@@ -1,92 +1,131 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/theme/app_text_styles.dart';
 import 'package:shc_stock/app/modules/auth/widgets/login_form.dart';
-import 'package:shc_stock/app/modules/auth/widgets/shc_logo.dart';
 
 class WebLoginLayout extends StatelessWidget {
   const WebLoginLayout({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundLavender,
       body: Column(
         children: [
-          // Main body: left panel + right card side by side
+          // ─── Main Row: Left Panel + Right Card ───
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ─── LEFT PANEL ─────────────────────────────────
-                Expanded(
-                  flex: 55,
-                  child: _buildLeftPanel(context),
-                ),
+            child: Padding(
+              // Overall outer spacing — scales with screen size
+              padding: EdgeInsets.symmetric(
+                horizontal: size.width  * 0.05,  // 5% each side
+                vertical:   size.height * 0.03,  // 3% top & bottom
+              ),
+              child: Center(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // LEFT PANEL — exactly 50% of content area
+                    Expanded(
+                      child: _buildLeftPanel(context, size),
+                    ),
 
-                // ─── RIGHT PANEL (Login Card) ────────────────────
-                Expanded(
-                  flex: 45,
-                  child: _buildRightPanel(context),
+                    // RIGHT PANEL — exactly 50% of content area
+                    Expanded(
+                      child: _buildRightPanel(context, size),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
 
-          // Footer
-          _buildFooter(),
+          // ─── Footer ───
+          _buildFooter(size),
         ],
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────────
   //  LEFT PANEL
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildLeftPanel(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  //  Stack:
+  //    Layer 1 (bottom): Warehouse image anchored to panel bottom (~62% height)
+  //    Layer 2 (top)   : Logo + Hero text sitting above the image
+  // ───────────────────────────────────────────────────────────────
+  Widget _buildLeftPanel(BuildContext context, Size size) {
+    return Stack(
+      clipBehavior: Clip.none,
       children: [
-        // 1. Logo at the very top-left
-        Padding(
-          padding: const EdgeInsets.only(left: 40, top: 28),
-          child: const SHCLogo(),
+        // ── Layer 1: Background warehouse image (bottom ~62%) ──
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: size.height * 0.62,
+          child: Image.asset(
+            'assets/background.png',
+            fit: BoxFit.cover,
+            alignment: Alignment.topCenter,
+          ),
         ),
 
-        // 2. Hero text labels
-        _buildHeroText(),
+        // ── Layer 2: Logo + Hero text on top ──
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Dynamic top breathing room
+            SizedBox(height: size.height * 0.04),
 
-        // 3. Warehouse image – FULL image visible (no cropping)
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(left: 16, right: 0, bottom: 12),
-            child: Image.asset(
-              'assets/background.png',
-              fit: BoxFit.contain,
-              alignment: Alignment.bottomCenter,
+            // Logo — width proportional to screen width
+            Padding(
+              // Left padding relative to the panel (panel = 45% of screen after outer pad)
+              padding: EdgeInsets.only(left: size.width * 0.025),
+              child: Image.asset(
+                'assets/logo.png',
+                // Panel is ~45% of screen → logo takes ~30% of panel width
+                width: size.width * 0.135,
+                fit: BoxFit.fitWidth,
+              ),
             ),
-          ),
+
+            SizedBox(height: size.height * 0.025),
+
+            // Hero headline + accent + subtitle
+            _buildHeroText(size),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildHeroText() {
+  Widget _buildHeroText(Size size) {
+    // Font sizes scale with screen width for all resolutions
+    // Each panel is now 50% of (screen - 10% outer pad) ≈ 45% of screen
+    final double headingFontSize = size.width * 0.022;
+    final double bodyFontSize    = size.width * 0.011;
+
     return Padding(
-      padding: const EdgeInsets.only(left: 56, right: 24, top: 32),
+      padding: EdgeInsets.only(
+        left:  size.width * 0.035,
+        right: size.width * 0.015,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Hero headline
           RichText(
             text: TextSpan(
-              style: AppTextStyles.heroHeading,
+              style: AppTextStyles.heroHeading.copyWith(
+                fontSize: headingFontSize,
+              ),
               children: [
                 const TextSpan(text: 'Built for '),
                 TextSpan(
                   text: 'efficiency.',
                   style: AppTextStyles.heroHeading.copyWith(
+                    fontSize: headingFontSize,
                     color: AppColors.primaryPurple,
                   ),
                 ),
@@ -94,6 +133,7 @@ class WebLoginLayout extends StatelessWidget {
                 TextSpan(
                   text: 'growth.',
                   style: AppTextStyles.heroHeading.copyWith(
+                    fontSize: headingFontSize,
                     color: AppColors.primaryOrange,
                   ),
                 ),
@@ -101,11 +141,11 @@ class WebLoginLayout extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 14),
+          SizedBox(height: size.height * 0.014),
 
-          // Orange underline accent
+          // Orange accent underline
           Container(
-            width: 48,
+            width: size.width * 0.022,
             height: 3,
             decoration: BoxDecoration(
               color: AppColors.primaryOrange,
@@ -113,71 +153,70 @@ class WebLoginLayout extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: size.height * 0.014),
 
           // Subtitle body text
           Text(
             'Powerful tools to manage stock,\npurchases, sales and reports –\nall in one place.',
-            style: AppTextStyles.heroBody,
+            style: AppTextStyles.heroBody.copyWith(
+              fontSize: bodyFontSize,
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────────
   //  RIGHT PANEL (Login Card)
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildRightPanel(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.only(
-          left: 16,   // minimal gap from the left image panel
-          right: 48,
-          top: 20,
-          bottom: 20,
+  //  - left : nearly flush with the panel dividing line
+  //  - right: breathing room from outer edge
+  //  - top  : aligns card top roughly with logo bottom on left side
+  //  - Card fills the entire right panel (50% of content area)
+  // ───────────────────────────────────────────────────────────────
+  Widget _buildRightPanel(BuildContext context, Size size) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left:   size.width  * 0.008, // nearly flush — tiny gap from left panel
+        right:  size.width  * 0.025, // slight breathing room on right
+        top:    size.height * 0.10,  // card top aligns ~with logo bottom
+        bottom: size.height * 0.06,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(size.width * 0.012),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A4A3AFF),
+              blurRadius: 48,
+              offset: Offset(0, 8),
+              spreadRadius: 0,
+            ),
+            BoxShadow(
+              color: Color(0x0A000000),
+              blurRadius: 16,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: 420,
-            minWidth: 320,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: size.width  * 0.028, // inner card horizontal padding
+            vertical:   size.height * 0.038, // inner card vertical padding
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0x1A4A3AFF),
-                  blurRadius: 48,
-                  offset: const Offset(0, 8),
-                  spreadRadius: 0,
-                ),
-                BoxShadow(
-                  color: const Color(0x0A000000),
-                  blurRadius: 16,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(36, 28, 36, 32),
-              child: const LoginForm(showLogo: false),
-            ),
-          ),
+          child: const LoginForm(showLogo: false),
         ),
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────────
   //  FOOTER
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildFooter() {
+  // ───────────────────────────────────────────────────────────────
+  Widget _buildFooter(Size size) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: EdgeInsets.symmetric(vertical: size.height * 0.018),
       child: Text(
         '© 2024 Secure Heat Care. All rights reserved.',
         style: AppTextStyles.copyright,

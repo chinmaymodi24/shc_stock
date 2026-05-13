@@ -7,8 +7,8 @@ class SHCLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Image.asset(
       "assets/logo.png",
-      width: 280,
-      height: 180,
+      width: 380,
+      height: 280,
       fit: BoxFit.fitWidth,
     );
   }
