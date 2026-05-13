@@ -9,29 +9,44 @@ class MobileLoginLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
+    final size       = MediaQuery.of(context).size;
+    final topPadding = MediaQuery.of(context).padding.top; // status-bar height
+
+    // ── Proportions ──────────────────────────────────────────────
+    // Image occupies the top 40% of the screen.
+    // White card starts at 36% — overlapping the image by 4%.
+    final double imageHeight = size.height * 0.40;
+    final double cardTop     = size.height * 0.36;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLavender,
+
+      // KEY FIX: StackFit.expand forces the Stack to fill the entire
+      // Scaffold body. Without this, the Stack shrinks to the height
+      // of its only non-Positioned child (the image SizedBox = 40%),
+      // leaving the white card with almost no height to render in.
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Top hero section with warehouse
-          SizedBox(
-            width: double.infinity,
-            height: screenHeight * 0.42,
+          // ── Layer 1: Warehouse image — Positioned at top (40%) ──
+          Positioned(
+            top:    0,
+            left:   0,
+            right:  0,
+            height: imageHeight,
             child: Stack(
               children: [
-                // Warehouse illustration
+                // Image fills its Positioned bounds completely
                 Positioned.fill(
                   child: WarehouseIllustration(
-                    width: screenWidth,
-                    height: screenHeight * 0.42,
+                    width:  size.width,
+                    height: imageHeight,
                   ),
                 ),
-                // Language selector
+
+                // Language selector — respects status-bar safe area
                 Positioned(
-                  top: MediaQuery.of(context).padding.top + 12,
+                  top:   topPadding + 12,
                   right: 16,
                   child: const LanguageSelector(),
                 ),
@@ -39,30 +54,35 @@ class MobileLoginLayout extends StatelessWidget {
             ),
           ),
 
-          // Bottom white card
+          // ── Layer 2: White login card — from 36% to bottom ──────
           Positioned(
+            top:    cardTop,
+            left:   0,
+            right:  0,
             bottom: 0,
-            left: 0,
-            right: 0,
-            top: screenHeight * 0.36,
             child: Container(
               decoration: const BoxDecoration(
                 color: AppColors.white,
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(28),
-                  topRight: Radius.circular(28),
+                  topLeft:  Radius.circular(30),
+                  topRight: Radius.circular(30),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0x1A4A3AFF),
+                    color:      Color(0x1A4A3AFF),
                     blurRadius: 24,
-                    offset: Offset(0, -6),
+                    offset:     Offset(0, -6),
                   ),
                 ],
               ),
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+                padding: EdgeInsets.only(
+                  left:   size.width  * 0.06,  // ~6% each side
+                  right:  size.width  * 0.06,
+                  top:    size.height * 0.03,  // breathing room below the curve
+                  bottom: size.height * 0.04,  // safe clearance at bottom
+                ),
                 child: const LoginForm(showLogo: true),
               ),
             ),
