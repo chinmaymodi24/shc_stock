@@ -20,7 +20,7 @@ class WebLoginLayout extends StatelessWidget {
               // Overall outer spacing — scales with screen size
               padding: EdgeInsets.symmetric(
                 horizontal: size.width  * 0.05,  // 5% each side
-                vertical:   size.height * 0.03,  // 3% top & bottom
+                vertical: size.height * 0.03,  // 3% top & bottom
               ),
               child: Center(
                 child: Row(
@@ -28,11 +28,13 @@ class WebLoginLayout extends StatelessWidget {
                   children: [
                     // LEFT PANEL — exactly 50% of content area
                     Expanded(
+                      flex: 10,
                       child: _buildLeftPanel(context, size),
                     ),
 
                     // RIGHT PANEL — exactly 50% of content area
                     Expanded(
+                      flex: 6,
                       child: _buildRightPanel(context, size),
                     ),
                   ],
@@ -63,10 +65,10 @@ class WebLoginLayout extends StatelessWidget {
           bottom: 0,
           left: 0,
           right: 0,
-          height: size.height * 0.62,
+          height: size.height * 0.67,
           child: Image.asset(
             'assets/background.png',
-            fit: BoxFit.cover,
+            fit: BoxFit.fill,
             alignment: Alignment.topCenter,
           ),
         ),
@@ -81,11 +83,11 @@ class WebLoginLayout extends StatelessWidget {
             // Logo — width proportional to screen width
             Padding(
               // Left padding relative to the panel (panel = 45% of screen after outer pad)
-              padding: EdgeInsets.only(left: size.width * 0.025),
+              padding: EdgeInsets.only(left: size.width * 0.019),
               child: Image.asset(
                 'assets/logo.png',
                 // Panel is ~45% of screen → logo takes ~30% of panel width
-                width: size.width * 0.135,
+                width: size.width * 0.15,
                 fit: BoxFit.fitWidth,
               ),
             ),
@@ -103,8 +105,8 @@ class WebLoginLayout extends StatelessWidget {
   Widget _buildHeroText(Size size) {
     // Font sizes scale with screen width for all resolutions
     // Each panel is now 50% of (screen - 10% outer pad) ≈ 45% of screen
-    final double headingFontSize = size.width * 0.022;
-    final double bodyFontSize    = size.width * 0.011;
+    final double headingFontSize = size.width * 0.017;
+    final double bodyFontSize    = size.width * 0.007;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -146,10 +148,10 @@ class WebLoginLayout extends StatelessWidget {
           // Orange accent underline
           Container(
             width: size.width * 0.022,
-            height: 3,
+            height: 6,
             decoration: BoxDecoration(
               color: AppColors.primaryOrange,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(30),
             ),
           ),
 
@@ -160,6 +162,7 @@ class WebLoginLayout extends StatelessWidget {
             'Powerful tools to manage stock,\npurchases, sales and reports –\nall in one place.',
             style: AppTextStyles.heroBody.copyWith(
               fontSize: bodyFontSize,
+              color: Color(0xFF5d6093)
             ),
           ),
         ],
@@ -177,7 +180,8 @@ class WebLoginLayout extends StatelessWidget {
   Widget _buildRightPanel(BuildContext context, Size size) {
     return Padding(
       padding: EdgeInsets.only(
-        left:   size.width  * 0.008, // nearly flush — tiny gap from left panel
+        left: 0,
+        // left:   size.width  * 0.008, // nearly flush — tiny gap from left panel
         right:  size.width  * 0.025, // slight breathing room on right
         top:    size.height * 0.10,  // card top aligns ~with logo bottom
         bottom: size.height * 0.06,
@@ -205,7 +209,7 @@ class WebLoginLayout extends StatelessWidget {
             horizontal: size.width  * 0.028, // inner card horizontal padding
             vertical:   size.height * 0.038, // inner card vertical padding
           ),
-          child: const LoginForm(showLogo: false),
+          child: const LoginForm(showLogo: false,isMobile: false,),
         ),
       ),
     );

@@ -7,11 +7,13 @@ import 'language_selector.dart';
 import 'shc_logo.dart';
 
 class LoginForm extends GetView<LoginController> {
+  final bool isMobile;
   final bool showLogo;
 
   const LoginForm({
     super.key,
     this.showLogo = true,
+    required this.isMobile,
   });
 
   @override
@@ -68,7 +70,11 @@ class LoginForm extends GetView<LoginController> {
 
           _buildDividerWithDot(),
 
-          const SizedBox(height: 28),
+
+
+          isMobile == true ?
+          const SizedBox(height: 28) :
+          const SizedBox(height: 68),
 
           /// EMAIL LABEL
           Text('Email Address', style: AppTextStyles.label),
@@ -77,7 +83,9 @@ class LoginForm extends GetView<LoginController> {
 
           _buildEmailField(),
 
-          const SizedBox(height: 20),
+          isMobile == true ?
+          const SizedBox(height: 20) :
+          const SizedBox(height: 30),
 
           /// PASSWORD LABEL
           Text('Password', style: AppTextStyles.label),
@@ -91,7 +99,9 @@ class LoginForm extends GetView<LoginController> {
           /// REMEMBER ME + FORGOT PASSWORD
           _buildRememberMeRow(),
 
-          const SizedBox(height: 24),
+          isMobile == true ?
+          const SizedBox(height: 24) :
+          const SizedBox(height: 64),
 
           /// SIGN IN BUTTON
           _buildSignInButton(),
@@ -106,7 +116,9 @@ class LoginForm extends GetView<LoginController> {
           /// SIGN IN WITH ANOTHER ACCOUNT
           _buildAlternateSignInButton(),
 
-          const SizedBox(height: 24),
+          isMobile == true ?
+          const SizedBox(height: 24) :
+          const SizedBox(height: 74),
 
           /// SECURITY BADGE
           _buildSecurityBadge(),
@@ -372,21 +384,19 @@ class LoginForm extends GetView<LoginController> {
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Secure. Reliable. Always.',
-                  style: AppTextStyles.badgeTitle,
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  'Your data is safe with us, always and everywhere.',
-                  style: AppTextStyles.badgeSubtitle,
-                ),
-              ],
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Secure. Reliable. Always.',
+                style: AppTextStyles.badgeTitle,
+              ),
+              const SizedBox(height: 3),
+              Text(
+                'Your data is safe with us, always and everywhere.',
+                style: AppTextStyles.badgeSubtitle,
+              ),
+            ],
           ),
         ],
       ),

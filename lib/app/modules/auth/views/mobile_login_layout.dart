@@ -9,14 +9,14 @@ class MobileLoginLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size       = MediaQuery.of(context).size;
+    final size = MediaQuery.of(context).size;
     final topPadding = MediaQuery.of(context).padding.top; // status-bar height
 
     // ── Proportions ──────────────────────────────────────────────
     // Image occupies the top 40% of the screen.
     // White card starts at 36% — overlapping the image by 4%.
     final double imageHeight = size.height * 0.40;
-    final double cardTop     = size.height * 0.36;
+    final double cardTop = size.height * 0.36;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLavender,
@@ -30,23 +30,23 @@ class MobileLoginLayout extends StatelessWidget {
         children: [
           // ── Layer 1: Warehouse image — Positioned at top (40%) ──
           Positioned(
-            top:    0,
-            left:   0,
-            right:  0,
+            top: 0,
+            left: 0,
+            right: 0,
             height: imageHeight,
             child: Stack(
               children: [
                 // Image fills its Positioned bounds completely
                 Positioned.fill(
                   child: WarehouseIllustration(
-                    width:  size.width,
+                    width: size.width,
                     height: imageHeight,
                   ),
                 ),
 
                 // Language selector — respects status-bar safe area
                 Positioned(
-                  top:   topPadding + 12,
+                  top: topPadding + 12,
                   right: 16,
                   child: const LanguageSelector(),
                 ),
@@ -56,34 +56,34 @@ class MobileLoginLayout extends StatelessWidget {
 
           // ── Layer 2: White login card — from 36% to bottom ──────
           Positioned(
-            top:    cardTop,
-            left:   0,
-            right:  0,
+            top: cardTop,
+            left: 0,
+            right: 0,
             bottom: 0,
             child: Container(
               decoration: const BoxDecoration(
                 color: AppColors.white,
                 borderRadius: BorderRadius.only(
-                  topLeft:  Radius.circular(30),
+                  topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color:      Color(0x1A4A3AFF),
+                    color: Color(0x1A4A3AFF),
                     blurRadius: 24,
-                    offset:     Offset(0, -6),
+                    offset: Offset(0, -6),
                   ),
                 ],
               ),
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 padding: EdgeInsets.only(
-                  left:   size.width  * 0.06,  // ~6% each side
-                  right:  size.width  * 0.06,
-                  top:    size.height * 0.03,  // breathing room below the curve
-                  bottom: size.height * 0.04,  // safe clearance at bottom
+                  left: size.width * 0.06, // ~6% each side
+                  right: size.width * 0.06,
+                  top: size.height * 0.03, // breathing room below the curve
+                  bottom: size.height * 0.04, // safe clearance at bottom
                 ),
-                child: const LoginForm(showLogo: true),
+                child: const LoginForm(showLogo: true, isMobile: true),
               ),
             ),
           ),

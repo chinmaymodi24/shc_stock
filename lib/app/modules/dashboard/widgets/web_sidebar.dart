@@ -38,7 +38,9 @@ class WebSidebar extends GetView<DashboardController> {
 
           // Nav items
           Expanded(
-            child: Obx(() => ListView.builder(
+            child:
+            // Obx(() =>
+                ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               itemCount: _navItems.length,
               itemBuilder: (context, index) {
@@ -49,7 +51,8 @@ class WebSidebar extends GetView<DashboardController> {
                   onTap: () => controller.onNavTap(index),
                 );
               },
-            )),
+            ),
+            // ),
           ),
 
           // Admin profile at bottom
