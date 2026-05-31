@@ -5,6 +5,8 @@ import 'package:shc_stock/app/modules/dashboard/widgets/stat_card.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/today_sales_card.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/quick_action_button.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import '../widgets/app_drawer.dart';
 
 class MobileDashboardLayout extends StatelessWidget {
   const MobileDashboardLayout({super.key});
@@ -22,7 +24,8 @@ class MobileDashboardLayout extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FF),
-      appBar: _buildAppBar(),
+      drawer: const AppDrawer(activeRoute: AppRoutes.dashboard),
+      appBar: _buildAppBar(context),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         child: Column(
@@ -95,13 +98,15 @@ class MobileDashboardLayout extends StatelessWidget {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.menu_rounded, color: Color(0xFF1A1240), size: 24),
-        onPressed: () {},
+      leading: Builder(
+        builder: (ctx) => IconButton(
+          icon: const Icon(Icons.menu_rounded, color: Color(0xFF1A1240), size: 24),
+          onPressed: () => Scaffold.of(ctx).openDrawer(),
+        ),
       ),
       title: Image.asset(
         "assets/logo.png",
