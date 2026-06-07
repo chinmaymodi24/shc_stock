@@ -13,7 +13,7 @@ class MobileProductsLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.find<ProductsController>();
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7FF),
+      backgroundColor: appColors.background,
       drawer: const AppDrawer(activeRoute: AppRoutes.products),
       appBar: _buildAppBar(context, c),
       body: Column(
@@ -35,22 +35,22 @@ class MobileProductsLayout extends StatelessWidget {
   // ── AppBar ───────────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar(BuildContext context, ProductsController c) {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: appColors.topBarBg,
       elevation: 0,
       leading: Builder(
         builder: (ctx) => IconButton(
-          icon: const Icon(Icons.menu_rounded, color: Color(0xFF1A1240), size: 24),
+          icon: Icon(Icons.menu_rounded, color: appColors.textPrimary, size: 24),
           onPressed: () => Scaffold.of(ctx).openDrawer(),
         ),
       ),
-      title: const Text('Products', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+      title: Text('Products', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: appColors.textPrimary, fontFamily: 'Poppins')),
       actions: [
         Stack(children: [
-          IconButton(icon: const Icon(Icons.notifications_outlined, color: Color(0xFF1A1240), size: 24), onPressed: () {}),
+          IconButton(icon: Icon(Icons.notifications_outlined, color: appColors.textPrimary, size: 24), onPressed: () {}),
           Positioned(top: 10, right: 10, child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle))),
         ]),
       ],
-      bottom: const PreferredSize(preferredSize: Size.fromHeight(1), child: Divider(height: 1, color: Color(0xFFF0EFF8))),
+      bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Divider(height: 1, color: appColors.divider)),
     );
   }
 
@@ -60,17 +60,17 @@ class MobileProductsLayout extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: TextField(
         onChanged: (v) => c.searchQuery.value = v,
-        style: const TextStyle(fontSize: 14, fontFamily: 'Poppins', color: Color(0xFF1A1240)),
+        style: TextStyle(fontSize: 14, fontFamily: 'Poppins', color: appColors.textPrimary),
         decoration: InputDecoration(
           hintText: 'Search products...',
-          hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9B9BB4), fontFamily: 'Poppins'),
-          prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF9B9BB4), size: 20),
+          hintStyle: TextStyle(fontSize: 14, color: appColors.textHint, fontFamily: 'Poppins'),
+          prefixIcon: Icon(Icons.search_rounded, color: appColors.textHint, size: 20),
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE0DFF5))),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE0DFF5))),
+          fillColor: appColors.inputFill,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: appColors.border)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: appColors.border)),
           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryOrange, width: 1.5)),
         ),
       ),
@@ -96,9 +96,9 @@ class MobileProductsLayout extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryOrange : Colors.white,
+                  color: isSelected ? AppColors.primaryOrange : appColors.surface,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: isSelected ? AppColors.primaryOrange : const Color(0xFFE0DFF5)),
+                  border: Border.all(color: isSelected ? AppColors.primaryOrange : appColors.border),
                 ),
                 child: Text(
                   cats[i],
@@ -106,7 +106,7 @@ class MobileProductsLayout extends StatelessWidget {
                     fontSize: 12.5,
                     fontFamily: 'Poppins',
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? Colors.white : const Color(0xFF6B6B8A),
+                    color: isSelected ? Colors.white : appColors.textSecondary,
                   ),
                 ),
               ),
@@ -152,9 +152,9 @@ class _ProductCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: appColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF0EFF8)),
+        border: Border.all(color: appColors.divider),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
@@ -173,8 +173,8 @@ class _ProductCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(product.name, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins'), maxLines: 2, overflow: TextOverflow.ellipsis),
-                    Text(product.categoryName, style: const TextStyle(fontSize: 11.5, color: Color(0xFF9B9BB4), fontFamily: 'Poppins')),
+                    Text(product.name, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: appColors.textPrimary, fontFamily: 'Poppins'), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text(product.categoryName, style: TextStyle(fontSize: 11.5, color: appColors.textHint, fontFamily: 'Poppins')),
                   ],
                 ),
               ),
@@ -193,7 +193,7 @@ class _ProductCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(height: 1, color: Color(0xFFF0EFF8)),
+          Divider(height: 1, color: appColors.divider),
           const SizedBox(height: 10),
           // ── Bottom Row: price | stock | sub-cat + actions ──
           Row(children: [
@@ -247,13 +247,13 @@ class _InfoChip extends StatelessWidget {
       flex: flex,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(color: const Color(0xFFF8F7FF), borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(color: appColors.tagBg, borderRadius: BorderRadius.circular(8)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 10.5, color: Color(0xFF9B9BB4), fontFamily: 'Poppins')),
+            Text(label, style: TextStyle(fontSize: 10.5, color: appColors.textHint, fontFamily: 'Poppins')),
             const SizedBox(height: 2),
-            Text(value, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins'), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(value, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: appColors.textPrimary, fontFamily: 'Poppins'), maxLines: 1, overflow: TextOverflow.ellipsis),
           ],
         ),
       ),
@@ -297,9 +297,9 @@ class _MobileDeleteConfirmDialog extends StatelessWidget {
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: appColors.surface,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 32, offset: const Offset(0, 10))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.20), blurRadius: 32, offset: const Offset(0, 10))],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -317,20 +317,20 @@ class _MobileDeleteConfirmDialog extends StatelessWidget {
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text('Delete Product?',
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, fontFamily: 'Poppins')),
                   ),
                   GestureDetector(
                     onTap: Get.back,
                     child: Container(
                       width: 30, height: 30,
-                      decoration: BoxDecoration(color: const Color(0xFFF5F4FF), borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.close_rounded, size: 17, color: Color(0xFF6B6B8A)),
+                      decoration: BoxDecoration(color: appColors.comingSoonBadge, borderRadius: BorderRadius.circular(8)),
+                      child: Icon(Icons.close_rounded, size: 17, color: appColors.textSecondary),
                     ),
                   ),
                 ],
               ),
             ),
-            const Padding(padding: EdgeInsets.only(top: 14), child: Divider(height: 1, color: Color(0xFFF0EFF8))),
+            Padding(padding: const EdgeInsets.only(top: 14), child: Divider(height: 1, color: appColors.divider)),
             // ── Body ──
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
@@ -357,11 +357,11 @@ class _MobileDeleteConfirmDialog extends StatelessWidget {
                         child: OutlinedButton(
                           onPressed: Get.back,
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFE0DFF5)),
+                            side: BorderSide(color: appColors.border),
                             padding: const EdgeInsets.symmetric(vertical: 13),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          child: const Text('Cancel', style: TextStyle(fontSize: 14, fontFamily: 'Poppins', color: Color(0xFF6B6B8A))),
+                          child: Text('Cancel', style: TextStyle(fontSize: 14, fontFamily: 'Poppins', color: appColors.textSecondary)),
                         ),
                       ),
                       const SizedBox(width: 10),

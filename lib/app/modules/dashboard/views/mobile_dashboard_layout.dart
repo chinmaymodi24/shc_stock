@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/dashboard/controllers/dashboard_controller.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/stat_card.dart';
@@ -21,9 +21,10 @@ class MobileDashboardLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<DashboardController>();
+    final colors = appColors;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7FF),
+      backgroundColor: colors.background,
       drawer: const AppDrawer(activeRoute: AppRoutes.dashboard),
       appBar: _buildAppBar(context),
       body: SingleChildScrollView(
@@ -58,7 +59,7 @@ class MobileDashboardLayout extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Quick Actions
-            const Text('Quick Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+            Text('Quick Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
             const SizedBox(height: 12),
             GridView.count(
               crossAxisCount: 2,
@@ -72,21 +73,21 @@ class MobileDashboardLayout extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Stock Summary
-            const Text('Stock Summary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+            Text('Stock Summary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
             const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFF0EFF8)),
+                border: Border.all(color: colors.divider),
                 boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
               ),
               child: Column(
                 children: [
                   _StockSummaryRow(label: 'Total Products', value: '1,245', isFirst: true),
-                  const Divider(height: 1, color: Color(0xFFF0EFF8)),
+                  Divider(height: 1, color: colors.divider),
                   _StockSummaryRow(label: 'Low Stock Items', value: '23', valueColor: const Color(0xFFEF4444)),
-                  const Divider(height: 1, color: Color(0xFFF0EFF8)),
+                  Divider(height: 1, color: colors.divider),
                   _StockSummaryRow(label: 'Out of Stock', value: '65', valueColor: const Color(0xFFEF4444)),
                 ],
               ),
@@ -99,12 +100,13 @@ class MobileDashboardLayout extends StatelessWidget {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final colors = appColors;
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.topBarBg,
       elevation: 0,
       leading: Builder(
         builder: (ctx) => IconButton(
-          icon: const Icon(Icons.menu_rounded, color: Color(0xFF1A1240), size: 24),
+          icon: Icon(Icons.menu_rounded, color: colors.textPrimary, size: 24),
           onPressed: () => Scaffold.of(ctx).openDrawer(),
         ),
       ),
@@ -117,12 +119,12 @@ class MobileDashboardLayout extends StatelessWidget {
       actions: [
         Stack(
           children: [
-            IconButton(icon: const Icon(Icons.notifications_outlined, color: Color(0xFF1A1240), size: 24), onPressed: () {}),
+            IconButton(icon: Icon(Icons.notifications_outlined, color: colors.textPrimary, size: 24), onPressed: () {}),
             Positioned(top: 10, right: 10, child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle))),
           ],
         ),
       ],
-      bottom: const PreferredSize(preferredSize: Size.fromHeight(1), child: Divider(height: 1, color: Color(0xFFF0EFF8))),
+      bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Divider(height: 1, color: colors.divider)),
     );
   }
 
@@ -177,20 +179,21 @@ class _SimpleStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF0EFF8)),
+        border: Border.all(color: colors.divider),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: colors.textSecondary, fontFamily: 'Poppins')),
           const SizedBox(height: 8),
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
         ],
       ),
     );
@@ -207,13 +210,14 @@ class _StockSummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
-          Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: valueColor ?? const Color(0xFF1A1240), fontFamily: 'Poppins')),
+          Text(label, style: TextStyle(fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
+          Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: valueColor ?? colors.textPrimary, fontFamily: 'Poppins')),
         ],
       ),
     );

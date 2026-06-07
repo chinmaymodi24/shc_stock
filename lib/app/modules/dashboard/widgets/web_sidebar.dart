@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/theme/theme_controller.dart';
 import '../../../routes/app_routes.dart';
 
 class WebSidebar extends StatelessWidget {
@@ -72,6 +73,9 @@ class WebSidebar extends StatelessWidget {
             ),
           ),
 
+          // ── Theme Selector ──
+          const _SidebarThemeSelector(),
+
           // ── Admin profile ──
           Container(
             padding: const EdgeInsets.all(14),
@@ -130,6 +134,97 @@ class WebSidebar extends StatelessWidget {
   }
 }
 
+// ── Theme Selector Widget ─────────────────────────────────────────────────────
+class _SidebarThemeSelector extends StatelessWidget {
+  const _SidebarThemeSelector();
+
+  @override
+  Widget build(BuildContext context) {
+    final tc = Get.find<ThemeController>();
+    return Container(
+      margin: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Obx(() => Row(
+        children: [
+          _ThemeBtn(
+            icon: Icons.wb_sunny_rounded,
+            label: 'Light',
+            isActive: tc.isLight,
+            onTap: () => tc.setTheme(ThemeMode.light),
+          ),
+          _ThemeBtn(
+            icon: Icons.nightlight_round,
+            label: 'Dark',
+            isActive: tc.isDark,
+            onTap: () => tc.setTheme(ThemeMode.dark),
+          ),
+          _ThemeBtn(
+            icon: Icons.devices_rounded,
+            label: 'Auto',
+            isActive: tc.isSystem,
+            onTap: () => tc.setTheme(ThemeMode.system),
+          ),
+        ],
+      )),
+    );
+  }
+}
+
+class _ThemeBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _ThemeBtn({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: isActive ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 14,
+                color: isActive ? AppColors.primaryOrange : Colors.white70,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
+                  color: isActive ? AppColors.primaryOrange : Colors.white70,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SidebarNavItem extends StatelessWidget {
   final _NavItem item;
   final bool isActive;
@@ -181,6 +276,12 @@ class _SignOutDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surface = appColors.surface;
+    final textPrimary = appColors.textPrimary;
+    final textSecondary = appColors.textSecondary;
+    final divider = appColors.divider;
+    final comingSoonBadge = appColors.comingSoonBadge;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.zero,
@@ -189,11 +290,11 @@ class _SignOutDialog extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 420, minWidth: 320),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: surface,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.14),
+                  color: Colors.black.withValues(alpha: 0.20),
                   blurRadius: 40,
                   offset: const Offset(0, 12),
                 ),
@@ -217,7 +318,7 @@ class _SignOutDialog extends StatelessWidget {
                             color: AppColors.primaryOrange, size: 24),
                       ),
                       const SizedBox(width: 14),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -225,13 +326,13 @@ class _SignOutDialog extends StatelessWidget {
                                 style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF1A1240),
+                                    color: textPrimary,
                                     fontFamily: 'Poppins')),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text('Are you sure you want to sign out?',
                                 style: TextStyle(
                                     fontSize: 12.5,
-                                    color: Color(0xFF9B9BB4),
+                                    color: textSecondary,
                                     fontFamily: 'Poppins')),
                           ],
                         ),
@@ -241,19 +342,19 @@ class _SignOutDialog extends StatelessWidget {
                         child: Container(
                           width: 32, height: 32,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F4FF),
+                            color: comingSoonBadge,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.close_rounded,
-                              size: 18, color: Color(0xFF6B6B8A)),
+                          child: Icon(Icons.close_rounded,
+                              size: 18, color: textSecondary),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.only(top: 20),
-                  child: Divider(height: 1, color: Color(0xFFF0EFF8)),
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: Divider(height: 1, color: divider),
                 ),
                 // ── Body message ──
                 Padding(
@@ -270,12 +371,12 @@ class _SignOutDialog extends StatelessWidget {
                         Icon(Icons.info_outline_rounded,
                             color: AppColors.primaryOrange.withValues(alpha: 0.8), size: 18),
                         const SizedBox(width: 10),
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             'You will be returned to the login screen. Any unsaved changes will be lost.',
                             style: TextStyle(
                                 fontSize: 12.5,
-                                color: Color(0xFF6B6B8A),
+                                color: textSecondary,
                                 fontFamily: 'Poppins',
                                 height: 1.5),
                           ),
@@ -293,16 +394,16 @@ class _SignOutDialog extends StatelessWidget {
                         child: OutlinedButton(
                           onPressed: Get.back,
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFE0DFF5)),
+                            side: BorderSide(color: appColors.border),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: const Text('Cancel',
+                          child: Text('Cancel',
                               style: TextStyle(
                                   fontSize: 14,
                                   fontFamily: 'Poppins',
-                                  color: Color(0xFF6B6B8A))),
+                                  color: textSecondary)),
                         ),
                       ),
                       const SizedBox(width: 12),

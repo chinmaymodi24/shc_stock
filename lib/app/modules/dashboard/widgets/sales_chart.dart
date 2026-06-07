@@ -1,4 +1,4 @@
-﻿import 'dart:math';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/dashboard_models.dart';
 import '../../../core/theme/app_colors.dart';
@@ -10,16 +10,20 @@ class SalesLineChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return CustomPaint(
-      painter: _SalesChartPainter(data: data),
+      painter: _SalesChartPainter(data: data, gridColor: colors.divider, labelColor: colors.textSecondary, dotBorderColor: colors.surface),
     );
   }
 }
 
 class _SalesChartPainter extends CustomPainter {
   final List<SalesChartPoint> data;
+  final Color gridColor;
+  final Color labelColor;
+  final Color dotBorderColor;
 
-  _SalesChartPainter({required this.data});
+  _SalesChartPainter({required this.data, required this.gridColor, required this.labelColor, required this.dotBorderColor});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -34,10 +38,10 @@ class _SalesChartPainter extends CustomPainter {
     final double chartH = size.height - bottomPad - topPad;
 
     final gridPaint = Paint()
-      ..color = const Color(0xFFF0EFF8)
+      ..color = gridColor
       ..strokeWidth = 1;
 
-    final textStyle = const TextStyle(fontSize: 11, color: Color(0xFF9090AA), fontFamily: 'Poppins');
+    final textStyle = TextStyle(fontSize: 11, color: labelColor, fontFamily: 'Poppins');
 
     // Draw Y grid lines and labels
     for (int i = 0; i < yLabels.length; i++) {
@@ -97,7 +101,7 @@ class _SalesChartPainter extends CustomPainter {
 
     // Draw dots
     final dotPaint = Paint()..color = AppColors.primaryOrange..style = PaintingStyle.fill;
-    final dotBorderPaint = Paint()..color = Colors.white..style = PaintingStyle.fill;
+    final dotBorderPaint = Paint()..color = dotBorderColor..style = PaintingStyle.fill;
     for (final pt in points) {
       canvas.drawCircle(pt, 6, dotBorderPaint);
       canvas.drawCircle(pt, 4, dotPaint);
@@ -115,5 +119,6 @@ class _SalesChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _SalesChartPainter oldDelegate) =>
+      oldDelegate.gridColor != gridColor || oldDelegate.labelColor != labelColor;
 }

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../models/dashboard_models.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -15,7 +15,7 @@ class RecentTransactions extends StatelessWidget {
         return Column(
           children: [
             _TransactionRow(data: e.value),
-            if (!isLast) const Divider(height: 1, color: Color(0xFFF0EFF8)),
+            if (!isLast) Divider(height: 1, color: appColors.divider),
           ],
         );
       }).toList(),
@@ -50,17 +50,17 @@ class _TransactionRow extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(data.type,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: appColors.textPrimary, fontFamily: 'Poppins')),
           ),
           Expanded(
             child: Text(data.invoiceNo,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+                style: TextStyle(fontSize: 12, color: appColors.textSecondary, fontFamily: 'Poppins')),
           ),
           Text(data.amount,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: appColors.textPrimary, fontFamily: 'Poppins')),
           const SizedBox(width: 16),
           Text(data.date,
-              style: const TextStyle(fontSize: 11.5, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+              style: TextStyle(fontSize: 11.5, color: appColors.textSecondary, fontFamily: 'Poppins')),
         ],
       ),
     );

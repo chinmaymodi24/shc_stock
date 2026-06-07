@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../models/dashboard_models.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -10,12 +10,13 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return Container(
       padding: EdgeInsets.all(compact ? 14 : 18),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF0EFF8), width: 1),
+        border: Border.all(color: colors.divider, width: 1),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
@@ -26,13 +27,13 @@ class StatCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(data.title, style: TextStyle(fontSize: compact ? 12 : 13, fontWeight: FontWeight.w500, color: AppColors.textMedium, fontFamily: 'Poppins')),
+                child: Text(data.title, style: TextStyle(fontSize: compact ? 12 : 13, fontWeight: FontWeight.w500, color: colors.textSecondary, fontFamily: 'Poppins')),
               ),
               _buildIcon(),
             ],
           ),
           SizedBox(height: compact ? 6 : 10),
-          Text(data.value, style: TextStyle(fontSize: compact ? 20 : 24, fontWeight: FontWeight.w700, color: AppColors.textDark, fontFamily: 'Poppins')),
+          Text(data.value, style: TextStyle(fontSize: compact ? 20 : 24, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
           if (data.change != null) ...[
             const SizedBox(height: 4),
             Text(data.change!, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500,

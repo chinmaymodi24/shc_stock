@@ -16,9 +16,10 @@ class WebDashboardLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<DashboardController>();
+    final colors = appColors;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7FF),
+      backgroundColor: colors.background,
       body: Row(
         children: [
           const WebSidebar(),
@@ -71,27 +72,28 @@ class WebDashboardLayout extends StatelessWidget {
   }
 
   Widget _buildTopBar(DashboardController c) {
+    final colors = appColors;
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFF0EFF8), width: 1)),
+      decoration: BoxDecoration(
+        color: colors.topBarBg,
+        border: Border(bottom: BorderSide(color: colors.divider, width: 1)),
       ),
       child: Row(
         children: [
           const Spacer(),
           Stack(
             children: [
-              IconButton(icon: const Icon(Icons.notifications_outlined, color: Color(0xFF1A1240), size: 24), onPressed: () {}),
+              IconButton(icon: Icon(Icons.notifications_outlined, color: colors.textPrimary, size: 24), onPressed: () {}),
               Positioned(top: 8, right: 8, child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle))),
             ],
           ),
           const SizedBox(width: 4),
           CircleAvatar(radius: 18, backgroundColor: AppColors.primaryOrange.withValues(alpha: 0.15), child: const Icon(Icons.person_rounded, color: AppColors.primaryOrange, size: 20)),
           const SizedBox(width: 8),
-          const Text('Admin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
-          const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF6B6B8A), size: 18),
+          Text('Admin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'Poppins')),
+          Icon(Icons.keyboard_arrow_down_rounded, color: colors.textSecondary, size: 18),
         ],
       ),
     );
@@ -167,13 +169,14 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF0EFF8)),
+        border: Border.all(color: colors.divider),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
@@ -182,7 +185,7 @@ class _SectionCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+              Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
               if (trailing != null) trailing!,
             ],
           ),
@@ -203,12 +206,14 @@ class _DropdownFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE0DFF5)), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(border: Border.all(color: colors.border), borderRadius: BorderRadius.circular(8)),
       child: DropdownButton<String>(
         value: value, isDense: true, underline: const SizedBox(),
-        style: const TextStyle(fontSize: 12, color: Color(0xFF1A1240), fontFamily: 'Poppins'),
+        dropdownColor: colors.surface,
+        style: TextStyle(fontSize: 12, color: colors.textPrimary, fontFamily: 'Poppins'),
         items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
         onChanged: (v) { if (v != null) onChanged(v); },
       ),

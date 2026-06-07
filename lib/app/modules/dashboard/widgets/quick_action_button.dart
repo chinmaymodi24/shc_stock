@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 
 class QuickActionButton extends StatelessWidget {
@@ -10,13 +10,14 @@ class QuickActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFF0EFF8)),
+          border: Border.all(color: colors.divider),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))],
         ),
         child: Column(
@@ -24,7 +25,7 @@ class QuickActionButton extends StatelessWidget {
           children: [
             Icon(icon, color: AppColors.primaryOrange, size: 32),
             const SizedBox(height: 10),
-            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+            Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colors.textPrimary, fontFamily: 'Poppins')),
           ],
         ),
       ),
@@ -53,7 +54,7 @@ class QuickActionTile extends StatelessWidget {
             child: Icon(icon, color: AppColors.primaryOrange, size: 26),
           ),
           const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+          Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: appColors.textPrimary, fontFamily: 'Poppins')),
         ],
       ),
     );

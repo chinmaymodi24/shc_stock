@@ -1,30 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'app/core/theme/app_theme.dart';
+import 'app/core/theme/theme_controller.dart';
 import 'app/routes/app_pages.dart';
 
 void main() {
-  runApp(const SecureHeatCareApp());
+  final themeController = Get.put(ThemeController(), permanent: true);
+  runApp(SecureHeatCareApp(themeController: themeController));
 }
 
 class SecureHeatCareApp extends StatelessWidget {
-  const SecureHeatCareApp({super.key});
+  final ThemeController themeController;
+  const SecureHeatCareApp({super.key, required this.themeController});
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      title: 'Secure Heat Care',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2B1888),
-          primary: const Color(0xFF2B1888),
-          secondary: const Color(0xFFF47B20),
-        ),
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFEEECFF),
+    return Obx(
+      () => GetMaterialApp(
+        title: 'Secure Heat Care',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: themeController.themeMode,
+        initialRoute: AppPages.initial,
+        getPages: AppPages.routes,
       ),
-      initialRoute: AppPages.initial,
-      getPages: AppPages.routes,
     );
   }
 }

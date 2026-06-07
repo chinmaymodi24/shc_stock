@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import '../models/dashboard_models.dart';
 
 class LowStockTable extends StatelessWidget {
@@ -14,16 +15,16 @@ class LowStockTable extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: Row(
-            children: const [
-              Expanded(child: Text('Product', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF6B6B8A), fontFamily: 'Poppins'))),
-              SizedBox(width: 16),
-              Text('Current Stock', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
-              SizedBox(width: 24),
-              Text('Minimum Stock', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+            children: [
+              Expanded(child: Text('Product', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: appColors.textSecondary, fontFamily: 'Poppins'))),
+              const SizedBox(width: 16),
+              Text('Current Stock', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: appColors.textSecondary, fontFamily: 'Poppins')),
+              const SizedBox(width: 24),
+              Text('Minimum Stock', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: appColors.textSecondary, fontFamily: 'Poppins')),
             ],
           ),
         ),
-        const Divider(height: 1, color: Color(0xFFF0EFF8)),
+        Divider(height: 1, color: appColors.divider),
         ...items.map((item) => _LowStockRow(item: item)),
       ],
     );
@@ -43,7 +44,7 @@ class _LowStockRow extends StatelessWidget {
         children: [
           Expanded(
             child: Text(item.product,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w400, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w400, color: appColors.textPrimary, fontFamily: 'Poppins')),
           ),
           const SizedBox(width: 16),
           SizedBox(
@@ -60,7 +61,7 @@ class _LowStockRow extends StatelessWidget {
             child: Text(
               item.minimumStock.toString(),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins'),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: appColors.textPrimary, fontFamily: 'Poppins'),
             ),
           ),
         ],

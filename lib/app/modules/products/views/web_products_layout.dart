@@ -14,9 +14,9 @@ class WebProductsLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
+    final colors = appColors;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7FF),
+      backgroundColor: colors.background,
       body: Row(
         children: [
           const WebSidebar(),
@@ -49,12 +49,13 @@ class WebProductsLayout extends StatelessWidget {
 
   // ── Top Bar ───────────────────────────────────────────────────
   Widget _buildTopBar(ProductsController c) {
+    final colors = appColors;
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFF0EFF8))),
+      decoration: BoxDecoration(
+        color: colors.topBarBg,
+        border: Border(bottom: BorderSide(color: colors.divider)),
       ),
       child: Row(
         children: [
@@ -64,33 +65,33 @@ class WebProductsLayout extends StatelessWidget {
               height: 40,
               constraints: const BoxConstraints(maxWidth: 380),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F7FF),
+                color: colors.inputFill,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE0DFF5)),
+                border: Border.all(color: colors.border),
               ),
               child: TextField(
                 onChanged: (v) => c.searchQuery.value = v,
-                style: const TextStyle(fontSize: 13, fontFamily: 'Poppins', color: Color(0xFF1A1240)),
-                decoration: const InputDecoration(
+                style: TextStyle(fontSize: 13, fontFamily: 'Poppins', color: colors.textPrimary),
+                decoration: InputDecoration(
                   hintText: 'Search anything...',
-                  hintStyle: TextStyle(fontSize: 13, color: Color(0xFF9B9BB4), fontFamily: 'Poppins'),
-                  prefixIcon: Icon(Icons.search_rounded, color: Color(0xFF9B9BB4), size: 18),
+                  hintStyle: TextStyle(fontSize: 13, color: colors.textHint, fontFamily: 'Poppins'),
+                  prefixIcon: Icon(Icons.search_rounded, color: colors.textHint, size: 18),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
             ),
           ),
           const Spacer(),
           Stack(children: [
-            IconButton(icon: const Icon(Icons.notifications_outlined, color: Color(0xFF1A1240), size: 24), onPressed: () {}),
+            IconButton(icon: Icon(Icons.notifications_outlined, color: colors.textPrimary, size: 24), onPressed: () {}),
             Positioned(top: 8, right: 8, child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle))),
           ]),
           const SizedBox(width: 4),
-          CircleAvatar(radius: 18, backgroundImage: null, backgroundColor: AppColors.primaryOrange.withValues(alpha: 0.15), child: const Icon(Icons.person_rounded, color: AppColors.primaryOrange, size: 20)),
+          CircleAvatar(radius: 18, backgroundColor: AppColors.primaryOrange.withValues(alpha: 0.15), child: const Icon(Icons.person_rounded, color: AppColors.primaryOrange, size: 20)),
           const SizedBox(width: 8),
-          const Text('Admin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
-          const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF6B6B8A), size: 18),
+          Text('Admin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'Poppins')),
+          Icon(Icons.keyboard_arrow_down_rounded, color: colors.textSecondary, size: 18),
         ],
       ),
     );
@@ -98,16 +99,17 @@ class WebProductsLayout extends StatelessWidget {
 
   // ── Page Header ───────────────────────────────────────────────
   Widget _buildHeader() {
+    final colors = appColors;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text('Products', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
-            SizedBox(height: 4),
-            Text('Manage all your products and inventory details.', style: TextStyle(fontSize: 13, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+          children: [
+            Text('Products', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
+            const SizedBox(height: 4),
+            Text('Manage all your products and inventory details.', style: TextStyle(fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
           ],
         ),
         ElevatedButton.icon(
@@ -142,25 +144,26 @@ class WebProductsLayout extends StatelessWidget {
 
   // ── Table Section ─────────────────────────────────────────────
   Widget _buildTableSection(ProductsController c) {
+    final colors = appColors;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF0EFF8)),
+        border: Border.all(color: colors.divider),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
           _buildFiltersRow(c),
-          const Divider(height: 1, color: Color(0xFFF0EFF8)),
+          Divider(height: 1, color: colors.divider),
           _buildTableHeader(),
-          const Divider(height: 1, color: Color(0xFFF0EFF8)),
+          Divider(height: 1, color: colors.divider),
           Obx(() {
             final products = c.paginatedProducts;
             if (products.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.all(48),
-                child: Center(child: Text('No products found.', style: TextStyle(color: Color(0xFF6B6B8A), fontFamily: 'Poppins'))),
+              return Padding(
+                padding: const EdgeInsets.all(48),
+                child: Center(child: Text('No products found.', style: TextStyle(color: colors.textSecondary, fontFamily: 'Poppins'))),
               );
             }
             return Column(
@@ -169,7 +172,7 @@ class WebProductsLayout extends StatelessWidget {
               }).toList(),
             );
           }),
-          const Divider(height: 1, color: Color(0xFFF0EFF8)),
+          Divider(height: 1, color: colors.divider),
           _buildPagination(c),
         ],
       ),
@@ -178,44 +181,44 @@ class WebProductsLayout extends StatelessWidget {
 
   // ── Filters Row ───────────────────────────────────────────────
   Widget _buildFiltersRow(ProductsController c) {
+    final colors = appColors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Obx(() => Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Search — fixed height 40, same as dropdowns
+          // Search
           Expanded(
             child: SizedBox(
               height: 40,
               child: TextField(
                 onChanged: (v) => c.searchQuery.value = v,
-                style: const TextStyle(fontSize: 13, fontFamily: 'Poppins', color: Color(0xFF1A1240)),
+                style: TextStyle(fontSize: 13, fontFamily: 'Poppins', color: colors.textPrimary),
                 decoration: InputDecoration(
                   hintText: 'Search products...',
-                  hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9B9BB4), fontFamily: 'Poppins'),
-                  prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF9B9BB4), size: 18),
+                  hintStyle: TextStyle(fontSize: 13, color: colors.textHint, fontFamily: 'Poppins'),
+                  prefixIcon: Icon(Icons.search_rounded, color: colors.textHint, size: 18),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFE0DFF5)),
+                    borderSide: BorderSide(color: colors.border),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFE0DFF5)),
+                    borderSide: BorderSide(color: colors.border),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: const BorderSide(color: AppColors.primaryOrange, width: 1.5),
                   ),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: colors.inputFill,
                 ),
               ),
             ),
           ),
           const SizedBox(width: 12),
-          // Category filter
           SizedBox(
             width: 160,
             child: _FilterDropdown(
@@ -226,7 +229,6 @@ class WebProductsLayout extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // Status filter
           SizedBox(
             width: 120,
             child: _FilterDropdown(
@@ -237,7 +239,6 @@ class WebProductsLayout extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // Stock Status filter
           SizedBox(
             width: 130,
             child: _FilterDropdown(
@@ -248,15 +249,14 @@ class WebProductsLayout extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // Reset
           SizedBox(
             height: 40,
             child: OutlinedButton.icon(
               onPressed: c.resetFilters,
-              icon: const Icon(Icons.refresh_rounded, size: 16, color: Color(0xFF6B6B8A)),
-              label: const Text('Reset', style: TextStyle(fontSize: 13, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+              icon: Icon(Icons.refresh_rounded, size: 16, color: colors.textSecondary),
+              label: Text('Reset', style: TextStyle(fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFE0DFF5)),
+                side: BorderSide(color: colors.border),
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
@@ -284,20 +284,21 @@ class WebProductsLayout extends StatelessWidget {
 
   // ── Table Header ──────────────────────────────────────────────
   Widget _buildTableHeader() {
-    const style = TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF6B6B8A), fontFamily: 'Poppins');
+    final style = TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: appColors.textSecondary, fontFamily: 'Poppins');
+    final sortIcon = Icon(Icons.unfold_more_rounded, size: 14, color: appColors.textHint);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          const SizedBox(width: 44), // icon space
-          Expanded(flex: 5, child: Row(children: [const Text('Product Name', style: style), const SizedBox(width: 4), const Icon(Icons.unfold_more_rounded, size: 14, color: Color(0xFF9B9BB4))])),
-          Expanded(flex: 2, child: Row(children: [const Text('SKU', style: style), const SizedBox(width: 4), const Icon(Icons.unfold_more_rounded, size: 14, color: Color(0xFF9B9BB4))])),
-          Expanded(flex: 3, child: Row(children: [const Text('Category', style: style), const SizedBox(width: 4), const Icon(Icons.unfold_more_rounded, size: 14, color: Color(0xFF9B9BB4))])),
-          Expanded(flex: 2, child: Row(children: [const Text('Unit Price', style: style), const SizedBox(width: 4), const Icon(Icons.unfold_more_rounded, size: 14, color: Color(0xFF9B9BB4))])),
-          Expanded(flex: 2, child: Row(children: [const Text('Stock', style: style), const SizedBox(width: 4), const Icon(Icons.unfold_more_rounded, size: 14, color: Color(0xFF9B9BB4))])),
-          Expanded(flex: 2, child: Row(children: [const Text('Status', style: style), const SizedBox(width: 4), const Icon(Icons.unfold_more_rounded, size: 14, color: Color(0xFF9B9BB4))])),
-          Expanded(flex: 2, child: Row(children: [const Text('Created On', style: style), const SizedBox(width: 4), const Icon(Icons.unfold_more_rounded, size: 14, color: Color(0xFF9B9BB4))])),
-          const SizedBox(width: 116, child: Center(child: Text('Actions', style: style))),
+          const SizedBox(width: 44),
+          Expanded(flex: 5, child: Row(children: [Text('Product Name', style: style), const SizedBox(width: 4), sortIcon])),
+          Expanded(flex: 2, child: Row(children: [Text('SKU', style: style), const SizedBox(width: 4), sortIcon])),
+          Expanded(flex: 3, child: Row(children: [Text('Category', style: style), const SizedBox(width: 4), sortIcon])),
+          Expanded(flex: 2, child: Row(children: [Text('Unit Price', style: style), const SizedBox(width: 4), sortIcon])),
+          Expanded(flex: 2, child: Row(children: [Text('Stock', style: style), const SizedBox(width: 4), sortIcon])),
+          Expanded(flex: 2, child: Row(children: [Text('Status', style: style), const SizedBox(width: 4), sortIcon])),
+          Expanded(flex: 2, child: Row(children: [Text('Created On', style: style), const SizedBox(width: 4), sortIcon])),
+          SizedBox(width: 116, child: Center(child: Text('Actions', style: style))),
         ],
       ),
     );
@@ -305,31 +306,31 @@ class WebProductsLayout extends StatelessWidget {
 
   // ── Pagination ────────────────────────────────────────────────
   Widget _buildPagination(ProductsController c) {
+    final colors = appColors;
     return Obx(() => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
           Text('Showing ${(c.currentPage.value - 1) * c.rowsPerPage.value + 1} to ${((c.currentPage.value) * c.rowsPerPage.value).clamp(0, c.filteredProducts.length)} of ${c.filteredProducts.length} entries',
-            style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+            style: TextStyle(fontSize: 12.5, color: colors.textSecondary, fontFamily: 'Poppins')),
           const Spacer(),
-          // Rows per page
           Row(children: [
-            const Text('Rows per page: ', style: TextStyle(fontSize: 12.5, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+            Text('Rows per page: ', style: TextStyle(fontSize: 12.5, color: colors.textSecondary, fontFamily: 'Poppins')),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE0DFF5)), borderRadius: BorderRadius.circular(6)),
+              decoration: BoxDecoration(border: Border.all(color: colors.border), borderRadius: BorderRadius.circular(6)),
               child: DropdownButton<int>(
                 value: c.rowsPerPage.value,
                 isDense: true,
                 underline: const SizedBox(),
-                style: const TextStyle(fontSize: 12.5, color: Color(0xFF1A1240), fontFamily: 'Poppins'),
+                dropdownColor: colors.surface,
+                style: TextStyle(fontSize: 12.5, color: colors.textPrimary, fontFamily: 'Poppins'),
                 items: [5, 10, 20, 50].map((e) => DropdownMenuItem(value: e, child: Text('$e'))).toList(),
                 onChanged: (v) { if (v != null) { c.rowsPerPage.value = v; c.currentPage.value = 1; } },
               ),
             ),
           ]),
           const SizedBox(width: 16),
-          // Page buttons
           _PageButton(icon: Icons.first_page_rounded, onTap: () => c.currentPage.value = 1, enabled: c.currentPage.value > 1),
           _PageButton(icon: Icons.chevron_left_rounded, onTap: () { if (c.currentPage.value > 1) c.currentPage.value--; }, enabled: c.currentPage.value > 1),
           ...List.generate(c.totalPages.clamp(0, 5), (i) {
@@ -343,17 +344,17 @@ class WebProductsLayout extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isActive ? AppColors.primaryOrange : Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: isActive ? AppColors.primaryOrange : const Color(0xFFE0DFF5)),
+                  border: Border.all(color: isActive ? AppColors.primaryOrange : colors.border),
                 ),
-                child: Center(child: Text('$page', style: TextStyle(fontSize: 12.5, fontWeight: isActive ? FontWeight.w600 : FontWeight.w400, color: isActive ? Colors.white : const Color(0xFF1A1240), fontFamily: 'Poppins'))),
+                child: Center(child: Text('$page', style: TextStyle(fontSize: 12.5, fontWeight: isActive ? FontWeight.w600 : FontWeight.w400, color: isActive ? Colors.white : colors.textPrimary, fontFamily: 'Poppins'))),
               ),
             );
           }),
           if (c.totalPages > 5) ...[
-            const Text('...', style: TextStyle(color: Color(0xFF6B6B8A))),
+            Text('...', style: TextStyle(color: colors.textSecondary)),
             GestureDetector(
               onTap: () => c.currentPage.value = c.totalPages,
-              child: Container(width: 32, height: 32, margin: const EdgeInsets.symmetric(horizontal: 2), decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: const Color(0xFFE0DFF5))), child: Center(child: Text('${c.totalPages}', style: const TextStyle(fontSize: 12.5, color: Color(0xFF1A1240), fontFamily: 'Poppins')))),
+              child: Container(width: 32, height: 32, margin: const EdgeInsets.symmetric(horizontal: 2), decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: colors.border)), child: Center(child: Text('${c.totalPages}', style: TextStyle(fontSize: 12.5, color: colors.textPrimary, fontFamily: 'Poppins')))),
             ),
           ],
           _PageButton(icon: Icons.chevron_right_rounded, onTap: () { if (c.currentPage.value < c.totalPages) c.currentPage.value++; }, enabled: c.currentPage.value < c.totalPages),
@@ -376,6 +377,7 @@ class _ProductRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final fmt = NumberFormat('#,##,##0.00', 'en_IN');
     final dateFmt = DateFormat('d MMM yyyy');
+    final colors = appColors;
 
     Color stockColor;
     if (product.currentStock == 0) stockColor = const Color(0xFFEF4444);
@@ -393,34 +395,27 @@ class _ProductRow extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isEven ? const Color(0xFFFCFBFF) : Colors.white,
-        border: const Border(bottom: BorderSide(color: Color(0xFFF0EFF8))),
+        color: isEven ? colors.rowEven : colors.surface,
+        border: Border(bottom: BorderSide(color: colors.divider)),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         child: Row(
           children: [
-            // Product icon placeholder
             Container(
               width: 36, height: 36,
               decoration: BoxDecoration(
-                color: const Color(0xFFEEECFF),
+                color: colors.iconBgPurple,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.inventory_2_outlined, color: AppColors.primaryPurple, size: 18),
             ),
             const SizedBox(width: 8),
-            // Name
-            Expanded(flex: 5, child: Text(product.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF1A1240), fontFamily: 'Poppins'), overflow: TextOverflow.ellipsis)),
-            // SKU
-            Expanded(flex: 2, child: Text(product.sku, style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B6B8A), fontFamily: 'Poppins'))),
-            // Category
-            Expanded(flex: 3, child: Text(product.categoryName.replaceFirst(RegExp(r'^\d+\.\s'), ''), style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B6B8A), fontFamily: 'Poppins'), overflow: TextOverflow.ellipsis)),
-            // Price
-            Expanded(flex: 2, child: Text('₹ ${fmt.format(product.sellingPrice)}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF1A1240), fontFamily: 'Poppins'))),
-            // Stock
+            Expanded(flex: 5, child: Text(product.name, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colors.textPrimary, fontFamily: 'Poppins'), overflow: TextOverflow.ellipsis)),
+            Expanded(flex: 2, child: Text(product.sku, style: TextStyle(fontSize: 12.5, color: colors.textSecondary, fontFamily: 'Poppins'))),
+            Expanded(flex: 3, child: Text(product.categoryName.replaceFirst(RegExp(r'^\d+\.\s'), ''), style: TextStyle(fontSize: 12.5, color: colors.textSecondary, fontFamily: 'Poppins'), overflow: TextOverflow.ellipsis)),
+            Expanded(flex: 2, child: Text('₹ ${fmt.format(product.sellingPrice)}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colors.textPrimary, fontFamily: 'Poppins'))),
             Expanded(flex: 2, child: Text('${product.currentStock}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: stockColor, fontFamily: 'Poppins'))),
-            // Status badge
             Expanded(
               flex: 2,
               child: Container(
@@ -429,15 +424,13 @@ class _ProductRow extends StatelessWidget {
                 child: Text(statusText, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: statusTextColor, fontFamily: 'Poppins'), textAlign: TextAlign.center),
               ),
             ),
-            // Created On
-            Expanded(flex: 2, child: Text(dateFmt.format(product.createdAt), style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B6B8A), fontFamily: 'Poppins'))),
-            // Actions
+            Expanded(flex: 2, child: Text(dateFmt.format(product.createdAt), style: TextStyle(fontSize: 12.5, color: colors.textSecondary, fontFamily: 'Poppins'))),
             SizedBox(
               width: 116,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _ActionBtn(icon: Icons.remove_red_eye_outlined, color: const Color(0xFF6B6B8A), onTap: () {}),
+                  _ActionBtn(icon: Icons.remove_red_eye_outlined, color: colors.textSecondary, onTap: () {}),
                   const SizedBox(width: 6),
                   _ActionBtn(icon: Icons.edit_outlined, color: AppColors.primaryPurple, onTap: () {}),
                   const SizedBox(width: 6),
@@ -478,13 +471,14 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFF0EFF8)),
+          border: Border.all(color: colors.divider),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
         ),
         child: Row(
@@ -494,9 +488,9 @@ class _StatCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+                  Text(label, style: TextStyle(fontSize: 12.5, color: colors.textSecondary, fontFamily: 'Poppins')),
                   const SizedBox(height: 6),
-                  Text(value, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+                  Text(value, style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
                   const SizedBox(height: 4),
                   Text(change, style: TextStyle(fontSize: 11.5, color: isPositive ? const Color(0xFF22C55E) : const Color(0xFFEF4444), fontFamily: 'Poppins')),
                 ],
@@ -529,22 +523,24 @@ class _FilterDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return SizedBox(
       height: 40,
       child: DropdownButtonFormField<String>(
         value: value,
         isDense: true,
         isExpanded: true,
-        style: const TextStyle(
+        dropdownColor: colors.surface,
+        style: TextStyle(
           fontSize: 12.5,
-          color: Color(0xFF1A1240),
+          color: colors.textPrimary,
           fontFamily: 'Poppins',
         ),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(
+          labelStyle: TextStyle(
             fontSize: 11,
-            color: Color(0xFF9B9BB4),
+            color: colors.textHint,
             fontFamily: 'Poppins',
           ),
           floatingLabelBehavior: FloatingLabelBehavior.always,
@@ -552,18 +548,18 @@ class _FilterDropdown extends StatelessWidget {
           isDense: true,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFFE0DFF5)),
+            borderSide: BorderSide(color: colors.border),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFFE0DFF5)),
+            borderSide: BorderSide(color: colors.border),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
             borderSide: const BorderSide(color: AppColors.primaryOrange, width: 1.5),
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: colors.inputFill,
         ),
         items: items
             .map((e) => DropdownMenuItem(value: e, child: Text(e, overflow: TextOverflow.ellipsis)))
@@ -603,6 +599,7 @@ class _PageButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return GestureDetector(
       onTap: enabled ? onTap : null,
       child: Container(
@@ -610,10 +607,10 @@ class _PageButton extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: const Color(0xFFE0DFF5)),
-          color: enabled ? Colors.white : const Color(0xFFF8F7FF),
+          border: Border.all(color: colors.border),
+          color: enabled ? colors.surface : colors.background,
         ),
-        child: Icon(icon, size: 18, color: enabled ? const Color(0xFF1A1240) : const Color(0xFFB0B0C4)),
+        child: Icon(icon, size: 18, color: enabled ? colors.textPrimary : colors.textHint),
       ),
     );
   }
@@ -631,6 +628,7 @@ class _DeleteConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.zero,
@@ -639,11 +637,11 @@ class _DeleteConfirmDialog extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 460, minWidth: 360),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
+                  color: Colors.black.withValues(alpha: 0.20),
                   blurRadius: 36,
                   offset: const Offset(0, 10),
                 ),
@@ -652,7 +650,6 @@ class _DeleteConfirmDialog extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // ── Header ──
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
                   child: Row(
@@ -667,13 +664,13 @@ class _DeleteConfirmDialog extends StatelessWidget {
                             color: Color(0xFFEF4444), size: 24),
                       ),
                       const SizedBox(width: 14),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Delete Product?',
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1A1240),
+                              color: colors.textPrimary,
                               fontFamily: 'Poppins'),
                         ),
                       ),
@@ -682,21 +679,20 @@ class _DeleteConfirmDialog extends StatelessWidget {
                         child: Container(
                           width: 32, height: 32,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F4FF),
+                            color: colors.comingSoonBadge,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.close_rounded,
-                              size: 18, color: Color(0xFF6B6B8A)),
+                          child: Icon(Icons.close_rounded,
+                              size: 18, color: colors.textSecondary),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.only(top: 16),
-                  child: Divider(height: 1, color: Color(0xFFF0EFF8)),
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Divider(height: 1, color: colors.divider),
                 ),
-                // ── Body ──
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
                   child: Column(
@@ -704,9 +700,9 @@ class _DeleteConfirmDialog extends StatelessWidget {
                     children: [
                       RichText(
                         text: TextSpan(
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF6B6B8A),
+                              color: colors.textSecondary,
                               fontFamily: 'Poppins',
                               height: 1.55),
                           children: [
@@ -715,9 +711,9 @@ class _DeleteConfirmDialog extends StatelessWidget {
                                     'Are you sure you want to permanently delete '),
                             TextSpan(
                               text: '"$productName"',
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF1A1240)),
+                                  color: colors.textPrimary),
                             ),
                             const TextSpan(
                                 text:
@@ -732,18 +728,17 @@ class _DeleteConfirmDialog extends StatelessWidget {
                           OutlinedButton(
                             onPressed: Get.back,
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(
-                                  color: Color(0xFFE0DFF5)),
+                              side: BorderSide(color: colors.border),
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 22, vertical: 12),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10)),
                             ),
-                            child: const Text('Cancel',
+                            child: Text('Cancel',
                                 style: TextStyle(
                                     fontSize: 14,
                                     fontFamily: 'Poppins',
-                                    color: Color(0xFF6B6B8A))),
+                                    color: colors.textSecondary)),
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton.icon(

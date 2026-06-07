@@ -11,8 +11,9 @@ class WebCategoriesLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<CategoriesController>();
+    final colors = appColors;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7FF),
+      backgroundColor: colors.background,
       body: Row(
         children: [
           const WebSidebar(),
@@ -44,13 +45,14 @@ class WebCategoriesLayout extends StatelessWidget {
   }
 
   Widget _buildHeader(CategoriesController c) {
+    final colors = appColors;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
-          Text('Categories', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
-          SizedBox(height: 4),
-          Text('Manage product categories and sub-categories.', style: TextStyle(fontSize: 13, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Categories', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
+          const SizedBox(height: 4),
+          Text('Manage product categories and sub-categories.', style: TextStyle(fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
         ]),
         ElevatedButton.icon(
           onPressed: () => _showAddCategoryDialog(c),
@@ -102,16 +104,17 @@ class WebCategoriesLayout extends StatelessWidget {
 class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: const BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: Color(0xFFF0EFF8)))),
+      decoration: BoxDecoration(color: colors.topBarBg, border: Border(bottom: BorderSide(color: colors.divider))),
       child: Row(children: [
         const Spacer(),
         CircleAvatar(radius: 18, backgroundColor: AppColors.primaryOrange.withValues(alpha: 0.15), child: const Icon(Icons.person_rounded, color: AppColors.primaryOrange, size: 20)),
         const SizedBox(width: 8),
-        const Text('Admin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
-        const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF6B6B8A), size: 18),
+        Text('Admin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'Poppins')),
+        Icon(Icons.keyboard_arrow_down_rounded, color: colors.textSecondary, size: 18),
       ]),
     );
   }
@@ -135,13 +138,14 @@ class _CategoryCardState extends State<_CategoryCard> {
   Widget build(BuildContext context) {
     final cat = widget.cat;
     final c = widget.controller;
+    final colors = appColors;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF0EFF8)),
+        border: Border.all(color: colors.divider),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
@@ -151,32 +155,28 @@ class _CategoryCardState extends State<_CategoryCard> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Order badge
                 Container(
                   width: 32, height: 32,
                   decoration: BoxDecoration(color: AppColors.primaryOrange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                   child: Center(child: Text('${widget.index + 1}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primaryOrange, fontFamily: 'Poppins'))),
                 ),
                 const SizedBox(width: 12),
-                // Category icon
                 Container(
                   width: 40, height: 40,
-                  decoration: BoxDecoration(color: const Color(0xFFEEECFF), borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(color: colors.iconBgPurple, borderRadius: BorderRadius.circular(10)),
                   child: const Icon(Icons.category_outlined, color: AppColors.primaryPurple, size: 20),
                 ),
                 const SizedBox(width: 14),
-                // Name + sub count
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(cat.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+                      Text(cat.name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'Poppins')),
                       const SizedBox(height: 2),
-                      Text('${cat.subProducts.length} sub-categories', style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+                      Text('${cat.subProducts.length} sub-categories', style: TextStyle(fontSize: 12.5, color: colors.textSecondary, fontFamily: 'Poppins')),
                     ],
                   ),
                 ),
-                // Actions
                 _ActionBtn(icon: Icons.add_rounded, color: const Color(0xFF22C55E), tooltip: 'Add Sub-Category',
                   onTap: () => _showAddSubDialog(c, cat.id)),
                 const SizedBox(width: 6),
@@ -186,13 +186,12 @@ class _CategoryCardState extends State<_CategoryCard> {
                 _ActionBtn(icon: Icons.delete_outline_rounded, color: const Color(0xFFEF4444), tooltip: 'Delete Category',
                   onTap: () => _confirmDeleteCategory(c, cat)),
                 const SizedBox(width: 8),
-                // Expand toggle
                 GestureDetector(
                   onTap: () => setState(() => _expanded = !_expanded),
                   child: AnimatedRotation(
                     turns: _expanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF6B6B8A), size: 22),
+                    child: Icon(Icons.keyboard_arrow_down_rounded, color: colors.textSecondary, size: 22),
                   ),
                 ),
               ],
@@ -204,17 +203,17 @@ class _CategoryCardState extends State<_CategoryCard> {
             duration: const Duration(milliseconds: 200),
             child: _expanded
                 ? Container(
-                    decoration: const BoxDecoration(
-                      border: Border(top: BorderSide(color: Color(0xFFF0EFF8))),
+                    decoration: BoxDecoration(
+                      border: Border(top: BorderSide(color: colors.divider)),
                     ),
                     child: cat.subProducts.isEmpty
                         ? Padding(
                             padding: const EdgeInsets.all(20),
                             child: Center(
                               child: Column(children: [
-                                Icon(Icons.inbox_outlined, color: Colors.grey[300], size: 36),
+                                Icon(Icons.inbox_outlined, color: colors.textHint, size: 36),
                                 const SizedBox(height: 8),
-                                const Text('No sub-categories yet. Tap + to add.', style: TextStyle(fontSize: 13, color: Color(0xFF9B9BB4), fontFamily: 'Poppins')),
+                                Text('No sub-categories yet. Tap + to add.', style: TextStyle(fontSize: 13, color: colors.textHint, fontFamily: 'Poppins')),
                               ]),
                             ),
                           )
@@ -258,6 +257,7 @@ class _CategoryCardState extends State<_CategoryCard> {
   }
 
   void _confirmDeleteCategory(CategoriesController c, ProductCategory cat) {
+    final colors = appColors;
     Get.dialog(
       Dialog(
         backgroundColor: Colors.transparent,
@@ -267,9 +267,9 @@ class _CategoryCardState extends State<_CategoryCard> {
             constraints: const BoxConstraints(maxWidth: 440, minWidth: 360),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 32, offset: const Offset(0, 8))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.20), blurRadius: 32, offset: const Offset(0, 8))],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -284,26 +284,26 @@ class _CategoryCardState extends State<_CategoryCard> {
                           child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 22),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(child: Text('Delete Category?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins'))),
+                        Expanded(child: Text('Delete Category?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins'))),
                         GestureDetector(
                           onTap: Get.back,
-                          child: Container(width: 32, height: 32, decoration: BoxDecoration(color: const Color(0xFFF5F4FF), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF6B6B8A))),
+                          child: Container(width: 32, height: 32, decoration: BoxDecoration(color: colors.comingSoonBadge, borderRadius: BorderRadius.circular(8)), child: Icon(Icons.close_rounded, size: 18, color: colors.textSecondary)),
                         ),
                       ],
                     ),
                   ),
-                  const Padding(padding: EdgeInsets.only(top: 16), child: Divider(height: 1, color: Color(0xFFF0EFF8))),
+                  Padding(padding: const EdgeInsets.only(top: 16), child: Divider(height: 1, color: colors.divider)),
                   Padding(
                     padding: const EdgeInsets.all(24),
                     child: Text(
                       'Are you sure you want to permanently delete "${cat.name}"? This will also delete all ${cat.subProducts.length} sub-categories inside it. This action cannot be undone.',
-                      style: const TextStyle(fontSize: 13.5, color: Color(0xFF6B6B8A), fontFamily: 'Poppins', height: 1.5),
+                      style: TextStyle(fontSize: 13.5, color: colors.textSecondary, fontFamily: 'Poppins', height: 1.5),
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                     child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                      OutlinedButton(onPressed: Get.back, style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFFE0DFF5)), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Color(0xFF6B6B8A), fontSize: 14))),
+                      OutlinedButton(onPressed: Get.back, style: OutlinedButton.styleFrom(side: BorderSide(color: colors.border), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: colors.textSecondary, fontSize: 14))),
                       const SizedBox(width: 10),
                       ElevatedButton(
                         onPressed: () { c.deleteCategory(cat.id); Get.back(); },
@@ -334,22 +334,22 @@ class _SubCategoryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: index.isEven ? const Color(0xFFFCFBFF) : Colors.white,
-        border: isLast ? null : const Border(bottom: BorderSide(color: Color(0xFFF0EFF8))),
+        color: index.isEven ? colors.rowEven : colors.surface,
+        border: isLast ? null : Border(bottom: BorderSide(color: colors.divider)),
       ),
       child: Row(
         children: [
-          const SizedBox(width: 52), // indent
+          const SizedBox(width: 52),
           Container(
             width: 6, height: 6,
             decoration: BoxDecoration(color: AppColors.primaryOrange.withValues(alpha: 0.5), shape: BoxShape.circle),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Text(name, style: const TextStyle(fontSize: 13.5, color: Color(0xFF1A1240), fontFamily: 'Poppins'))),
-          // Edit sub
+          Expanded(child: Text(name, style: TextStyle(fontSize: 13.5, color: colors.textPrimary, fontFamily: 'Poppins'))),
           _ActionBtn(icon: Icons.edit_outlined, color: AppColors.primaryPurple, tooltip: 'Edit',
             onTap: () {
               final ctrl = TextEditingController(text: name);
@@ -361,7 +361,6 @@ class _SubCategoryRow extends StatelessWidget {
               ));
             }),
           const SizedBox(width: 6),
-          // Delete sub
           _ActionBtn(icon: Icons.delete_outline_rounded, color: const Color(0xFFEF4444), tooltip: 'Delete',
             onTap: () => Get.dialog(
               Dialog(
@@ -371,7 +370,7 @@ class _SubCategoryRow extends StatelessWidget {
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 440, minWidth: 360),
                     child: Container(
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 32, offset: const Offset(0, 8))]),
+                      decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.20), blurRadius: 32, offset: const Offset(0, 8))]),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -380,19 +379,19 @@ class _SubCategoryRow extends StatelessWidget {
                             child: Row(children: [
                               Container(width: 40, height: 40, decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 22)),
                               const SizedBox(width: 12),
-                              const Expanded(child: Text('Delete Sub-Category?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins'))),
-                              GestureDetector(onTap: Get.back, child: Container(width: 32, height: 32, decoration: BoxDecoration(color: const Color(0xFFF5F4FF), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF6B6B8A)))),
+                              Expanded(child: Text('Delete Sub-Category?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins'))),
+                              GestureDetector(onTap: Get.back, child: Container(width: 32, height: 32, decoration: BoxDecoration(color: colors.comingSoonBadge, borderRadius: BorderRadius.circular(8)), child: Icon(Icons.close_rounded, size: 18, color: colors.textSecondary))),
                             ]),
                           ),
-                          const Padding(padding: EdgeInsets.only(top: 16), child: Divider(height: 1, color: Color(0xFFF0EFF8))),
+                          Padding(padding: const EdgeInsets.only(top: 16), child: Divider(height: 1, color: colors.divider)),
                           Padding(
                             padding: const EdgeInsets.all(24),
-                            child: Text('Are you sure you want to permanently delete "$name"? This action cannot be undone.', style: const TextStyle(fontSize: 13.5, color: Color(0xFF6B6B8A), fontFamily: 'Poppins', height: 1.5)),
+                            child: Text('Are you sure you want to permanently delete "$name"? This action cannot be undone.', style: TextStyle(fontSize: 13.5, color: colors.textSecondary, fontFamily: 'Poppins', height: 1.5)),
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                             child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                              OutlinedButton(onPressed: Get.back, style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFFE0DFF5)), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Color(0xFF6B6B8A), fontSize: 14))),
+                              OutlinedButton(onPressed: Get.back, style: OutlinedButton.styleFrom(side: BorderSide(color: colors.border), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: colors.textSecondary, fontSize: 14))),
                               const SizedBox(width: 10),
                               ElevatedButton(onPressed: () { controller.deleteSubCategory(categoryId, index); Get.back(); }, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: const Text('Delete', style: TextStyle(fontFamily: 'Poppins', color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14))),
                             ]),
@@ -422,18 +421,19 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white, borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF0EFF8)),
+        color: colors.surface, borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.divider),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Row(children: [
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+          Text(label, style: TextStyle(fontSize: 12.5, color: colors.textSecondary, fontFamily: 'Poppins')),
           const SizedBox(height: 6),
-          Text(value, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+          Text(value, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
         ])),
         Container(width: 46, height: 46, decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(12)),
           child: Icon(icon, color: iconColor, size: 22)),
@@ -475,20 +475,20 @@ class _FormDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return Dialog(
       backgroundColor: Colors.transparent,
-      // ← Key fix: constrain the dialog width to SaaS standard
       insetPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480, minWidth: 380),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
+                  color: Colors.black.withValues(alpha: 0.20),
                   blurRadius: 32,
                   offset: const Offset(0, 8),
                 ),
@@ -498,7 +498,6 @@ class _FormDialog extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Header ──
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
                   child: Row(
@@ -515,10 +514,10 @@ class _FormDialog extends StatelessWidget {
                       Expanded(
                         child: Text(
                           title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A1240),
+                            color: colors.textPrimary,
                             fontFamily: 'Poppins',
                           ),
                         ),
@@ -528,32 +527,30 @@ class _FormDialog extends StatelessWidget {
                         child: Container(
                           width: 32, height: 32,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F4FF),
+                            color: colors.comingSoonBadge,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF6B6B8A)),
+                          child: Icon(Icons.close_rounded, size: 18, color: colors.textSecondary),
                         ),
                       ),
                     ],
                   ),
                 ),
-                // ── Divider ──
-                const Padding(
-                  padding: EdgeInsets.only(top: 16),
-                  child: Divider(height: 1, color: Color(0xFFF0EFF8)),
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Divider(height: 1, color: colors.divider),
                 ),
-                // ── Body ──
                 Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Name',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A1240),
+                          color: colors.textPrimary,
                           fontFamily: 'Poppins',
                         ),
                       ),
@@ -561,33 +558,32 @@ class _FormDialog extends StatelessWidget {
                       TextField(
                         controller: controller,
                         autofocus: true,
-                        style: const TextStyle(fontSize: 14, color: Color(0xFF1A1240), fontFamily: 'Poppins'),
+                        style: TextStyle(fontSize: 14, color: colors.textPrimary, fontFamily: 'Poppins'),
                         decoration: InputDecoration(
                           hintText: hint,
-                          hintStyle: const TextStyle(color: Color(0xFF9B9BB4), fontFamily: 'Poppins'),
+                          hintStyle: TextStyle(color: colors.textHint, fontFamily: 'Poppins'),
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Color(0xFFE0DFF5)),
+                            borderSide: BorderSide(color: colors.border),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Color(0xFFE0DFF5)),
+                            borderSide: BorderSide(color: colors.border),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                             borderSide: const BorderSide(color: AppColors.primaryOrange, width: 1.5),
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFFAF9FF),
+                          fillColor: colors.inputFill,
                         ),
                         onSubmitted: (_) => onSave(),
                       ),
                     ],
                   ),
                 ),
-                // ── Footer ──
                 Container(
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                   child: Row(
@@ -596,11 +592,11 @@ class _FormDialog extends StatelessWidget {
                       OutlinedButton(
                         onPressed: Get.back,
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFE0DFF5)),
+                          side: BorderSide(color: colors.border),
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Color(0xFF6B6B8A), fontSize: 14)),
+                        child: Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: colors.textSecondary, fontSize: 14)),
                       ),
                       const SizedBox(width: 10),
                       ElevatedButton(
@@ -624,4 +620,3 @@ class _FormDialog extends StatelessWidget {
     );
   }
 }
-

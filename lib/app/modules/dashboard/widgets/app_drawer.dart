@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/theme_controller.dart';
 import '../../../routes/app_routes.dart';
 
 /// Shared drawer used by all mobile layouts.
@@ -29,8 +30,9 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.drawerBg,
       child: SafeArea(
         child: Column(
           children: [
@@ -95,8 +97,11 @@ class AppDrawer extends StatelessWidget {
               ),
             ),
 
+            // ── Theme Selector ────────────────────────────────
+            const _DrawerThemeSelector(),
+
             // ── Footer ───────────────────────────────────────
-            const Divider(color: Color(0xFFF0EFF8)),
+            Divider(color: colors.divider),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Row(children: [
@@ -106,10 +111,122 @@ class AppDrawer extends StatelessWidget {
                   child: const Icon(Icons.logout_rounded, color: AppColors.primaryOrange, size: 18),
                 ),
                 const SizedBox(width: 12),
-                const Text('Sign Out', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+                Text('Sign Out', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'Poppins')),
               ]),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Drawer Theme Selector ─────────────────────────────────────────────────────
+class _DrawerThemeSelector extends StatelessWidget {
+  const _DrawerThemeSelector();
+
+  @override
+  Widget build(BuildContext context) {
+    final tc = Get.find<ThemeController>();
+    final colors = appColors;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 8),
+            child: Text(
+              'Theme',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: colors.textSecondary,
+                fontFamily: 'Poppins',
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          Obx(() => Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: colors.iconBgPurple,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                _DrawerThemeBtn(
+                  icon: Icons.wb_sunny_rounded,
+                  label: 'Light',
+                  isActive: tc.isLight,
+                  onTap: () => tc.setTheme(ThemeMode.light),
+                ),
+                _DrawerThemeBtn(
+                  icon: Icons.nightlight_round,
+                  label: 'Dark',
+                  isActive: tc.isDark,
+                  onTap: () => tc.setTheme(ThemeMode.dark),
+                ),
+                _DrawerThemeBtn(
+                  icon: Icons.devices_rounded,
+                  label: 'System',
+                  isActive: tc.isSystem,
+                  onTap: () => tc.setTheme(ThemeMode.system),
+                ),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+}
+
+class _DrawerThemeBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _DrawerThemeBtn({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.primaryOrange : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isActive ? Colors.white : appColors.textSecondary,
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
+                  color: isActive ? Colors.white : appColors.textSecondary,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -126,6 +243,7 @@ class _DrawerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       child: Material(
@@ -139,7 +257,7 @@ class _DrawerTile extends StatelessWidget {
             child: Row(children: [
               Icon(
                 item.icon,
-                color: isActive ? AppColors.primaryOrange : isEnabled ? const Color(0xFF6B6B8A) : const Color(0xFFCCCADE),
+                color: isActive ? AppColors.primaryOrange : isEnabled ? colors.textSecondary : colors.textHint,
                 size: 20,
               ),
               const SizedBox(width: 14),
@@ -149,7 +267,7 @@ class _DrawerTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                    color: isActive ? AppColors.primaryOrange : isEnabled ? const Color(0xFF1A1240) : const Color(0xFFCCCADE),
+                    color: isActive ? AppColors.primaryOrange : isEnabled ? colors.textPrimary : colors.textHint,
                     fontFamily: 'Poppins',
                   ),
                 ),
@@ -157,8 +275,8 @@ class _DrawerTile extends StatelessWidget {
               if (!isEnabled)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: const Color(0xFFF5F4FF), borderRadius: BorderRadius.circular(20)),
-                  child: const Text('Soon', style: TextStyle(fontSize: 10, color: Color(0xFF9B9BB4), fontFamily: 'Poppins')),
+                  decoration: BoxDecoration(color: colors.comingSoonBadge, borderRadius: BorderRadius.circular(20)),
+                  child: Text('Soon', style: TextStyle(fontSize: 10, color: colors.textSecondary, fontFamily: 'Poppins')),
                 ),
               if (isActive)
                 Container(width: 4, height: 4, decoration: const BoxDecoration(color: AppColors.primaryOrange, shape: BoxShape.circle)),

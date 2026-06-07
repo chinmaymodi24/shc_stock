@@ -41,9 +41,9 @@ class DonutChart extends StatelessWidget {
                     totalItems.toString().replaceAllMapped(
                           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
                           (m) => '${m[1]},'),
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins'),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: appColors.textPrimary, fontFamily: 'Poppins'),
                   ),
-                  const Text('Total Items', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+                  Text('Total Items', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: appColors.textSecondary, fontFamily: 'Poppins')),
                 ],
               ),
             ],
@@ -82,8 +82,8 @@ class _LegendItem extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
-            Text(value, style: const TextStyle(fontSize: 12, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+            Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: appColors.textPrimary, fontFamily: 'Poppins')),
+            Text(value, style: TextStyle(fontSize: 12, color: appColors.textSecondary, fontFamily: 'Poppins')),
           ],
         ),
       ],
