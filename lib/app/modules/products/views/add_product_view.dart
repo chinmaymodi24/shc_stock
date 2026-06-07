@@ -3,9 +3,24 @@ import 'package:get/get.dart';
 import '../controllers/products_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../dashboard/widgets/web_sidebar.dart';
+import 'mobile_add_product_layout.dart';
 
 class AddProductView extends StatelessWidget {
   const AddProductView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 700) return const _WebAddProductLayout();
+        return const MobileAddProductLayout();
+      },
+    );
+  }
+}
+
+class _WebAddProductLayout extends StatelessWidget {
+  const _WebAddProductLayout();
 
   @override
   Widget build(BuildContext context) {
@@ -114,16 +129,13 @@ class AddProductView extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.menu_rounded, color: Color(0xFF1A1240), size: 22),
-          const SizedBox(width: 16),
-          const Text('Add Product', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
           const Spacer(),
           Stack(children: [
             IconButton(icon: const Icon(Icons.notifications_outlined, color: Color(0xFF1A1240), size: 24), onPressed: () {}),
             Positioned(top: 8, right: 8, child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle))),
           ]),
           const SizedBox(width: 4),
-          CircleAvatar(radius: 18, backgroundColor: AppColors.primaryOrange.withOpacity(0.15), child: const Icon(Icons.person_rounded, color: AppColors.primaryOrange, size: 20)),
+          CircleAvatar(radius: 18, backgroundColor: AppColors.primaryOrange.withValues(alpha: 0.15), child: const Icon(Icons.person_rounded, color: AppColors.primaryOrange, size: 20)),
           const SizedBox(width: 8),
           const Text('Admin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
           const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF6B6B8A), size: 18),
@@ -374,7 +386,7 @@ class _ImageSection extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFF0EFF8)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,7 +453,7 @@ class _StatusSectionState extends State<_StatusSection> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFF0EFF8)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -542,7 +554,7 @@ class _FormCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFF0EFF8)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

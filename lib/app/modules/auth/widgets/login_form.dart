@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/theme/app_text_styles.dart';
@@ -285,7 +285,7 @@ class LoginForm extends GetView<LoginController> {
           onPressed: controller.isLoading.value ? null : controller.signIn,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryOrange,
-            disabledBackgroundColor: AppColors.primaryOrange.withOpacity(0.6),
+            disabledBackgroundColor: AppColors.primaryOrange.withValues(alpha: 0.6),
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),

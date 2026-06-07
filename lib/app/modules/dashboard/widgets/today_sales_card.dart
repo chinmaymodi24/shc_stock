@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 
 class TodaySalesCard extends StatelessWidget {
@@ -39,7 +39,7 @@ class TodaySalesCard extends StatelessWidget {
           Container(
             width: 52, height: 52,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.bar_chart_rounded, color: Colors.white, size: 28),

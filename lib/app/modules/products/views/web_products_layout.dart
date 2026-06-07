@@ -58,10 +58,6 @@ class WebProductsLayout extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.menu_rounded, color: Color(0xFF1A1240), size: 22),
-          const SizedBox(width: 16),
-          const Text('Products', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
-          const SizedBox(width: 24),
           // Search bar
           Expanded(
             child: Container(
@@ -91,7 +87,7 @@ class WebProductsLayout extends StatelessWidget {
             Positioned(top: 8, right: 8, child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle))),
           ]),
           const SizedBox(width: 4),
-          CircleAvatar(radius: 18, backgroundImage: null, backgroundColor: AppColors.primaryOrange.withOpacity(0.15), child: const Icon(Icons.person_rounded, color: AppColors.primaryOrange, size: 20)),
+          CircleAvatar(radius: 18, backgroundImage: null, backgroundColor: AppColors.primaryOrange.withValues(alpha: 0.15), child: const Icon(Icons.person_rounded, color: AppColors.primaryOrange, size: 20)),
           const SizedBox(width: 8),
           const Text('Admin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
           const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF6B6B8A), size: 18),
@@ -151,7 +147,7 @@ class WebProductsLayout extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFF0EFF8)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -169,7 +165,7 @@ class WebProductsLayout extends StatelessWidget {
             }
             return Column(
               children: products.asMap().entries.map((e) {
-                return _ProductRow(product: e.value, isEven: e.key.isEven);
+                return _ProductRow(product: e.value, isEven: e.key.isEven, controller: c);
               }).toList(),
             );
           }),
@@ -301,7 +297,7 @@ class WebProductsLayout extends StatelessWidget {
           Expanded(flex: 2, child: Row(children: [const Text('Stock', style: style), const SizedBox(width: 4), const Icon(Icons.unfold_more_rounded, size: 14, color: Color(0xFF9B9BB4))])),
           Expanded(flex: 2, child: Row(children: [const Text('Status', style: style), const SizedBox(width: 4), const Icon(Icons.unfold_more_rounded, size: 14, color: Color(0xFF9B9BB4))])),
           Expanded(flex: 2, child: Row(children: [const Text('Created On', style: style), const SizedBox(width: 4), const Icon(Icons.unfold_more_rounded, size: 14, color: Color(0xFF9B9BB4))])),
-          const SizedBox(width: 100, child: Center(child: Text('Actions', style: style))),
+          const SizedBox(width: 116, child: Center(child: Text('Actions', style: style))),
         ],
       ),
     );
@@ -372,8 +368,9 @@ class WebProductsLayout extends StatelessWidget {
 class _ProductRow extends StatelessWidget {
   final ProductModel product;
   final bool isEven;
+  final ProductsController controller;
 
-  const _ProductRow({required this.product, required this.isEven});
+  const _ProductRow({required this.product, required this.isEven, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -436,7 +433,7 @@ class _ProductRow extends StatelessWidget {
             Expanded(flex: 2, child: Text(dateFmt.format(product.createdAt), style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B6B8A), fontFamily: 'Poppins'))),
             // Actions
             SizedBox(
-              width: 100,
+              width: 116,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -444,7 +441,19 @@ class _ProductRow extends StatelessWidget {
                   const SizedBox(width: 6),
                   _ActionBtn(icon: Icons.edit_outlined, color: AppColors.primaryPurple, onTap: () {}),
                   const SizedBox(width: 6),
-                  _ActionBtn(icon: Icons.delete_outline_rounded, color: const Color(0xFFEF4444), onTap: () {}),
+                  _ActionBtn(
+                    icon: Icons.delete_outline_rounded,
+                    color: const Color(0xFFEF4444),
+                    onTap: () => Get.dialog(
+                      _DeleteConfirmDialog(
+                        productName: product.name,
+                        onConfirm: () {
+                          controller.deleteProduct(product.id);
+                          Get.back();
+                        },
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -476,7 +485,7 @@ class _StatCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: const Color(0xFFF0EFF8)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,7 +588,7 @@ class _ActionBtn extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 30, height: 30,
-        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(7)),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(7)),
         child: Icon(icon, color: color, size: 16),
       ),
     );
@@ -605,6 +614,166 @@ class _PageButton extends StatelessWidget {
           color: enabled ? Colors.white : const Color(0xFFF8F7FF),
         ),
         child: Icon(icon, size: 18, color: enabled ? const Color(0xFF1A1240) : const Color(0xFFB0B0C4)),
+      ),
+    );
+  }
+}
+
+// ── Delete Confirm Dialog ─────────────────────────────────────────────────────
+class _DeleteConfirmDialog extends StatelessWidget {
+  final String productName;
+  final VoidCallback onConfirm;
+
+  const _DeleteConfirmDialog({
+    required this.productName,
+    required this.onConfirm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.zero,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460, minWidth: 360),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 36,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // ── Header ──
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44, height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.delete_outline_rounded,
+                            color: Color(0xFFEF4444), size: 24),
+                      ),
+                      const SizedBox(width: 14),
+                      const Expanded(
+                        child: Text(
+                          'Delete Product?',
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A1240),
+                              fontFamily: 'Poppins'),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: Get.back,
+                        child: Container(
+                          width: 32, height: 32,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F4FF),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.close_rounded,
+                              size: 18, color: Color(0xFF6B6B8A)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(top: 16),
+                  child: Divider(height: 1, color: Color(0xFFF0EFF8)),
+                ),
+                // ── Body ──
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      RichText(
+                        text: TextSpan(
+                          style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF6B6B8A),
+                              fontFamily: 'Poppins',
+                              height: 1.55),
+                          children: [
+                            const TextSpan(
+                                text:
+                                    'Are you sure you want to permanently delete '),
+                            TextSpan(
+                              text: '"$productName"',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1A1240)),
+                            ),
+                            const TextSpan(
+                                text:
+                                    '? This action cannot be undone.'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          OutlinedButton(
+                            onPressed: Get.back,
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(
+                                  color: Color(0xFFE0DFF5)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 22, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                            child: const Text('Cancel',
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    fontFamily: 'Poppins',
+                                    color: Color(0xFF6B6B8A))),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            onPressed: onConfirm,
+                            icon: const Icon(Icons.delete_rounded,
+                                color: Colors.white, size: 16),
+                            label: const Text('Yes, Delete',
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'Poppins',
+                                    color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFEF4444),
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 22, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

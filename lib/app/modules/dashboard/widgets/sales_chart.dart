@@ -1,4 +1,4 @@
-import 'dart:math';
+﻿import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/dashboard_models.dart';
 import '../../../core/theme/app_colors.dart';
@@ -74,7 +74,7 @@ class _SalesChartPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [AppColors.primaryOrange.withOpacity(0.15), AppColors.primaryOrange.withOpacity(0.0)],
+        colors: [AppColors.primaryOrange.withValues(alpha: 0.15), AppColors.primaryOrange.withValues(alpha: 0.0)],
       ).createShader(Rect.fromLTWH(0, topPad, size.width, chartH));
     canvas.drawPath(fillPath, fillPaint);
 

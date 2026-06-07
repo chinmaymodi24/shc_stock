@@ -76,13 +76,13 @@ class WebSidebar extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
             ),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: Colors.white.withOpacity(0.3),
+                  backgroundColor: Colors.white.withValues(alpha: 0.3),
                   child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
                 ),
                 const SizedBox(width: 10),
@@ -95,9 +95,31 @@ class WebSidebar extends StatelessWidget {
                     ],
                   ),
                 ),
-                GestureDetector(
-                  onTap: () => Get.offNamed(AppRoutes.login),
-                  child: const Icon(Icons.logout_rounded, color: Colors.white70, size: 18),
+                Tooltip(
+                  message: 'Sign Out',
+                  preferBelow: false,
+                  textStyle: const TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'Poppins',
+                    color: Colors.white,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1240),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: GestureDetector(
+                    onTap: () => Get.dialog(const _SignOutDialog()),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.logout_rounded,
+                          color: Colors.white, size: 18),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -151,4 +173,170 @@ class _NavItem {
   final String label;
   final String route;
   const _NavItem({required this.icon, required this.label, required this.route});
+}
+
+// ── Sign Out Confirm Dialog ───────────────────────────────────────────────────
+class _SignOutDialog extends StatelessWidget {
+  const _SignOutDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.zero,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420, minWidth: 320),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.14),
+                  blurRadius: 40,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // ── Header ──
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48, height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryOrange.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(Icons.logout_rounded,
+                            color: AppColors.primaryOrange, size: 24),
+                      ),
+                      const SizedBox(width: 14),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Sign Out',
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1A1240),
+                                    fontFamily: 'Poppins')),
+                            SizedBox(height: 2),
+                            Text('Are you sure you want to sign out?',
+                                style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: Color(0xFF9B9BB4),
+                                    fontFamily: 'Poppins')),
+                          ],
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: Get.back,
+                        child: Container(
+                          width: 32, height: 32,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F4FF),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.close_rounded,
+                              size: 18, color: Color(0xFF6B6B8A)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(top: 20),
+                  child: Divider(height: 1, color: Color(0xFFF0EFF8)),
+                ),
+                // ── Body message ──
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 18, 24, 4),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF8F2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primaryOrange.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline_rounded,
+                            color: AppColors.primaryOrange.withValues(alpha: 0.8), size: 18),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            'You will be returned to the login screen. Any unsaved changes will be lost.',
+                            style: TextStyle(
+                                fontSize: 12.5,
+                                color: Color(0xFF6B6B8A),
+                                fontFamily: 'Poppins',
+                                height: 1.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // ── Actions ──
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: Get.back,
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFE0DFF5)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Cancel',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontFamily: 'Poppins',
+                                  color: Color(0xFF6B6B8A))),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Get.back();
+                            Get.offAllNamed(AppRoutes.login);
+                          },
+                          icon: const Icon(Icons.logout_rounded,
+                              color: Colors.white, size: 16),
+                          label: const Text('Yes, Sign Out',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'Poppins',
+                                  color: Colors.white)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryOrange,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../models/dashboard_models.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -38,7 +38,7 @@ class _TransactionRow extends StatelessWidget {
           Container(
             width: 34, height: 34,
             decoration: BoxDecoration(
-              color: isSales ? const Color(0xFF4A3AFF).withOpacity(0.1) : const Color(0xFFEF4444).withOpacity(0.1),
+              color: isSales ? const Color(0xFF4A3AFF).withValues(alpha: 0.1) : const Color(0xFFEF4444).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/dashboard/controllers/dashboard_controller.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/stat_card.dart';
@@ -79,7 +79,7 @@ class MobileDashboardLayout extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: const Color(0xFFF0EFF8)),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
               ),
               child: Column(
                 children: [
@@ -183,7 +183,7 @@ class _SimpleStatCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFF0EFF8)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

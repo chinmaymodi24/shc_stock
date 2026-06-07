@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import '../models/product_model.dart';
 
 class ProductsController extends GetxController {
@@ -240,6 +240,10 @@ class ProductsController extends GetxController {
     selectedCategory.value = 'All Categories';
     selectedStatus.value = 'All Status';
     selectedStockStatus.value = 'All';
+  }
+  void deleteProduct(String id) {
+    products.removeWhere((p) => p.id == id);
+    _applyFilters();
   }
 
   List<String> get subProductsForCategory {

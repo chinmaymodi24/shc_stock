@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 
 class QuickActionButton extends StatelessWidget {
@@ -17,7 +17,7 @@ class QuickActionButton extends StatelessWidget {
           color: AppColors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: const Color(0xFFF0EFF8)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -49,7 +49,7 @@ class QuickActionTile extends StatelessWidget {
         children: [
           Container(
             width: 52, height: 52,
-            decoration: BoxDecoration(color: AppColors.primaryOrange.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: AppColors.primaryOrange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: AppColors.primaryOrange, size: 26),
           ),
           const SizedBox(height: 8),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../models/dashboard_models.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -16,7 +16,7 @@ class StatCard extends StatelessWidget {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFF0EFF8), width: 1),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,7 +53,7 @@ class StatCard extends StatelessWidget {
     }
     return Container(
       width: 44, height: 44,
-      decoration: BoxDecoration(color: AppColors.primaryOrange.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(color: AppColors.primaryOrange.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
       child: Icon(icon, color: AppColors.primaryOrange, size: 22),
     );
   }
