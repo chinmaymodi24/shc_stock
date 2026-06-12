@@ -10,7 +10,7 @@ class QuickActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -54,7 +54,7 @@ class QuickActionTile extends StatelessWidget {
             child: Icon(icon, color: AppColors.primaryOrange, size: 26),
           ),
           const SizedBox(height: 8),
-          Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: appColors.textPrimary, fontFamily: 'Poppins')),
+          Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: context.appColors.textPrimary, fontFamily: 'Poppins')),
         ],
       ),
     );

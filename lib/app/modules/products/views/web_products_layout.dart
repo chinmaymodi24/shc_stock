@@ -14,7 +14,7 @@ class WebProductsLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return Scaffold(
       backgroundColor: colors.background,
       body: Row(
@@ -23,18 +23,18 @@ class WebProductsLayout extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                _buildTopBar(c),
+                _buildTopBar(context, c),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildHeader(),
+                        _buildHeader(context),
                         const SizedBox(height: 20),
                         _buildStatCards(c),
                         const SizedBox(height: 20),
-                        _buildTableSection(c),
+                        _buildTableSection(context, c),
                       ],
                     ),
                   ),
@@ -48,8 +48,8 @@ class WebProductsLayout extends StatelessWidget {
   }
 
   // ── Top Bar ───────────────────────────────────────────────────
-  Widget _buildTopBar(ProductsController c) {
-    final colors = appColors;
+  Widget _buildTopBar(BuildContext context, ProductsController c) {
+    final colors = context.appColors;
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -98,8 +98,8 @@ class WebProductsLayout extends StatelessWidget {
   }
 
   // ── Page Header ───────────────────────────────────────────────
-  Widget _buildHeader() {
-    final colors = appColors;
+  Widget _buildHeader(BuildContext context) {
+    final colors = context.appColors;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,8 +143,8 @@ class WebProductsLayout extends StatelessWidget {
   }
 
   // ── Table Section ─────────────────────────────────────────────
-  Widget _buildTableSection(ProductsController c) {
-    final colors = appColors;
+  Widget _buildTableSection(BuildContext context, ProductsController c) {
+    final colors = context.appColors;
     return Container(
       decoration: BoxDecoration(
         color: colors.surface,
@@ -154,9 +154,9 @@ class WebProductsLayout extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildFiltersRow(c),
+          _buildFiltersRow(context, c),
           Divider(height: 1, color: colors.divider),
-          _buildTableHeader(),
+          _buildTableHeader(context),
           Divider(height: 1, color: colors.divider),
           Obx(() {
             final products = c.paginatedProducts;
@@ -173,15 +173,15 @@ class WebProductsLayout extends StatelessWidget {
             );
           }),
           Divider(height: 1, color: colors.divider),
-          _buildPagination(c),
+          _buildPagination(context, c),
         ],
       ),
     );
   }
 
   // ── Filters Row ───────────────────────────────────────────────
-  Widget _buildFiltersRow(ProductsController c) {
-    final colors = appColors;
+  Widget _buildFiltersRow(BuildContext context, ProductsController c) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Obx(() => Row(
@@ -283,9 +283,9 @@ class WebProductsLayout extends StatelessWidget {
   }
 
   // ── Table Header ──────────────────────────────────────────────
-  Widget _buildTableHeader() {
-    final style = TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: appColors.textSecondary, fontFamily: 'Poppins');
-    final sortIcon = Icon(Icons.unfold_more_rounded, size: 14, color: appColors.textHint);
+  Widget _buildTableHeader(BuildContext context) {
+    final style = TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: context.appColors.textSecondary, fontFamily: 'Poppins');
+    final sortIcon = Icon(Icons.unfold_more_rounded, size: 14, color: context.appColors.textHint);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -305,8 +305,8 @@ class WebProductsLayout extends StatelessWidget {
   }
 
   // ── Pagination ────────────────────────────────────────────────
-  Widget _buildPagination(ProductsController c) {
-    final colors = appColors;
+  Widget _buildPagination(BuildContext context, ProductsController c) {
+    final colors = context.appColors;
     return Obx(() => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
@@ -377,7 +377,7 @@ class _ProductRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final fmt = NumberFormat('#,##,##0.00', 'en_IN');
     final dateFmt = DateFormat('d MMM yyyy');
-    final colors = appColors;
+    final colors = context.appColors;
 
     Color stockColor;
     if (product.currentStock == 0) stockColor = const Color(0xFFEF4444);
@@ -471,7 +471,7 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(18),
@@ -523,7 +523,7 @@ class _FilterDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return SizedBox(
       height: 40,
       child: DropdownButtonFormField<String>(
@@ -628,7 +628,7 @@ class _DeleteConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.zero,

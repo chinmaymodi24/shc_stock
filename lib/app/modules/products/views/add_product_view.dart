@@ -25,22 +25,23 @@ class _WebAddProductLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<ProductsController>();
+    final colors = context.appColors;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7FF),
+      backgroundColor: colors.background,
       body: Row(
         children: [
           const WebSidebar(),
           Expanded(
             child: Column(
               children: [
-                _buildTopBar(),
+                _buildTopBar(context),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildBreadcrumb(),
+                        _buildBreadcrumb(context),
                         const SizedBox(height: 20),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,13 +120,14 @@ class _WebAddProductLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildTopBar() {
+  Widget _buildTopBar(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFF0EFF8))),
+      decoration: BoxDecoration(
+        color: colors.topBarBg,
+        border: Border(bottom: BorderSide(color: colors.divider)),
       ),
       child: Row(
         children: [
@@ -137,27 +139,28 @@ class _WebAddProductLayout extends StatelessWidget {
           const SizedBox(width: 4),
           CircleAvatar(radius: 18, backgroundColor: AppColors.primaryOrange.withValues(alpha: 0.15), child: const Icon(Icons.person_rounded, color: AppColors.primaryOrange, size: 20)),
           const SizedBox(width: 8),
-          const Text('Admin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
-          const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF6B6B8A), size: 18),
+          const Text('Admin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+          Icon(Icons.keyboard_arrow_down_rounded, color: colors.textSecondary, size: 18),
         ],
       ),
     );
   }
 
-  Widget _buildBreadcrumb() {
+  Widget _buildBreadcrumb(BuildContext context) {
+    final colors = context.appColors;
     return Row(
       children: [
         GestureDetector(
           onTap: () => Get.back(),
-          child: const Text('Home', style: TextStyle(fontSize: 13, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+          child: Text('Home', style: TextStyle(fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
         ),
-        const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF9B9BB4)),
+        Icon(Icons.chevron_right_rounded, size: 16, color: colors.textHint),
         GestureDetector(
           onTap: () => Get.back(),
-          child: const Text('Products', style: TextStyle(fontSize: 13, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+          child: Text('Products', style: TextStyle(fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
         ),
-        const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF9B9BB4)),
-        const Text('Add Product', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+        Icon(Icons.chevron_right_rounded, size: 16, color: colors.textHint),
+        Text('Add Product', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'Poppins')),
       ],
     );
   }
@@ -380,26 +383,27 @@ class _ImageSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF0EFF8)),
+        border: Border.all(color: colors.divider),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Product Image', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+          Text('Product Image', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
           const SizedBox(height: 16),
           Container(
             width: double.infinity,
             height: 180,
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F7FF),
+              color: colors.inputFill,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE0DFF5), style: BorderStyle.solid),
+              border: Border.all(color: colors.border, style: BorderStyle.solid),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -447,18 +451,19 @@ class _StatusSectionState extends State<_StatusSection> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF0EFF8)),
+        border: Border.all(color: colors.divider),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Status', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+          Text('Status', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
           const SizedBox(height: 16),
           _FormField(
             label: 'Product Status *',
@@ -472,7 +477,7 @@ class _StatusSectionState extends State<_StatusSection> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Low Stock Alert', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+              const Text('Low Stock Alert', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Poppins')),
               Obx(() => Switch(
                 value: widget.c.lowStockAlertEnabled.value,
                 onChanged: (v) => widget.c.lowStockAlertEnabled.value = v,
@@ -547,19 +552,20 @@ class _FormCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF0EFF8)),
+        border: Border.all(color: colors.divider),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+          Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
           const SizedBox(height: 16),
           child,
         ],
@@ -596,30 +602,31 @@ class _StyledTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return TextField(
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
-      style: const TextStyle(fontSize: 13, color: Color(0xFF1A1240), fontFamily: 'Poppins'),
+      style: TextStyle(fontSize: 13, color: colors.textPrimary, fontFamily: 'Poppins'),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF9B9BB4), fontFamily: 'Poppins'),
+        hintStyle: TextStyle(fontSize: 13, color: colors.textHint, fontFamily: 'Poppins'),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFE0DFF5)),
+          borderSide: BorderSide(color: colors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFE0DFF5)),
+          borderSide: BorderSide(color: colors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.primaryOrange, width: 1.5),
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: colors.inputFill,
       ),
     );
   }
@@ -641,21 +648,23 @@ class _StyledDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return DropdownButtonFormField<String>(
       value: value,
       isDense: true,
       isExpanded: true,
-      style: const TextStyle(
+      dropdownColor: colors.surface,
+      style: TextStyle(
         fontSize: 13,
-        color: Color(0xFF1A1240),
+        color: colors.textPrimary,
         fontFamily: 'Poppins',
       ),
       hint: hint != null
           ? Text(
               hint!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: Color(0xFF9B9BB4),
+                color: colors.textHint,
                 fontFamily: 'Poppins',
               ),
             )
@@ -665,18 +674,18 @@ class _StyledDropdown extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFE0DFF5)),
+          borderSide: BorderSide(color: colors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFE0DFF5)),
+          borderSide: BorderSide(color: colors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.primaryOrange, width: 1.5),
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: colors.inputFill,
       ),
       items: items
           .map((e) => DropdownMenuItem(

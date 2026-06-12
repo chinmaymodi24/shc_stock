@@ -5,6 +5,7 @@ import 'app_colors.dart';
 class AppTextStyles {
   AppTextStyles._();
 
+  // ── Static (brand / non-theme-sensitive) ────────────────────────────────
   static TextStyle get heading1 => GoogleFonts.poppins(
         fontSize: 28,
         fontWeight: FontWeight.w700,
@@ -118,5 +119,69 @@ class AppTextStyles {
         fontSize: 12,
         fontWeight: FontWeight.w400,
         color: AppColors.textLight,
+      );
+
+  // ── Context-aware variants (use in build() for dark mode support) ────────
+
+  static TextStyle heading1Ctx(BuildContext context) => GoogleFonts.poppins(
+        fontSize: 28,
+        fontWeight: FontWeight.w700,
+        color: context.appColors.textPrimary,
+        letterSpacing: -0.5,
+      );
+
+  static TextStyle subtitleCtx(BuildContext context) => GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: context.appColors.textSecondary,
+      );
+
+  static TextStyle labelCtx(BuildContext context) => GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: context.appColors.textPrimary,
+      );
+
+  static TextStyle inputHintCtx(BuildContext context) => GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: context.appColors.textHint,
+      );
+
+  static TextStyle inputTextCtx(BuildContext context) => GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: context.appColors.textPrimary,
+      );
+
+  static TextStyle badgeTitleCtx(BuildContext context) => GoogleFonts.poppins(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: context.appColors.textPrimary,
+      );
+
+  static TextStyle badgeSubtitleCtx(BuildContext context) =>
+      GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: context.appColors.textSecondary,
+      );
+
+  static TextStyle rememberMeCtx(BuildContext context) => GoogleFonts.poppins(
+        fontSize: 13,
+        fontWeight: FontWeight.w400,
+        color: context.appColors.textSecondary,
+      );
+
+  static TextStyle orDividerCtx(BuildContext context) => GoogleFonts.poppins(
+        fontSize: 13,
+        fontWeight: FontWeight.w400,
+        color: context.appColors.textHint,
+      );
+
+  static TextStyle copyrightCtx(BuildContext context) => GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: context.appColors.textSecondary,
       );
 }

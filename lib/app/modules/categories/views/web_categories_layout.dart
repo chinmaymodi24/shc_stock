@@ -11,7 +11,7 @@ class WebCategoriesLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<CategoriesController>();
-    final colors = appColors;
+    final colors = context.appColors;
     return Scaffold(
       backgroundColor: colors.background,
       body: Row(
@@ -27,7 +27,7 @@ class WebCategoriesLayout extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildHeader(c),
+                        _buildHeader(context, c),
                         const SizedBox(height: 20),
                         _buildStatCards(c),
                         const SizedBox(height: 20),
@@ -44,8 +44,8 @@ class WebCategoriesLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(CategoriesController c) {
-    final colors = appColors;
+  Widget _buildHeader(BuildContext context, CategoriesController c) {
+    final colors = context.appColors;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -104,7 +104,7 @@ class WebCategoriesLayout extends StatelessWidget {
 class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -138,7 +138,7 @@ class _CategoryCardState extends State<_CategoryCard> {
   Widget build(BuildContext context) {
     final cat = widget.cat;
     final c = widget.controller;
-    final colors = appColors;
+    final colors = context.appColors;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -257,7 +257,7 @@ class _CategoryCardState extends State<_CategoryCard> {
   }
 
   void _confirmDeleteCategory(CategoriesController c, ProductCategory cat) {
-    final colors = appColors;
+    final colors = context.appColors;
     Get.dialog(
       Dialog(
         backgroundColor: Colors.transparent,
@@ -334,7 +334,7 @@ class _SubCategoryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
@@ -421,7 +421,7 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -475,7 +475,7 @@ class _FormDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),

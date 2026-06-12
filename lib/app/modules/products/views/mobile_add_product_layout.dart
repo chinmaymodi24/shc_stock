@@ -11,8 +11,9 @@ class MobileAddProductLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<ProductsController>();
+    final colors = context.appColors;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7FF),
+      backgroundColor: colors.background,
       drawer: const AppDrawer(activeRoute: AppRoutes.products),
       appBar: _buildAppBar(context),
       body: SingleChildScrollView(
@@ -90,27 +91,26 @@ class MobileAddProductLayout extends StatelessWidget {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final colors = context.appColors;
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.topBarBg,
       elevation: 0,
       leading: Builder(
         builder: (ctx) => IconButton(
-          icon: const Icon(Icons.arrow_back_rounded,
-              color: Color(0xFF1A1240), size: 24),
+          icon: Icon(Icons.arrow_back_rounded, color: colors.textPrimary, size: 24),
           onPressed: () => Navigator.of(ctx).pop(),
         ),
       ),
-      title: const Text('Add Product',
+      title: Text('Add Product',
           style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1240),
+              color: colors.textPrimary,
               fontFamily: 'Poppins')),
       actions: [
         Stack(children: [
           IconButton(
-              icon: const Icon(Icons.notifications_outlined,
-                  color: Color(0xFF1A1240), size: 24),
+              icon: Icon(Icons.notifications_outlined, color: colors.textPrimary, size: 24),
               onPressed: () {}),
           Positioned(
               top: 10,
@@ -122,9 +122,9 @@ class MobileAddProductLayout extends StatelessWidget {
                       color: Colors.red, shape: BoxShape.circle))),
         ]),
       ],
-      bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, color: Color(0xFFF0EFF8))),
+      bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: colors.divider)),
     );
   }
 }
@@ -138,13 +138,14 @@ class _MobileSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF0EFF8)),
+        border: Border.all(color: colors.divider),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
@@ -156,10 +157,10 @@ class _MobileSectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A1240),
+                  color: colors.textPrimary,
                   fontFamily: 'Poppins')),
           const SizedBox(height: 14),
           child,
@@ -180,15 +181,16 @@ class _MobileFormField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         RichText(
           text: TextSpan(
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF1A1240),
+                color: colors.textPrimary,
                 fontFamily: 'Poppins'),
             children: [
               TextSpan(text: label),
@@ -222,26 +224,27 @@ class _MobileTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return TextField(
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
-      style: const TextStyle(
-          fontSize: 13, color: Color(0xFF1A1240), fontFamily: 'Poppins'),
+      style: TextStyle(
+          fontSize: 13, color: colors.textPrimary, fontFamily: 'Poppins'),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(
-            fontSize: 13, color: Color(0xFF9B9BB4), fontFamily: 'Poppins'),
+        hintStyle: TextStyle(
+            fontSize: 13, color: colors.textHint, fontFamily: 'Poppins'),
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE0DFF5)),
+          borderSide: BorderSide(color: colors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE0DFF5)),
+          borderSide: BorderSide(color: colors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -249,7 +252,7 @@ class _MobileTextField extends StatelessWidget {
               const BorderSide(color: AppColors.primaryOrange, width: 1.5),
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: colors.inputFill,
       ),
     );
   }
@@ -271,17 +274,19 @@ class _MobileDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return DropdownButtonFormField<String>(
       value: value,
       isDense: true,
       isExpanded: true,
-      style: const TextStyle(
-          fontSize: 13, color: Color(0xFF1A1240), fontFamily: 'Poppins'),
+      dropdownColor: colors.surface,
+      style: TextStyle(
+          fontSize: 13, color: colors.textPrimary, fontFamily: 'Poppins'),
       hint: hint != null
           ? Text(hint!,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF9B9BB4),
+                  color: colors.textHint,
                   fontFamily: 'Poppins'))
           : null,
       decoration: InputDecoration(
@@ -290,11 +295,11 @@ class _MobileDropdown extends StatelessWidget {
             const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE0DFF5)),
+          borderSide: BorderSide(color: colors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE0DFF5)),
+          borderSide: BorderSide(color: colors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -302,7 +307,7 @@ class _MobileDropdown extends StatelessWidget {
               const BorderSide(color: AppColors.primaryOrange, width: 1.5),
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: colors.inputFill,
       ),
       items: items
           .map((e) => DropdownMenuItem(
@@ -513,12 +518,13 @@ class _MobileVariantToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Obx(() => Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8F7FF),
+            color: colors.comingSoonBadge,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFFE0DFF5)),
+            border: Border.all(color: colors.border),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -528,10 +534,10 @@ class _MobileVariantToggle extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(label,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF1A1240),
+                            color: colors.textPrimary,
                             fontFamily: 'Poppins')),
                   ),
                   Switch(
@@ -558,12 +564,12 @@ class _MobileVariantToggle extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppColors.primaryOrange
-                              : Colors.white,
+                              : colors.surface,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: isSelected
                                 ? AppColors.primaryOrange
-                                : const Color(0xFFE0DFF5),
+                                : colors.border,
                           ),
                         ),
                         child: Text(opt,
@@ -575,7 +581,7 @@ class _MobileVariantToggle extends StatelessWidget {
                                     : FontWeight.w400,
                                 color: isSelected
                                     ? Colors.white
-                                    : const Color(0xFF6B6B8A))),
+                                    : colors.textSecondary)),
                       ),
                     );
                   }).toList(),

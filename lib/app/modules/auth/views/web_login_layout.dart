@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/theme/app_text_styles.dart';
 import 'package:shc_stock/app/modules/auth/widgets/login_form.dart';
@@ -8,10 +9,14 @@ class WebLoginLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLavender,
+      // backgroundColor: colors.background,
+      backgroundColor: context.isDarkMode
+          ? Color(0xFF000c25)
+          : AppColors.backgroundLavender,
       body: Column(
         children: [
           // ─── Main Row: Left Panel + Right Card ───
@@ -19,24 +24,18 @@ class WebLoginLayout extends StatelessWidget {
             child: Padding(
               // Overall outer spacing — scales with screen size
               padding: EdgeInsets.symmetric(
-                horizontal: size.width  * 0.05,  // 5% each side
-                vertical: size.height * 0.03,  // 3% top & bottom
+                horizontal: size.width * 0.05, // 5% each side
+                vertical: size.height * 0.03, // 3% top & bottom
               ),
               child: Center(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // LEFT PANEL — exactly 50% of content area
-                    Expanded(
-                      flex: 10,
-                      child: _buildLeftPanel(context, size),
-                    ),
+                    Expanded(flex: 10, child: _buildLeftPanel(context, size)),
 
                     // RIGHT PANEL — exactly 50% of content area
-                    Expanded(
-                      flex: 6,
-                      child: _buildRightPanel(context, size),
-                    ),
+                    Expanded(flex: 6, child: _buildRightPanel(context, size)),
                   ],
                 ),
               ),
@@ -44,7 +43,7 @@ class WebLoginLayout extends StatelessWidget {
           ),
 
           // ─── Footer ───
-          _buildFooter(size),
+          _buildFooter(context, size),
         ],
       ),
     );
@@ -62,12 +61,14 @@ class WebLoginLayout extends StatelessWidget {
       children: [
         // ── Layer 1: Background warehouse image (bottom ~62%) ──
         Positioned(
-          bottom: 0,
+          bottom: 90,
           left: 0,
           right: 0,
           height: size.height * 0.67,
           child: Image.asset(
-            'assets/background.png',
+            context.isDarkMode
+                ? 'assets/background_dark.png'
+                : 'assets/background_light.png',
             fit: BoxFit.fill,
             alignment: Alignment.topCenter,
           ),
@@ -95,22 +96,22 @@ class WebLoginLayout extends StatelessWidget {
             SizedBox(height: size.height * 0.025),
 
             // Hero headline + accent + subtitle
-            _buildHeroText(size),
+            _buildHeroText(context, size),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildHeroText(Size size) {
+  Widget _buildHeroText(BuildContext context, Size size) {
     // Font sizes scale with screen width for all resolutions
     // Each panel is now 50% of (screen - 10% outer pad) ≈ 45% of screen
     final double headingFontSize = size.width * 0.017;
-    final double bodyFontSize    = size.width * 0.007;
+    final double bodyFontSize = size.width * 0.007;
 
     return Padding(
       padding: EdgeInsets.only(
-        left:  size.width * 0.035,
+        left: size.width * 0.035,
         right: size.width * 0.015,
       ),
       child: Column(
@@ -123,7 +124,12 @@ class WebLoginLayout extends StatelessWidget {
                 fontSize: headingFontSize,
               ),
               children: [
-                const TextSpan(text: 'Built for '),
+                TextSpan(
+                  text: 'Built for ',
+                  style: context.isDarkMode
+                      ? TextStyle(color: Colors.white)
+                      : null,
+                ),
                 TextSpan(
                   text: 'efficiency.',
                   style: AppTextStyles.heroHeading.copyWith(
@@ -131,7 +137,11 @@ class WebLoginLayout extends StatelessWidget {
                     color: AppColors.primaryPurple,
                   ),
                 ),
-                const TextSpan(text: '\nDesigned for '),
+                TextSpan(text: '\nDesigned for ',
+                  style: context.isDarkMode
+                      ? TextStyle(color: Colors.white)
+                      : null,
+                ),
                 TextSpan(
                   text: 'growth.',
                   style: AppTextStyles.heroHeading.copyWith(
@@ -162,7 +172,7 @@ class WebLoginLayout extends StatelessWidget {
             'Powerful tools to manage stock,\npurchases, sales and reports –\nall in one place.',
             style: AppTextStyles.heroBody.copyWith(
               fontSize: bodyFontSize,
-              color: Color(0xFF5d6093)
+              color: const Color(0xFF5d6093),
             ),
           ),
         ],
@@ -172,44 +182,40 @@ class WebLoginLayout extends StatelessWidget {
 
   // ───────────────────────────────────────────────────────────────
   //  RIGHT PANEL (Login Card)
-  //  - left : nearly flush with the panel dividing line
-  //  - right: breathing room from outer edge
-  //  - top  : aligns card top roughly with logo bottom on left side
-  //  - Card fills the entire right panel (50% of content area)
   // ───────────────────────────────────────────────────────────────
   Widget _buildRightPanel(BuildContext context, Size size) {
+    final colors = context.appColors;
     return Padding(
       padding: EdgeInsets.only(
         left: 0,
-        // left:   size.width  * 0.008, // nearly flush — tiny gap from left panel
-        right:  size.width  * 0.025, // slight breathing room on right
-        top:    size.height * 0.10,  // card top aligns ~with logo bottom
+        right: size.width * 0.025, // slight breathing room on right
+        top: size.height * 0.10, // card top aligns ~with logo bottom
         bottom: size.height * 0.06,
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(size.width * 0.012),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: Color(0x1A4A3AFF),
+              color: AppColors.cardShadow,
               blurRadius: 48,
-              offset: Offset(0, 8),
+              offset: const Offset(0, 8),
               spreadRadius: 0,
             ),
             BoxShadow(
-              color: Color(0x0A000000),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 16,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(
-            horizontal: size.width  * 0.028, // inner card horizontal padding
-            vertical:   size.height * 0.038, // inner card vertical padding
+            horizontal: size.width * 0.028, // inner card horizontal padding
+            vertical: size.height * 0.038, // inner card vertical padding
           ),
-          child: const LoginForm(showLogo: false,isMobile: false,),
+          child: const LoginForm(showLogo: false, isMobile: false),
         ),
       ),
     );
@@ -218,12 +224,12 @@ class WebLoginLayout extends StatelessWidget {
   // ───────────────────────────────────────────────────────────────
   //  FOOTER
   // ───────────────────────────────────────────────────────────────
-  Widget _buildFooter(Size size) {
+  Widget _buildFooter(BuildContext context, Size size) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: size.height * 0.018),
       child: Text(
         '© 2024 Secure Heat Care. All rights reserved.',
-        style: AppTextStyles.copyright,
+        style: AppTextStyles.copyrightCtx(context),
       ),
     );
   }

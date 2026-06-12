@@ -21,7 +21,7 @@ class MobileDashboardLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<DashboardController>();
-    final colors = appColors;
+    final colors = context.appColors;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -100,7 +100,7 @@ class MobileDashboardLayout extends StatelessWidget {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return AppBar(
       backgroundColor: colors.topBarBg,
       elevation: 0,
@@ -179,7 +179,7 @@ class _SimpleStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -210,7 +210,7 @@ class _StockSummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(

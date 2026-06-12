@@ -9,6 +9,7 @@ class MobileLoginLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final size = MediaQuery.of(context).size;
     final topPadding = MediaQuery.of(context).padding.top; // status-bar height
 
@@ -19,7 +20,7 @@ class MobileLoginLayout extends StatelessWidget {
     final double cardTop = size.height * 0.36;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLavender,
+      backgroundColor: colors.background,
 
       // KEY FIX: StackFit.expand forces the Stack to fill the entire
       // Scaffold body. Without this, the Stack shrinks to the height
@@ -54,24 +55,24 @@ class MobileLoginLayout extends StatelessWidget {
             ),
           ),
 
-          // ── Layer 2: White login card — from 36% to bottom ──────
+          // ── Layer 2: Login card — from 36% to bottom ──────
           Positioned(
             top: cardTop,
             left: 0,
             right: 0,
             bottom: 0,
             child: Container(
-              decoration: const BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: colors.surface,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0x1A4A3AFF),
+                    color: AppColors.cardShadow,
                     blurRadius: 24,
-                    offset: Offset(0, -6),
+                    offset: const Offset(0, -6),
                   ),
                 ],
               ),

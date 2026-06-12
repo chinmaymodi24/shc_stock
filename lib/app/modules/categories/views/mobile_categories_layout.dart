@@ -11,9 +11,10 @@ class MobileCategoriesLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final c = Get.find<CategoriesController>();
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7FF),
+      backgroundColor: colors.background,
       drawer: const AppDrawer(activeRoute: AppRoutes.categories),
       appBar: _buildAppBar(context),
       body: Obx(() => ListView.separated(
@@ -36,17 +37,18 @@ class MobileCategoriesLayout extends StatelessWidget {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final colors = context.appColors;
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.topBarBg,
       elevation: 0,
       leading: Builder(
         builder: (ctx) => IconButton(
-          icon: const Icon(Icons.menu_rounded, color: Color(0xFF1A1240), size: 24),
+          icon: Icon(Icons.menu_rounded, color: colors.textPrimary, size: 24),
           onPressed: () => Scaffold.of(ctx).openDrawer(),
         ),
       ),
-      title: const Text('Categories', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
-      bottom: const PreferredSize(preferredSize: Size.fromHeight(1), child: Divider(height: 1, color: Color(0xFFF0EFF8))),
+      title: Text('Categories', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
+      bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Divider(height: 1, color: colors.divider)),
     );
   }
 
@@ -77,14 +79,15 @@ class _MobileCategoryCardState extends State<_MobileCategoryCard> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final cat = widget.cat;
     final c = widget.controller;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF0EFF8)),
+        border: Border.all(color: colors.divider),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
@@ -103,8 +106,8 @@ class _MobileCategoryCardState extends State<_MobileCategoryCard> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(cat.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
-                  Text('${cat.subProducts.length} sub-categories', style: const TextStyle(fontSize: 12, color: Color(0xFF9B9BB4), fontFamily: 'Poppins')),
+                  Text(cat.name, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'Poppins')),
+                  Text('${cat.subProducts.length} sub-categories', style: TextStyle(fontSize: 12, color: colors.textSecondary, fontFamily: 'Poppins')),
                 ])),
                 // Action buttons
                 _MiniBtn(icon: Icons.add_rounded, color: const Color(0xFF22C55E),
@@ -119,7 +122,7 @@ class _MobileCategoryCardState extends State<_MobileCategoryCard> {
                 AnimatedRotation(
                   turns: _expanded ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
-                  child: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF6B6B8A), size: 20),
+                  child: Icon(Icons.keyboard_arrow_down_rounded, color: colors.textSecondary, size: 20),
                 ),
               ]),
             ),
@@ -130,11 +133,11 @@ class _MobileCategoryCardState extends State<_MobileCategoryCard> {
             duration: const Duration(milliseconds: 200),
             child: _expanded
                 ? Container(
-                    decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFF0EFF8)))),
+                    decoration: BoxDecoration(border: Border(top: BorderSide(color: colors.divider))),
                     child: cat.subProducts.isEmpty
-                        ? const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Center(child: Text('No sub-categories yet.', style: TextStyle(fontSize: 13, color: Color(0xFF9B9BB4), fontFamily: 'Poppins'))),
+                        ? Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Center(child: Text('No sub-categories yet.', style: TextStyle(fontSize: 13, color: colors.textHint, fontFamily: 'Poppins'))),
                           )
                         : Column(
                             children: cat.subProducts.asMap().entries.map((e) {
@@ -177,11 +180,12 @@ class _MobileCategoryCardState extends State<_MobileCategoryCard> {
 
   void _confirmDelete(CategoriesController c, ProductCategory cat) {
     Get.dialog(AlertDialog(
+      backgroundColor: context.appColors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text('Delete Category?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Poppins')),
-      content: Text('Are you sure you want to delete "${cat.name}"? This will also delete all ${cat.subProducts.length} sub-categories.', style: const TextStyle(fontSize: 13.5, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+      title: Text('Delete Category?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Poppins', color: context.appColors.textPrimary)),
+      content: Text('Are you sure you want to delete "${cat.name}"? This will also delete all ${cat.subProducts.length} sub-categories.', style: TextStyle(fontSize: 13.5, color: context.appColors.textSecondary, fontFamily: 'Poppins')),
       actions: [
-        TextButton(onPressed: Get.back, child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Color(0xFF6B6B8A)))),
+        TextButton(onPressed: Get.back, child: Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: context.appColors.textSecondary))),
         ElevatedButton(
           onPressed: () { c.deleteCategory(cat.id); Get.back(); },
           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
@@ -203,17 +207,18 @@ class _SubRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: index.isEven ? const Color(0xFFFCFBFF) : Colors.white,
-        border: isLast ? null : const Border(bottom: BorderSide(color: Color(0xFFF0EFF8))),
+        color: index.isEven ? colors.rowEven : colors.surface,
+        border: isLast ? null : Border(bottom: BorderSide(color: colors.divider)),
       ),
       child: Row(children: [
         const SizedBox(width: 16),
         Container(width: 5, height: 5, decoration: BoxDecoration(color: AppColors.primaryOrange.withValues(alpha: 0.5), shape: BoxShape.circle)),
         const SizedBox(width: 10),
-        Expanded(child: Text(name, style: const TextStyle(fontSize: 13, color: Color(0xFF1A1240), fontFamily: 'Poppins'))),
+        Expanded(child: Text(name, style: TextStyle(fontSize: 13, color: colors.textPrimary, fontFamily: 'Poppins'))),
         _MiniBtn(icon: Icons.edit_outlined, color: AppColors.primaryPurple,
           onTap: () {
             final ctrl = TextEditingController(text: name);
@@ -227,11 +232,12 @@ class _SubRow extends StatelessWidget {
         const SizedBox(width: 6),
         _MiniBtn(icon: Icons.delete_outline_rounded, color: const Color(0xFFEF4444),
           onTap: () => Get.dialog(AlertDialog(
+            backgroundColor: colors.surface,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text('Delete?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Poppins')),
-            content: Text('Are you sure you want to delete "$name"?', style: const TextStyle(fontSize: 13.5, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+            title: Text('Delete?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Poppins', color: colors.textPrimary)),
+            content: Text('Are you sure you want to delete "$name"?', style: TextStyle(fontSize: 13.5, color: colors.textSecondary, fontFamily: 'Poppins')),
             actions: [
-              TextButton(onPressed: Get.back, child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Color(0xFF6B6B8A)))),
+              TextButton(onPressed: Get.back, child: Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: colors.textSecondary))),
               ElevatedButton(
                 onPressed: () { controller.deleteSubCategory(categoryId, index); Get.back(); },
                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
@@ -274,7 +280,9 @@ class _MobileFormDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Dialog(
+      backgroundColor: colors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: Padding(
@@ -283,26 +291,28 @@ class _MobileFormDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+            Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
             const SizedBox(height: 14),
             TextField(
               controller: controller,
               autofocus: true,
-              style: const TextStyle(fontSize: 14, color: Color(0xFF1A1240), fontFamily: 'Poppins'),
+              style: TextStyle(fontSize: 14, color: colors.textPrimary, fontFamily: 'Poppins'),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: const TextStyle(color: Color(0xFF9B9BB4), fontFamily: 'Poppins'),
+                hintStyle: TextStyle(color: colors.textHint, fontFamily: 'Poppins'),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE0DFF5))),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE0DFF5))),
+                filled: true,
+                fillColor: colors.inputFill,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.border)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.border)),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.primaryOrange, width: 1.5)),
               ),
               onSubmitted: (_) => onSave(),
             ),
             const SizedBox(height: 16),
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-              TextButton(onPressed: Get.back, child: const Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: Color(0xFF6B6B8A)))),
+              TextButton(onPressed: Get.back, child: Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: colors.textSecondary))),
               const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: onSave,

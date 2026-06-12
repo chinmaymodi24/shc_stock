@@ -74,7 +74,7 @@ class WebSidebar extends StatelessWidget {
           ),
 
           // ── Theme Selector ──
-          const _SidebarThemeSelector(),
+          const SidebarThemeSelector(),
 
           // ── Admin profile ──
           Container(
@@ -135,8 +135,8 @@ class WebSidebar extends StatelessWidget {
 }
 
 // ── Theme Selector Widget ─────────────────────────────────────────────────────
-class _SidebarThemeSelector extends StatelessWidget {
-  const _SidebarThemeSelector();
+class SidebarThemeSelector extends StatelessWidget {
+  const SidebarThemeSelector({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -276,11 +276,12 @@ class _SignOutDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final surface = appColors.surface;
-    final textPrimary = appColors.textPrimary;
-    final textSecondary = appColors.textSecondary;
-    final divider = appColors.divider;
-    final comingSoonBadge = appColors.comingSoonBadge;
+    final colors = context.appColors;
+    final surface = colors.surface;
+    final textPrimary = colors.textPrimary;
+    final textSecondary = colors.textSecondary;
+    final divider = colors.divider;
+    final comingSoonBadge = colors.comingSoonBadge;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -394,7 +395,7 @@ class _SignOutDialog extends StatelessWidget {
                         child: OutlinedButton(
                           onPressed: Get.back,
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: appColors.border),
+                            side: BorderSide(color: colors.border),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),

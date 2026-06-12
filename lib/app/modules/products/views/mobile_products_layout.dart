@@ -12,14 +12,15 @@ class MobileProductsLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<ProductsController>();
+    final colors = context.appColors;
     return Scaffold(
-      backgroundColor: appColors.background,
+      backgroundColor: colors.background,
       drawer: const AppDrawer(activeRoute: AppRoutes.products),
       appBar: _buildAppBar(context, c),
       body: Column(
         children: [
-          _buildSearchBar(c),
-          _buildFilterChips(c),
+          _buildSearchBar(context, c),
+          _buildFilterChips(context, c),
           Expanded(child: _buildProductList(c)),
         ],
       ),
@@ -34,43 +35,45 @@ class MobileProductsLayout extends StatelessWidget {
 
   // ── AppBar ───────────────────────────────────────────────────
   PreferredSizeWidget _buildAppBar(BuildContext context, ProductsController c) {
+    final colors = context.appColors;
     return AppBar(
-      backgroundColor: appColors.topBarBg,
+      backgroundColor: colors.topBarBg,
       elevation: 0,
       leading: Builder(
         builder: (ctx) => IconButton(
-          icon: Icon(Icons.menu_rounded, color: appColors.textPrimary, size: 24),
+          icon: Icon(Icons.menu_rounded, color: colors.textPrimary, size: 24),
           onPressed: () => Scaffold.of(ctx).openDrawer(),
         ),
       ),
-      title: Text('Products', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: appColors.textPrimary, fontFamily: 'Poppins')),
+      title: Text('Products', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
       actions: [
         Stack(children: [
-          IconButton(icon: Icon(Icons.notifications_outlined, color: appColors.textPrimary, size: 24), onPressed: () {}),
+          IconButton(icon: Icon(Icons.notifications_outlined, color: colors.textPrimary, size: 24), onPressed: () {}),
           Positioned(top: 10, right: 10, child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle))),
         ]),
       ],
-      bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Divider(height: 1, color: appColors.divider)),
+      bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Divider(height: 1, color: colors.divider)),
     );
   }
 
   // ── Search Bar ───────────────────────────────────────────────
-  Widget _buildSearchBar(ProductsController c) {
+  Widget _buildSearchBar(BuildContext context, ProductsController c) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: TextField(
         onChanged: (v) => c.searchQuery.value = v,
-        style: TextStyle(fontSize: 14, fontFamily: 'Poppins', color: appColors.textPrimary),
+        style: TextStyle(fontSize: 14, fontFamily: 'Poppins', color: colors.textPrimary),
         decoration: InputDecoration(
           hintText: 'Search products...',
-          hintStyle: TextStyle(fontSize: 14, color: appColors.textHint, fontFamily: 'Poppins'),
-          prefixIcon: Icon(Icons.search_rounded, color: appColors.textHint, size: 20),
+          hintStyle: TextStyle(fontSize: 14, color: colors.textHint, fontFamily: 'Poppins'),
+          prefixIcon: Icon(Icons.search_rounded, color: colors.textHint, size: 20),
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           filled: true,
-          fillColor: appColors.inputFill,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: appColors.border)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: appColors.border)),
+          fillColor: colors.inputFill,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.border)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.border)),
           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryOrange, width: 1.5)),
         ),
       ),
@@ -78,9 +81,10 @@ class MobileProductsLayout extends StatelessWidget {
   }
 
   // ── Category Filter Chips ────────────────────────────────────
-  Widget _buildFilterChips(ProductsController c) {
+  Widget _buildFilterChips(BuildContext context, ProductsController c) {
     return Obx(() {
       RxList<String> cats = ['All', ...ProductsController.allCategories.map((cat) => cat.name)].obs;
+      final colors = context.appColors;
       return SizedBox(
         height: 44,
         child: ListView.separated(
@@ -96,9 +100,9 @@ class MobileProductsLayout extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryOrange : appColors.surface,
+                  color: isSelected ? AppColors.primaryOrange : colors.surface,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: isSelected ? AppColors.primaryOrange : appColors.border),
+                  border: Border.all(color: isSelected ? AppColors.primaryOrange : colors.border),
                 ),
                 child: Text(
                   cats[i],
@@ -106,7 +110,7 @@ class MobileProductsLayout extends StatelessWidget {
                     fontSize: 12.5,
                     fontFamily: 'Poppins',
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? Colors.white : appColors.textSecondary,
+                    color: isSelected ? Colors.white : colors.textSecondary,
                   ),
                 ),
               ),
@@ -148,13 +152,14 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final isLow = product.currentStock <= product.minimumStock;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: appColors.surface,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: appColors.divider),
+        border: Border.all(color: colors.divider),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
@@ -173,8 +178,8 @@ class _ProductCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(product.name, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: appColors.textPrimary, fontFamily: 'Poppins'), maxLines: 2, overflow: TextOverflow.ellipsis),
-                    Text(product.categoryName, style: TextStyle(fontSize: 11.5, color: appColors.textHint, fontFamily: 'Poppins')),
+                    Text(product.name, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'Poppins'), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text(product.categoryName, style: TextStyle(fontSize: 11.5, color: colors.textHint, fontFamily: 'Poppins')),
                   ],
                 ),
               ),
@@ -193,7 +198,7 @@ class _ProductCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Divider(height: 1, color: appColors.divider),
+          Divider(height: 1, color: colors.divider),
           const SizedBox(height: 10),
           // ── Bottom Row: price | stock | sub-cat + actions ──
           Row(children: [
@@ -243,17 +248,18 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Expanded(
       flex: flex,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(color: appColors.tagBg, borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(color: colors.tagBg, borderRadius: BorderRadius.circular(8)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(fontSize: 10.5, color: appColors.textHint, fontFamily: 'Poppins')),
+            Text(label, style: TextStyle(fontSize: 10.5, color: colors.textHint, fontFamily: 'Poppins')),
             const SizedBox(height: 2),
-            Text(value, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: appColors.textPrimary, fontFamily: 'Poppins'), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(value, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'Poppins'), maxLines: 1, overflow: TextOverflow.ellipsis),
           ],
         ),
       ),
@@ -292,12 +298,13 @@ class _MobileDeleteConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
       child: Container(
         decoration: BoxDecoration(
-          color: appColors.surface,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(18),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.20), blurRadius: 32, offset: const Offset(0, 10))],
         ),
@@ -323,14 +330,14 @@ class _MobileDeleteConfirmDialog extends StatelessWidget {
                     onTap: Get.back,
                     child: Container(
                       width: 30, height: 30,
-                      decoration: BoxDecoration(color: appColors.comingSoonBadge, borderRadius: BorderRadius.circular(8)),
-                      child: Icon(Icons.close_rounded, size: 17, color: appColors.textSecondary),
+                      decoration: BoxDecoration(color: colors.comingSoonBadge, borderRadius: BorderRadius.circular(8)),
+                      child: Icon(Icons.close_rounded, size: 17, color: colors.textSecondary),
                     ),
                   ),
                 ],
               ),
             ),
-            Padding(padding: const EdgeInsets.only(top: 14), child: Divider(height: 1, color: appColors.divider)),
+            Padding(padding: const EdgeInsets.only(top: 14), child: Divider(height: 1, color: colors.divider)),
             // ── Body ──
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
@@ -357,11 +364,11 @@ class _MobileDeleteConfirmDialog extends StatelessWidget {
                         child: OutlinedButton(
                           onPressed: Get.back,
                           style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: appColors.border),
+                            side: BorderSide(color: colors.border),
                             padding: const EdgeInsets.symmetric(vertical: 13),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          child: Text('Cancel', style: TextStyle(fontSize: 14, fontFamily: 'Poppins', color: appColors.textSecondary)),
+                          child: Text('Cancel', style: TextStyle(fontSize: 14, fontFamily: 'Poppins', color: colors.textSecondary)),
                         ),
                       ),
                       const SizedBox(width: 10),

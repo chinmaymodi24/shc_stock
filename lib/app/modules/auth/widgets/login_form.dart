@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/theme/app_text_styles.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
 import '../controllers/login_controller.dart';
 import 'language_selector.dart';
 import 'shc_logo.dart';
@@ -39,11 +40,20 @@ class LoginForm extends GetView<LoginController> {
             const SizedBox(height: 10),
           ],
 
+
+          // Web: language selector at top-right of card
+            Align(
+              alignment: Alignment.centerLeft,
+              child: SizedBox(
+                  width: 190,
+                  child: const SidebarThemeSelector()),
+            ),
+
           /// TITLE
           Center(
             child: Text(
               'Welcome Back!',
-              style: AppTextStyles.heading1,
+              style: AppTextStyles.heading1Ctx(context),
             ),
           ),
 
@@ -54,7 +64,7 @@ class LoginForm extends GetView<LoginController> {
             child: RichText(
               textAlign: TextAlign.center,
               text: TextSpan(
-                style: AppTextStyles.subtitle,
+                style: AppTextStyles.subtitleCtx(context),
                 children: [
                   const TextSpan(text: 'Sign in to continue to '),
                   TextSpan(
@@ -70,38 +80,36 @@ class LoginForm extends GetView<LoginController> {
 
           _buildDividerWithDot(),
 
-
-
-          isMobile == true ?
-          const SizedBox(height: 28) :
-          const SizedBox(height: 68),
+          isMobile == true
+              ? const SizedBox(height: 28)
+              : const SizedBox(height: 68),
 
           /// EMAIL LABEL
-          Text('Email Address', style: AppTextStyles.label),
+          Text('Email Address', style: AppTextStyles.labelCtx(context)),
 
           const SizedBox(height: 10),
 
-          _buildEmailField(),
+          _buildEmailField(context),
 
-          isMobile == true ?
-          const SizedBox(height: 20) :
-          const SizedBox(height: 30),
+          isMobile == true
+              ? const SizedBox(height: 20)
+              : const SizedBox(height: 30),
 
           /// PASSWORD LABEL
-          Text('Password', style: AppTextStyles.label),
+          Text('Password', style: AppTextStyles.labelCtx(context)),
 
           const SizedBox(height: 10),
 
-          _buildPasswordField(),
+          _buildPasswordField(context),
 
           const SizedBox(height: 18),
 
           /// REMEMBER ME + FORGOT PASSWORD
-          _buildRememberMeRow(),
+          _buildRememberMeRow(context),
 
-          isMobile == true ?
-          const SizedBox(height: 24) :
-          const SizedBox(height: 64),
+          isMobile == true
+              ? const SizedBox(height: 24)
+              : const SizedBox(height: 64),
 
           /// SIGN IN BUTTON
           _buildSignInButton(),
@@ -109,19 +117,19 @@ class LoginForm extends GetView<LoginController> {
           const SizedBox(height: 20),
 
           /// OR DIVIDER
-          _buildOrDivider(),
+          _buildOrDivider(context),
 
           const SizedBox(height: 20),
 
           /// SIGN IN WITH ANOTHER ACCOUNT
           _buildAlternateSignInButton(),
 
-          isMobile == true ?
-          const SizedBox(height: 24) :
-          const SizedBox(height: 74),
+          isMobile == true
+              ? const SizedBox(height: 24)
+              : const SizedBox(height: 74),
 
           /// SECURITY BADGE
-          _buildSecurityBadge(),
+          _buildSecurityBadge(context),
         ],
       ),
     );
@@ -146,30 +154,31 @@ class LoginForm extends GetView<LoginController> {
     );
   }
 
-  Widget _buildEmailField() {
+  Widget _buildEmailField(BuildContext context) {
+    final colors = context.appColors;
     return TextFormField(
       controller: controller.emailController,
       keyboardType: TextInputType.emailAddress,
       validator: controller.validateEmail,
-      style: AppTextStyles.inputText,
+      style: AppTextStyles.inputTextCtx(context),
       decoration: InputDecoration(
         hintText: 'Enter your email',
-        hintStyle: AppTextStyles.inputHint,
+        hintStyle: AppTextStyles.inputHintCtx(context),
         prefixIcon: const Icon(
           Icons.mail_outline_rounded,
           color: AppColors.inputIcon,
           size: 20,
         ),
         filled: true,
-        fillColor: AppColors.white,
+        fillColor: colors.inputFill,
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.inputBorder, width: 1),
+          borderSide: BorderSide(color: colors.border, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.inputBorder, width: 1),
+          borderSide: BorderSide(color: colors.border, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -187,16 +196,17 @@ class LoginForm extends GetView<LoginController> {
     );
   }
 
-  Widget _buildPasswordField() {
+  Widget _buildPasswordField(BuildContext context) {
+    final colors = context.appColors;
     return Obx(
       () => TextFormField(
         controller: controller.passwordController,
         obscureText: !controller.isPasswordVisible.value,
         validator: controller.validatePassword,
-        style: AppTextStyles.inputText,
+        style: AppTextStyles.inputTextCtx(context),
         decoration: InputDecoration(
           hintText: 'Enter your password',
-          hintStyle: AppTextStyles.inputHint,
+          hintStyle: AppTextStyles.inputHintCtx(context),
           prefixIcon: const Icon(
             Icons.lock_outline_rounded,
             color: AppColors.inputIcon,
@@ -208,20 +218,20 @@ class LoginForm extends GetView<LoginController> {
               controller.isPasswordVisible.value
                   ? Icons.visibility_outlined
                   : Icons.visibility_off_outlined,
-              color: AppColors.textLight,
+              color: colors.textHint,
               size: 20,
             ),
           ),
           filled: true,
-          fillColor: AppColors.white,
+          fillColor: colors.inputFill,
           contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.inputBorder, width: 1),
+            borderSide: BorderSide(color: colors.border, width: 1),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.inputBorder, width: 1),
+            borderSide: BorderSide(color: colors.border, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -240,7 +250,7 @@ class LoginForm extends GetView<LoginController> {
     );
   }
 
-  Widget _buildRememberMeRow() {
+  Widget _buildRememberMeRow(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -257,14 +267,14 @@ class LoginForm extends GetView<LoginController> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  side: const BorderSide(
-                    color: AppColors.inputBorder,
+                  side: BorderSide(
+                    color: context.appColors.border,
                     width: 1.5,
                   ),
                 ),
               ),
               const SizedBox(width: 8),
-              Text('Remember me', style: AppTextStyles.rememberMe),
+              Text('Remember me', style: AppTextStyles.rememberMeCtx(context)),
             ],
           ),
         ),
@@ -313,18 +323,19 @@ class LoginForm extends GetView<LoginController> {
     );
   }
 
-  Widget _buildOrDivider() {
+  Widget _buildOrDivider(BuildContext context) {
+    final colors = context.appColors;
     return Row(
       children: [
-        const Expanded(
-          child: Divider(color: AppColors.inputBorder, thickness: 1),
+        Expanded(
+          child: Divider(color: colors.border, thickness: 1),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Text('OR', style: AppTextStyles.orDivider),
+          child: Text('OR', style: AppTextStyles.orDividerCtx(context)),
         ),
-        const Expanded(
-          child: Divider(color: AppColors.inputBorder, thickness: 1),
+        Expanded(
+          child: Divider(color: colors.border, thickness: 1),
         ),
       ],
     );
@@ -361,11 +372,12 @@ class LoginForm extends GetView<LoginController> {
     );
   }
 
-  Widget _buildSecurityBadge() {
+  Widget _buildSecurityBadge(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F4FF),
+        color: colors.comingSoonBadge,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -373,8 +385,8 @@ class LoginForm extends GetView<LoginController> {
           Container(
             width: 44,
             height: 44,
-            decoration: const BoxDecoration(
-              color: Color(0xFFECEAFF),
+            decoration: BoxDecoration(
+              color: colors.iconBgPurple,
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -389,12 +401,12 @@ class LoginForm extends GetView<LoginController> {
             children: [
               Text(
                 'Secure. Reliable. Always.',
-                style: AppTextStyles.badgeTitle,
+                style: AppTextStyles.badgeTitleCtx(context),
               ),
               const SizedBox(height: 3),
               Text(
                 'Your data is safe with us, always and everywhere.',
-                style: AppTextStyles.badgeSubtitle,
+                style: AppTextStyles.badgeSubtitleCtx(context),
               ),
             ],
           ),

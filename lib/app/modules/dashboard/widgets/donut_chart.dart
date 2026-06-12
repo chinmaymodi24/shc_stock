@@ -18,6 +18,7 @@ class DonutChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Row(
       children: [
         SizedBox(
@@ -41,9 +42,9 @@ class DonutChart extends StatelessWidget {
                     totalItems.toString().replaceAllMapped(
                           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
                           (m) => '${m[1]},'),
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: appColors.textPrimary, fontFamily: 'Poppins'),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins'),
                   ),
-                  Text('Total Items', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: appColors.textSecondary, fontFamily: 'Poppins')),
+                  Text('Total Items', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: colors.textSecondary, fontFamily: 'Poppins')),
                 ],
               ),
             ],
@@ -75,6 +76,7 @@ class _LegendItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Row(
       children: [
         Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
@@ -82,8 +84,8 @@ class _LegendItem extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: appColors.textPrimary, fontFamily: 'Poppins')),
-            Text(value, style: TextStyle(fontSize: 12, color: appColors.textSecondary, fontFamily: 'Poppins')),
+            Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colors.textPrimary, fontFamily: 'Poppins')),
+            Text(value, style: TextStyle(fontSize: 12, color: colors.textSecondary, fontFamily: 'Poppins')),
           ],
         ),
       ],

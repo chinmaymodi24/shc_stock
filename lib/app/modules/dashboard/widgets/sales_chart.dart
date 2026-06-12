@@ -10,7 +10,7 @@ class SalesLineChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return CustomPaint(
       painter: _SalesChartPainter(data: data, gridColor: colors.divider, labelColor: colors.textSecondary, dotBorderColor: colors.surface),
     );

@@ -160,7 +160,17 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Convenience global getter — use appColors.tokenName anywhere
+// Global getter — for use inside Obx() where context is unavailable
 // ─────────────────────────────────────────────────────────────────────────────
 AppThemeColors get appColors =>
     Get.theme.extension<AppThemeColors>() ?? AppThemeColors.light;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BuildContext extension — use context.appColors inside build() methods.
+// This hooks into Flutter's InheritedWidget system so widgets automatically
+// rebuild when the theme changes — no Obx or setState needed.
+// ─────────────────────────────────────────────────────────────────────────────
+extension AppThemeColorsContext on BuildContext {
+  AppThemeColors get appColors =>
+      Theme.of(this).extension<AppThemeColors>() ?? AppThemeColors.light;
+}

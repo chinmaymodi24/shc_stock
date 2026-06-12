@@ -9,13 +9,14 @@ class RecentTransactions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Column(
       children: transactions.asMap().entries.map((e) {
         final isLast = e.key == transactions.length - 1;
         return Column(
           children: [
             _TransactionRow(data: e.value),
-            if (!isLast) Divider(height: 1, color: appColors.divider),
+            if (!isLast) Divider(height: 1, color: colors.divider),
           ],
         );
       }).toList(),
@@ -30,6 +31,7 @@ class _TransactionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final isSales = data.type == 'Sales';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -50,17 +52,17 @@ class _TransactionRow extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(data.type,
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: appColors.textPrimary, fontFamily: 'Poppins')),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colors.textPrimary, fontFamily: 'Poppins')),
           ),
           Expanded(
             child: Text(data.invoiceNo,
-                style: TextStyle(fontSize: 12, color: appColors.textSecondary, fontFamily: 'Poppins')),
+                style: TextStyle(fontSize: 12, color: colors.textSecondary, fontFamily: 'Poppins')),
           ),
           Text(data.amount,
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: appColors.textPrimary, fontFamily: 'Poppins')),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'Poppins')),
           const SizedBox(width: 16),
           Text(data.date,
-              style: TextStyle(fontSize: 11.5, color: appColors.textSecondary, fontFamily: 'Poppins')),
+              style: TextStyle(fontSize: 11.5, color: colors.textSecondary, fontFamily: 'Poppins')),
         ],
       ),
     );

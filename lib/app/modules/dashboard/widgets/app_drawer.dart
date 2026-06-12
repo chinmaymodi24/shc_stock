@@ -30,7 +30,7 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return Drawer(
       backgroundColor: colors.drawerBg,
       child: SafeArea(
@@ -128,7 +128,7 @@ class _DrawerThemeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tc = Get.find<ThemeController>();
-    final colors = appColors;
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
       child: Column(
@@ -197,6 +197,7 @@ class _DrawerThemeBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dimColor = context.appColors.textSecondary;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -213,7 +214,7 @@ class _DrawerThemeBtn extends StatelessWidget {
               Icon(
                 icon,
                 size: 16,
-                color: isActive ? Colors.white : appColors.textSecondary,
+                color: isActive ? Colors.white : dimColor,
               ),
               const SizedBox(height: 3),
               Text(
@@ -221,7 +222,7 @@ class _DrawerThemeBtn extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
-                  color: isActive ? Colors.white : appColors.textSecondary,
+                  color: isActive ? Colors.white : dimColor,
                   fontFamily: 'Poppins',
                 ),
               ),
@@ -243,7 +244,7 @@ class _DrawerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       child: Material(

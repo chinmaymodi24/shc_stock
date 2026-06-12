@@ -10,7 +10,7 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return Container(
       padding: EdgeInsets.all(compact ? 14 : 18),
       decoration: BoxDecoration(

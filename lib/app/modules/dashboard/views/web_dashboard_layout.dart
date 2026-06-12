@@ -16,7 +16,7 @@ class WebDashboardLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<DashboardController>();
-    final colors = appColors;
+    final colors = context.appColors;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -26,7 +26,7 @@ class WebDashboardLayout extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                _buildTopBar(c),
+                _buildTopBar(context, c),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
@@ -71,8 +71,8 @@ class WebDashboardLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildTopBar(DashboardController c) {
-    final colors = appColors;
+  Widget _buildTopBar(BuildContext context, DashboardController c) {
+    final colors = context.appColors;
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -169,7 +169,7 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -206,7 +206,7 @@ class _DropdownFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = appColors;
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(border: Border.all(color: colors.border), borderRadius: BorderRadius.circular(8)),
