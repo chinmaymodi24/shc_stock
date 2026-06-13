@@ -131,13 +131,13 @@ class WebProductsLayout extends StatelessWidget {
   Widget _buildStatCards(ProductsController c) {
     return Obx(() => Row(
       children: [
-        _StatCard(label: 'Total Products', value: '${c.totalProducts}', change: '+12% from last month', isPositive: true, icon: Icons.inventory_2_outlined, iconColor: AppColors.primaryOrange, iconBg: const Color(0xFFFFF3E8)),
+        _StatCard(label: 'Total Products', value: '${c.totalProducts}', change: '+12% from last month', isPositive: true, icon: Icons.inventory_2_outlined, iconColor: AppColors.primaryOrange),
         const SizedBox(width: 16),
-        _StatCard(label: 'Active Products', value: '${c.activeProducts}', change: '+8% from last month', isPositive: true, icon: Icons.check_circle_outline_rounded, iconColor: const Color(0xFF22C55E), iconBg: const Color(0xFFECFDF5)),
+        _StatCard(label: 'Active Products', value: '${c.activeProducts}', change: '+8% from last month', isPositive: true, icon: Icons.check_circle_outline_rounded, iconColor: appColors.success),
         const SizedBox(width: 16),
-        _StatCard(label: 'Low Stock Items', value: '${c.lowStockProducts}', change: '-5% from last month', isPositive: false, icon: Icons.warning_amber_rounded, iconColor: const Color(0xFFF59E0B), iconBg: const Color(0xFFFFFBEB)),
+        _StatCard(label: 'Low Stock Items', value: '${c.lowStockProducts}', change: '-5% from last month', isPositive: false, icon: Icons.warning_amber_rounded, iconColor: appColors.warning),
         const SizedBox(width: 16),
-        _StatCard(label: 'Out of Stock Items', value: '${c.outOfStockProducts}', change: '-3% from last month', isPositive: false, icon: Icons.cancel_outlined, iconColor: const Color(0xFFEF4444), iconBg: const Color(0xFFFEF2F2)),
+        _StatCard(label: 'Out of Stock Items', value: '${c.outOfStockProducts}', change: '-3% from last month', isPositive: false, icon: Icons.cancel_outlined, iconColor: appColors.error),
       ],
     ));
   }
@@ -336,8 +336,9 @@ class WebProductsLayout extends StatelessWidget {
           ...List.generate(c.totalPages.clamp(0, 5), (i) {
             final page = i + 1;
             final isActive = c.currentPage.value == page;
-            return GestureDetector(
+            return InkWell(
               onTap: () => c.currentPage.value = page,
+              borderRadius: BorderRadius.circular(6),
               child: Container(
                 width: 32, height: 32,
                 margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -352,8 +353,9 @@ class WebProductsLayout extends StatelessWidget {
           }),
           if (c.totalPages > 5) ...[
             Text('...', style: TextStyle(color: colors.textSecondary)),
-            GestureDetector(
+            InkWell(
               onTap: () => c.currentPage.value = c.totalPages,
+              borderRadius: BorderRadius.circular(6),
               child: Container(width: 32, height: 32, margin: const EdgeInsets.symmetric(horizontal: 2), decoration: BoxDecoration(borderRadius: BorderRadius.circular(6), border: Border.all(color: colors.border)), child: Center(child: Text('${c.totalPages}', style: TextStyle(fontSize: 12.5, color: colors.textPrimary, fontFamily: 'Poppins')))),
             ),
           ],
@@ -380,17 +382,25 @@ class _ProductRow extends StatelessWidget {
     final colors = context.appColors;
 
     Color stockColor;
-    if (product.currentStock == 0) stockColor = const Color(0xFFEF4444);
-    else if (product.currentStock <= product.minimumStock) stockColor = const Color(0xFFF59E0B);
-    else stockColor = const Color(0xFF22C55E);
+    if (product.currentStock == 0) stockColor = colors.error;
+    else if (product.currentStock <= product.minimumStock) stockColor = colors.warning;
+    else stockColor = colors.success;
 
     Color statusBadgeColor;
     Color statusTextColor;
     String statusText = product.stockStatus;
     switch (statusText) {
-      case 'In Stock': statusBadgeColor = const Color(0xFFECFDF5); statusTextColor = const Color(0xFF22C55E); break;
-      case 'Low Stock': statusBadgeColor = const Color(0xFFFFFBEB); statusTextColor = const Color(0xFFF59E0B); break;
-      default: statusBadgeColor = const Color(0xFFFEF2F2); statusTextColor = const Color(0xFFEF4444);
+      case 'In Stock': 
+        statusTextColor = colors.success; 
+        statusBadgeColor = statusTextColor.withValues(alpha: 0.1); 
+        break;
+      case 'Low Stock': 
+        statusTextColor = colors.warning; 
+        statusBadgeColor = statusTextColor.withValues(alpha: 0.1); 
+        break;
+      default: 
+        statusTextColor = colors.error; 
+        statusBadgeColor = statusTextColor.withValues(alpha: 0.1);
     }
 
     return Container(
@@ -408,7 +418,7 @@ class _ProductRow extends StatelessWidget {
                 color: colors.iconBgPurple,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.inventory_2_outlined, color: AppColors.primaryPurple, size: 18),
+              child: Icon(Icons.inventory_2_outlined, color: colors.purple, size: 18),
             ),
             const SizedBox(width: 8),
             Expanded(flex: 5, child: Text(product.name, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colors.textPrimary, fontFamily: 'Poppins'), overflow: TextOverflow.ellipsis)),
@@ -432,11 +442,11 @@ class _ProductRow extends StatelessWidget {
                 children: [
                   _ActionBtn(icon: Icons.remove_red_eye_outlined, color: colors.textSecondary, onTap: () {}),
                   const SizedBox(width: 6),
-                  _ActionBtn(icon: Icons.edit_outlined, color: AppColors.primaryPurple, onTap: () {}),
+                  _ActionBtn(icon: Icons.edit_outlined, color: colors.purple, onTap: () {}),
                   const SizedBox(width: 6),
                   _ActionBtn(
                     icon: Icons.delete_outline_rounded,
-                    color: const Color(0xFFEF4444),
+                    color: colors.error,
                     onTap: () => Get.dialog(
                       _DeleteConfirmDialog(
                         productName: product.name,
@@ -465,9 +475,8 @@ class _StatCard extends StatelessWidget {
   final bool isPositive;
   final IconData icon;
   final Color iconColor;
-  final Color iconBg;
 
-  const _StatCard({required this.label, required this.value, required this.change, required this.isPositive, required this.icon, required this.iconColor, required this.iconBg});
+  const _StatCard({required this.label, required this.value, required this.change, required this.isPositive, required this.icon, required this.iconColor});
 
   @override
   Widget build(BuildContext context) {
@@ -492,13 +501,13 @@ class _StatCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(value, style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
                   const SizedBox(height: 4),
-                  Text(change, style: TextStyle(fontSize: 11.5, color: isPositive ? const Color(0xFF22C55E) : const Color(0xFFEF4444), fontFamily: 'Poppins')),
+                  Text(change, style: TextStyle(fontSize: 11.5, color: isPositive ? colors.success : colors.error, fontFamily: 'Poppins')),
                 ],
               ),
             ),
             Container(
               width: 46, height: 46,
-              decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
               child: Icon(icon, color: iconColor, size: 22),
             ),
           ],
@@ -580,8 +589,9 @@ class _ActionBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(7),
       child: Container(
         width: 30, height: 30,
         decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(7)),
@@ -600,8 +610,9 @@ class _PageButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = appColors;
-    return GestureDetector(
+    return InkWell(
       onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(6),
       child: Container(
         width: 32, height: 32,
         margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -657,11 +668,11 @@ class _DeleteConfirmDialog extends StatelessWidget {
                       Container(
                         width: 44, height: 44,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFEF2F2),
+                          color: colors.error.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.delete_outline_rounded,
-                            color: Color(0xFFEF4444), size: 24),
+                        child: Icon(Icons.delete_outline_rounded,
+                            color: colors.error, size: 24),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -674,8 +685,9 @@ class _DeleteConfirmDialog extends StatelessWidget {
                               fontFamily: 'Poppins'),
                         ),
                       ),
-                      GestureDetector(
+                      InkWell(
                         onTap: Get.back,
+                        borderRadius: BorderRadius.circular(8),
                         child: Container(
                           width: 32, height: 32,
                           decoration: BoxDecoration(
@@ -752,7 +764,7 @@ class _DeleteConfirmDialog extends StatelessWidget {
                                     fontFamily: 'Poppins',
                                     color: Colors.white)),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFEF4444),
+                              backgroundColor: colors.error,
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 22, vertical: 12),

@@ -71,9 +71,9 @@ class WebCategoriesLayout extends StatelessWidget {
 
   Widget _buildStatCards(CategoriesController c) {
     return Obx(() => Row(children: [
-      Expanded(child: _StatCard(label: 'Total Categories', value: '${c.totalCategories}', icon: Icons.category_outlined, iconColor: AppColors.primaryOrange, iconBg: const Color(0xFFFFF3E8))),
+      Expanded(child: _StatCard(label: 'Total Categories', value: '${c.totalCategories}', icon: Icons.category_outlined, iconColor: AppColors.primaryOrange)),
       const SizedBox(width: 16),
-      Expanded(child: _StatCard(label: 'Total Sub-Categories', value: '${c.totalSubCategories}', icon: Icons.list_alt_rounded, iconColor: AppColors.primaryPurple, iconBg: const Color(0xFFEEECFF))),
+      Expanded(child: _StatCard(label: 'Total Sub-Categories', value: '${c.totalSubCategories}', icon: Icons.list_alt_rounded, iconColor: appColors.purple)),
       const Expanded(child: SizedBox()),
       const Expanded(child: SizedBox()),
     ]));
@@ -164,7 +164,7 @@ class _CategoryCardState extends State<_CategoryCard> {
                 Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(color: colors.iconBgPurple, borderRadius: BorderRadius.circular(10)),
-                  child: const Icon(Icons.category_outlined, color: AppColors.primaryPurple, size: 20),
+                  child: Icon(Icons.category_outlined, color: colors.purple, size: 20),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -177,17 +177,18 @@ class _CategoryCardState extends State<_CategoryCard> {
                     ],
                   ),
                 ),
-                _ActionBtn(icon: Icons.add_rounded, color: const Color(0xFF22C55E), tooltip: 'Add Sub-Category',
+                _ActionBtn(icon: Icons.add_rounded, color: colors.success, tooltip: 'Add Sub-Category',
                   onTap: () => _showAddSubDialog(c, cat.id)),
                 const SizedBox(width: 6),
-                _ActionBtn(icon: Icons.edit_outlined, color: AppColors.primaryPurple, tooltip: 'Edit Category',
+                _ActionBtn(icon: Icons.edit_outlined, color: colors.purple, tooltip: 'Edit Category',
                   onTap: () => _showEditCategoryDialog(c, cat)),
                 const SizedBox(width: 6),
-                _ActionBtn(icon: Icons.delete_outline_rounded, color: const Color(0xFFEF4444), tooltip: 'Delete Category',
+                _ActionBtn(icon: Icons.delete_outline_rounded, color: colors.error, tooltip: 'Delete Category',
                   onTap: () => _confirmDeleteCategory(c, cat)),
                 const SizedBox(width: 8),
-                GestureDetector(
+                InkWell(
                   onTap: () => setState(() => _expanded = !_expanded),
+                  borderRadius: BorderRadius.circular(20),
                   child: AnimatedRotation(
                     turns: _expanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
@@ -280,13 +281,14 @@ class _CategoryCardState extends State<_CategoryCard> {
                       children: [
                         Container(
                           width: 40, height: 40,
-                          decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(10)),
-                          child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 22),
+                          decoration: BoxDecoration(color: colors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                          child: Icon(Icons.delete_outline_rounded, color: colors.error, size: 22),
                         ),
                         const SizedBox(width: 12),
                         Expanded(child: Text('Delete Category?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins'))),
-                        GestureDetector(
+                        InkWell(
                           onTap: Get.back,
+                          borderRadius: BorderRadius.circular(8),
                           child: Container(width: 32, height: 32, decoration: BoxDecoration(color: colors.comingSoonBadge, borderRadius: BorderRadius.circular(8)), child: Icon(Icons.close_rounded, size: 18, color: colors.textSecondary)),
                         ),
                       ],
@@ -307,7 +309,7 @@ class _CategoryCardState extends State<_CategoryCard> {
                       const SizedBox(width: 10),
                       ElevatedButton(
                         onPressed: () { c.deleteCategory(cat.id); Get.back(); },
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                        style: ElevatedButton.styleFrom(backgroundColor: colors.error, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
                         child: const Text('Delete', style: TextStyle(fontFamily: 'Poppins', color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
                       ),
                     ]),
@@ -350,7 +352,7 @@ class _SubCategoryRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(child: Text(name, style: TextStyle(fontSize: 13.5, color: colors.textPrimary, fontFamily: 'Poppins'))),
-          _ActionBtn(icon: Icons.edit_outlined, color: AppColors.primaryPurple, tooltip: 'Edit',
+          _ActionBtn(icon: Icons.edit_outlined, color: colors.purple, tooltip: 'Edit',
             onTap: () {
               final ctrl = TextEditingController(text: name);
               Get.dialog(_FormDialog(
@@ -361,7 +363,7 @@ class _SubCategoryRow extends StatelessWidget {
               ));
             }),
           const SizedBox(width: 6),
-          _ActionBtn(icon: Icons.delete_outline_rounded, color: const Color(0xFFEF4444), tooltip: 'Delete',
+          _ActionBtn(icon: Icons.delete_outline_rounded, color: colors.error, tooltip: 'Delete',
             onTap: () => Get.dialog(
               Dialog(
                 backgroundColor: Colors.transparent,
@@ -377,10 +379,10 @@ class _SubCategoryRow extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
                             child: Row(children: [
-                              Container(width: 40, height: 40, decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 22)),
+                              Container(width: 40, height: 40, decoration: BoxDecoration(color: colors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)), child: Icon(Icons.delete_outline_rounded, color: colors.error, size: 22)),
                               const SizedBox(width: 12),
                               Expanded(child: Text('Delete Sub-Category?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins'))),
-                              GestureDetector(onTap: Get.back, child: Container(width: 32, height: 32, decoration: BoxDecoration(color: colors.comingSoonBadge, borderRadius: BorderRadius.circular(8)), child: Icon(Icons.close_rounded, size: 18, color: colors.textSecondary))),
+                              InkWell(onTap: Get.back, borderRadius: BorderRadius.circular(8), child: Container(width: 32, height: 32, decoration: BoxDecoration(color: colors.comingSoonBadge, borderRadius: BorderRadius.circular(8)), child: Icon(Icons.close_rounded, size: 18, color: colors.textSecondary))),
                             ]),
                           ),
                           Padding(padding: const EdgeInsets.only(top: 16), child: Divider(height: 1, color: colors.divider)),
@@ -393,7 +395,7 @@ class _SubCategoryRow extends StatelessWidget {
                             child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                               OutlinedButton(onPressed: Get.back, style: OutlinedButton.styleFrom(side: BorderSide(color: colors.border), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: Text('Cancel', style: TextStyle(fontFamily: 'Poppins', color: colors.textSecondary, fontSize: 14))),
                               const SizedBox(width: 10),
-                              ElevatedButton(onPressed: () { controller.deleteSubCategory(categoryId, index); Get.back(); }, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: const Text('Delete', style: TextStyle(fontFamily: 'Poppins', color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14))),
+                              ElevatedButton(onPressed: () { controller.deleteSubCategory(categoryId, index); Get.back(); }, style: ElevatedButton.styleFrom(backgroundColor: colors.error, elevation: 0, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: const Text('Delete', style: TextStyle(fontFamily: 'Poppins', color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14))),
                             ]),
                           ),
                         ],
@@ -416,8 +418,7 @@ class _StatCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color iconColor;
-  final Color iconBg;
-  const _StatCard({required this.label, required this.value, required this.icon, required this.iconColor, required this.iconBg});
+  const _StatCard({required this.label, required this.value, required this.icon, required this.iconColor});
 
   @override
   Widget build(BuildContext context) {
@@ -435,7 +436,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(value, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
         ])),
-        Container(width: 46, height: 46, decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(12)),
+        Container(width: 46, height: 46, decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
           child: Icon(icon, color: iconColor, size: 22)),
       ]),
     );
@@ -453,8 +454,9 @@ class _ActionBtn extends StatelessWidget {
   Widget build(BuildContext context) {
     return Tooltip(
       message: tooltip,
-      child: GestureDetector(
+      child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
         child: Container(
           width: 32, height: 32,
           decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
@@ -522,8 +524,9 @@ class _FormDialog extends StatelessWidget {
                           ),
                         ),
                       ),
-                      GestureDetector(
+                      InkWell(
                         onTap: Get.back,
+                        borderRadius: BorderRadius.circular(8),
                         child: Container(
                           width: 32, height: 32,
                           decoration: BoxDecoration(

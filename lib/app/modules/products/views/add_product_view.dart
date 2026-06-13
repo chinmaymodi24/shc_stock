@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' as io;
 import 'package:get/get.dart';
+import 'package:desktop_drop/desktop_drop.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:cross_file/cross_file.dart';
 import '../controllers/products_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../dashboard/widgets/web_sidebar.dart';
@@ -85,7 +90,7 @@ class _WebAddProductLayout extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
-                              child: const Text('Cancel', style: TextStyle(fontSize: 14, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
+                              child: Text('Cancel', style: TextStyle(fontSize: 14, color: colors.textSecondary, fontFamily: 'Poppins')),
                             ),
                             const SizedBox(width: 12),
                             ElevatedButton.icon(
@@ -133,7 +138,7 @@ class _WebAddProductLayout extends StatelessWidget {
         children: [
           const Spacer(),
           Stack(children: [
-            IconButton(icon: const Icon(Icons.notifications_outlined, color: Color(0xFF1A1240), size: 24), onPressed: () {}),
+            IconButton(icon: Icon(Icons.notifications_outlined, color: colors.textPrimary, size: 24), onPressed: () {}),
             Positioned(top: 8, right: 8, child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle))),
           ]),
           const SizedBox(width: 4),
@@ -378,8 +383,79 @@ class _PricingSectionState extends State<_PricingSection> {
 }
 
 // ── Section: Product Image ────────────────────────────────────────────────────
-class _ImageSection extends StatelessWidget {
+class _ImageSection extends StatefulWidget {
   const _ImageSection();
+
+  @override
+  State<_ImageSection> createState() => _ImageSectionState();
+}
+
+class _ImageSectionState extends State<_ImageSection> {
+  bool _isDragging = false;
+  final List<XFile> _files = [];
+
+  Future<void> _pickFiles() async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.image,
+      withData: kIsWeb, // Important for Web to get bytes
+    );
+
+    if (result == null) return;
+
+    final pickedFiles = result.files.map((e) {
+      if (kIsWeb) {
+        return XFile.fromData(e.bytes!, name: e.name);
+      }
+      return XFile(e.path!);
+    }).toList();
+
+    setState(() {
+      _files.addAll(pickedFiles);
+    });
+  }
+
+  void _removeFile(int index) {
+    setState(() {
+      _files.removeAt(index);
+    });
+  }
+
+  void _showImagePopup(XFile file) {
+    Get.dialog(
+      Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(20),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              constraints: const BoxConstraints(maxWidth: 800, maxHeight: 800),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.black,
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InteractiveViewer(
+                child: kIsWeb
+                    ? Image.network(file.path, fit: BoxFit.contain)
+                    : Image.file(io.File(file.path), fit: BoxFit.contain),
+              ),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: IconButton(
+                onPressed: () => Get.back(),
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 30),
+                style: IconButton.styleFrom(backgroundColor: Colors.black45),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -397,41 +473,129 @@ class _ImageSection extends StatelessWidget {
         children: [
           Text('Product Image', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
           const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            height: 180,
-            decoration: BoxDecoration(
-              color: colors.inputFill,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: colors.border, style: BorderStyle.solid),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 48, height: 48,
-                  decoration: const BoxDecoration(color: Color(0xFFEEECFF), shape: BoxShape.circle),
-                  child: const Icon(Icons.cloud_upload_outlined, color: AppColors.primaryPurple, size: 26),
-                ),
-                const SizedBox(height: 10),
-                const Text('Drag & drop image here', style: TextStyle(fontSize: 13, color: Color(0xFF6B6B8A), fontFamily: 'Poppins')),
-                const Text('or', style: TextStyle(fontSize: 12, color: Color(0xFF9B9BB4), fontFamily: 'Poppins')),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryOrange,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          DropTarget(
+            onDragEntered: (_) => setState(() => _isDragging = true),
+            onDragExited: (_) => setState(() => _isDragging = false),
+            onDragDone: (details) {
+              setState(() {
+                _isDragging = false;
+                _files.addAll(details.files);
+              });
+            },
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: _pickFiles,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: double.infinity,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    color: _isDragging ? AppColors.primaryPurple.withValues(alpha: 0.05) : colors.inputFill,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _isDragging ? AppColors.primaryPurple : colors.border,
+                      style: BorderStyle.solid,
+                      width: _isDragging ? 2 : 1,
+                    ),
                   ),
-                  child: const Text('Browse Image', style: TextStyle(fontSize: 13, color: Colors.white, fontFamily: 'Poppins')),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 48, height: 48,
+                        decoration: BoxDecoration(
+                          color: _isDragging ? AppColors.primaryPurple.withValues(alpha: 0.2) : const Color(0xFFEEECFF),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          _isDragging ? Icons.download_rounded : Icons.cloud_upload_outlined,
+                          color: AppColors.primaryPurple,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        _isDragging ? 'Release to upload' : 'Drag & drop image here',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: _isDragging ? FontWeight.w600 : FontWeight.w400,
+                          color: _isDragging ? AppColors.primaryPurple : colors.textSecondary,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                      if (!_isDragging) ...[
+                        Text('or', style: TextStyle(fontSize: 12, color: colors.textHint, fontFamily: 'Poppins')),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: _pickFiles,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryOrange,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('Browse Image', style: TextStyle(fontSize: 13, color: Colors.white, fontFamily: 'Poppins')),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
           ),
+          if (_files.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _files.asMap().entries.map((entry) {
+                final index = entry.key;
+                final file = entry.value;
+                return Stack(
+                  children: [
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () => _showImagePopup(file),
+                        child: Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: colors.divider),
+                            image: DecorationImage(
+                              image: kIsWeb
+                                  ? NetworkImage(file.path)
+                                  : FileImage(io.File(file.path)) as ImageProvider,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          onTap: () => _removeFile(index),
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                            child: const Icon(Icons.close, size: 12, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ],
           const SizedBox(height: 8),
-          const Text('JPG, PNG or WEBP. Max size of 2MB.', style: TextStyle(fontSize: 11.5, color: Color(0xFF9B9BB4), fontFamily: 'Poppins')),
+          Text('JPG, PNG or WEBP. Max size of 2MB.', style: TextStyle(fontSize: 11.5, color: colors.textHint, fontFamily: 'Poppins')),
         ],
       ),
     );
@@ -477,7 +641,7 @@ class _StatusSectionState extends State<_StatusSection> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Low Stock Alert', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Poppins')),
+              Text('Low Stock Alert', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colors.textPrimary, fontFamily: 'Poppins')),
               Obx(() => Switch(
                 value: widget.c.lowStockAlertEnabled.value,
                 onChanged: (v) => widget.c.lowStockAlertEnabled.value = v,
@@ -503,13 +667,14 @@ class _VariantToggleGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Obx(() => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Flexible(child: Text(label, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF1A1240), fontFamily: 'Poppins'))),
+            Flexible(child: Text(label, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'Poppins'))),
             Switch(
               value: enabledObs.value,
               onChanged: (v) => enabledObs.value = v,
@@ -535,7 +700,7 @@ class _VariantToggleGroup extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(opt, style: const TextStyle(fontSize: 12.5, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+              Text(opt, style: TextStyle(fontSize: 12.5, color: colors.textPrimary, fontFamily: 'Poppins')),
             ]),
           )),
         ],
@@ -581,10 +746,11 @@ class _FormField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+        Text(label, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: colors.textPrimary, fontFamily: 'Poppins')),
         const SizedBox(height: 6),
         child,
       ],

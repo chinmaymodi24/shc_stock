@@ -53,6 +53,12 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
   final Color drawerBg;       // mobile drawer body
   final Color comingSoonBadge;
 
+  // Semantic Action Colors
+  final Color purple;
+  final Color success;
+  final Color warning;
+  final Color error;
+
   const AppThemeColors({
     required this.background,
     required this.surface,
@@ -69,6 +75,10 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     required this.sidebarFooter,
     required this.drawerBg,
     required this.comingSoonBadge,
+    required this.purple,
+    required this.success,
+    required this.warning,
+    required this.error,
   });
 
   // ── Light ──────────────────────────────────────────────────────
@@ -88,6 +98,10 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     sidebarFooter:   Color(0x14000000),  // black 8%
     drawerBg:        Color(0xFFFFFFFF),
     comingSoonBadge: Color(0xFFF5F4FF),
+    purple:          Color(0xFF2B1888),
+    success:         Color(0xFF22C55E),
+    warning:         Color(0xFFF59E0B),
+    error:           Color(0xFFEF4444),
   );
 
   // ── Dark ───────────────────────────────────────────────────────
@@ -107,6 +121,10 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     sidebarFooter:   Color(0x33000000),  // black 20%
     drawerBg:        Color(0xFF1E1E2E),
     comingSoonBadge: Color(0xFF252538),
+    purple:          Color(0xFFB1A5FF),
+    success:         Color(0xFF34D399),
+    warning:         Color(0xFFFBBF24),
+    error:           Color(0xFFF87171),
   );
 
   @override
@@ -116,6 +134,7 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     Color? border, Color? divider, Color? inputFill,
     Color? rowEven, Color? tagBg, Color? iconBgPurple,
     Color? sidebarFooter, Color? drawerBg, Color? comingSoonBadge,
+    Color? purple, Color? success, Color? warning, Color? error,
   }) {
     return AppThemeColors(
       background:      background      ?? this.background,
@@ -133,6 +152,10 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
       sidebarFooter:   sidebarFooter   ?? this.sidebarFooter,
       drawerBg:        drawerBg        ?? this.drawerBg,
       comingSoonBadge: comingSoonBadge ?? this.comingSoonBadge,
+      purple:          purple          ?? this.purple,
+      success:         success         ?? this.success,
+      warning:         warning         ?? this.warning,
+      error:           error           ?? this.error,
     );
   }
 
@@ -155,6 +178,10 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
       sidebarFooter:   Color.lerp(sidebarFooter,   other.sidebarFooter,   t)!,
       drawerBg:        Color.lerp(drawerBg,        other.drawerBg,        t)!,
       comingSoonBadge: Color.lerp(comingSoonBadge, other.comingSoonBadge, t)!,
+      purple:          Color.lerp(purple,          other.purple,          t)!,
+      success:         Color.lerp(success,         other.success,         t)!,
+      warning:         Color.lerp(warning,         other.warning,         t)!,
+      error:           Color.lerp(error,           other.error,           t)!,
     );
   }
 }

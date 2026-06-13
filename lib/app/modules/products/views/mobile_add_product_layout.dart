@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' as io;
 import 'package:get/get.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:cross_file/cross_file.dart';
 import '../controllers/products_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../routes/app_routes.dart';
@@ -43,10 +47,10 @@ class MobileAddProductLayout extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text('Cancel',
+                    child: Text('Cancel',
                         style: TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF6B6B8A),
+                            color: colors.textSecondary,
                             fontFamily: 'Poppins')),
                   ),
                 ),
@@ -453,6 +457,7 @@ class _MobileVariantsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return _MobileSectionCard(
       title: 'Variants / Specifications',
       child: Column(
@@ -620,6 +625,7 @@ class _MobilePricingSectionState extends State<_MobilePricingSection> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return _MobileSectionCard(
       title: 'Pricing & Stock',
       child: Column(
@@ -707,66 +713,197 @@ class _MobilePricingSectionState extends State<_MobilePricingSection> {
 }
 
 // ── Section: Product Image (Mobile) ──────────────────────────────────────────
-class _MobileImageSection extends StatelessWidget {
+class _MobileImageSection extends StatefulWidget {
   const _MobileImageSection();
 
   @override
+  State<_MobileImageSection> createState() => _MobileImageSectionState();
+}
+
+class _MobileImageSectionState extends State<_MobileImageSection> {
+  final List<XFile> _files = [];
+
+  Future<void> _pickFiles() async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.image,
+      withData: kIsWeb, // Important for Web to get bytes
+    );
+
+    if (result == null) return;
+
+    final pickedFiles = result.files.map((e) {
+      if (kIsWeb) {
+        return XFile.fromData(e.bytes!, name: e.name);
+      }
+      return XFile(e.path!);
+    }).toList();
+
+    setState(() {
+      _files.addAll(pickedFiles);
+    });
+  }
+
+  void _removeFile(int index) {
+    setState(() {
+      _files.removeAt(index);
+    });
+  }
+
+  void _showImagePopup(XFile file) {
+    Get.dialog(
+      Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.black,
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InteractiveViewer(
+                child: kIsWeb
+                    ? Image.network(file.path, fit: BoxFit.contain)
+                    : Image.file(io.File(file.path), fit: BoxFit.contain),
+              ),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: IconButton(
+                onPressed: () => Get.back(),
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                style: IconButton.styleFrom(backgroundColor: Colors.black45),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return _MobileSectionCard(
       title: 'Product Image',
       child: Column(
         children: [
-          Container(
-            width: double.infinity,
-            height: 160,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F7FF),
-              borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: const Color(0xFFE0DFF5), style: BorderStyle.solid),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: const BoxDecoration(
-                      color: Color(0xFFEEECFF), shape: BoxShape.circle),
-                  child: const Icon(Icons.cloud_upload_outlined,
-                      color: AppColors.primaryPurple, size: 26),
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: _pickFiles,
+              child: Container(
+                width: double.infinity,
+                height: 160,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8F7FF),
+                  borderRadius: BorderRadius.circular(12),
+                  border:
+                      Border.all(color: const Color(0xFFE0DFF5), style: BorderStyle.solid),
                 ),
-                const SizedBox(height: 10),
-                const Text('Tap to upload image',
-                    style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF6B6B8A),
-                        fontFamily: 'Poppins')),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryOrange,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: const Text('Browse Image',
-                      style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white,
-                          fontFamily: 'Poppins')),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: const BoxDecoration(
+                          color: Color(0xFFEEECFF), shape: BoxShape.circle),
+                      child: const Icon(Icons.cloud_upload_outlined,
+                          color: AppColors.primaryPurple, size: 26),
+                    ),
+                    const SizedBox(height: 10),
+                    Text('Tap to upload image',
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: colors.textSecondary,
+                            fontFamily: 'Poppins')),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: _pickFiles,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryOrange,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Browse Image',
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.white,
+                              fontFamily: 'Poppins')),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
+          if (_files.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 80,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _files.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final file = _files[index];
+                  return Stack(
+                    children: [
+                      MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          onTap: () => _showImagePopup(file),
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFE0DFF5)),
+                              image: DecorationImage(
+                                image: kIsWeb
+                                    ? NetworkImage(file.path)
+                                    : FileImage(io.File(file.path)) as ImageProvider,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: GestureDetector(
+                            onTap: () => _removeFile(index),
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: const BoxDecoration(
+                                  color: Colors.red, shape: BoxShape.circle),
+                              child: const Icon(Icons.close,
+                                  size: 14, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
-          const Text('JPG, PNG or WEBP. Max size of 2MB.',
+          Text('JPG, PNG or WEBP. Max size of 2MB.',
               style: TextStyle(
                   fontSize: 11.5,
-                  color: Color(0xFF9B9BB4),
+                  color: colors.textHint,
                   fontFamily: 'Poppins')),
         ],
       ),
@@ -788,6 +925,7 @@ class _MobileStatusSectionState extends State<_MobileStatusSection> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return _MobileSectionCard(
       title: 'Status',
       child: Column(
@@ -808,11 +946,11 @@ class _MobileStatusSectionState extends State<_MobileStatusSection> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Low Stock Alert',
+              Text('Low Stock Alert',
                   style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF1A1240),
+                      color: colors.textPrimary,
                       fontFamily: 'Poppins')),
               Obx(() => Switch(
                     value: widget.c.lowStockAlertEnabled.value,
