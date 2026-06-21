@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/theme/app_text_styles.dart';
-import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/core/theme/theme_controller.dart';
 import '../controllers/login_controller.dart';
-import 'language_selector.dart';
 import 'shc_logo.dart';
 
 class LoginForm extends GetView<LoginController> {
@@ -31,23 +31,14 @@ class LoginForm extends GetView<LoginController> {
             const SizedBox(height: 24),
           ],
 
-          // Web: language selector at top-right of card
+          // Web only: theme toggle at top-right of card
           if (!showLogo) ...[
             Align(
               alignment: Alignment.centerRight,
-              child: const LanguageSelector(),
+              child: const _LoginThemeToggle(),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 40),
           ],
-
-
-          // Web: language selector at top-right of card
-            Align(
-              alignment: Alignment.centerLeft,
-              child: SizedBox(
-                  width: 190,
-                  child: const SidebarThemeSelector()),
-            ),
 
           /// TITLE
           Center(
@@ -114,19 +105,7 @@ class LoginForm extends GetView<LoginController> {
           /// SIGN IN BUTTON
           _buildSignInButton(),
 
-          const SizedBox(height: 20),
-
-          /// OR DIVIDER
-          _buildOrDivider(context),
-
-          const SizedBox(height: 20),
-
-          /// SIGN IN WITH ANOTHER ACCOUNT
-          _buildAlternateSignInButton(),
-
-          isMobile == true
-              ? const SizedBox(height: 24)
-              : const SizedBox(height: 74),
+          const SizedBox(height: 32),
 
           /// SECURITY BADGE
           _buildSecurityBadge(context),
@@ -161,6 +140,7 @@ class LoginForm extends GetView<LoginController> {
       keyboardType: TextInputType.emailAddress,
       validator: controller.validateEmail,
       style: AppTextStyles.inputTextCtx(context),
+      textInputAction: TextInputAction.next,
       decoration: InputDecoration(
         hintText: 'Enter your email',
         hintStyle: AppTextStyles.inputHintCtx(context),
@@ -204,6 +184,8 @@ class LoginForm extends GetView<LoginController> {
         obscureText: !controller.isPasswordVisible.value,
         validator: controller.validatePassword,
         style: AppTextStyles.inputTextCtx(context),
+        textInputAction: TextInputAction.done,
+        onFieldSubmitted: (_) => controller.signIn(),
         decoration: InputDecoration(
           hintText: 'Enter your password',
           hintStyle: AppTextStyles.inputHintCtx(context),
@@ -251,6 +233,7 @@ class LoginForm extends GetView<LoginController> {
   }
 
   Widget _buildRememberMeRow(BuildContext context) {
+    final colors = context.appColors;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -263,12 +246,13 @@ class LoginForm extends GetView<LoginController> {
                 child: Checkbox(
                   value: controller.rememberMe.value,
                   onChanged: controller.toggleRememberMe,
-                  activeColor: AppColors.primaryPurple,
+                  activeColor: AppColors.primaryOrange,
+                  checkColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
                   ),
                   side: BorderSide(
-                    color: context.appColors.border,
+                    color: colors.textSecondary,
                     width: 1.5,
                   ),
                 ),
@@ -280,7 +264,14 @@ class LoginForm extends GetView<LoginController> {
         ),
         GestureDetector(
           onTap: controller.forgotPassword,
-          child: Text('Forgot Password?', style: AppTextStyles.forgotPassword),
+          child: Text(
+            'Forgot Password?',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: colors.purple,
+            ),
+          ),
         ),
       ],
     );
@@ -323,54 +314,6 @@ class LoginForm extends GetView<LoginController> {
     );
   }
 
-  Widget _buildOrDivider(BuildContext context) {
-    final colors = context.appColors;
-    return Row(
-      children: [
-        Expanded(
-          child: Divider(color: colors.border, thickness: 1),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Text('OR', style: AppTextStyles.orDividerCtx(context)),
-        ),
-        Expanded(
-          child: Divider(color: colors.border, thickness: 1),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAlternateSignInButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: OutlinedButton(
-        onPressed: controller.signInWithAnotherAccount,
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.primaryPurple, width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.person_outline_rounded,
-              color: AppColors.primaryPurple,
-              size: 20,
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'Sign in with another account',
-              style: AppTextStyles.buttonOutlineText,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildSecurityBadge(BuildContext context) {
     final colors = context.appColors;
@@ -391,7 +334,7 @@ class LoginForm extends GetView<LoginController> {
             ),
             child: const Icon(
               Icons.verified_user_rounded,
-              color: AppColors.primaryPurple,
+              color: AppColors.primaryOrange,
               size: 22,
             ),
           ),
@@ -411,6 +354,66 @@ class LoginForm extends GetView<LoginController> {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Compact theme toggle for the login card ───────────────────────────────────
+class _LoginThemeToggle extends StatelessWidget {
+  const _LoginThemeToggle();
+
+  @override
+  Widget build(BuildContext context) {
+    final tc = Get.find<ThemeController>();
+    final colors = context.appColors;
+    return Obx(() => Container(
+      height: 36,
+      decoration: BoxDecoration(
+        color: colors.iconBgPurple,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: colors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _TBtn(icon: Icons.wb_sunny_rounded,  label: 'Light',  isActive: tc.isLight,  onTap: () => tc.setTheme(ThemeMode.light)),
+          _TBtn(icon: Icons.nightlight_round,   label: 'Dark',   isActive: tc.isDark,   onTap: () => tc.setTheme(ThemeMode.dark)),
+          _TBtn(icon: Icons.devices_rounded,    label: 'System', isActive: tc.isSystem, onTap: () => tc.setTheme(ThemeMode.system)),
+        ],
+      ),
+    ));
+  }
+}
+
+class _TBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+  const _TBtn({required this.icon, required this.label, required this.isActive, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return Tooltip(
+      message: label,
+      preferBelow: true,
+      textStyle: const TextStyle(fontSize: 11, fontFamily: 'Poppins', color: Colors.white),
+      decoration: BoxDecoration(color: const Color(0xFF1A1240), borderRadius: BorderRadius.circular(6)),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: 36,
+          height: 36,
+          margin: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.primaryOrange : Colors.transparent,
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Icon(icon, size: 16, color: isActive ? Colors.white : colors.textSecondary),
+        ),
       ),
     );
   }

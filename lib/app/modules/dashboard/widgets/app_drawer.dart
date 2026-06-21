@@ -101,7 +101,6 @@ class AppDrawer extends StatelessWidget {
             const _DrawerThemeSelector(),
 
             // ── Footer ───────────────────────────────────────
-            Divider(color: colors.divider),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Row(children: [
@@ -129,55 +128,74 @@ class _DrawerThemeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final tc = Get.find<ThemeController>();
     final colors = context.appColors;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 8),
-            child: Text(
-              'Theme',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: colors.textSecondary,
-                fontFamily: 'Poppins',
-                letterSpacing: 0.5,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Divider(height: 1, color: colors.divider),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Row(
+            children: [
+              // Icon badge
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryOrange.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.palette_outlined, color: AppColors.primaryOrange, size: 18),
               ),
-            ),
+              const SizedBox(width: 12),
+              // Label
+              Expanded(
+                child: Text(
+                  'Appearance',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+              ),
+              // Compact 3-icon toggle
+              Obx(() => Container(
+                height: 36,
+                decoration: BoxDecoration(
+                  color: colors.iconBgPurple,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: colors.divider),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _DrawerThemeBtn(
+                      icon: Icons.wb_sunny_rounded,
+                      label: 'Light',
+                      isActive: tc.isLight,
+                      onTap: () => tc.setTheme(ThemeMode.light),
+                    ),
+                    _DrawerThemeBtn(
+                      icon: Icons.nightlight_round,
+                      label: 'Dark',
+                      isActive: tc.isDark,
+                      onTap: () => tc.setTheme(ThemeMode.dark),
+                    ),
+                    _DrawerThemeBtn(
+                      icon: Icons.devices_rounded,
+                      label: 'System',
+                      isActive: tc.isSystem,
+                      onTap: () => tc.setTheme(ThemeMode.system),
+                    ),
+                  ],
+                ),
+              )),
+            ],
           ),
-          Obx(() => Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: colors.iconBgPurple,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                _DrawerThemeBtn(
-                  icon: Icons.wb_sunny_rounded,
-                  label: 'Light',
-                  isActive: tc.isLight,
-                  onTap: () => tc.setTheme(ThemeMode.light),
-                ),
-                _DrawerThemeBtn(
-                  icon: Icons.nightlight_round,
-                  label: 'Dark',
-                  isActive: tc.isDark,
-                  onTap: () => tc.setTheme(ThemeMode.dark),
-                ),
-                _DrawerThemeBtn(
-                  icon: Icons.devices_rounded,
-                  label: 'System',
-                  isActive: tc.isSystem,
-                  onTap: () => tc.setTheme(ThemeMode.system),
-                ),
-              ],
-            ),
-          )),
-        ],
-      ),
+        ),
+        Divider(height: 1, color: colors.divider),
+      ],
     );
   }
 }
@@ -197,36 +215,29 @@ class _DrawerThemeBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dimColor = context.appColors.textSecondary;
-    return Expanded(
+    return Tooltip(
+      message: label,
+      preferBelow: false,
+      textStyle: const TextStyle(fontSize: 11, fontFamily: 'Poppins', color: Colors.white),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1240),
+        borderRadius: BorderRadius.circular(6),
+      ),
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          duration: const Duration(milliseconds: 180),
+          width: 36,
+          height: 36,
+          margin: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             color: isActive ? AppColors.primaryOrange : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(7),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isActive ? Colors.white : dimColor,
-              ),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
-                  color: isActive ? Colors.white : dimColor,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-            ],
+          child: Icon(
+            icon,
+            size: 16,
+            color: isActive ? Colors.white : context.appColors.textSecondary,
           ),
         ),
       ),

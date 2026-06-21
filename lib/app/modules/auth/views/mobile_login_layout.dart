@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
-import '../widgets/language_selector.dart';
+import '../../../core/theme/theme_controller.dart';
 import '../widgets/login_form.dart';
 import '../widgets/warehouse_illustration.dart';
 
@@ -45,11 +46,11 @@ class MobileLoginLayout extends StatelessWidget {
                   ),
                 ),
 
-                // Language selector — respects status-bar safe area
+                // Theme toggle — respects status-bar safe area
                 Positioned(
                   top: topPadding + 12,
                   right: 16,
-                  child: const LanguageSelector(),
+                  child: const _MobileThemeToggle(),
                 ),
               ],
             ),
@@ -89,6 +90,58 @@ class MobileLoginLayout extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Floating theme toggle for mobile login image overlay ──────────────────────
+class _MobileThemeToggle extends StatelessWidget {
+  const _MobileThemeToggle();
+
+  @override
+  Widget build(BuildContext context) {
+    final tc = Get.find<ThemeController>();
+    return Obx(() => Container(
+      height: 36,
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _MobileTBtn(icon: Icons.wb_sunny_rounded,  label: 'Light',  isActive: tc.isLight,  onTap: () => tc.setTheme(ThemeMode.light)),
+          _MobileTBtn(icon: Icons.nightlight_round,   label: 'Dark',   isActive: tc.isDark,   onTap: () => tc.setTheme(ThemeMode.dark)),
+          _MobileTBtn(icon: Icons.devices_rounded,    label: 'System', isActive: tc.isSystem, onTap: () => tc.setTheme(ThemeMode.system)),
+        ],
+      ),
+    ));
+  }
+}
+
+class _MobileTBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+  const _MobileTBtn({required this.icon, required this.label, required this.isActive, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        width: 36,
+        height: 36,
+        margin: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.primaryOrange : Colors.transparent,
+          borderRadius: BorderRadius.circular(7),
+        ),
+        child: Icon(icon, size: 16, color: isActive ? Colors.white : Colors.white60),
       ),
     );
   }

@@ -141,35 +141,62 @@ class SidebarThemeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tc = Get.find<ThemeController>();
-    return Container(
-      margin: const EdgeInsets.fromLTRB(10, 0, 10, 8),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Obx(() => Row(
-        children: [
-          _ThemeBtn(
-            icon: Icons.wb_sunny_rounded,
-            label: 'Light',
-            isActive: tc.isLight,
-            onTap: () => tc.setTheme(ThemeMode.light),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Subtle top divider
+        Divider(height: 1, color: Colors.white.withValues(alpha: 0.12)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Section label
+              Text(
+                'APPEARANCE',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white.withValues(alpha: 0.45),
+                  letterSpacing: 1.2,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Toggle strip
+              Obx(() => Container(
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.20),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    _ThemeBtn(
+                      icon: Icons.wb_sunny_rounded,
+                      label: 'Light',
+                      isActive: tc.isLight,
+                      onTap: () => tc.setTheme(ThemeMode.light),
+                    ),
+                    _ThemeBtn(
+                      icon: Icons.nightlight_round,
+                      label: 'Dark',
+                      isActive: tc.isDark,
+                      onTap: () => tc.setTheme(ThemeMode.dark),
+                    ),
+                    _ThemeBtn(
+                      icon: Icons.devices_rounded,
+                      label: 'System',
+                      isActive: tc.isSystem,
+                      onTap: () => tc.setTheme(ThemeMode.system),
+                    ),
+                  ],
+                ),
+              )),
+            ],
           ),
-          _ThemeBtn(
-            icon: Icons.nightlight_round,
-            label: 'Dark',
-            isActive: tc.isDark,
-            onTap: () => tc.setTheme(ThemeMode.dark),
-          ),
-          _ThemeBtn(
-            icon: Icons.devices_rounded,
-            label: 'Auto',
-            isActive: tc.isSystem,
-            onTap: () => tc.setTheme(ThemeMode.system),
-          ),
-        ],
-      )),
+        ),
+      ],
     );
   }
 }
@@ -193,31 +220,28 @@ class _ThemeBtn extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          duration: const Duration(milliseconds: 180),
+          margin: const EdgeInsets.all(3),
           decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.transparent,
+            color: isActive ? AppColors.primaryOrange : Colors.transparent,
             borderRadius: BorderRadius.circular(7),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
+          child: Tooltip(
+            message: label,
+            preferBelow: false,
+            textStyle: const TextStyle(fontSize: 11, fontFamily: 'Poppins', color: Colors.white),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1240),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: SizedBox(
+              height: double.infinity,
+              child: Icon(
                 icon,
-                size: 14,
-                color: isActive ? AppColors.primaryOrange : Colors.white70,
+                size: 15,
+                color: isActive ? Colors.white : Colors.white54,
               ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 9.5,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
-                  color: isActive ? AppColors.primaryOrange : Colors.white70,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

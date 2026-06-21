@@ -9,7 +9,6 @@ class WebLoginLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
