@@ -150,7 +150,7 @@ class WebProductsLayout extends StatelessWidget {
         color: colors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: colors.divider),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 3, offset: const Offset(0, 1))],
       ),
       child: Column(
         children: [
@@ -488,7 +488,7 @@ class _StatCard extends StatelessWidget {
           color: colors.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: colors.divider),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 3, offset: const Offset(0, 1))],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,

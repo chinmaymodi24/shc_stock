@@ -26,6 +26,8 @@ class AppDrawer extends StatelessWidget {
     AppRoutes.dashboard,
     AppRoutes.products,
     AppRoutes.categories,
+    AppRoutes.purchase,
+    AppRoutes.sales,
   };
 
   @override

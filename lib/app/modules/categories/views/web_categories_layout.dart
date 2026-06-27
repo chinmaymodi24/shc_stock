@@ -320,16 +320,14 @@ class _WebCategoriesLayoutState extends State<WebCategoriesLayout> {
 
   // ── Dialogs ───────────────────────────────────────────────────
   void _showAddCategoryDialog(CategoriesController c) {
-    final ctrl = TextEditingController();
-    Get.dialog(_FormDialog(
-      title: 'Add New Category',
-      hint: 'e.g. Ceramic Fiber Products',
-      controller: ctrl,
-      onSave: () {
-        c.addCategory(ctrl.text);
-        Get.back();
-      },
-    ));
+    Get.dialog(
+      _AddCategoryDialog(
+        onSave: (name) {
+          c.addCategory(name);
+          Get.back();
+        },
+      ),
+    );
   }
 
   void _showEditDialog(CategoriesController c, ProductCategory cat) {
@@ -1680,6 +1678,447 @@ class _FormDialog extends StatelessWidget {
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rich Add Category Dialog  (matches screenshot exactly)
+// ─────────────────────────────────────────────────────────────────────────────
+class _AddCategoryDialog extends StatefulWidget {
+  final void Function(String name) onSave;
+  const _AddCategoryDialog({required this.onSave});
+
+  @override
+  State<_AddCategoryDialog> createState() => _AddCategoryDialogState();
+}
+
+class _AddCategoryDialogState extends State<_AddCategoryDialog> {
+  final _nameCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+  int _selectedIcon = 0;
+  bool _isActive = true;
+  int _descLen = 0;
+
+  // 8 icons shown in dialog (matching screenshot grid)
+  static const _pickerIcons = [
+    Icons.grid_view_rounded,
+    Icons.label_outline_rounded,
+    Icons.shield_outlined,
+    Icons.local_fire_department_outlined,
+    Icons.inventory_2_outlined,
+    Icons.warning_amber_outlined,
+    Icons.group_outlined,
+    Icons.construction_outlined,
+  ];
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _descCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.zero,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520, minWidth: 400),
+          child: Container(
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.18),
+                  blurRadius: 40,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Header ──────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 22, 20, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Add Category',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: colors.textPrimary,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Create a new product category.',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: colors.textSecondary,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Close X button
+                      InkWell(
+                        onTap: Get.back,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: colors.comingSoonBadge,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(Icons.close_rounded,
+                              size: 18, color: colors.textSecondary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Divider(height: 1, color: colors.divider),
+                ),
+
+                // ── Form Body ────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Category Name
+                      RichText(
+                        text: TextSpan(
+                          text: 'Category Name ',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                            fontFamily: 'Poppins',
+                          ),
+                          children: const [
+                            TextSpan(
+                              text: '*',
+                              style: TextStyle(color: Color(0xFFEF4444)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _nameCtrl,
+                        autofocus: true,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          color: colors.textPrimary,
+                          fontFamily: 'Poppins',
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Enter category name',
+                          hintStyle: TextStyle(
+                              color: colors.textHint, fontFamily: 'Poppins', fontSize: 13.5),
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 13),
+                          filled: true,
+                          fillColor: colors.inputFill,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(color: colors.border),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(color: colors.border),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                                color: AppColors.primaryOrange, width: 1.5),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Description
+                      Text(
+                        'Description',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Stack(
+                        children: [
+                          TextField(
+                            controller: _descCtrl,
+                            maxLines: 3,
+                            maxLength: 250,
+                            onChanged: (v) =>
+                                setState(() => _descLen = v.length),
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              color: colors.textPrimary,
+                              fontFamily: 'Poppins',
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Enter description (optional)',
+                              hintStyle: TextStyle(
+                                  color: colors.textHint,
+                                  fontFamily: 'Poppins',
+                                  fontSize: 13.5),
+                              isDense: true,
+                              counterText: '', // hide default counter
+                              contentPadding: const EdgeInsets.fromLTRB(
+                                  14, 12, 14, 28),
+                              filled: true,
+                              fillColor: colors.inputFill,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide(color: colors.border),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide(color: colors.border),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                    color: AppColors.primaryOrange,
+                                    width: 1.5),
+                              ),
+                            ),
+                          ),
+                          // Custom counter bottom-right
+                          Positioned(
+                            bottom: 8,
+                            right: 12,
+                            child: Text(
+                              '$_descLen/250',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: colors.textHint,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Icon Picker
+                      Text(
+                        'Icon',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: _pickerIcons.asMap().entries.map((e) {
+                          final isSelected = e.key == _selectedIcon;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: GestureDetector(
+                              onTap: () =>
+                                  setState(() => _selectedIcon = e.key),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppColors.primaryOrange.withValues(alpha: 0.12)
+                                      : colors.iconBgPurple,
+                                  borderRadius: BorderRadius.circular(9),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? AppColors.primaryOrange
+                                        : colors.border,
+                                    width: isSelected ? 1.5 : 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  e.value,
+                                  size: 18,
+                                  color: isSelected
+                                      ? AppColors.primaryOrange
+                                      : colors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 10),
+                      // Browse more icons
+                      GestureDetector(
+                        onTap: () {},
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.grid_view_outlined,
+                                size: 14,
+                                color: AppColors.primaryOrange),
+                            const SizedBox(width: 5),
+                            Text(
+                              'Browse more icons',
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                color: AppColors.primaryOrange,
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Status toggle
+                      Text(
+                        'Status',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () =>
+                                setState(() => _isActive = !_isActive),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 44,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: _isActive
+                                    ? AppColors.primaryOrange
+                                    : colors.border,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Stack(
+                                children: [
+                                  AnimatedPositioned(
+                                    duration:
+                                        const Duration(milliseconds: 200),
+                                    left: _isActive ? 22 : 2,
+                                    top: 2,
+                                    child: Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            _isActive ? 'Active' : 'Inactive',
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w500,
+                              color: _isActive
+                                  ? AppColors.primaryOrange
+                                  : colors.textSecondary,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── Footer Buttons ───────────────────────────────
+                Divider(height: 1, color: colors.divider),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(
+                        onPressed: Get.back,
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: colors.border),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 22, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(9)),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontFamily: 'Poppins',
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (_nameCtrl.text.trim().isNotEmpty) {
+                            widget.onSave(_nameCtrl.text.trim());
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryOrange,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 22, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(9)),
+                        ),
+                        child: const Text(
+                          'Save Category',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            fontFamily: 'Poppins',
                           ),
                         ),
                       ),

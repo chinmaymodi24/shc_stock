@@ -4,9 +4,13 @@ import '../modules/dashboard/views/dashboard_view.dart';
 import '../modules/products/views/products_view.dart';
 import '../modules/products/views/add_product_view.dart';
 import '../modules/categories/views/categories_view.dart';
+import '../modules/purchase/views/purchase_view.dart';
+import '../modules/sales/views/sales_view.dart';
 import 'app_routes.dart';
 import 'products_binding.dart';
 import 'categories_binding.dart';
+import 'purchase_binding.dart';
+import 'sales_binding.dart';
 
 class AppPages {
   AppPages._();
@@ -40,6 +44,18 @@ class AppPages {
       name: AppRoutes.categories,
       page: () => const CategoriesView(),
       binding: CategoriesBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.purchase,
+      page: () => const PurchaseView(),
+      binding: PurchaseBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.sales,
+      page: () => const SalesView(),
+      binding: SalesBinding(),
       transition: Transition.fadeIn,
     ),
   ];
