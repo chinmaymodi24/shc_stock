@@ -8,6 +8,7 @@ abstract class AppRoutes {
   static const purchase   = '/purchase';
   static const sales      = '/sales';
   static const clients    = '/clients';
+  static const addClient  = '/clients/add';
   static const reports    = '/reports';
   static const users      = '/users';
   static const settings   = '/settings';

@@ -65,8 +65,10 @@ class WebSidebar extends StatelessWidget {
     AppRoutes.dashboard,
     AppRoutes.products,
     AppRoutes.categories,
+    AppRoutes.stock,
     AppRoutes.purchase,
     AppRoutes.sales,
+    AppRoutes.clients,
   };
 
   @override

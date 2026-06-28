@@ -9,6 +9,7 @@ import '../controllers/products_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../dashboard/widgets/web_sidebar.dart';
 import 'mobile_add_product_layout.dart';
+import 'web_add_product_layout.dart';
 
 class AddProductView extends StatelessWidget {
   const AddProductView({super.key});
@@ -17,7 +18,7 @@ class AddProductView extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= 700) return const _WebAddProductLayout();
+        if (constraints.maxWidth >= 700) return const WebAddProductLayout();
         return const MobileAddProductLayout();
       },
     );

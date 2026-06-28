@@ -6,11 +6,16 @@ import '../modules/products/views/add_product_view.dart';
 import '../modules/categories/views/categories_view.dart';
 import '../modules/purchase/views/purchase_view.dart';
 import '../modules/sales/views/sales_view.dart';
+import '../modules/clients/views/clients_view.dart';
+import '../modules/clients/views/add_client_view.dart';
+import '../modules/stock/views/stock_view.dart';
 import 'app_routes.dart';
 import 'products_binding.dart';
 import 'categories_binding.dart';
 import 'purchase_binding.dart';
 import 'sales_binding.dart';
+import 'clients_binding.dart';
+import 'stock_binding.dart';
 
 class AppPages {
   AppPages._();
@@ -56,6 +61,24 @@ class AppPages {
       name: AppRoutes.sales,
       page: () => const SalesView(),
       binding: SalesBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.clients,
+      page: () => const ClientsView(),
+      binding: ClientsBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.addClient,
+      page: () => const AddClientView(),
+      binding: ClientsBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.stock,
+      page: () => const StockView(),
+      binding: StockBinding(),
       transition: Transition.fadeIn,
     ),
   ];
