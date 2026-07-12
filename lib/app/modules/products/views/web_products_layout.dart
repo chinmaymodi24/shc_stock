@@ -180,17 +180,21 @@ class WebProductsLayout extends StatelessWidget {
   }
 
   // ── Filters Row ───────────────────────────────────────────────
+  // One fixed-height box + CrossAxisAlignment.stretch = every control
+  // (search, dropdowns, buttons) renders at EXACTLY the same height.
+  static const double _filterControlHeight = 44;
+
   Widget _buildFiltersRow(BuildContext context, ProductsController c) {
     final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      child: Obx(() => Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Search
-          Expanded(
-            child: SizedBox(
-              height: 40,
+      child: SizedBox(
+        height: _filterControlHeight,
+        child: Obx(() => Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Search
+            Expanded(
               child: TextField(
                 onChanged: (v) => c.searchQuery.value = v,
                 style: TextStyle(fontSize: 13, fontFamily: 'Poppins', color: colors.textPrimary),
@@ -217,55 +221,48 @@ class WebProductsLayout extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 160,
-            child: _FilterDropdown(
-              label: 'Category',
-              value: c.selectedCategory.value,
-              items: c.categoryNames,
-              onChanged: (v) => c.selectedCategory.value = v,
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 160,
+              child: _FilterDropdown(
+                value: c.selectedCategory.value,
+                items: c.categoryNames,
+                onChanged: (v) => c.selectedCategory.value = v,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 120,
-            child: _FilterDropdown(
-              label: 'Status',
-              value: c.selectedStatus.value,
-              items: const ['All Status', 'Active', 'Inactive'],
-              onChanged: (v) => c.selectedStatus.value = v,
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 120,
+              child: _FilterDropdown(
+                value: c.selectedStatus.value,
+                items: const ['All Status', 'Active', 'Inactive'],
+                onChanged: (v) => c.selectedStatus.value = v,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 130,
-            child: _FilterDropdown(
-              label: 'Stock Status',
-              value: c.selectedStockStatus.value,
-              items: const ['All', 'In Stock', 'Low Stock', 'Out of Stock'],
-              onChanged: (v) => c.selectedStockStatus.value = v,
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 130,
+              child: _FilterDropdown(
+                value: c.selectedStockStatus.value,
+                items: const ['All', 'In Stock', 'Low Stock', 'Out of Stock'],
+                onChanged: (v) => c.selectedStockStatus.value = v,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            height: 40,
-            child: OutlinedButton.icon(
+            const SizedBox(width: 12),
+            OutlinedButton.icon(
               onPressed: c.resetFilters,
               icon: Icon(Icons.refresh_rounded, size: 16, color: colors.textSecondary),
               label: Text('Reset', style: TextStyle(fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: colors.border),
                 padding: const EdgeInsets.symmetric(horizontal: 14),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            height: 40,
-            child: ElevatedButton.icon(
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
               onPressed: () {},
               icon: const Icon(Icons.filter_list_rounded, size: 16, color: Colors.white),
               label: const Text('Filter', style: TextStyle(fontSize: 13, color: Colors.white, fontFamily: 'Poppins')),
@@ -273,12 +270,14 @@ class WebProductsLayout extends StatelessWidget {
                 backgroundColor: AppColors.primaryOrange,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
-          ),
-        ],
-      )),
+          ],
+        )),
+      ),
     );
   }
 
@@ -382,9 +381,13 @@ class _ProductRow extends StatelessWidget {
     final colors = context.appColors;
 
     Color stockColor;
-    if (product.currentStock == 0) stockColor = colors.error;
-    else if (product.currentStock <= product.minimumStock) stockColor = colors.warning;
-    else stockColor = colors.success;
+    if (product.currentStock == 0) {
+      stockColor = colors.error;
+    } else if (product.currentStock <= product.minimumStock) {
+      stockColor = colors.warning;
+    } else {
+      stockColor = colors.success;
+    }
 
     Color statusBadgeColor;
     Color statusTextColor;
@@ -428,10 +431,13 @@ class _ProductRow extends StatelessWidget {
             Expanded(flex: 2, child: Text('${product.currentStock}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: stockColor, fontFamily: 'Poppins'))),
             Expanded(
               flex: 2,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: statusBadgeColor, borderRadius: BorderRadius.circular(20)),
-                child: Text(statusText, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: statusTextColor, fontFamily: 'Poppins'), textAlign: TextAlign.center),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: statusBadgeColor, borderRadius: BorderRadius.circular(20)),
+                  child: Text(statusText, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: statusTextColor, fontFamily: 'Poppins'), textAlign: TextAlign.center),
+                ),
               ),
             ),
             Expanded(flex: 2, child: Text(dateFmt.format(product.createdAt), style: TextStyle(fontSize: 12.5, color: colors.textSecondary, fontFamily: 'Poppins'))),
@@ -518,13 +524,11 @@ class _StatCard extends StatelessWidget {
 }
 
 class _FilterDropdown extends StatelessWidget {
-  final String label;
   final String value;
   final List<String> items;
   final ValueChanged<String> onChanged;
 
   const _FilterDropdown({
-    required this.label,
     required this.value,
     required this.items,
     required this.onChanged,
@@ -533,9 +537,9 @@ class _FilterDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    return SizedBox(
-      height: 40,
-      child: DropdownButtonFormField<String>(
+    // No fixed height here — the parent filter row stretches this to the
+    // shared control height so every filter control matches exactly.
+    return DropdownButtonFormField<String>(
         value: value,
         isDense: true,
         isExpanded: true,
@@ -546,14 +550,7 @@ class _FilterDropdown extends StatelessWidget {
           fontFamily: 'Poppins',
         ),
         decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            fontSize: 11,
-            color: colors.textHint,
-            fontFamily: 'Poppins',
-          ),
-          floatingLabelBehavior: FloatingLabelBehavior.always,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           isDense: true,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
@@ -576,7 +573,6 @@ class _FilterDropdown extends StatelessWidget {
         onChanged: (v) {
           if (v != null) onChanged(v);
         },
-      ),
     );
   }
 }

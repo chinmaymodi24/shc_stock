@@ -954,7 +954,7 @@ class _TextAreaFieldState extends State<_TextAreaField> {
           hintText: widget.hint,
           hintStyle: TextStyle(fontSize: 13, color: colors.textHint, fontFamily: 'Poppins'),
           filled: true, fillColor: colors.inputFill,
-          counterText: '${_count}/${widget.maxLength}',
+          counterText: '$_count/${widget.maxLength}',
           counterStyle: TextStyle(fontSize: 11, color: colors.textHint, fontFamily: 'Poppins'),
           contentPadding: const EdgeInsets.all(12),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: colors.border)),

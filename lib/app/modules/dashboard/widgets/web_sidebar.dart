@@ -51,7 +51,7 @@ class WebSidebar extends StatelessWidget {
     ),
     _NavItem(
       icon: Icons.manage_accounts_outlined,
-      label: 'Users',
+      label: 'Employee',
       route: AppRoutes.users,
     ),
     _NavItem(
@@ -69,12 +69,12 @@ class WebSidebar extends StatelessWidget {
     AppRoutes.purchase,
     AppRoutes.sales,
     AppRoutes.clients,
+    AppRoutes.users,
   };
 
   @override
   Widget build(BuildContext context) {
     final currentRoute = Get.currentRoute;
-    final tc = Get.find<ThemeController>();
 
     final colors = context.appColors;
     return Container(

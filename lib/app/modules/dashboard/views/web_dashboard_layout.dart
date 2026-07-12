@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/dashboard_controller.dart';
+import '../models/dashboard_models.dart';
 import '../widgets/web_sidebar.dart';
-import '../widgets/stat_card.dart';
+import '../widgets/bar_chart.dart';
 import '../widgets/donut_chart.dart';
 import '../widgets/sales_chart.dart';
 import '../widgets/recent_transactions.dart';
 import '../widgets/low_stock_table.dart';
-import '../widgets/quick_action_button.dart';
+import '../widgets/incoming_deliveries.dart';
+import '../widgets/category_breakdown.dart';
+import '../widgets/notes_todo.dart';
+import '../widgets/notes_dialog.dart';
 import '../../../core/theme/app_colors.dart';
 
 class WebDashboardLayout extends StatelessWidget {
@@ -33,15 +37,39 @@ class WebDashboardLayout extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildStatCards(c),
-                        const SizedBox(height: 24),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: c.dashboardStats.asMap().entries.map((e) {
+                            final isLast = e.key == c.dashboardStats.length - 1;
+                            return Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.only(right: isLast ? 0 : 16),
+                                child: _DashboardStatTile(data: e.value),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: _buildPurchasesChart(context, c)),
+                            const SizedBox(width: 16),
+                            Expanded(child: _buildSalesChart(context, c)),
+                            const SizedBox(width: 16),
+                            Expanded(child: _buildNewClientsChart(context, c)),
+                            const SizedBox(width: 16),
+                            Expanded(child: _buildCategoryDonut(context, c)),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
                         IntrinsicHeight(
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(flex: 45, child: _buildStockOverview(c)),
-                              const SizedBox(width: 20),
-                              Expanded(flex: 55, child: _buildRecentTransactions(c)),
+                              Expanded(flex: 65, child: _buildRecentTransactions(context, c)),
+                              const SizedBox(width: 16),
+                              Expanded(flex: 35, child: _buildIncomingDeliveries(context, c)),
                             ],
                           ),
                         ),
@@ -50,15 +78,14 @@ class WebDashboardLayout extends StatelessWidget {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(flex: 45, child: _buildLowStockAlert(c)),
-                              const SizedBox(width: 20),
-                              Expanded(flex: 55, child: _buildSalesOverview(c)),
+                              Expanded(child: _buildCategoryBreakdown(context, c)),
+                              const SizedBox(width: 16),
+                              Expanded(child: _buildLowStockAlerts(context, c)),
+                              const SizedBox(width: 16),
+                              Expanded(child: _buildNotesTodo(context, c)),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 20),
-                        _buildQuickActions(),
-                        const SizedBox(height: 16),
                       ],
                     ),
                   ),
@@ -71,95 +98,189 @@ class WebDashboardLayout extends StatelessWidget {
     );
   }
 
+  // ── Top bar: greeting + search + bell + avatar ───────────────────────────
   Widget _buildTopBar(BuildContext context, DashboardController c) {
     final colors = context.appColors;
     return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
       decoration: BoxDecoration(
         color: colors.topBarBg,
         border: Border(bottom: BorderSide(color: colors.divider, width: 1)),
       ),
       child: Row(
         children: [
-          const Spacer(),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Good morning, ${c.greetingName}!',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
+                const SizedBox(height: 2),
+                Text("Here's what's happening in your inventory today",
+                    style: TextStyle(fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
+              ],
+            ),
+          ),
+          Container(
+            width: 260,
+            height: 42,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(color: colors.tagBg, borderRadius: BorderRadius.circular(12)),
+            child: Row(
+              children: [
+                Icon(Icons.search_rounded, size: 19, color: colors.textSecondary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    style: TextStyle(fontSize: 13.5, color: colors.textPrimary, fontFamily: 'Poppins'),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      border: InputBorder.none,
+                      hintText: 'Search inventory...',
+                      hintStyle: TextStyle(fontSize: 13.5, color: colors.textSecondary, fontFamily: 'Poppins'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 14),
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(color: colors.warning.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(12)),
+            child: Icon(Icons.notifications_rounded, color: colors.warning, size: 19),
+          ),
+          const SizedBox(width: 14),
           Stack(
+            clipBehavior: Clip.none,
             children: [
-              IconButton(icon: Icon(Icons.notifications_outlined, color: colors.textPrimary, size: 24), onPressed: () {}),
-              Positioned(top: 8, right: 8, child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle))),
+              CircleAvatar(radius: 19, backgroundColor: AppColors.primaryPurple, child: const Icon(Icons.person_rounded, color: Colors.white, size: 20)),
+              Positioned(
+                bottom: -1,
+                right: -1,
+                child: Container(
+                  width: 10, height: 10,
+                  decoration: BoxDecoration(color: AppColors.primaryOrange, shape: BoxShape.circle, border: Border.all(color: colors.topBarBg, width: 2)),
+                ),
+              ),
             ],
           ),
-          const SizedBox(width: 4),
-          CircleAvatar(radius: 18, backgroundColor: AppColors.primaryOrange.withValues(alpha: 0.15), child: const Icon(Icons.person_rounded, color: AppColors.primaryOrange, size: 20)),
-          const SizedBox(width: 8),
-          Text('Admin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'Poppins')),
-          Icon(Icons.keyboard_arrow_down_rounded, color: colors.textSecondary, size: 18),
         ],
       ),
     );
   }
 
-  Widget _buildStatCards(DashboardController c) {
-    return Row(
-      children: c.webStatCards.asMap().entries.map((e) {
-        final isLast = e.key == c.webStatCards.length - 1;
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(right: isLast ? 0 : 16),
-            child: StatCard(data: e.value),
-          ),
-        );
-      }).toList(),
+  // ── Charts ────────────────────────────────────────────────────────────────
+  Widget _buildPurchasesChart(BuildContext context, DashboardController c) {
+    return _ChartCard(
+      title: 'Purchases (6 months)',
+      changeText: c.purchasesChange,
+      child: SimpleBarChart(data: c.purchasesData, barColor: AppColors.primaryPurple, height: 150),
     );
   }
 
-  Widget _buildStockOverview(DashboardController c) {
-    return _SectionCard(
-      title: 'Stock Overview',
-      child: DonutChart(inStock: c.inStockPercent, lowStock: c.lowStockPercent, outOfStock: c.outOfStockPercent, totalItems: c.totalItems),
+  Widget _buildSalesChart(BuildContext context, DashboardController c) {
+    return _ChartCard(
+      title: 'Sales (6 months)',
+      changeText: c.salesChange,
+      child: SimpleBarChart(data: c.salesData, barColor: AppColors.primaryOrange, height: 150),
     );
   }
 
-  Widget _buildRecentTransactions(DashboardController c) {
+  Widget _buildNewClientsChart(BuildContext context, DashboardController c) {
+    return _ChartCard(
+      title: 'New clients (6 months)',
+      changeText: c.newClientsChange,
+      child: SizedBox(height: 150, child: SalesLineChart(data: c.newClientsData, lineColor: AppColors.accentPurple)),
+    );
+  }
+
+  Widget _buildCategoryDonut(BuildContext context, DashboardController c) {
+    return _ChartCard(
+      title: 'Sales by category',
+      child: SizedBox(height: 150, child: Center(child: CategoryDonutChart(slices: c.categorySlices, size: 120))),
+    );
+  }
+
+  Widget _buildRecentTransactions(BuildContext context, DashboardController c) {
     return _SectionCard(
-      title: 'Recent Transactions',
-      trailing: TextButton(onPressed: () {}, child: const Text('View All', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryOrange, fontFamily: 'Poppins'))),
+      title: 'Recent transactions',
       child: RecentTransactions(transactions: c.recentTransactions),
     );
   }
 
-  Widget _buildLowStockAlert(DashboardController c) {
+  Widget _buildIncomingDeliveries(BuildContext context, DashboardController c) {
     return _SectionCard(
-      title: 'Low Stock Alert',
-      trailing: TextButton(onPressed: () {}, child: const Text('View All', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryOrange, fontFamily: 'Poppins'))),
-      child: LowStockTable(items: c.lowStockItems),
+      title: 'Incoming deliveries',
+      child: IncomingDeliveries(deliveries: c.incomingDeliveries),
     );
   }
 
-  Widget _buildSalesOverview(DashboardController c) {
+  Widget _buildCategoryBreakdown(BuildContext context, DashboardController c) {
     return _SectionCard(
-      title: 'Sales Overview',
-      trailing: Obx(() => _DropdownFilter(value: c.selectedSalesFilter.value, items: c.salesFilters, onChanged: c.changeSalesFilter)),
-      child: SizedBox(height: 220, child: SalesLineChart(data: c.salesChartData)),
+      title: 'Category breakdown',
+      child: CategoryBreakdown(categories: c.categorySlices),
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildLowStockAlerts(BuildContext context, DashboardController c) {
     return _SectionCard(
-      title: 'Quick Actions',
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: const [
-          QuickActionTile(icon: Icons.shopping_cart_outlined, label: 'Add Sale'),
-          QuickActionTile(icon: Icons.shopping_bag_outlined, label: 'Add Purchase'),
-          QuickActionTile(icon: Icons.inventory_2_outlined, label: 'Add Product'),
-          QuickActionTile(icon: Icons.warehouse_outlined, label: 'View Stock'),
+      title: 'Low stock alerts',
+      child: LowStockTable(items: c.lowStockAlerts),
+    );
+  }
+
+  Widget _buildNotesTodo(BuildContext context, DashboardController c) {
+    return _SectionCard(
+      title: 'Notes & to-dos',
+      trailing: TextButton(
+        onPressed: () => Get.dialog(NotesDialog(notes: c.notes, onToggle: c.toggleNote, onAdd: c.addNote)),
+        child: const Text('View All', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryOrange, fontFamily: 'Poppins')),
+      ),
+      child: NotesTodo(notes: c.notes, onToggle: c.toggleNote, onAdd: c.addNote),
+    );
+  }
+}
+
+// ── Pastel summary tile ────────────────────────────────────────────────────
+class _DashboardStatTile extends StatelessWidget {
+  final DashboardStatData data;
+  const _DashboardStatTile({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(color: data.bgColor, borderRadius: BorderRadius.circular(14)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(data.icon, color: data.iconColor, size: 20),
+          const SizedBox(height: 10),
+          Text(data.title, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: data.iconColor.withValues(alpha: 0.85), fontFamily: 'Poppins')),
+          const SizedBox(height: 6),
+          Text(data.value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+          const SizedBox(height: 4),
+          // Always reserve the caption line's space (invisible when there's
+          // no change value) so every tile is the same height naturally,
+          // without hardcoding a height that can drift out of sync with
+          // actual (async-loaded web font) text metrics.
+          Visibility(
+            visible: data.change != null,
+            maintainSize: true,
+            maintainAnimation: true,
+            maintainState: true,
+            child: Text(data.change ?? '', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF2FA85C), fontFamily: 'Poppins')),
+          ),
         ],
       ),
     );
   }
 }
 
+// ── Generic card wrapper for lists/tables ─────────────────────────────────
 class _SectionCard extends StatelessWidget {
   final String title;
   final Widget? trailing;
@@ -197,25 +318,44 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _DropdownFilter extends StatelessWidget {
-  final String value;
-  final List<String> items;
-  final ValueChanged<String> onChanged;
+// ── Chart card: title + chart + trailing change caption ───────────────────
+class _ChartCard extends StatelessWidget {
+  final String title;
+  final String? changeText;
+  final Widget child;
 
-  const _DropdownFilter({required this.value, required this.items, required this.onChanged});
+  const _ChartCard({required this.title, this.changeText, required this.child});
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(border: Border.all(color: colors.border), borderRadius: BorderRadius.circular(8)),
-      child: DropdownButton<String>(
-        value: value, isDense: true, underline: const SizedBox(),
-        dropdownColor: colors.surface,
-        style: TextStyle(fontSize: 12, color: colors.textPrimary, fontFamily: 'Poppins'),
-        items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-        onChanged: (v) { if (v != null) onChanged(v); },
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.divider),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 3, offset: const Offset(0, 1))],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
+          const SizedBox(height: 14),
+          child,
+          const SizedBox(height: 10),
+          // Always reserve the caption line's space (invisible when absent)
+          // so all 4 cards share the same height without a hardcoded value.
+          Visibility(
+            visible: changeText != null,
+            maintainSize: true,
+            maintainAnimation: true,
+            maintainState: true,
+            child: Text(changeText ?? '', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF2FA85C), fontFamily: 'Poppins')),
+          ),
+        ],
       ),
     );
   }

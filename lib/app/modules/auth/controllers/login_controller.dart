@@ -15,9 +15,10 @@ class LoginController extends GetxController {
 
   final List<String> languages = ['English', 'Hindi', 'Gujarati'];
 
-  // ── SharedPreferences keys ────────────────────────────────────
-  static const _keyRemember = 'remember_me';
-  static const _keyEmail    = 'saved_email';
+  // ── SharedPreferences keys ─────────────────────────────────
+  static const _keyRemember  = 'remember_me';
+  static const _keyEmail     = 'saved_email';
+  static const _keyPassword  = 'saved_password'; // legacy key, only used to purge old plaintext values
 
   // ── Lifecycle ─────────────────────────────────────────────────
   @override
@@ -33,22 +34,27 @@ class LoginController extends GetxController {
     super.onClose();
   }
 
-  // ── Load saved credentials on app start ──────────────────────
+  // ── Load saved credentials on app start ─────────────────────
   Future<void> _loadRememberedCredentials() async {
     final prefs = await SharedPreferences.getInstance();
+    // Purge any password persisted in plaintext by older versions of this app.
+    if (prefs.containsKey(_keyPassword)) await prefs.remove(_keyPassword);
+
     final isRemembered = prefs.getBool(_keyRemember) ?? false;
     if (isRemembered) {
-      rememberMe.value = true;
+      rememberMe.value     = true;
       emailController.text = prefs.getString(_keyEmail) ?? '';
     }
   }
 
-  // ── Save or clear credentials ─────────────────────────────────
+  // ── Save or clear credentials ──────────────────────────────
+  // Only the email is persisted. Passwords are never written to disk in
+  // plaintext; the user must always re-enter their password to sign in.
   Future<void> _saveRememberMe() async {
     final prefs = await SharedPreferences.getInstance();
     if (rememberMe.value) {
       await prefs.setBool(_keyRemember, true);
-      await prefs.setString(_keyEmail, emailController.text.trim());
+      await prefs.setString(_keyEmail,  emailController.text.trim());
     } else {
       await prefs.remove(_keyRemember);
       await prefs.remove(_keyEmail);
@@ -91,14 +97,11 @@ class LoginController extends GetxController {
 
       Get.offNamed(AppRoutes.dashboard);
     } catch (e) {
-      Get.snackbar(
+      _showTopRightToast(
         'Sign In Failed',
         'Something went wrong. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
         backgroundColor: const Color(0xFFEF4444),
         colorText: const Color(0xFFFFFFFF),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 12,
       );
     } finally {
       isLoading.value = false;
@@ -106,21 +109,39 @@ class LoginController extends GetxController {
   }
 
   void signInWithAnotherAccount() {
-    Get.snackbar(
+    _showTopRightToast(
       'Coming Soon',
       'Single Sign-On (SSO) will be available in a future release.',
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
     );
   }
 
   void forgotPassword() {
-    Get.snackbar(
+    _showTopRightToast(
       'Coming Soon',
       'Password reset via email will be available soon.',
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(16),
+    );
+  }
+
+  // ── Shared top-right toast ─────────────────────────────────────
+  void _showTopRightToast(
+    String title,
+    String message, {
+    Color? backgroundColor,
+    Color? colorText,
+  }) {
+    const toastWidth = 380.0;
+    final screenWidth = Get.width;
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: backgroundColor,
+      colorText: colorText,
+      margin: EdgeInsets.only(
+        top: 16,
+        right: 16,
+        left: (screenWidth - toastWidth - 16).clamp(16, screenWidth - 32),
+      ),
       borderRadius: 12,
     );
   }

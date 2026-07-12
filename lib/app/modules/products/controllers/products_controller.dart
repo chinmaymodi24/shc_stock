@@ -1,4 +1,4 @@
-﻿import 'package:get/get.dart';
+import 'package:get/get.dart';
 import '../models/product_model.dart';
 
 class ProductsController extends GetxController {
@@ -26,7 +26,7 @@ class ProductsController extends GetxController {
   final RxSet<String> selectedReinforcements = <String>{}.obs;
 
   // ── Static Categories & Sub-products (SHC specific) ─────────
-  static const List<ProductCategory> allCategories = [
+  static final List<ProductCategory> allCategories = [
     ProductCategory(
       id: 'cat_01',
       name: '1. Ceramic Fiber Products',

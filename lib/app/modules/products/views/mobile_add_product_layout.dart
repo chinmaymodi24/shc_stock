@@ -457,7 +457,6 @@ class _MobileVariantsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
     return _MobileSectionCard(
       title: 'Variants / Specifications',
       child: Column(
@@ -625,7 +624,6 @@ class _MobilePricingSectionState extends State<_MobilePricingSection> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
     return _MobileSectionCard(
       title: 'Pricing & Stock',
       child: Column(

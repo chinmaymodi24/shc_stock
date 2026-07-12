@@ -1,16 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
-
     The path provided below has to start and end with a slash "/" in order for
     it to work correctly.
-
     For more details:
     * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
@@ -18,21 +15,415 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Secure Heat Care – Stock Management System">
+
+  <!-- Always white/light status bar — no dark flash on any device -->
+  <meta name="theme-color" content="#ffffff">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="shc_stock">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Secure Heat Care">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>shc_stock</title>
+  <title>Secure Heat Care</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* ── Reset ─────────────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: #ffffff;                          /* white always */
+      font-family: 'Segoe UI', -apple-system, Arial, sans-serif;
+    }
+
+    /* ── Brand tokens (always light / white) ──────────────────── */
+    :root {
+      --brand-orange: #F47B20;
+      --brand-purple: #2B1888;
+      --tagline-clr:  #AAAAAA;
+      --ring-dash:    rgba(244, 123, 32, 0.28);
+      --glow-clr:     rgba(244, 123, 32, 0.07);
+    }
+
+    /* ── Splash overlay ───────────────────────────────────────── */
+    #shc-splash {
+      position: fixed;
+      inset: 0;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      overflow: hidden;
+      transition: opacity 0.55s ease, visibility 0.55s ease;
+    }
+    #shc-splash.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* ── Dot grid — top-left ──────────────────────────────────── */
+    .dot-grid {
+      position: absolute;
+      top: 24px; left: 24px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      animation: fadeIn 0.6s ease 0.1s both;
+    }
+    .dot-grid span {
+      display: block;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--brand-orange);
+    }
+    .dot-grid span:nth-child(1)  { opacity:.75; }
+    .dot-grid span:nth-child(2)  { opacity:.62; }
+    .dot-grid span:nth-child(3)  { opacity:.50; }
+    .dot-grid span:nth-child(4)  { opacity:.36; }
+    .dot-grid span:nth-child(5)  { opacity:.24; }
+    .dot-grid span:nth-child(6)  { opacity:.60; }
+    .dot-grid span:nth-child(7)  { opacity:.48; }
+    .dot-grid span:nth-child(8)  { opacity:.38; }
+    .dot-grid span:nth-child(9)  { opacity:.28; }
+    .dot-grid span:nth-child(10) { opacity:.18; }
+    .dot-grid span:nth-child(11) { opacity:.48; }
+    .dot-grid span:nth-child(12) { opacity:.36; }
+    .dot-grid span:nth-child(13) { opacity:.26; }
+    .dot-grid span:nth-child(14) { opacity:.18; }
+    .dot-grid span:nth-child(15) { opacity:.10; }
+    .dot-grid span:nth-child(n+16) { opacity:.08; }
+
+    /* ── Dot grid — bottom-right (subtle mirror) ──────────────── */
+    .dot-grid-br {
+      position: absolute;
+      bottom: 120px; right: 24px;
+      opacity: 0.40;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      animation: fadeIn 0.7s ease 0.2s both;
+    }
+    .dot-grid-br span {
+      display: block;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: var(--brand-orange);
+      opacity: 0.35;
+    }
+
+    /* ── Orbital ring wrapper ─────────────────────────────────── */
+    .orbit-wrap {
+      position: relative;
+      width: 320px; height: 320px;
+      margin-bottom: 24px;
+      animation: scaleIn 0.75s cubic-bezier(.22,1,.36,1) 0.10s both;
+      flex-shrink: 0;
+    }
+
+    /* SVG dashed ring (rotates via animateTransform) */
+    .orbit-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+    }
+
+    /* Pulsing glow behind logo */
+    .orbit-glow {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 220px; height: 110px;
+      border-radius: 60px;
+      background: radial-gradient(ellipse, rgba(244,123,32,0.10) 0%, transparent 70%);
+      animation: glowPulse 2.4s ease-in-out infinite;
+    }
+    @keyframes glowPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.8; }
+      50%       { transform: translate(-50%, -50%) scale(1.08); opacity: 1;   }
+    }
+
+    /* Full Secure Heat Care logo (landscape) in the center */
+    .orbit-logo-full {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 210px;
+      height: auto;
+      object-fit: contain;
+      animation: logoFade 0.6s ease 0.35s both;
+    }
+    /* CSS fallback shown via JS if logo.png fails */
+    .logo-fallback {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      animation: logoFade 0.6s ease 0.35s both;
+    }
+    .fb-flame {
+      width: 52px; height: 52px;
+      border-radius: 50% 50% 42% 42% / 58% 58% 38% 38%;
+      background: linear-gradient(160deg, #F47B20 0%, #FF9A5C 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 22px rgba(244,123,32,0.30);
+    }
+    .fb-inner { width: 24px; height: 24px; border-radius: inherit; background: #2B1888; }
+    .fb-text { font-size: 13px; font-weight: 800; color: var(--brand-purple); letter-spacing: 2px; }
+
+    /* ── Feature icon bubbles ────────────────────────────────────
+       Each icon is absolutely positioned at its orbit point.
+       Staggered pop-in: scale 0.2→1 with elastic overshoot.
+    ─────────────────────────────────────────────────────────────*/
+    .orbit-icon {
+      position: absolute;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 1.5px solid var(--brand-orange);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 10px rgba(244,123,32,0.14);
+      font-size: 17px;
+      color: var(--brand-orange);
+      /* Center each icon on its anchor point */
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+      animation: iconPop 0.55s cubic-bezier(.22,1,.36,1) forwards;
+    }
+    @keyframes iconPop {
+      to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+    /*
+      Orbit radius = 128px, center = 160px (half of 320px)
+      Top      (-π/2):  x=160,       y=32
+      Left     (π):     x=32,        y=160
+      Right    (0):     x=288,       y=160
+      Btm-L    (225°):  x=69.5,      y=250.5
+      Btm-R    (-45°):  x=250.5,     y=250.5
+    */
+    .icon-top      { top: 32px;    left: 160px;  animation-delay: 0.50s; }
+    .icon-left     { top: 160px;   left: 32px;   animation-delay: 0.66s; }
+    .icon-right    { top: 160px;   left: 288px;  animation-delay: 0.58s; }
+    .icon-btm-left { top: 250.5px; left: 69.5px; animation-delay: 0.74s; }
+    .icon-btm-right{ top: 250.5px; left: 250.5px;animation-delay: 0.82s; }
+
+    /* ── Tagline ──────────────────────────────────────────────── */
+    .splash-tagline {
+      text-align: center;
+      font-size: 14px;
+      color: var(--tagline-clr);
+      line-height: 1.75;
+      letter-spacing: 0.3px;
+      animation: fadeUp 0.5s ease 0.30s both;
+    }
+    .tagline-line {
+      width: 42px; height: 3px;
+      background: var(--brand-orange);
+      border-radius: 99px;
+      margin: 0 auto 14px;
+    }
+
+    /* ── City skyline SVG (bottom) ────────────────────────────── */
+    .city-wrap {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 100px;
+      pointer-events: none;
+    }
+    .city-wrap svg { width: 100%; height: 100%; }
+
+    /* ── Spinner + label ──────────────────────────────────────── */
+    .loader-row {
+      position: absolute;
+      bottom: 108px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: fadeUp 0.5s ease 0.55s both;
+    }
+    .loader-spinner {
+      width: 18px; height: 18px;
+      border: 1.8px solid rgba(244,123,32,0.20);
+      border-top-color: var(--brand-orange);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    .loader-text { font-size: 13px; color: var(--tagline-clr); }
+
+    /* ── Orange spinner at bottom-center ───────────────────────── */
+    .bottom-spinner {
+      position: absolute;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 22px; height: 22px;
+      border: 2px solid rgba(244,123,32,0.20);
+      border-top-color: var(--brand-orange);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite, fadeIn 0.5s ease 0.6s both;
+      opacity: 0;
+    }
+
+    @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes logoFade{ from { opacity: 0; } to { opacity: 1; } }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.72); }
+      to   { opacity: 1; transform: scale(1);    }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+  </style>
 </head>
 <body>
+
+  <!-- ── Splash Screen ──────────────────────────────────────────────────── -->
+  <div id="shc-splash">
+
+    <!-- Dot grids -->
+    <div class="dot-grid" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="dot-grid-br" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <!-- Orbital ring area -->
+    <div class="orbit-wrap" aria-hidden="true">
+
+      <!-- Dashed SVG ring with rotation animation -->
+      <svg class="orbit-svg" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
+        <g>
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            from="0 160 160"
+            to="360 160 160"
+            dur="14s"
+            repeatCount="indefinite"
+          />
+          <circle cx="160" cy="160" r="128"
+            fill="none"
+            stroke="rgba(244,123,32,0.28)"
+            stroke-width="1.5"
+            stroke-dasharray="6 4"
+            stroke-linecap="round"
+          />
+          <!-- Anchor dots at icon positions (rotate with ring) -->
+          <circle cx="160"   cy="32"    r="3.5" fill="rgba(244,123,32,0.40)"/>
+          <circle cx="32"    cy="160"   r="3.5" fill="rgba(244,123,32,0.40)"/>
+          <circle cx="288"   cy="160"   r="3.5" fill="rgba(244,123,32,0.40)"/>
+          <circle cx="69.5"  cy="250.5" r="3.5" fill="rgba(244,123,32,0.40)"/>
+          <circle cx="250.5" cy="250.5" r="3.5" fill="rgba(244,123,32,0.40)"/>
+        </g>
+      </svg>
+
+      <!-- Glow behind logo -->
+      <div class="orbit-glow"></div>
+
+      <!-- Full Secure Heat Care logo -->
+      <img
+        class="orbit-logo-full"
+        src="assets/logo.png"
+        alt="Secure Heat Care"
+        onerror="
+          this.style.display='none';
+          document.getElementById('logo-fb').style.display='flex';
+        "
+      >
+      <!-- CSS fallback if logo.png not cached yet -->
+      <div id="logo-fb" class="logo-fallback">
+        <div class="fb-flame"><div class="fb-inner"></div></div>
+        <div class="fb-text">SECURE HEAT CARE</div>
+      </div>
+
+      <!-- Feature icon bubbles -->
+      <div class="orbit-icon icon-top">📦</div>
+      <div class="orbit-icon icon-left">🛒</div>
+      <div class="orbit-icon icon-right">📊</div>
+      <div class="orbit-icon icon-btm-left">🛡️</div>
+      <div class="orbit-icon icon-btm-right">👥</div>
+    </div><!-- /orbit-wrap -->
+
+    <!-- Tagline (logo already shows brand name) -->
+    <div class="splash-tagline">
+      <div class="tagline-line"></div>
+      Smart Solutions for Inventory,<br>
+      Sales, Purchase &amp; Reports
+    </div>
+
+
+    <!-- City skyline (inline SVG — zero extra network request) -->
+    <div class="city-wrap" aria-hidden="true">
+      <svg viewBox="0 0 400 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill="rgba(238,236,255,0.70)" d="
+          M0,100 L0,42 L16,42 L16,55 L28,55 L28,30 L40,30 L40,46 L52,46
+          L52,22 L64,22 L64,14 L72,14 L72,32 L88,32 L88,50 L112,50
+          L112,62 L160,62 L160,70
+          L240,70 L240,62 L288,62
+          L288,50 L312,50 L312,32 L328,32 L328,14 L336,14 L336,22
+          L348,22 L348,46 L360,46 L360,30 L372,30 L372,55 L384,55
+          L384,42 L400,42 L400,100 Z
+        "/>
+      </svg>
+    </div>
+
+    <!-- Orange circular spinner at bottom-center -->
+    <div class="bottom-spinner"></div>
+
+  </div><!-- /shc-splash -->
+
+  <!-- Flutter bootstrap -->
   <script src="flutter_bootstrap.js" async></script>
+
+  <script>
+    // ── Ensure white background before Flutter mounts ─────────────────────
+    document.body.style.background = '#ffffff';
+
+    // ── Minimum 2-second splash display ───────────────────────────────────
+    // Record when the page loaded. When Flutter fires flutter-first-frame,
+    // we wait for the remaining time (if any) before fading out.
+    var _splashStart = Date.now();
+    var _MIN_MS      = 2000;        // minimum display time in milliseconds
+
+    function _hideSplash() {
+      var splash = document.getElementById('shc-splash');
+      if (!splash) return;
+      splash.classList.add('hidden');
+      // Remove from DOM after transition completes (650 ms safety net)
+      setTimeout(function () {
+        if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+      }, 700);
+    }
+
+    window.addEventListener('flutter-first-frame', function () {
+      var elapsed   = Date.now() - _splashStart;
+      var remaining = Math.max(0, _MIN_MS - elapsed);
+      // If Flutter loaded before 2 s, wait for the remainder; else hide now
+      setTimeout(_hideSplash, remaining);
+    });
+  </script>
+
 </body>
 </html>

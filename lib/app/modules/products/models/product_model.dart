@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 class ProductModel {
   final String id;
   final String name;
@@ -103,10 +105,18 @@ class ProductCategory {
   final String id;
   final String name;
   final List<String> subProducts;
+  final String description;
+  /// Parallel to [subProducts] — each index holds the description for that sub-category.
+  final List<String> subDescriptions;
+  /// User-picked image bytes (null = use initials placeholder).
+  final Uint8List? imageBytes;
 
-  const ProductCategory({
+  ProductCategory({
     required this.id,
     required this.name,
     required this.subProducts,
+    this.description = '',
+    this.subDescriptions = const [],
+    this.imageBytes,
   });
 }

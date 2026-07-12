@@ -375,7 +375,7 @@ class _DescFieldState extends State<_DescField> {
           hintText: 'Enter item description (optional)',
           hintStyle: TextStyle(fontSize: 13, color: c.textHint, fontFamily: 'Poppins'),
           filled: true, fillColor: c.inputFill,
-          counterText: '${_count}/500',
+          counterText: '$_count/500',
           counterStyle: TextStyle(fontSize: 11, color: c.textHint, fontFamily: 'Poppins'),
           contentPadding: const EdgeInsets.all(12),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: c.border)),
@@ -420,21 +420,21 @@ class _ImageUpload extends StatelessWidget {
               duration: const Duration(milliseconds: 150),
               width: double.infinity, height: 182,
               decoration: BoxDecoration(
-                color: isDragging ? const Color(0xFF4A3AFF).withValues(alpha: 0.05) : colors.inputFill,
+                color: isDragging ? AppColors.primaryOrange.withValues(alpha: 0.05) : colors.inputFill,
                 borderRadius: BorderRadius.circular(8)),
               child: CustomPaint(
                 painter: _DashedBorderPainter(
-                  color: isDragging ? const Color(0xFF4A3AFF) : colors.border,
+                  color: isDragging ? AppColors.primaryOrange : colors.border,
                   radius: 8),
                 child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Container(width: 46, height: 46,
-                    decoration: BoxDecoration(color: const Color(0xFF4A3AFF).withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
+                    decoration: BoxDecoration(color: AppColors.primaryOrange.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
                     child: Icon(isDragging ? Icons.download_rounded : Icons.cloud_upload_outlined,
-                      color: const Color(0xFF4A3AFF), size: 24)),
+                      color: AppColors.primaryOrange, size: 24)),
                   const SizedBox(height: 10),
                   Text(isDragging ? 'Release to upload' : 'Drag & drop an image here',
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
-                      color: isDragging ? const Color(0xFF4A3AFF) : colors.textSecondary, fontFamily: 'Poppins')),
+                      color: isDragging ? AppColors.primaryOrange : colors.textSecondary, fontFamily: 'Poppins')),
                   if (!isDragging) ...[
                     const SizedBox(height: 2),
                     RichText(text: TextSpan(children: [

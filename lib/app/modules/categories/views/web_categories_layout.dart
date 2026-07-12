@@ -1,21 +1,26 @@
+import 'dart:io' as io;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
+import 'package:file_picker/file_picker.dart';
+import 'package:desktop_drop/desktop_drop.dart';
 import '../controllers/categories_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../dashboard/widgets/web_sidebar.dart';
 import '../../products/models/product_model.dart';
 
 // ── Column layout constants (header + category row + sub-category row MUST match)
-const double _kNumW  = 36.0;  // # badge / drag handle width
-const double _kIconW = 36.0;  // category icon box width
-const double _kGapW  = 12.0;  // gap between fixed-width columns
-const int    _kNameF = 26;    // Category / Sub-Category name flex
-const int    _kTypeF = 18;    // Type badge flex
-const int    _kProdF = 10;    // Products count flex (center)
-const int    _kStatF = 13;    // Status badge flex (center)
-const int    _kDateF = 18;    // Created On flex
-const int    _kActF  = 11;    // Actions flex
+const double _kDragW  = 22.0;  // drag-handle indicator column width
+const double _kNumW   = 36.0;  // # badge width
+const double _kIconW  = 36.0;  // category icon/image box width
+const double _kGapW   = 12.0;  // gap between fixed-width columns
+const int    _kNameF  = 26;    // Category / Sub-Category name flex
+const int    _kTypeF  = 18;    // Type badge flex
+const int    _kProdF  = 10;    // Products count flex (center)
+const int    _kStatF  = 13;    // Status badge flex (center)
+const int    _kDateF  = 18;    // Created On flex
+const int    _kActF   = 11;    // Actions flex
 
 // ── Seed display data ──────────────────────────────────────────────────────
 const _kCatDates = [
@@ -45,25 +50,6 @@ const _kSubDates = [
   ['05 May 2024','05 May 2024','06 May 2024','06 May 2024','06 May 2024'],
 ];
 
-const _kCatIcons = [
-  Icons.layers_rounded,
-  Icons.texture_rounded,
-  Icons.view_module_rounded,
-  Icons.local_fire_department_rounded,
-  Icons.science_rounded,
-  Icons.shield_rounded,
-  Icons.build_rounded,
-];
-
-const _kIconColors = [
-  Color(0xFF4A3AFF),
-  Color(0xFFEF4444),
-  Color(0xFF22C55E),
-  AppColors.primaryOrange,
-  Color(0xFF8B5CF6),
-  Color(0xFF0EA5E9),
-  Color(0xFFF59E0B),
-];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Widget
@@ -232,7 +218,30 @@ class _WebCategoriesLayoutState extends State<WebCategoriesLayout> {
                           ])),
                         )
                       else
-                        ..._buildRows(pageItems, colors, c),
+                        ReorderableListView(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          buildDefaultDragHandles: false,
+                          proxyDecorator: (child, _, animation) {
+                            return AnimatedBuilder(
+                              animation: animation,
+                              builder: (ctx, ch) => Material(
+                                color: Colors.transparent,
+                                elevation: 4 * animation.value,
+                                shadowColor: Colors.black26,
+                                borderRadius: BorderRadius.circular(12),
+                                child: ch,
+                              ),
+                              child: child,
+                            );
+                          },
+                          onReorder: (oldIdx, newIdx) {
+                            if (_searchQuery.isEmpty) {
+                              c.reorderCategory(startIdx + oldIdx, startIdx + newIdx);
+                            }
+                          },
+                          children: _buildCategoryBlocks(pageItems, colors, c),
+                        ),
 
                       // Footer
                       Divider(height: 1, color: colors.divider),
@@ -258,72 +267,100 @@ class _WebCategoriesLayoutState extends State<WebCategoriesLayout> {
     );
   }
 
-  // ── Build flat list of rows (categories + inline sub-categories) ───────────
-  List<Widget> _buildRows(
+  // ── Build category blocks (keyed, one per category) for ReorderableListView ─
+  List<Widget> _buildCategoryBlocks(
       List<ProductCategory> pageItems, AppThemeColors colors, CategoriesController c) {
-    final rows = <Widget>[];
-    for (int i = 0; i < pageItems.length; i++) {
-      final cat        = pageItems[i];
-      final globalIdx  = c.categories.indexOf(cat);
-      final isExpanded = _expanded.contains(cat.id);
-      final isLast     = i == pageItems.length - 1 && !isExpanded;
+    return pageItems.asMap().entries.map((entry) {
+      final i      = entry.key;
+      final cat    = entry.value;
+      final gIdx   = c.categories.indexOf(cat);
+      final isExp  = _expanded.contains(cat.id);
+      final isLast = i == pageItems.length - 1;
 
-      rows.add(_CategoryRow(
-        cat: cat, globalIndex: globalIdx,
-        isExpanded: isExpanded, isLast: isLast,
-        colors: colors,
-        onToggle: () => _toggle(cat.id),
-        onEdit:   () => _showEditDialog(c, cat),
-        onDelete: () => _confirmDelete(c, cat),
-      ));
-
-      if (isExpanded) {
-        for (int si = 0; si < cat.subProducts.length; si++) {
-          rows.add(_SubCategoryRow(
-            name: cat.subProducts[si],
-            catIndex: globalIdx, subIndex: si,
-            colors: colors,
-            onEdit:   () => _showEditSubDialog(c, cat, si),
-            onDelete: () { c.deleteSubCategory(cat.id, si); setState(() {}); },
-          ));
-        }
-        rows.add(_AddSubRow(
+      return KeyedSubtree(
+        key: ValueKey(cat.id),
+        child: _CatBlock(
+          pageIndex: i,
+          cat: cat,
+          globalIndex: gIdx,
+          isExpanded: isExp,
+          isLastCat: isLast,
           colors: colors,
-          isLast: i == pageItems.length - 1,
-          onTap: () => _showAddSubDialog(c, cat.id, cat.name),
-        ));
-      }
-    }
-    return rows;
+          onToggle:   () => _toggle(cat.id),
+          onEdit:     () => _showEditDialog(c, cat),
+          onDelete:   () => _confirmDelete(c, cat),
+          onInfo:     () => _showInfoDialog(cat, gIdx),
+          onAddSub:   () => _showAddSubDialog(c, cat.id, cat.name),
+          onEditSub:  (si) => _showEditSubDialog(c, cat, si),
+          onDeleteSub: (si) { c.deleteSubCategory(cat.id, si); setState(() {}); },
+          onInfoSub:  (si) => _showSubInfoDialog(cat, si, gIdx),
+          onReorderSub: (oldSi, newSi) => c.reorderSubCategory(cat.id, oldSi, newSi),
+        ),
+      );
+    }).toList();
   }
 
   // ── Dialogs ───────────────────────────────────────────────────────────────
   void _showAddCategoryDialog(CategoriesController c) {
-    Get.dialog(_AddCategoryDialog(
-      onSave: (name) { c.addCategory(name); Get.back(); },
+    Get.dialog(_CategoryFormDialog(
+      isSubCategory: false, isEdit: false,
+      onSave: (name, desc, bytes) { c.addCategory(name, desc: desc, imageBytes: bytes); Get.back(); },
     ));
   }
 
   void _showEditDialog(CategoriesController c, ProductCategory cat) {
-    final ctrl = TextEditingController(text: cat.name);
-    Get.dialog(_FormDialog(
-      title: 'Edit Category', hint: cat.name, controller: ctrl,
-      onSave: () { c.updateCategory(cat.id, ctrl.text); Get.back(); },
+    Get.dialog(_CategoryFormDialog(
+      isSubCategory: false, isEdit: true,
+      initialName: cat.name,
+      initialDesc: cat.description,
+      initialImageBytes: cat.imageBytes,
+      onSave: (name, desc, bytes) { c.updateCategory(cat.id, name, desc: desc, imageBytes: bytes); Get.back(); },
     ));
   }
 
   void _showEditSubDialog(CategoriesController c, ProductCategory cat, int subIdx) {
-    final ctrl = TextEditingController(text: cat.subProducts[subIdx]);
-    Get.dialog(_FormDialog(
-      title: 'Edit Sub-Category', hint: cat.subProducts[subIdx], controller: ctrl,
-      onSave: () { c.updateSubCategory(cat.id, subIdx, ctrl.text); Get.back(); },
+    final currentDesc = subIdx < cat.subDescriptions.length
+        ? cat.subDescriptions[subIdx] : '';
+    Get.dialog(_CategoryFormDialog(
+      isSubCategory: true, isEdit: true,
+      parentCategoryName: cat.name,
+      initialName: cat.subProducts[subIdx],
+      initialDesc: currentDesc,
+      onSave: (name, desc, _) {
+        c.updateSubCategory(cat.id, subIdx, name, desc: desc);
+        Get.back();
+      },
     ));
   }
 
   void _showAddSubDialog(CategoriesController c, String catId, String catName) {
-    Get.dialog(_AddSubCategoryDialog(
+    Get.dialog(_CategoryFormDialog(
+      isSubCategory: true, isEdit: false,
       parentCategoryName: catName,
-      onSave: (name) { c.addSubCategory(catId, name); Get.back(); },
+      onSave: (name, desc, _) { c.addSubCategory(catId, name, desc: desc); Get.back(); },
+    ));
+  }
+
+  void _showInfoDialog(ProductCategory cat, int globalIndex) {
+    Get.dialog(_CategoryInfoDialog(
+      isSubCategory: false,
+      name: cat.name,
+      description: cat.description,
+      subCategories: cat.subProducts,
+      globalIndex: globalIndex,
+    ));
+  }
+
+  void _showSubInfoDialog(ProductCategory cat, int subIdx, int globalIndex) {
+    final desc = subIdx < cat.subDescriptions.length
+        ? cat.subDescriptions[subIdx] : '';
+    Get.dialog(_CategoryInfoDialog(
+      isSubCategory: true,
+      name: cat.subProducts[subIdx],
+      description: desc,
+      parentName: cat.name,
+      globalIndex: globalIndex,
+      subIndex: subIdx,
     ));
   }
 
@@ -411,6 +448,89 @@ class _WebCategoriesLayoutState extends State<WebCategoriesLayout> {
         ),
       )),
     ));
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Category Block — category row + optional draggable sub-categories
+// ─────────────────────────────────────────────────────────────────────────────
+class _CatBlock extends StatelessWidget {
+  final int pageIndex, globalIndex;
+  final ProductCategory cat;
+  final bool isExpanded, isLastCat;
+  final AppThemeColors colors;
+  final VoidCallback onToggle, onEdit, onDelete, onInfo, onAddSub;
+  final ValueChanged<int> onEditSub, onDeleteSub, onInfoSub;
+  final ReorderCallback onReorderSub;
+
+  const _CatBlock({
+    required this.pageIndex, required this.globalIndex,
+    required this.cat, required this.isExpanded, required this.isLastCat,
+    required this.colors,
+    required this.onToggle, required this.onEdit, required this.onDelete,
+    required this.onInfo,
+    required this.onAddSub, required this.onEditSub, required this.onDeleteSub,
+    required this.onInfoSub,
+    required this.onReorderSub,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Category row — wrapped so the parent ReorderableListView can drag it
+        ReorderableDragStartListener(
+          index: pageIndex,
+          child: _CategoryRow(
+            cat: cat, globalIndex: globalIndex,
+            isExpanded: isExpanded,
+            isLast: !isExpanded && isLastCat,
+            colors: colors,
+            onToggle: onToggle, onEdit: onEdit, onDelete: onDelete,
+            onInfo: onInfo,
+          ),
+        ),
+        // Expanded sub-categories with their own drag & drop
+        if (isExpanded) ...[
+          ReorderableListView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            proxyDecorator: (child, _, animation) => AnimatedBuilder(
+              animation: animation,
+              builder: (ctx, ch) => Material(
+                color: Colors.transparent,
+                elevation: 3 * animation.value,
+                shadowColor: Colors.black12,
+                borderRadius: BorderRadius.circular(8),
+                child: ch,
+              ),
+              child: child,
+            ),
+            onReorder: onReorderSub,
+            children: cat.subProducts.asMap().entries.map((e) {
+              final si = e.key;
+              return KeyedSubtree(
+                key: ValueKey('${cat.id}_sub_$si'),
+                child: ReorderableDragStartListener(
+                  index: si,
+                  child: _SubCategoryRow(
+                    name: e.value,
+                    catIndex: globalIndex, subIndex: si,
+                    colors: colors,
+                    onEdit:   () => onEditSub(si),
+                    onDelete: () => onDeleteSub(si),
+                    onInfo:   () => onInfoSub(si),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          _AddSubRow(colors: colors, isLast: isLastCat, onTap: onAddSub),
+        ],
+      ],
+    );
   }
 }
 
@@ -758,9 +878,16 @@ class _TableColumnHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
       child: Row(children: [
+        // Drag-handle hint column — matches the drag indicator in rows
+        Tooltip(
+          message: 'Drag rows to reorder',
+          child: SizedBox(width: _kDragW,
+            child: Icon(Icons.drag_indicator_rounded,
+              size: 15, color: colors.textHint.withValues(alpha: 0.5))),
+        ),
         SizedBox(width: _kNumW, child: Text('#', style: _s)),
         const SizedBox(width: _kGapW),
-        const SizedBox(width: _kIconW), // icon placeholder (no header label needed)
+        const SizedBox(width: _kIconW), // icon/image placeholder
         const SizedBox(width: _kGapW),
         Expanded(flex: _kNameF, child: Text('Category / Sub-Category', style: _s)),
         Expanded(flex: _kTypeF, child: Center(child: Text('Type', style: _s))),
@@ -781,13 +908,13 @@ class _CategoryRow extends StatefulWidget {
   final int globalIndex;
   final bool isExpanded, isLast;
   final AppThemeColors colors;
-  final VoidCallback onToggle, onEdit, onDelete;
+  final VoidCallback onToggle, onEdit, onDelete, onInfo;
 
   const _CategoryRow({
     required this.cat, required this.globalIndex,
     required this.isExpanded, required this.isLast,
     required this.colors, required this.onToggle,
-    required this.onEdit, required this.onDelete,
+    required this.onEdit, required this.onDelete, required this.onInfo,
   });
 
   @override State<_CategoryRow> createState() => _CategoryRowState();
@@ -801,8 +928,6 @@ class _CategoryRowState extends State<_CategoryRow> {
     final c          = widget.colors;
     final cat        = widget.cat;
     final idx        = widget.globalIndex;
-    final catIcon    = _kCatIcons[idx % _kCatIcons.length];
-    final iconColor  = const Color(0xFF4A3AFF); // consistent dark blue across all rows
     final date       = idx < _kCatDates.length ? _kCatDates[idx] : '01 Jun 2024';
     final products   = idx < _kCatProducts.length ? _kCatProducts[idx] : cat.subProducts.length * 12;
 
@@ -823,7 +948,23 @@ class _CategoryRowState extends State<_CategoryRow> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
 
-            // # orange badge
+            // ── Drag handle indicator (makes reorder discoverable) ──────
+            MouseRegion(
+              cursor: SystemMouseCursors.grab,
+              child: SizedBox(
+                width: _kDragW,
+                child: Center(
+                  child: AnimatedOpacity(
+                    opacity: _hovered ? 0.8 : 0.35,
+                    duration: const Duration(milliseconds: 150),
+                    child: Icon(Icons.drag_indicator_rounded,
+                      size: 18, color: c.textSecondary),
+                  ),
+                ),
+              ),
+            ),
+
+            // ── # orange badge ───────────────────────────────────────────
             Container(
               width: _kNumW, height: _kNumW,
               decoration: BoxDecoration(
@@ -835,14 +976,8 @@ class _CategoryRowState extends State<_CategoryRow> {
             ),
             const SizedBox(width: _kGapW),
 
-            // Category icon
-            Container(
-              width: _kIconW, height: _kIconW,
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(9)),
-              child: Icon(catIcon, color: iconColor, size: 18),
-            ),
+            // ── Category image (user-picked) or initials avatar ──────────
+            _buildCategoryAvatar(cat, c),
             const SizedBox(width: _kGapW),
 
             // Category name + sub-count chip
@@ -893,10 +1028,13 @@ class _CategoryRowState extends State<_CategoryRow> {
             Expanded(flex: _kDateF, child: Text(date,
               style: TextStyle(fontSize: 13, color: c.textSecondary, fontFamily: 'Poppins'))),
 
-            // Actions: edit + delete + expand toggle
+            // Actions: info + edit + delete + expand toggle
             Expanded(flex: _kActF, child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                _ActionBtn(icon: Icons.info_outline_rounded, color: const Color(0xFF0EA5E9),
+                  tooltip: 'Info', onTap: widget.onInfo),
+                const SizedBox(width: 5),
                 _ActionBtn(icon: Icons.edit_outlined, color: const Color(0xFF4A3AFF),
                   tooltip: 'Edit', onTap: widget.onEdit),
                 const SizedBox(width: 5),
@@ -929,6 +1067,36 @@ class _CategoryRowState extends State<_CategoryRow> {
       ),
     );
   }
+
+  /// Builds the 36x36 category image/avatar box.
+  Widget _buildCategoryAvatar(ProductCategory cat, AppThemeColors c) {
+    final hue = (cat.name.codeUnits.fold(0, (h, v) => h + v) * 37) % 360;
+    final accent = HSLColor.fromAHSL(1, hue.toDouble(), 0.58, 0.44).toColor();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(9),
+      child: Container(
+        width: _kIconW, height: _kIconW,
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: 0.13),
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: cat.imageBytes != null
+          ? Image.memory(cat.imageBytes!, fit: BoxFit.cover, width: _kIconW, height: _kIconW)
+          : Center(
+              child: Text(
+                cat.name.trim().split(' ')
+                  .where((w) => w.isNotEmpty)
+                  .take(2)
+                  .map((w) => w[0].toUpperCase())
+                  .join(),
+                style: TextStyle(
+                  fontSize: 11.5, fontWeight: FontWeight.w800,
+                  color: accent, fontFamily: 'Poppins'),
+              ),
+            ),
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -938,11 +1106,12 @@ class _SubCategoryRow extends StatefulWidget {
   final String name;
   final int catIndex, subIndex;
   final AppThemeColors colors;
-  final VoidCallback onEdit, onDelete;
+  final VoidCallback onEdit, onDelete, onInfo;
 
   const _SubCategoryRow({
     required this.name, required this.catIndex, required this.subIndex,
     required this.colors, required this.onEdit, required this.onDelete,
+    required this.onInfo,
   });
 
   @override State<_SubCategoryRow> createState() => _SubCategoryRowState();
@@ -983,10 +1152,24 @@ class _SubCategoryRowState extends State<_SubCategoryRow> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
 
-            // Drag handle (instead of # badge)
-            SizedBox(width: _kNumW,
-              child: Center(child: Icon(Icons.drag_indicator_rounded,
-                size: 16, color: c.textHint))),
+            // ── Drag handle (aligns with _kDragW in category rows) ───────────
+            MouseRegion(
+              cursor: SystemMouseCursors.grab,
+              child: SizedBox(
+                width: _kDragW,
+                child: Center(
+                  child: AnimatedOpacity(
+                    opacity: _hovered ? 0.8 : 0.4,
+                    duration: const Duration(milliseconds: 150),
+                    child: Icon(Icons.drag_indicator_rounded,
+                      size: 16, color: c.textHint),
+                  ),
+                ),
+              ),
+            ),
+
+            // Empty space matching _kNumW # badge column
+            const SizedBox(width: _kNumW),
             const SizedBox(width: _kGapW),
 
             // Empty icon placeholder — keeps alignment with category rows
@@ -1030,10 +1213,13 @@ class _SubCategoryRowState extends State<_SubCategoryRow> {
             Expanded(flex: _kDateF, child: Text(_date,
               style: TextStyle(fontSize: 13, color: c.textSecondary, fontFamily: 'Poppins'))),
 
-            // Actions: edit + delete (no chevron for sub-categories)
+            // Actions: info + edit + delete (no chevron for sub-categories)
             Expanded(flex: _kActF, child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                _ActionBtn(icon: Icons.info_outline_rounded, color: const Color(0xFF0EA5E9),
+                  tooltip: 'Info', onTap: widget.onInfo),
+                const SizedBox(width: 5),
                 _ActionBtn(icon: Icons.edit_outlined, color: const Color(0xFF4A3AFF),
                   tooltip: 'Edit', onTap: widget.onEdit),
                 const SizedBox(width: 5),
@@ -1208,360 +1394,656 @@ class _PageBtn extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Add Category Dialog
+// Unified Category Form Dialog
+// Handles: Add Category, Edit Category, Add Sub-Category, Edit Sub-Category
 // ─────────────────────────────────────────────────────────────────────────────
-class _AddCategoryDialog extends StatefulWidget {
-  final ValueChanged<String> onSave;
-  const _AddCategoryDialog({required this.onSave});
-  @override State<_AddCategoryDialog> createState() => _AddCategoryDialogState();
+class _CategoryFormDialog extends StatefulWidget {
+  final bool isSubCategory;
+  final bool isEdit;
+  final String? parentCategoryName;
+  final String initialName;
+  final String initialDesc;
+  final Uint8List? initialImageBytes;
+  /// Called with (name, description, imageBytes) when the user taps Save.
+  final void Function(String name, String desc, Uint8List? imageBytes) onSave;
+
+  const _CategoryFormDialog({
+    required this.isSubCategory,
+    required this.isEdit,
+    this.parentCategoryName,
+    this.initialName = '',
+    this.initialDesc = '',
+    this.initialImageBytes,
+    required this.onSave,
+  });
+
+  @override
+  State<_CategoryFormDialog> createState() => _CategoryFormDialogState();
 }
 
-class _AddCategoryDialogState extends State<_AddCategoryDialog> {
-  final _nameCtrl = TextEditingController();
-  final _descCtrl = TextEditingController();
-  int  _selIcon  = 0;
-  bool _isActive = true;
-  int  _descLen  = 0;
-
-  static const _icons = [
-    Icons.grid_view_rounded, Icons.hub_outlined, Icons.shield_outlined,
-    Icons.calendar_month_outlined, Icons.water_drop_outlined,
-    Icons.change_history_rounded, Icons.warehouse_outlined, Icons.content_cut_rounded,
-  ];
+class _CategoryFormDialogState extends State<_CategoryFormDialog> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _descCtrl;
+  late bool _isActive;
+  int _descLen = 0;
+  bool _isDragOver = false;
+  Uint8List? _pickedImageBytes;
+  String _pickedImageName = '';
 
   @override
   void initState() {
     super.initState();
+    _nameCtrl = TextEditingController(text: widget.initialName);
+    _descCtrl = TextEditingController(text: widget.initialDesc);
+    _isActive = true;
+    _descLen = _descCtrl.text.length;
+    _pickedImageBytes = widget.initialImageBytes;
     _descCtrl.addListener(() => setState(() => _descLen = _descCtrl.text.length));
   }
 
   @override
   void dispose() { _nameCtrl.dispose(); _descCtrl.dispose(); super.dispose(); }
 
+  String get _title {
+    if (widget.isEdit) {
+      return widget.isSubCategory ? 'Edit Sub-Category' : 'Edit Category';
+    }
+    return widget.isSubCategory ? 'Add Sub-Category' : 'Add Category';
+  }
+
+  String get _saveLabel {
+    if (widget.isEdit) {
+      return widget.isSubCategory ? 'Update Sub-Category' : 'Update Category';
+    }
+    return widget.isSubCategory ? 'Save Sub-Category' : 'Save Category';
+  }
+
+  Future<void> _pickImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true, // always get bytes (works on web + desktop)
+    );
+    if (result == null || result.files.isEmpty) return;
+    final f = result.files.first;
+    Uint8List? bytes = f.bytes;
+    if (bytes == null && f.path != null) {
+      bytes = await io.File(f.path!).readAsBytes();
+    }
+    if (bytes != null) {
+      setState(() { _pickedImageBytes = bytes; _pickedImageName = f.name; });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final isSub  = widget.isSubCategory;
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(32),
-      child: Center(child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
-        child: Container(
-          decoration: BoxDecoration(
-            color: colors.surface,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.18),
-              blurRadius: 40, offset: const Offset(0, 10))],
-          ),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            // ── Header ──────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 22, 22, 16),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Add Category', style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w700,
-                    color: colors.textPrimary, fontFamily: 'Poppins')),
-                  const SizedBox(height: 3),
-                  Text('Create a new product category.', style: TextStyle(
-                    fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
-                ])),
-                InkWell(onTap: Get.back, borderRadius: BorderRadius.circular(8),
-                  child: Container(width: 32, height: 32,
-                    decoration: BoxDecoration(
-                      color: colors.comingSoonBadge,
-                      borderRadius: BorderRadius.circular(8)),
-                    child: Icon(Icons.close_rounded, size: 18, color: colors.textSecondary))),
-              ]),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Container(
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 40, offset: const Offset(0, 10))],
             ),
-            Divider(height: 1, color: colors.divider),
-            // ── Body ────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                _DlgLabel('Category Name', required: true, colors: colors),
-                const SizedBox(height: 6),
-                _DlgTF(ctrl: _nameCtrl, hint: 'Enter category name', autofocus: true, colors: colors),
-                const SizedBox(height: 16),
-                _DlgLabel('Description (optional)', colors: colors),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: _descCtrl, maxLines: 4,
-                  style: TextStyle(fontSize: 13.5, color: colors.textPrimary, fontFamily: 'Poppins'),
-                  decoration: InputDecoration(
-                    hintText: 'Enter description',
-                    hintStyle: TextStyle(color: colors.textHint, fontFamily: 'Poppins', fontSize: 13.5),
-                    filled: true, fillColor: colors.inputFill,
-                    contentPadding: const EdgeInsets.all(12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: colors.border)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: colors.border)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: AppColors.primaryOrange, width: 1.5)),
-                  ),
-                ),
-                Align(alignment: Alignment.centerRight,
-                  child: Text('$_descLen/250', style: TextStyle(
-                    fontSize: 11.5, color: colors.textHint, fontFamily: 'Poppins'))),
-                const SizedBox(height: 16),
-                _DlgLabel('Icon', colors: colors),
-                const SizedBox(height: 8),
-                Row(children: List.generate(_icons.length, (i) => Padding(
-                  padding: EdgeInsets.only(right: i < _icons.length - 1 ? 8 : 0),
-                  child: GestureDetector(
-                    onTap: () => setState(() => _selIcon = i),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 120),
-                      width: 42, height: 42,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+
+              // ── Header ──────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 22, 22, 16),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(_title, style: TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w700,
+                        color: colors.textPrimary, fontFamily: 'Poppins')),
+                      const SizedBox(height: 4),
+                      if (isSub && widget.parentCategoryName != null && !widget.isEdit) ...[
+                        Text('Add a new sub-category under', style: TextStyle(
+                          fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
+                        const SizedBox(height: 2),
+                        Text(widget.parentCategoryName!, style: TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w700,
+                          color: colors.textPrimary, fontFamily: 'Poppins')),
+                      ] else
+                        Text(
+                          widget.isEdit
+                            ? 'Update the ${isSub ? "sub-" : ""}category details.'
+                            : 'Create a new product ${isSub ? "sub-" : ""}category.',
+                          style: TextStyle(
+                            fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
+                    ],
+                  )),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: Get.back,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 32, height: 32,
                       decoration: BoxDecoration(
-                        color: _selIcon == i
-                          ? AppColors.primaryOrange.withValues(alpha: 0.12) : colors.inputFill,
-                        borderRadius: BorderRadius.circular(9),
-                        border: Border.all(
-                          color: _selIcon == i ? AppColors.primaryOrange : colors.border,
-                          width: _selIcon == i ? 1.5 : 1)),
-                      child: Icon(_icons[i],
-                        color: _selIcon == i ? AppColors.primaryOrange : colors.textHint, size: 20),
+                        color: colors.comingSoonBadge,
+                        borderRadius: BorderRadius.circular(8)),
+                      child: Icon(Icons.close_rounded, size: 18, color: colors.textSecondary)),
+                  ),
+                ]),
+              ),
+              Divider(height: 1, color: colors.divider),
+
+              // ── Body ────────────────────────────────────────────────────
+              SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+
+                  // Name
+                  _DlgLabel(isSub ? 'Sub-Category Name' : 'Category Name',
+                    required: true, colors: colors),
+                  const SizedBox(height: 6),
+                  _DlgTF(
+                    ctrl: _nameCtrl,
+                    hint: isSub ? 'Enter sub-category name' : 'Enter category name',
+                    autofocus: true, colors: colors),
+                  const SizedBox(height: 16),
+
+                  // Description
+                  _DlgLabel('Description (optional)', colors: colors),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: _descCtrl,
+                    maxLines: 3,
+                    maxLength: 250,
+                    style: TextStyle(fontSize: 13.5, color: colors.textPrimary, fontFamily: 'Poppins'),
+                    decoration: InputDecoration(
+                      hintText: 'Enter description',
+                      hintStyle: TextStyle(color: colors.textHint, fontFamily: 'Poppins', fontSize: 13.5),
+                      filled: true, fillColor: colors.inputFill,
+                      counterText: '',
+                      contentPadding: const EdgeInsets.all(12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: colors.border)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: colors.border)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: AppColors.primaryOrange, width: 1.5)),
                     ),
                   ),
-                ))),
-                const SizedBox(height: 10),
-                MouseRegion(cursor: SystemMouseCursors.click,
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.apps_rounded, size: 15, color: colors.textSecondary),
-                    const SizedBox(width: 5),
-                    Text('Browse more icons', style: TextStyle(
-                      fontSize: 12.5, color: colors.textSecondary,
-                      fontFamily: 'Poppins', fontWeight: FontWeight.w500)),
-                  ]),
-                ),
-                const SizedBox(height: 16),
-                _DlgLabel('Status', colors: colors),
-                const SizedBox(height: 8),
-                Row(children: [
-                  Switch(
-                    value: _isActive, onChanged: (v) => setState(() => _isActive = v),
-                    activeColor: AppColors.primaryOrange,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(_isActive ? 'Active' : 'Inactive', style: TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w500,
-                    color: colors.textPrimary, fontFamily: 'Poppins')),
-                ]),
-              ]),
-            ),
-            Divider(height: 1, color: colors.divider),
-            // ── Footer ──────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 14, 24, 20),
-              child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                OutlinedButton(
-                  onPressed: Get.back,
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: colors.border),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                  child: Text('Cancel', style: TextStyle(
-                    fontFamily: 'Poppins', color: colors.textPrimary, fontSize: 14)),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    if (_nameCtrl.text.trim().isNotEmpty) widget.onSave(_nameCtrl.text.trim());
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryOrange, elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                  child: const Text('Save Category', style: TextStyle(
-                    fontFamily: 'Poppins', color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-                ),
-              ]),
-            ),
-          ]),
-        ),
-      )),
-    );
-  }
-}
+                  Align(alignment: Alignment.centerRight,
+                    child: Text('$_descLen/250', style: TextStyle(
+                      fontSize: 11.5, color: colors.textHint, fontFamily: 'Poppins'))),
+                  const SizedBox(height: 16),
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Add Sub-Category Dialog
-// ─────────────────────────────────────────────────────────────────────────────
-class _AddSubCategoryDialog extends StatefulWidget {
-  final String parentCategoryName;
-  final ValueChanged<String> onSave;
-  const _AddSubCategoryDialog({required this.parentCategoryName, required this.onSave});
-  @override State<_AddSubCategoryDialog> createState() => _AddSubCategoryDialogState();
-}
+                  // Image upload zone
+                  _DlgLabel(
+                    isSub ? 'Sub-Category Image (optional)' : 'Category Image (optional)',
+                    colors: colors),
+                  const SizedBox(height: 8),
 
-class _AddSubCategoryDialogState extends State<_AddSubCategoryDialog> {
-  final _nameCtrl = TextEditingController();
-  final _descCtrl = TextEditingController();
-  int  _selIcon  = 0;
-  bool _isActive = true;
-  int  _descLen  = 0;
-
-  static const _icons = [
-    Icons.local_fire_department_outlined, Icons.shield_outlined,
-    Icons.inventory_2_outlined, Icons.hub_outlined, Icons.water_drop_outlined,
-    Icons.change_history_rounded, Icons.content_cut_rounded, Icons.more_horiz_rounded,
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _descCtrl.addListener(() => setState(() => _descLen = _descCtrl.text.length));
-  }
-
-  @override
-  void dispose() { _nameCtrl.dispose(); _descCtrl.dispose(); super.dispose(); }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(32),
-      child: Center(child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
-        child: Container(
-          decoration: BoxDecoration(
-            color: colors.surface,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.18),
-              blurRadius: 40, offset: const Offset(0, 10))],
-          ),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            // ── Header ──────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 22, 22, 16),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Add Sub-Category', style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w700,
-                    color: colors.textPrimary, fontFamily: 'Poppins')),
-                  const SizedBox(height: 5),
-                  Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, children: [
-                    Text('Add a new sub-category under', style: TextStyle(
-                      fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
+                  // If an image has been picked, show preview + clear button
+                  if (_pickedImageBytes != null) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      width: double.infinity,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryOrange.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20)),
-                      child: Text(widget.parentCategoryName, style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w600,
-                        color: AppColors.primaryOrange, fontFamily: 'Poppins')),
+                        border: Border.all(color: AppColors.primaryOrange.withValues(alpha: 0.40)),
+                        borderRadius: BorderRadius.circular(10),
+                        color: colors.inputFill,
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      child: Row(children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.memory(_pickedImageBytes!,
+                            width: 72, height: 72, fit: BoxFit.cover),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(
+                            _pickedImageName.isNotEmpty
+                              ? _pickedImageName
+                              : 'Existing image',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                              color: colors.textPrimary, fontFamily: 'Poppins'),
+                            overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 4),
+                          Text('Image selected', style: TextStyle(
+                            fontSize: 11, color: AppColors.primaryOrange, fontFamily: 'Poppins')),
+                        ])),
+                        InkWell(
+                          onTap: () => setState(() { _pickedImageBytes = null; _pickedImageName = ''; }),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            width: 28, height: 28,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(6)),
+                            child: const Icon(Icons.close_rounded, color: Color(0xFFEF4444), size: 14)),
+                        ),
+                      ]),
                     ),
+                  ] else ...[
+                    // Drag & Drop + click-to-browse zone
+                    DropTarget(
+                      onDragEntered: (_) => setState(() => _isDragOver = true),
+                      onDragExited:  (_) => setState(() => _isDragOver = false),
+                      onDragDone: (detail) async {
+                        _isDragOver = false;
+                        if (detail.files.isNotEmpty) {
+                          final bytes = await detail.files.first.readAsBytes();
+                          final name  = detail.files.first.name;
+                          setState(() { _pickedImageBytes = bytes; _pickedImageName = name; });
+                        } else {
+                          setState(() {});
+                        }
+                      },
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          onTap: _pickImage,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            width: double.infinity,
+                            height: 118,
+                            decoration: BoxDecoration(
+                              color: _isDragOver
+                                ? AppColors.primaryOrange.withValues(alpha: 0.06)
+                                : colors.inputFill,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: _isDragOver ? AppColors.primaryOrange : colors.border,
+                                width: _isDragOver ? 1.8 : 1),
+                            ),
+                            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                width: 44, height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryOrange.withValues(
+                                    alpha: _isDragOver ? 0.14 : 0.08),
+                                  borderRadius: BorderRadius.circular(10)),
+                                child: Icon(
+                                  _isDragOver
+                                    ? Icons.download_rounded
+                                    : Icons.cloud_upload_outlined,
+                                  size: 24, color: AppColors.primaryOrange),
+                              ),
+                              const SizedBox(height: 10),
+                              Text.rich(TextSpan(
+                                style: TextStyle(
+                                  fontSize: 12.5, color: colors.textSecondary,
+                                  fontFamily: 'Poppins', height: 1.5),
+                                children: [
+                                  TextSpan(
+                                    text: _isDragOver
+                                      ? 'Release to upload'
+                                      : 'Drag & drop an image here\n',
+                                    style: _isDragOver
+                                      ? const TextStyle(color: AppColors.primaryOrange,
+                                          fontWeight: FontWeight.w600)
+                                      : null,
+                                  ),
+                                  if (!_isDragOver)
+                                    TextSpan(text: 'or click to ', style: TextStyle(
+                                      color: colors.textHint)),
+                                  if (!_isDragOver)
+                                    const TextSpan(text: 'browse', style: TextStyle(
+                                      color: AppColors.primaryOrange,
+                                      fontWeight: FontWeight.w600)),
+                                ],
+                              ), textAlign: TextAlign.center),
+                            ]),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 6),
+                  Text('Allowed formats: JPG, PNG, WEBP (Max 2MB)',
+                    style: TextStyle(fontSize: 11.5, color: colors.textHint, fontFamily: 'Poppins')),
+                  const SizedBox(height: 16),
+
+                  // Status
+                  _DlgLabel('Status', colors: colors),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    Switch(
+                      value: _isActive,
+                      onChanged: (v) => setState(() => _isActive = v),
+                      activeColor: AppColors.primaryOrange,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(_isActive ? 'Active' : 'Inactive', style: TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w500,
+                      color: colors.textPrimary, fontFamily: 'Poppins')),
                   ]),
-                ])),
-                InkWell(onTap: Get.back, borderRadius: BorderRadius.circular(8),
-                  child: Container(width: 32, height: 32,
-                    decoration: BoxDecoration(
-                      color: colors.comingSoonBadge,
-                      borderRadius: BorderRadius.circular(8)),
-                    child: Icon(Icons.close_rounded, size: 18, color: colors.textSecondary))),
-              ]),
-            ),
-            Divider(height: 1, color: colors.divider),
-            // ── Body ────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                _DlgLabel('Sub-Category Name', required: true, colors: colors),
-                const SizedBox(height: 6),
-                _DlgTF(ctrl: _nameCtrl, hint: 'Enter sub-category name', autofocus: true, colors: colors),
-                const SizedBox(height: 16),
-                _DlgLabel('Description (optional)', colors: colors),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: _descCtrl, maxLines: 4,
-                  style: TextStyle(fontSize: 13.5, color: colors.textPrimary, fontFamily: 'Poppins'),
-                  decoration: InputDecoration(
-                    hintText: 'Enter description',
-                    hintStyle: TextStyle(color: colors.textHint, fontFamily: 'Poppins', fontSize: 13.5),
-                    filled: true, fillColor: colors.inputFill,
-                    contentPadding: const EdgeInsets.all(12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: colors.border)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: colors.border)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: AppColors.primaryOrange, width: 1.5)),
+                ]),
+              ),
+              Divider(height: 1, color: colors.divider),
+
+              // ── Footer ──────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 14, 24, 20),
+                child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  OutlinedButton(
+                    onPressed: Get.back,
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: colors.border),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                    child: Text('Cancel', style: TextStyle(
+                      fontFamily: 'Poppins', color: colors.textPrimary, fontSize: 14)),
                   ),
-                ),
-                Align(alignment: Alignment.centerRight,
-                  child: Text('$_descLen/250', style: TextStyle(
-                    fontSize: 11.5, color: colors.textHint, fontFamily: 'Poppins'))),
-                const SizedBox(height: 16),
-                _DlgLabel('Icon', colors: colors),
-                const SizedBox(height: 8),
-                Row(children: List.generate(_icons.length, (i) => Padding(
-                  padding: EdgeInsets.only(right: i < _icons.length - 1 ? 8 : 0),
-                  child: GestureDetector(
-                    onTap: () => setState(() => _selIcon = i),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 120),
-                      width: 42, height: 42,
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      final name = _nameCtrl.text.trim();
+                      if (name.isNotEmpty) {
+                        widget.onSave(name, _descCtrl.text.trim(), _pickedImageBytes);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryOrange, elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                    child: Text(_saveLabel, style: const TextStyle(
+                      fontFamily: 'Poppins', color: Colors.white,
+                      fontWeight: FontWeight.w600, fontSize: 14)),
+                  ),
+                ]),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Category / Sub-Category Info Dialog
+// ─────────────────────────────────────────────────────────────────────────────
+class _CategoryInfoDialog extends StatelessWidget {
+  final bool isSubCategory;
+  final String name;
+  final String description;
+  final String? parentName;
+  final List<String>? subCategories;
+  final int globalIndex;
+  final int subIndex;
+
+  const _CategoryInfoDialog({
+    required this.isSubCategory,
+    required this.name,
+    required this.description,
+    this.parentName,
+    this.subCategories,
+    required this.globalIndex,
+    this.subIndex = 0,
+  });
+
+  String get _createdOn {
+    if (!isSubCategory) {
+      return globalIndex < _kCatDates.length ? _kCatDates[globalIndex] : '01 May 2024';
+    }
+    final ci = globalIndex, si = subIndex;
+    return (ci < _kSubDates.length && si < _kSubDates[ci].length)
+        ? _kSubDates[ci][si] : '01 May 2024';
+  }
+
+  int get _products {
+    if (!isSubCategory) {
+      return globalIndex < _kCatProducts.length ? _kCatProducts[globalIndex] : 0;
+    }
+    final ci = globalIndex, si = subIndex;
+    return (ci < _kSubProducts.length && si < _kSubProducts[ci].length)
+        ? _kSubProducts[ci][si] : 0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    const accent  = Color(0xFF0EA5E9); // info blue
+    const orange  = AppColors.primaryOrange;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(32),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Container(
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 40, offset: const Offset(0, 10))],
+            ),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+
+              // ── Header ────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 20, 16),
+                child: Row(children: [
+                  Container(
+                    width: 38, height: 38,
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(10)),
+                    child: const Icon(Icons.info_outline_rounded, color: accent, size: 20)),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(isSubCategory ? 'Sub-Category Info' : 'Category Info',
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700,
+                        color: colors.textPrimary, fontFamily: 'Poppins')),
+                    Text(isSubCategory ? 'Sub-category details' : 'Category details',
+                      style: TextStyle(fontSize: 12, color: colors.textSecondary, fontFamily: 'Poppins')),
+                  ])),
+                  InkWell(
+                    onTap: Get.back,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 30, height: 30,
+                      decoration: BoxDecoration(color: colors.comingSoonBadge, borderRadius: BorderRadius.circular(8)),
+                      child: Icon(Icons.close_rounded, size: 16, color: colors.textSecondary)),
+                  ),
+                ]),
+              ),
+              Divider(height: 1, color: colors.divider),
+
+              // ── Body ──────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+
+                  // Name
+                  _InfoRow(
+                    label: isSubCategory ? 'Sub-Category Name' : 'Category Name',
+                    colors: colors,
+                    child: Text(name, style: TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600,
+                      color: colors.textPrimary, fontFamily: 'Poppins')),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Parent category (sub-categories only)
+                  if (isSubCategory && parentName != null) ...[
+                    _InfoRow(
+                      label: 'Parent Category',
+                      colors: colors,
+                      child: Text(parentName!, style: TextStyle(
+                        fontSize: 13.5, color: orange,
+                        fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+
+                  // Type badge
+                  _InfoRow(
+                    label: 'Type',
+                    colors: colors,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _selIcon == i
-                          ? AppColors.primaryOrange.withValues(alpha: 0.12) : colors.inputFill,
-                        borderRadius: BorderRadius.circular(9),
-                        border: Border.all(
-                          color: _selIcon == i ? AppColors.primaryOrange : colors.border,
-                          width: _selIcon == i ? 1.5 : 1)),
-                      child: Icon(_icons[i],
-                        color: _selIcon == i ? AppColors.primaryOrange : colors.textHint, size: 20),
+                        color: isSubCategory
+                          ? const Color(0xFF22C55E).withValues(alpha: 0.10)
+                          : const Color(0xFF4A3AFF).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20)),
+                      child: Text(isSubCategory ? 'Sub-Category' : 'Category',
+                        style: TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Poppins',
+                          color: isSubCategory ? const Color(0xFF22C55E) : const Color(0xFF4A3AFF))),
                     ),
                   ),
-                ))),
-                const SizedBox(height: 16),
-                _DlgLabel('Status', colors: colors),
-                const SizedBox(height: 8),
-                Row(children: [
-                  Switch(
-                    value: _isActive, onChanged: (v) => setState(() => _isActive = v),
-                    activeColor: AppColors.primaryOrange,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  const SizedBox(height: 14),
+
+                  // Products + Status row
+                  Row(children: [
+                    Expanded(child: _InfoRow(
+                      label: 'Products',
+                      colors: colors,
+                      child: Text('$_products', style: TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w600,
+                        color: colors.textPrimary, fontFamily: 'Poppins')),
+                    )),
+                    const SizedBox(width: 24),
+                    Expanded(child: _InfoRow(
+                      label: 'Status',
+                      colors: colors,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF22C55E).withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(20)),
+                        child: const Text('Active', style: TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w600,
+                          color: Color(0xFF22C55E), fontFamily: 'Poppins')),
+                      ),
+                    )),
+                  ]),
+                  const SizedBox(height: 14),
+
+                  // Created On
+                  _InfoRow(
+                    label: 'Created On',
+                    colors: colors,
+                    child: Text(_createdOn, style: TextStyle(
+                      fontSize: 13.5, color: colors.textPrimary, fontFamily: 'Poppins')),
                   ),
-                  const SizedBox(width: 8),
-                  Text(_isActive ? 'Active' : 'Inactive', style: TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w500,
-                    color: colors.textPrimary, fontFamily: 'Poppins')),
+                  const SizedBox(height: 16),
+
+                  // Description section
+                  Divider(height: 1, color: colors.divider),
+                  const SizedBox(height: 14),
+                  Text('Description', style: TextStyle(
+                    fontSize: 12.5, fontWeight: FontWeight.w600,
+                    color: colors.textSecondary, fontFamily: 'Poppins',
+                    letterSpacing: 0.4)),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: colors.inputFill,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: colors.border)),
+                    child: description.isEmpty
+                      ? Row(children: [
+                          Icon(Icons.info_outline, size: 15,
+                            color: colors.textHint),
+                          const SizedBox(width: 6),
+                          Text('No description added', style: TextStyle(
+                            fontSize: 13, color: colors.textHint,
+                            fontStyle: FontStyle.italic, fontFamily: 'Poppins')),
+                        ])
+                      : Text(description, style: TextStyle(
+                          fontSize: 13.5, color: colors.textPrimary,
+                          fontFamily: 'Poppins', height: 1.55)),
+                  ),
+
+                  // Sub-categories list (for parent categories only)
+                  if (!isSubCategory && subCategories != null && subCategories!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Divider(height: 1, color: colors.divider),
+                    const SizedBox(height: 14),
+                    Row(children: [
+                      Text('Sub-Categories', style: TextStyle(
+                        fontSize: 12.5, fontWeight: FontWeight.w600,
+                        color: colors.textSecondary, fontFamily: 'Poppins',
+                        letterSpacing: 0.4)),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: orange.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(20)),
+                        child: Text('${subCategories!.length}', style: const TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w700,
+                          color: orange, fontFamily: 'Poppins')),
+                      ),
+                    ]),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8, runSpacing: 8,
+                      children: subCategories!.map((s) => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: colors.comingSoonBadge,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: colors.border)),
+                        child: Text(s, style: TextStyle(
+                          fontSize: 12, color: colors.textPrimary, fontFamily: 'Poppins')),
+                      )).toList(),
+                    ),
+                  ],
                 ]),
-              ]),
-            ),
-            Divider(height: 1, color: colors.divider),
-            // ── Footer ──────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 14, 24, 20),
-              child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                OutlinedButton(
-                  onPressed: Get.back,
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: colors.border),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                  child: Text('Cancel', style: TextStyle(
-                    fontFamily: 'Poppins', color: colors.textPrimary, fontSize: 14)),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    if (_nameCtrl.text.trim().isNotEmpty) widget.onSave(_nameCtrl.text.trim());
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryOrange, elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                  child: const Text('Save Sub-Category', style: TextStyle(
-                    fontFamily: 'Poppins', color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-                ),
-              ]),
-            ),
-          ]),
+              ),
+              Divider(height: 1, color: colors.divider),
+
+              // ── Footer ────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 14, 24, 20),
+                child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  ElevatedButton(
+                    onPressed: Get.back,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryOrange, elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                    child: const Text('Close', style: TextStyle(
+                      fontFamily: 'Poppins', color: Colors.white,
+                      fontWeight: FontWeight.w600, fontSize: 14)),
+                  ),
+                ]),
+              ),
+            ]),
+          ),
         ),
-      )),
+      ),
     );
+  }
+}
+
+// Helper for _CategoryInfoDialog
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final Widget child;
+  final AppThemeColors colors;
+  const _InfoRow({required this.label, required this.child, required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: TextStyle(
+        fontSize: 11.5, fontWeight: FontWeight.w600,
+        color: colors.textSecondary, fontFamily: 'Poppins',
+        letterSpacing: 0.3)),
+      const SizedBox(height: 5),
+      child,
+    ]);
   }
 }
 
@@ -1607,109 +2089,3 @@ class _DlgTF extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Generic Form Dialog (edit category / add-edit sub-category)
-// ─────────────────────────────────────────────────────────────────────────────
-class _FormDialog extends StatelessWidget {
-  final String title, hint;
-  final TextEditingController controller;
-  final VoidCallback onSave;
-  const _FormDialog({required this.title, required this.hint, required this.controller, required this.onSave});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.zero,
-      child: Center(child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480, minWidth: 380),
-        child: Container(
-          decoration: BoxDecoration(
-            color: colors.surface,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.20),
-              blurRadius: 32, offset: const Offset(0, 8))],
-          ),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-              child: Row(children: [
-                Container(
-                  width: 40, height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryOrange.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10)),
-                  child: const Icon(Icons.edit_note_rounded, color: AppColors.primaryOrange, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(child: Text(title, style: TextStyle(
-                  fontSize: 17, fontWeight: FontWeight.w700,
-                  color: colors.textPrimary, fontFamily: 'Poppins'))),
-                InkWell(
-                  onTap: Get.back,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    width: 32, height: 32,
-                    decoration: BoxDecoration(color: colors.comingSoonBadge, borderRadius: BorderRadius.circular(8)),
-                    child: Icon(Icons.close_rounded, size: 18, color: colors.textSecondary),
-                  ),
-                ),
-              ]),
-            ),
-            Padding(padding: const EdgeInsets.only(top: 16),
-              child: Divider(height: 1, color: colors.divider)),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Name', style: TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w500,
-                  color: colors.textPrimary, fontFamily: 'Poppins')),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: controller,
-                  autofocus: true,
-                  style: TextStyle(fontSize: 13.5, color: colors.textPrimary, fontFamily: 'Poppins'),
-                  decoration: InputDecoration(
-                    hintText: hint,
-                    hintStyle: TextStyle(color: colors.textHint, fontFamily: 'Poppins'),
-                    filled: true, fillColor: colors.inputFill,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: colors.border)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: colors.border)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: AppColors.primaryOrange, width: 1.5)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                  ),
-                ),
-              ]),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                OutlinedButton(
-                  onPressed: Get.back,
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: colors.border),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                  child: Text('Cancel', style: TextStyle(
-                    fontFamily: 'Poppins', color: colors.textSecondary, fontSize: 14)),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: onSave,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryOrange, elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                  child: const Text('Save', style: TextStyle(
-                    fontFamily: 'Poppins', color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-                ),
-              ]),
-            ),
-          ]),
-        ),
-      )),
-    );
-  }
-}

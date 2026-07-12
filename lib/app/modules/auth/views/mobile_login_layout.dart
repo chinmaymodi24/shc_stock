@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/theme_controller.dart';
 import '../widgets/login_form.dart';
 import '../widgets/warehouse_illustration.dart';
 
@@ -12,7 +10,6 @@ class MobileLoginLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final size = MediaQuery.of(context).size;
-    final topPadding = MediaQuery.of(context).padding.top; // status-bar height
 
     // ── Proportions ──────────────────────────────────────────────
     // Image occupies the top 40% of the screen.
@@ -21,7 +18,7 @@ class MobileLoginLayout extends StatelessWidget {
     final double cardTop = size.height * 0.36;
 
     return Scaffold(
-      backgroundColor: colors.background,
+      backgroundColor: AppColors.backgroundLavender,
 
       // KEY FIX: StackFit.expand forces the Stack to fill the entire
       // Scaffold body. Without this, the Stack shrinks to the height
@@ -36,23 +33,9 @@ class MobileLoginLayout extends StatelessWidget {
             left: 0,
             right: 0,
             height: imageHeight,
-            child: Stack(
-              children: [
-                // Image fills its Positioned bounds completely
-                Positioned.fill(
-                  child: WarehouseIllustration(
-                    width: size.width,
-                    height: imageHeight,
-                  ),
-                ),
-
-                // Theme toggle — respects status-bar safe area
-                Positioned(
-                  top: topPadding + 12,
-                  right: 16,
-                  child: const _MobileThemeToggle(),
-                ),
-              ],
+            child: WarehouseIllustration(
+              width: size.width,
+              height: imageHeight,
             ),
           ),
 
@@ -90,58 +73,6 @@ class MobileLoginLayout extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Floating theme toggle for mobile login image overlay ──────────────────────
-class _MobileThemeToggle extends StatelessWidget {
-  const _MobileThemeToggle();
-
-  @override
-  Widget build(BuildContext context) {
-    final tc = Get.find<ThemeController>();
-    return Obx(() => Container(
-      height: 36,
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _MobileTBtn(icon: Icons.wb_sunny_rounded,  label: 'Light',  isActive: tc.isLight,  onTap: () => tc.setTheme(ThemeMode.light)),
-          _MobileTBtn(icon: Icons.nightlight_round,   label: 'Dark',   isActive: tc.isDark,   onTap: () => tc.setTheme(ThemeMode.dark)),
-          _MobileTBtn(icon: Icons.devices_rounded,    label: 'System', isActive: tc.isSystem, onTap: () => tc.setTheme(ThemeMode.system)),
-        ],
-      ),
-    ));
-  }
-}
-
-class _MobileTBtn extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-  const _MobileTBtn({required this.icon, required this.label, required this.isActive, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        width: 36,
-        height: 36,
-        margin: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.primaryOrange : Colors.transparent,
-          borderRadius: BorderRadius.circular(7),
-        ),
-        child: Icon(icon, size: 16, color: isActive ? Colors.white : Colors.white60),
       ),
     );
   }

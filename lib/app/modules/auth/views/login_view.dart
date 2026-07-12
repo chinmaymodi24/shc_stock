@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/login_controller.dart';
 import 'mobile_login_layout.dart';
+import 'tablet_login_layout.dart';
 import 'web_login_layout.dart';
 
 class LoginView extends StatelessWidget {
@@ -12,10 +13,10 @@ class LoginView extends StatelessWidget {
     Get.put(LoginController());
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= 700) {
-          return const WebLoginLayout();
-        }
-        return const MobileLoginLayout();
+        final w = constraints.maxWidth;
+        if (w >= 1100) return const WebLoginLayout();     // Desktop
+        if (w >= 600)  return const TabletLoginLayout();  // Tablet
+        return const MobileLoginLayout();                 // Mobile
       },
     );
   }

@@ -1,66 +1,37 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../models/dashboard_models.dart';
 import '../../../core/theme/app_colors.dart';
 
-class DonutChart extends StatelessWidget {
-  final double inStock;
-  final double lowStock;
-  final double outOfStock;
-  final int totalItems;
+/// Multi-slice donut with a dot-legend — used for "Sales by category".
+class CategoryDonutChart extends StatelessWidget {
+  final List<CategorySlice> slices;
+  final double size;
 
-  const DonutChart({
-    super.key,
-    required this.inStock,
-    required this.lowStock,
-    required this.outOfStock,
-    required this.totalItems,
-  });
+  const CategoryDonutChart({super.key, required this.slices, this.size = 140});
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
     return Row(
       children: [
         SizedBox(
-          width: 180,
-          height: 180,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              CustomPaint(
-                size: const Size(180, 180),
-                painter: _DonutPainter(
-                  inStock: inStock,
-                  lowStock: lowStock,
-                  outOfStock: outOfStock,
-                ),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    totalItems.toString().replaceAllMapped(
-                          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                          (m) => '${m[1]},'),
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins'),
-                  ),
-                  Text('Total Items', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: colors.textSecondary, fontFamily: 'Poppins')),
-                ],
-              ),
-            ],
+          width: size,
+          height: size,
+          child: CustomPaint(
+            size: Size(size, size),
+            painter: _DonutPainter(slices: slices),
           ),
         ),
-        const SizedBox(width: 28),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _LegendItem(color: AppColors.primaryOrange, label: 'In Stock', value: '1,001 (${inStock}%)'),
-            const SizedBox(height: 16),
-            _LegendItem(color: const Color(0xFFFBBF24), label: 'Low Stock', value: '179 (${lowStock}%)'),
-            const SizedBox(height: 16),
-            _LegendItem(color: const Color(0xFFEF4444), label: 'Out of Stock', value: '65 (${outOfStock}%)'),
-          ],
+        const SizedBox(width: 24),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: slices.map((s) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: _LegendItem(color: s.color, label: s.label, percent: s.percent),
+            )).toList(),
+          ),
         ),
       ],
     );
@@ -70,23 +41,23 @@ class DonutChart extends StatelessWidget {
 class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;
-  final String value;
+  final double percent;
 
-  const _LegendItem({required this.color, required this.label, required this.value});
+  const _LegendItem({required this.color, required this.label, required this.percent});
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
     return Row(
       children: [
-        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(width: 9, height: 9, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colors.textPrimary, fontFamily: 'Poppins')),
-            Text(value, style: TextStyle(fontSize: 12, color: colors.textSecondary, fontFamily: 'Poppins')),
-          ],
+        Expanded(
+          child: Text(
+            '$label — ${percent.toStringAsFixed(0)}%',
+            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: colors.textPrimary, fontFamily: 'Poppins'),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );
@@ -94,45 +65,33 @@ class _LegendItem extends StatelessWidget {
 }
 
 class _DonutPainter extends CustomPainter {
-  final double inStock;
-  final double lowStock;
-  final double outOfStock;
+  final List<CategorySlice> slices;
 
-  _DonutPainter({required this.inStock, required this.lowStock, required this.outOfStock});
+  _DonutPainter({required this.slices});
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (slices.isEmpty) return;
+
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 12;
-    const strokeWidth = 28.0;
+    final radius = size.width / 2 - 10;
+    const strokeWidth = 24.0;
+    const gapAngle = 0.04;
 
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.butt;
 
-    const gapAngle = 0.035; // small gap between segments
-    final total = inStock + lowStock + outOfStock;
-
-    final inStockAngle = (inStock / total) * 2 * pi - gapAngle;
-    final lowStockAngle = (lowStock / total) * 2 * pi - gapAngle;
-    final outStockAngle = (outOfStock / total) * 2 * pi - gapAngle;
-
+    final total = slices.fold<double>(0, (sum, s) => sum + s.percent);
     double startAngle = -pi / 2;
 
-    // In Stock - orange
-    paint.color = AppColors.primaryOrange;
-    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), startAngle, inStockAngle, false, paint);
-    startAngle += inStockAngle + gapAngle;
-
-    // Low Stock - yellow
-    paint.color = const Color(0xFFFBBF24);
-    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), startAngle, lowStockAngle, false, paint);
-    startAngle += lowStockAngle + gapAngle;
-
-    // Out of Stock - red
-    paint.color = const Color(0xFFEF4444);
-    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), startAngle, outStockAngle, false, paint);
+    for (final slice in slices) {
+      final sweep = total == 0 ? 0.0 : (slice.percent / total) * 2 * pi - gapAngle;
+      paint.color = slice.color;
+      canvas.drawArc(Rect.fromCircle(center: center, radius: radius), startAngle, sweep, false, paint);
+      startAngle += sweep + gapAngle;
+    }
   }
 
   @override

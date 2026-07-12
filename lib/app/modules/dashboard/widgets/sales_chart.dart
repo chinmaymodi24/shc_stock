@@ -1,76 +1,77 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/dashboard_models.dart';
 import '../../../core/theme/app_colors.dart';
 
 class SalesLineChart extends StatelessWidget {
-  final List<SalesChartPoint> data;
+  final List<ChartPoint> data;
+  final Color lineColor;
 
-  const SalesLineChart({super.key, required this.data});
+  const SalesLineChart({
+    super.key,
+    required this.data,
+    this.lineColor = AppColors.primaryOrange,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    return CustomPaint(
-      painter: _SalesChartPainter(data: data, gridColor: colors.divider, labelColor: colors.textSecondary, dotBorderColor: colors.surface),
+    // Without an explicit width, a bare CustomPaint collapses to zero width
+    // when its parent (a Column) only offers a loose 0..maxWidth constraint.
+    return SizedBox(
+      width: double.infinity,
+      child: CustomPaint(
+        painter: _SalesChartPainter(
+          data: data,
+          lineColor: lineColor,
+          gridColor: colors.divider,
+          labelColor: colors.textSecondary,
+          dotBorderColor: colors.surface,
+        ),
+      ),
     );
   }
 }
 
 class _SalesChartPainter extends CustomPainter {
-  final List<SalesChartPoint> data;
+  final List<ChartPoint> data;
+  final Color lineColor;
   final Color gridColor;
   final Color labelColor;
   final Color dotBorderColor;
 
-  _SalesChartPainter({required this.data, required this.gridColor, required this.labelColor, required this.dotBorderColor});
+  _SalesChartPainter({
+    required this.data,
+    required this.lineColor,
+    required this.gridColor,
+    required this.labelColor,
+    required this.dotBorderColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (data.isEmpty) return;
 
-    final double maxVal = 200000;
-    final yLabels = [200000.0, 150000.0, 100000.0, 50000.0, 0.0];
-    final double leftPad = 52;
-    final double bottomPad = 32;
+    final double maxVal = data.map((d) => d.value).reduce((a, b) => a > b ? a : b) * 1.15;
+    final double leftPad = 8;
+    final double bottomPad = 24;
     final double topPad = 12;
     final double chartW = size.width - leftPad;
     final double chartH = size.height - bottomPad - topPad;
 
-    final gridPaint = Paint()
-      ..color = gridColor
-      ..strokeWidth = 1;
-
     final textStyle = TextStyle(fontSize: 11, color: labelColor, fontFamily: 'Poppins');
-
-    // Draw Y grid lines and labels
-    for (int i = 0; i < yLabels.length; i++) {
-      final y = topPad + chartH * (1 - yLabels[i] / maxVal);
-      canvas.drawLine(Offset(leftPad, y), Offset(size.width, y), gridPaint);
-
-      String label;
-      if (yLabels[i] == 0) label = '0';
-      else label = '${(yLabels[i] / 1000).toInt()}K';
-
-      final tp = TextPainter(
-        text: TextSpan(text: label, style: textStyle),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      tp.paint(canvas, Offset(0, y - tp.height / 2));
-    }
 
     // Compute point positions
     final points = <Offset>[];
     for (int i = 0; i < data.length; i++) {
-      final x = leftPad + (i / (data.length - 1)) * chartW;
-      final y = topPad + chartH * (1 - data[i].value / maxVal);
+      final x = leftPad + (data.length == 1 ? 0 : (i / (data.length - 1)) * chartW);
+      final y = topPad + chartH * (1 - (maxVal == 0 ? 0 : data[i].value / maxVal));
       points.add(Offset(x, y));
     }
 
     // Draw filled area under the line
     final fillPath = Path();
     fillPath.moveTo(points.first.dx, topPad + chartH);
-    for (final pt in points) fillPath.lineTo(pt.dx, pt.dy);
+    for (final pt in points) { fillPath.lineTo(pt.dx, pt.dy); }
     fillPath.lineTo(points.last.dx, topPad + chartH);
     fillPath.close();
 
@@ -78,13 +79,13 @@ class _SalesChartPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [AppColors.primaryOrange.withValues(alpha: 0.15), AppColors.primaryOrange.withValues(alpha: 0.0)],
+        colors: [lineColor.withValues(alpha: 0.18), lineColor.withValues(alpha: 0.0)],
       ).createShader(Rect.fromLTWH(0, topPad, size.width, chartH));
     canvas.drawPath(fillPath, fillPaint);
 
     // Draw smooth line
     final linePaint = Paint()
-      ..color = AppColors.primaryOrange
+      ..color = lineColor
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round
@@ -100,25 +101,24 @@ class _SalesChartPainter extends CustomPainter {
     canvas.drawPath(linePath, linePaint);
 
     // Draw dots
-    final dotPaint = Paint()..color = AppColors.primaryOrange..style = PaintingStyle.fill;
+    final dotPaint = Paint()..color = lineColor..style = PaintingStyle.fill;
     final dotBorderPaint = Paint()..color = dotBorderColor..style = PaintingStyle.fill;
     for (final pt in points) {
-      canvas.drawCircle(pt, 6, dotBorderPaint);
-      canvas.drawCircle(pt, 4, dotPaint);
+      canvas.drawCircle(pt, 5, dotBorderPaint);
+      canvas.drawCircle(pt, 3.5, dotPaint);
     }
 
     // Draw X labels
     for (int i = 0; i < data.length; i++) {
-      final x = leftPad + (i / (data.length - 1)) * chartW;
       final tp = TextPainter(
         text: TextSpan(text: data[i].label, style: textStyle),
         textDirection: TextDirection.ltr,
       )..layout();
-      tp.paint(canvas, Offset(x - tp.width / 2, size.height - bottomPad + 8));
+      tp.paint(canvas, Offset(points[i].dx - tp.width / 2, size.height - bottomPad + 8));
     }
   }
 
   @override
   bool shouldRepaint(covariant _SalesChartPainter oldDelegate) =>
-      oldDelegate.gridColor != gridColor || oldDelegate.labelColor != labelColor;
+      oldDelegate.gridColor != gridColor || oldDelegate.labelColor != labelColor || oldDelegate.lineColor != lineColor;
 }
