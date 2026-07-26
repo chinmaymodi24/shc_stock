@@ -8,6 +8,8 @@ class PurchaseOrder {
   final int itemCount;
   final double amount;
   final PurchaseStatus status;
+  final String modifiedBy;
+  final DateTime? modifiedAt;
 
   const PurchaseOrder({
     required this.id,
@@ -18,6 +20,8 @@ class PurchaseOrder {
     required this.itemCount,
     required this.amount,
     required this.status,
+    this.modifiedBy = 'Admin',
+    this.modifiedAt,
   });
 }
 

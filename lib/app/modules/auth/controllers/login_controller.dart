@@ -4,21 +4,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../routes/app_routes.dart';
 
 class LoginController extends GetxController {
-  final emailController    = TextEditingController();
+  final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final formKey            = GlobalKey<FormState>();
+  final formKey = GlobalKey<FormState>();
 
   final RxBool isPasswordVisible = false.obs;
-  final RxBool rememberMe        = false.obs;
-  final RxBool isLoading         = false.obs;
+  final RxBool rememberMe = false.obs;
+  final RxBool isLoading = false.obs;
   final RxString selectedLanguage = 'English'.obs;
 
   final List<String> languages = ['English', 'Hindi', 'Gujarati'];
 
   // ── SharedPreferences keys ─────────────────────────────────
-  static const _keyRemember  = 'remember_me';
-  static const _keyEmail     = 'saved_email';
-  static const _keyPassword  = 'saved_password'; // legacy key, only used to purge old plaintext values
+  static const _keyRemember = 'remember_me';
+  static const _keyEmail = 'saved_email';
+  static const _keyPassword =
+      'saved_password'; // legacy key, only used to purge old plaintext values
 
   // ── Lifecycle ─────────────────────────────────────────────────
   @override
@@ -42,7 +43,7 @@ class LoginController extends GetxController {
 
     final isRemembered = prefs.getBool(_keyRemember) ?? false;
     if (isRemembered) {
-      rememberMe.value     = true;
+      rememberMe.value = true;
       emailController.text = prefs.getString(_keyEmail) ?? '';
     }
   }
@@ -54,7 +55,7 @@ class LoginController extends GetxController {
     final prefs = await SharedPreferences.getInstance();
     if (rememberMe.value) {
       await prefs.setBool(_keyRemember, true);
-      await prefs.setString(_keyEmail,  emailController.text.trim());
+      await prefs.setString(_keyEmail, emailController.text.trim());
     } else {
       await prefs.remove(_keyRemember);
       await prefs.remove(_keyEmail);
@@ -72,14 +73,15 @@ class LoginController extends GetxController {
   void changeLanguage(String language) => selectedLanguage.value = language;
 
   String? validateEmail(String? value) {
-    if (value == null || value.isEmpty) return 'Please enter your email address.';
-    if (!GetUtils.isEmail(value))       return 'Please enter a valid email address.';
+    if (value == null || value.isEmpty)
+      return 'Please enter your email address.';
+    if (!GetUtils.isEmail(value)) return 'Please enter a valid email address.';
     return null;
   }
 
   String? validatePassword(String? value) {
     if (value == null || value.isEmpty) return 'Please enter your password.';
-    if (value.length < 6)               return 'Password must be at least 6 characters.';
+    if (value.length < 6) return 'Password must be at least 6 characters.';
     return null;
   }
 
@@ -93,7 +95,9 @@ class LoginController extends GetxController {
       await Future.delayed(const Duration(milliseconds: 600));
 
       // Save remember-me silently — never block navigation
-      try { await _saveRememberMe(); } catch (_) {}
+      try {
+        await _saveRememberMe();
+      } catch (_) {}
 
       Get.offNamed(AppRoutes.dashboard);
     } catch (e) {
@@ -146,4 +150,3 @@ class LoginController extends GetxController {
     );
   }
 }
-

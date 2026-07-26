@@ -15,8 +15,8 @@ class TabletLoginLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors     = context.appColors;
-    final size       = MediaQuery.of(context).size;
+    final colors = context.appColors;
+    final size = MediaQuery.of(context).size;
     final topPadding = MediaQuery.of(context).padding.top;
 
     return Scaffold(
@@ -24,7 +24,6 @@ class TabletLoginLayout extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-
           // ── Layer 1: Full-screen warehouse illustration ──────────
           Positioned.fill(
             child: WarehouseIllustration(
@@ -115,31 +114,33 @@ class _TabletThemeToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tc = Get.find<ThemeController>();
-    return Obx(() => Container(
-      height: 36,
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.30),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+    return Obx(
+      () => Container(
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.30),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _TBtn(
+              icon: Icons.wb_sunny_rounded,
+              label: 'Light',
+              isActive: tc.isLight,
+              onTap: () => tc.setTheme(ThemeMode.light),
+            ),
+            _TBtn(
+              icon: Icons.devices_rounded,
+              label: 'System',
+              isActive: tc.isSystem,
+              onTap: () => tc.setTheme(ThemeMode.system),
+            ),
+          ],
+        ),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _TBtn(
-            icon: Icons.wb_sunny_rounded,
-            label: 'Light',
-            isActive: tc.isLight,
-            onTap: () => tc.setTheme(ThemeMode.light),
-          ),
-          _TBtn(
-            icon: Icons.devices_rounded,
-            label: 'System',
-            isActive: tc.isSystem,
-            onTap: () => tc.setTheme(ThemeMode.system),
-          ),
-        ],
-      ),
-    ));
+    );
   }
 }
 
@@ -149,17 +150,20 @@ class _TBtn extends StatelessWidget {
   final bool isActive;
   final VoidCallback onTap;
   const _TBtn({
-    required this.icon, required this.label,
-    required this.isActive, required this.onTap,
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        width: 36, height: 36,
+        width: 36,
+        height: 36,
         margin: const EdgeInsets.all(3),
         decoration: BoxDecoration(
           color: isActive ? AppColors.primaryOrange : Colors.transparent,

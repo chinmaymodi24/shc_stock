@@ -7,158 +7,158 @@ class AppTextStyles {
 
   // ── Static (brand / non-theme-sensitive) ────────────────────────────────
   static TextStyle get heading1 => GoogleFonts.poppins(
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textDark,
-        letterSpacing: -0.5,
-      );
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textDark,
+    letterSpacing: -0.5,
+  );
 
   static TextStyle get heading2 => GoogleFonts.poppins(
-        fontSize: 22,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textDark,
-        letterSpacing: -0.3,
-      );
+    fontSize: 22,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textDark,
+    letterSpacing: -0.3,
+  );
 
   static TextStyle get subtitle => GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textMedium,
-      );
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textMedium,
+  );
 
   static TextStyle get subtitleHighlight => GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: AppColors.primaryOrange,
-      );
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.primaryOrange,
+  );
 
   static TextStyle get label => GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textDark,
-      );
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textDark,
+  );
 
   static TextStyle get inputHint => GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textLight,
-      );
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textLight,
+  );
 
   static TextStyle get inputText => GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textDark,
-      );
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textDark,
+  );
 
   static TextStyle get buttonText => GoogleFonts.poppins(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        color: AppColors.white,
-        letterSpacing: 0.3,
-      );
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    color: AppColors.white,
+    letterSpacing: 0.3,
+  );
 
   static TextStyle get buttonOutlineText => GoogleFonts.poppins(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        color: AppColors.primaryPurple,
-        letterSpacing: 0.3,
-      );
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    color: AppColors.primaryPurple,
+    letterSpacing: 0.3,
+  );
 
   static TextStyle get forgotPassword => GoogleFonts.poppins(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: AppColors.primaryPurple,
-      );
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    color: AppColors.primaryPurple,
+  );
 
   static TextStyle get rememberMe => GoogleFonts.poppins(
-        fontSize: 13,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textMedium,
-      );
+    fontSize: 13,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textMedium,
+  );
 
   static TextStyle get orDivider => GoogleFonts.poppins(
-        fontSize: 13,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textLight,
-      );
+    fontSize: 13,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textLight,
+  );
 
   static TextStyle get badgeTitle => GoogleFonts.poppins(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textDark,
-      );
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textDark,
+  );
 
   static TextStyle get badgeSubtitle => GoogleFonts.poppins(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textMedium,
-      );
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textMedium,
+  );
 
   static TextStyle get heroHeading => GoogleFonts.poppins(
-        fontSize: 36,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textDark,
-        height: 1.2,
-      );
+    fontSize: 36,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textDark,
+    height: 1.2,
+  );
 
   static TextStyle get heroHighlight => GoogleFonts.poppins(
-        fontSize: 36,
-        fontWeight: FontWeight.w700,
-        color: AppColors.primaryOrange,
-        height: 1.2,
-      );
+    fontSize: 36,
+    fontWeight: FontWeight.w700,
+    color: AppColors.primaryOrange,
+    height: 1.2,
+  );
 
   static TextStyle get heroBody => GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textMedium,
-        height: 1.6,
-      );
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textMedium,
+    height: 1.6,
+  );
 
   static TextStyle get copyright => GoogleFonts.poppins(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textLight,
-      );
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textLight,
+  );
 
   // ── Context-aware variants (use in build() for dark mode support) ────────
 
   static TextStyle heading1Ctx(BuildContext context) => GoogleFonts.poppins(
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-        color: context.appColors.textPrimary,
-        letterSpacing: -0.5,
-      );
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    color: context.appColors.textPrimary,
+    letterSpacing: -0.5,
+  );
 
   static TextStyle subtitleCtx(BuildContext context) => GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: context.appColors.textSecondary,
-      );
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: context.appColors.textSecondary,
+  );
 
   static TextStyle labelCtx(BuildContext context) => GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: context.appColors.textPrimary,
-      );
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: context.appColors.textPrimary,
+  );
 
   static TextStyle inputHintCtx(BuildContext context) => GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: context.appColors.textHint,
-      );
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: context.appColors.textHint,
+  );
 
   static TextStyle inputTextCtx(BuildContext context) => GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: context.appColors.textPrimary,
-      );
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: context.appColors.textPrimary,
+  );
 
   static TextStyle badgeTitleCtx(BuildContext context) => GoogleFonts.poppins(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: context.appColors.textPrimary,
-      );
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    color: context.appColors.textPrimary,
+  );
 
   static TextStyle badgeSubtitleCtx(BuildContext context) =>
       GoogleFonts.poppins(
@@ -168,20 +168,20 @@ class AppTextStyles {
       );
 
   static TextStyle rememberMeCtx(BuildContext context) => GoogleFonts.poppins(
-        fontSize: 13,
-        fontWeight: FontWeight.w400,
-        color: context.appColors.textSecondary,
-      );
+    fontSize: 13,
+    fontWeight: FontWeight.w400,
+    color: context.appColors.textSecondary,
+  );
 
   static TextStyle orDividerCtx(BuildContext context) => GoogleFonts.poppins(
-        fontSize: 13,
-        fontWeight: FontWeight.w400,
-        color: context.appColors.textHint,
-      );
+    fontSize: 13,
+    fontWeight: FontWeight.w400,
+    color: context.appColors.textHint,
+  );
 
   static TextStyle copyrightCtx(BuildContext context) => GoogleFonts.poppins(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        color: context.appColors.textSecondary,
-      );
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    color: context.appColors.textSecondary,
+  );
 }

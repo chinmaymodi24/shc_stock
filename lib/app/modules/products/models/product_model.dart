@@ -19,6 +19,8 @@ class ProductModel {
   final double taxPercent;
   final String stockLocation;
   final DateTime createdAt;
+  final String modifiedBy;
+  final DateTime? modifiedAt;
 
   // Variant toggles
   final List<String> densityVariants;
@@ -46,12 +48,16 @@ class ProductModel {
     this.taxPercent = 18.0,
     this.stockLocation = 'Main Warehouse',
     required this.createdAt,
+    this.modifiedBy = 'Admin',
+    this.modifiedAt,
     this.densityVariants = const [],
     this.boardVariants = const [],
     this.thicknessVariants = const [],
     this.reinforcementTypes = const [],
     this.otherSpecs,
   });
+
+  DateTime get effectiveModifiedAt => modifiedAt ?? createdAt;
 
   String get stockStatus {
     if (currentStock == 0) return 'Out of Stock';
@@ -106,8 +112,10 @@ class ProductCategory {
   final String name;
   final List<String> subProducts;
   final String description;
+
   /// Parallel to [subProducts] — each index holds the description for that sub-category.
   final List<String> subDescriptions;
+
   /// User-picked image bytes (null = use initials placeholder).
   final Uint8List? imageBytes;
 

@@ -77,7 +77,7 @@ class _ImageShimmerState extends State<_ImageShimmer>
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDarkMode;
-    final base  = isDark ? const Color(0xFF1A1A2E) : const Color(0xFFE8E6FF);
+    final base = isDark ? const Color(0xFF1A1A2E) : const Color(0xFFE8E6FF);
     final shine = isDark ? const Color(0xFF252545) : const Color(0xFFF0EEFF);
 
     return AnimatedBuilder(
@@ -90,11 +90,7 @@ class _ImageShimmerState extends State<_ImageShimmer>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [base, shine, base],
-            stops: [
-              0.0,
-              _anim.value,
-              1.0,
-            ],
+            stops: [0.0, _anim.value, 1.0],
           ),
         ),
       ),

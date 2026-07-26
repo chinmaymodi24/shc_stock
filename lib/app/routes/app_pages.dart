@@ -6,12 +6,17 @@ import '../modules/products/views/products_view.dart';
 import '../modules/products/views/add_product_view.dart';
 import '../modules/categories/views/categories_view.dart';
 import '../modules/purchase/views/purchase_view.dart';
+import '../modules/purchase/views/add_purchase_view.dart';
 import '../modules/sales/views/sales_view.dart';
+import '../modules/sales/views/add_sales_view.dart';
 import '../modules/clients/views/clients_view.dart';
 import '../modules/clients/views/add_client_view.dart';
 import '../modules/stock/views/stock_view.dart';
+import '../modules/transactions/views/transactions_view.dart';
 import '../modules/users/views/users_view.dart';
 import '../modules/users/views/add_employee_view.dart';
+import '../modules/settings/views/settings_view.dart';
+import '../modules/settings/views/mobile_profile_view.dart';
 import 'app_routes.dart';
 import 'products_binding.dart';
 import 'categories_binding.dart';
@@ -19,7 +24,9 @@ import 'purchase_binding.dart';
 import 'sales_binding.dart';
 import 'clients_binding.dart';
 import 'stock_binding.dart';
+import 'transactions_binding.dart';
 import 'users_binding.dart';
+import 'settings_binding.dart';
 
 class AppPages {
   AppPages._();
@@ -67,8 +74,20 @@ class AppPages {
       transition: Transition.fadeIn,
     ),
     GetPage(
+      name: AppRoutes.addPurchase,
+      page: () => const AddPurchaseView(),
+      binding: PurchaseBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
       name: AppRoutes.sales,
       page: () => const SalesView(),
+      binding: SalesBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.addSale,
+      page: () => const AddSalesView(),
       binding: SalesBinding(),
       transition: Transition.fadeIn,
     ),
@@ -91,6 +110,12 @@ class AppPages {
       transition: Transition.fadeIn,
     ),
     GetPage(
+      name: AppRoutes.transactions,
+      page: () => const TransactionsView(),
+      binding: TransactionsBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
       name: AppRoutes.users,
       page: () => const UsersView(),
       binding: UsersBinding(),
@@ -102,6 +127,16 @@ class AppPages {
       binding: UsersBinding(),
       transition: Transition.fadeIn,
     ),
+    GetPage(
+      name: AppRoutes.settings,
+      page: () => const SettingsView(),
+      binding: SettingsBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.profile,
+      page: () => const MobileProfileView(),
+      transition: Transition.fadeIn,
+    ),
   ];
 }
-

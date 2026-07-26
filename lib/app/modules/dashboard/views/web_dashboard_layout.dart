@@ -43,7 +43,9 @@ class WebDashboardLayout extends StatelessWidget {
                             final isLast = e.key == c.dashboardStats.length - 1;
                             return Expanded(
                               child: Padding(
-                                padding: EdgeInsets.only(right: isLast ? 0 : 16),
+                                padding: EdgeInsets.only(
+                                  right: isLast ? 0 : 16,
+                                ),
                                 child: _DashboardStatTile(data: e.value),
                               ),
                             );
@@ -67,9 +69,15 @@ class WebDashboardLayout extends StatelessWidget {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(flex: 65, child: _buildRecentTransactions(context, c)),
+                              Expanded(
+                                flex: 65,
+                                child: _buildRecentTransactions(context, c),
+                              ),
                               const SizedBox(width: 16),
-                              Expanded(flex: 35, child: _buildIncomingDeliveries(context, c)),
+                              Expanded(
+                                flex: 35,
+                                child: _buildIncomingDeliveries(context, c),
+                              ),
                             ],
                           ),
                         ),
@@ -78,7 +86,9 @@ class WebDashboardLayout extends StatelessWidget {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(child: _buildCategoryBreakdown(context, c)),
+                              Expanded(
+                                child: _buildCategoryBreakdown(context, c),
+                              ),
                               const SizedBox(width: 16),
                               Expanded(child: _buildLowStockAlerts(context, c)),
                               const SizedBox(width: 16),
@@ -113,11 +123,24 @@ class WebDashboardLayout extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Good morning, ${c.greetingName}!',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
+                Text(
+                  'Good morning, ${c.greetingName}!',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text("Here's what's happening in your inventory today",
-                    style: TextStyle(fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
+                Text(
+                  "Here's what's happening in your inventory today",
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: colors.textSecondary,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
               ],
             ),
           ),
@@ -125,19 +148,34 @@ class WebDashboardLayout extends StatelessWidget {
             width: 260,
             height: 42,
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(color: colors.tagBg, borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: colors.tagBg,
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Row(
               children: [
-                Icon(Icons.search_rounded, size: 19, color: colors.textSecondary),
+                Icon(
+                  Icons.search_rounded,
+                  size: 19,
+                  color: colors.textSecondary,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
-                    style: TextStyle(fontSize: 13.5, color: colors.textPrimary, fontFamily: 'Poppins'),
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      color: colors.textPrimary,
+                      fontFamily: 'Poppins',
+                    ),
                     decoration: InputDecoration(
                       isDense: true,
                       border: InputBorder.none,
                       hintText: 'Search inventory...',
-                      hintStyle: TextStyle(fontSize: 13.5, color: colors.textSecondary, fontFamily: 'Poppins'),
+                      hintStyle: TextStyle(
+                        fontSize: 13.5,
+                        color: colors.textSecondary,
+                        fontFamily: 'Poppins',
+                      ),
                     ),
                   ),
                 ),
@@ -148,20 +186,40 @@ class WebDashboardLayout extends StatelessWidget {
           Container(
             width: 42,
             height: 42,
-            decoration: BoxDecoration(color: colors.warning.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(12)),
-            child: Icon(Icons.notifications_rounded, color: colors.warning, size: 19),
+            decoration: BoxDecoration(
+              color: colors.warning.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.notifications_rounded,
+              color: colors.warning,
+              size: 19,
+            ),
           ),
           const SizedBox(width: 14),
           Stack(
             clipBehavior: Clip.none,
             children: [
-              CircleAvatar(radius: 19, backgroundColor: AppColors.primaryPurple, child: const Icon(Icons.person_rounded, color: Colors.white, size: 20)),
+              CircleAvatar(
+                radius: 19,
+                backgroundColor: AppColors.primaryPurple,
+                child: const Icon(
+                  Icons.person_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
               Positioned(
                 bottom: -1,
                 right: -1,
                 child: Container(
-                  width: 10, height: 10,
-                  decoration: BoxDecoration(color: AppColors.primaryOrange, shape: BoxShape.circle, border: Border.all(color: colors.topBarBg, width: 2)),
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryOrange,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: colors.topBarBg, width: 2),
+                  ),
                 ),
               ),
             ],
@@ -176,7 +234,11 @@ class WebDashboardLayout extends StatelessWidget {
     return _ChartCard(
       title: 'Purchases (6 months)',
       changeText: c.purchasesChange,
-      child: SimpleBarChart(data: c.purchasesData, barColor: AppColors.primaryPurple, height: 150),
+      child: SimpleBarChart(
+        data: c.purchasesData,
+        barColor: AppColors.primaryPurple,
+        height: 150,
+      ),
     );
   }
 
@@ -184,7 +246,11 @@ class WebDashboardLayout extends StatelessWidget {
     return _ChartCard(
       title: 'Sales (6 months)',
       changeText: c.salesChange,
-      child: SimpleBarChart(data: c.salesData, barColor: AppColors.primaryOrange, height: 150),
+      child: SimpleBarChart(
+        data: c.salesData,
+        barColor: AppColors.primaryOrange,
+        height: 150,
+      ),
     );
   }
 
@@ -192,14 +258,25 @@ class WebDashboardLayout extends StatelessWidget {
     return _ChartCard(
       title: 'New clients (6 months)',
       changeText: c.newClientsChange,
-      child: SizedBox(height: 150, child: SalesLineChart(data: c.newClientsData, lineColor: AppColors.accentPurple)),
+      child: SizedBox(
+        height: 150,
+        child: SalesLineChart(
+          data: c.newClientsData,
+          lineColor: AppColors.accentPurple,
+        ),
+      ),
     );
   }
 
   Widget _buildCategoryDonut(BuildContext context, DashboardController c) {
     return _ChartCard(
       title: 'Sales by category',
-      child: SizedBox(height: 150, child: Center(child: CategoryDonutChart(slices: c.categorySlices, size: 120))),
+      child: SizedBox(
+        height: 150,
+        child: Center(
+          child: CategoryDonutChart(slices: c.categorySlices, size: 120),
+        ),
+      ),
     );
   }
 
@@ -235,10 +312,24 @@ class WebDashboardLayout extends StatelessWidget {
     return _SectionCard(
       title: 'Notes & to-dos',
       trailing: TextButton(
-        onPressed: () => Get.dialog(NotesDialog(notes: c.notes, onToggle: c.toggleNote, onAdd: c.addNote)),
-        child: const Text('View All', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryOrange, fontFamily: 'Poppins')),
+        onPressed: () => Get.dialog(
+          NotesDialog(notes: c.notes, onToggle: c.toggleNote, onAdd: c.addNote),
+        ),
+        child: const Text(
+          'View All',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primaryOrange,
+            fontFamily: 'Poppins',
+          ),
+        ),
       ),
-      child: NotesTodo(notes: c.notes, onToggle: c.toggleNote, onAdd: c.addNote),
+      child: NotesTodo(
+        notes: c.notes,
+        onToggle: c.toggleNote,
+        onAdd: c.addNote,
+      ),
     );
   }
 }
@@ -252,16 +343,35 @@ class _DashboardStatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(color: data.bgColor, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(
+        color: data.bgColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(data.icon, color: data.iconColor, size: 20),
           const SizedBox(height: 10),
-          Text(data.title, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: data.iconColor.withValues(alpha: 0.85), fontFamily: 'Poppins')),
+          Text(
+            data.title,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              color: data.iconColor.withValues(alpha: 0.85),
+              fontFamily: 'Poppins',
+            ),
+          ),
           const SizedBox(height: 6),
-          Text(data.value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF1A1240), fontFamily: 'Poppins')),
+          Text(
+            data.value,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1240),
+              fontFamily: 'Poppins',
+            ),
+          ),
           const SizedBox(height: 4),
           // Always reserve the caption line's space (invisible when there's
           // no change value) so every tile is the same height naturally,
@@ -272,7 +382,15 @@ class _DashboardStatTile extends StatelessWidget {
             maintainSize: true,
             maintainAnimation: true,
             maintainState: true,
-            child: Text(data.change ?? '', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF2FA85C), fontFamily: 'Poppins')),
+            child: Text(
+              data.change ?? '',
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF2FA85C),
+                fontFamily: 'Poppins',
+              ),
+            ),
           ),
         ],
       ),
@@ -298,7 +416,13 @@ class _SectionCard extends StatelessWidget {
         color: colors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: colors.divider),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 3, offset: const Offset(0, 1))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,7 +430,15 @@ class _SectionCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                  fontFamily: 'Poppins',
+                ),
+              ),
               if (trailing != null) trailing!,
             ],
           ),
@@ -336,13 +468,27 @@ class _ChartCard extends StatelessWidget {
         color: colors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: colors.divider),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 3, offset: const Offset(0, 1))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: colors.textPrimary,
+              fontFamily: 'Poppins',
+            ),
+          ),
           const SizedBox(height: 14),
           child,
           const SizedBox(height: 10),
@@ -353,7 +499,15 @@ class _ChartCard extends StatelessWidget {
             maintainSize: true,
             maintainAnimation: true,
             maintainState: true,
-            child: Text(changeText ?? '', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF2FA85C), fontFamily: 'Poppins')),
+            child: Text(
+              changeText ?? '',
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF2FA85C),
+                fontFamily: 'Poppins',
+              ),
+            ),
           ),
         ],
       ),

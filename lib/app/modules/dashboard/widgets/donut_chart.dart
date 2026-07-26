@@ -27,10 +27,18 @@ class CategoryDonutChart extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: slices.map((s) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: _LegendItem(color: s.color, label: s.label, percent: s.percent),
-            )).toList(),
+            children: slices
+                .map(
+                  (s) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: _LegendItem(
+                      color: s.color,
+                      label: s.label,
+                      percent: s.percent,
+                    ),
+                  ),
+                )
+                .toList(),
           ),
         ),
       ],
@@ -43,19 +51,32 @@ class _LegendItem extends StatelessWidget {
   final String label;
   final double percent;
 
-  const _LegendItem({required this.color, required this.label, required this.percent});
+  const _LegendItem({
+    required this.color,
+    required this.label,
+    required this.percent,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
     return Row(
       children: [
-        Container(width: 9, height: 9, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+          width: 9,
+          height: 9,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             '$label — ${percent.toStringAsFixed(0)}%',
-            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: colors.textPrimary, fontFamily: 'Poppins'),
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              color: colors.textPrimary,
+              fontFamily: 'Poppins',
+            ),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -87,9 +108,17 @@ class _DonutPainter extends CustomPainter {
     double startAngle = -pi / 2;
 
     for (final slice in slices) {
-      final sweep = total == 0 ? 0.0 : (slice.percent / total) * 2 * pi - gapAngle;
+      final sweep = total == 0
+          ? 0.0
+          : (slice.percent / total) * 2 * pi - gapAngle;
       paint.color = slice.color;
-      canvas.drawArc(Rect.fromCircle(center: center, radius: radius), startAngle, sweep, false, paint);
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        sweep,
+        false,
+        paint,
+      );
       startAngle += sweep + gapAngle;
     }
   }

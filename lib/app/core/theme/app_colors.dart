@@ -10,21 +10,21 @@ class AppColors {
   // Brand Colors
   static const Color primaryOrange = Color(0xFFF47B20);
   static const Color primaryPurple = Color(0xFF2B1888);
-  static const Color accentPurple  = Color(0xFF4A3AFF);
+  static const Color accentPurple = Color(0xFF4A3AFF);
 
   // Background
-  static const Color backgroundLavender  = Color(0xFFEEECFF);
+  static const Color backgroundLavender = Color(0xFFEEECFF);
   static const Color backgroundPurpleTint = Color(0xFFDDDAFF);
   static const Color white = Color(0xFFFFFFFF);
 
   // Text
-  static const Color textDark   = Color(0xFF1A1240);
+  static const Color textDark = Color(0xFF1A1240);
   static const Color textMedium = Color(0xFF6B6B8A);
-  static const Color textLight  = Color(0xFFAAAAAA);
+  static const Color textLight = Color(0xFFAAAAAA);
 
   // Input
   static const Color inputBorder = Color(0xFFE0DFF5);
-  static const Color inputIcon   = Color(0xFF4A3AFF);
+  static const Color inputIcon = Color(0xFF4A3AFF);
 
   // Divider
   static const Color dividerPurple = Color(0xFF4A3AFF);
@@ -38,7 +38,7 @@ class AppColors {
 // ─────────────────────────────────────────────────────────────────────────────
 class AppThemeColors extends ThemeExtension<AppThemeColors> {
   final Color background;
-  final Color surface;        // card / white areas
+  final Color surface; // card / white areas
   final Color topBarBg;
   final Color textPrimary;
   final Color textSecondary;
@@ -46,11 +46,11 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
   final Color border;
   final Color divider;
   final Color inputFill;
-  final Color rowEven;        // table alternating rows
-  final Color tagBg;          // filter chip / tag bg
-  final Color iconBgPurple;   // icon container with purple tint
-  final Color sidebarFooter;  // admin footer in sidebar
-  final Color drawerBg;       // mobile drawer body
+  final Color rowEven; // table alternating rows
+  final Color tagBg; // filter chip / tag bg
+  final Color iconBgPurple; // icon container with purple tint
+  final Color sidebarFooter; // admin footer in sidebar
+  final Color drawerBg; // mobile drawer body
   final Color comingSoonBadge;
 
   // Semantic Action Colors
@@ -83,79 +83,92 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
 
   // ── Light ──────────────────────────────────────────────────────
   static const light = AppThemeColors(
-    background:      Color(0xFFFFFFFF),
-    surface:         Color(0xFFFFFFFF),
-    topBarBg:        Color(0xFFFFFFFF),
-    textPrimary:     Color(0xFF1A1240),
-    textSecondary:   Color(0xFF6B6B8A),
-    textHint:        Color(0xFF9B9BB4),
-    border:          Color(0xFFE0DFF5),
-    divider:         Color(0xFFF0EFF8),
-    inputFill:       Color(0xFFFFFFFF),
-    rowEven:         Color(0xFFFCFBFF),
-    tagBg:           Color(0xFFF8F7FF),
-    iconBgPurple:    Color(0xFFEEECFF),
-    sidebarFooter:   Color(0x14000000),  // black 8%
-    drawerBg:        Color(0xFFFFFFFF),
+    background: Color(0xFFFFFFFF),
+    surface: Color(0xFFFFFFFF),
+    topBarBg: Color(0xFFFFFFFF),
+    textPrimary: Color(0xFF1A1240),
+    textSecondary: Color(0xFF6B6B8A),
+    textHint: Color(0xFF9B9BB4),
+    border: Color(0xFFE0DFF5),
+    divider: Color(0xFFF0EFF8),
+    inputFill: Color(0xFFFFFFFF),
+    rowEven: Color(0xFFFCFBFF),
+    tagBg: Color(0xFFF8F7FF),
+    iconBgPurple: Color(0xFFEEECFF),
+    sidebarFooter: Color(0x14000000), // black 8%
+    drawerBg: Color(0xFFFFFFFF),
     comingSoonBadge: Color(0xFFF5F4FF),
-    purple:          Color(0xFF2B1888),
-    success:         Color(0xFF22C55E),
-    warning:         Color(0xFFF59E0B),
-    error:           Color(0xFFEF4444),
+    purple: Color(0xFF2B1888),
+    success: Color(0xFF22C55E),
+    warning: Color(0xFFF59E0B),
+    error: Color(0xFFEF4444),
   );
 
   // ── Dark ───────────────────────────────────────────────────────
   static const dark = AppThemeColors(
-    background:      Color(0xFF13131F),
-    surface:         Color(0xFF1E1E2E),
-    topBarBg:        Color(0xFF1E1E2E),
-    textPrimary:     Color(0xFFEAE8FF),
-    textSecondary:   Color(0xFF9B9BB4),
-    textHint:        Color(0xFF6B6B8A),
-    border:          Color(0xFF2E2E4A),
-    divider:         Color(0xFF252538),
-    inputFill:       Color(0xFF252538),
-    rowEven:         Color(0xFF1A1A2E),
-    tagBg:           Color(0xFF252538),
-    iconBgPurple:    Color(0xFF2A2A48),
-    sidebarFooter:   Color(0x33000000),  // black 20%
-    drawerBg:        Color(0xFF1E1E2E),
+    background: Color(0xFF13131F),
+    surface: Color(0xFF1E1E2E),
+    topBarBg: Color(0xFF1E1E2E),
+    textPrimary: Color(0xFFEAE8FF),
+    textSecondary: Color(0xFF9B9BB4),
+    textHint: Color(0xFF6B6B8A),
+    border: Color(0xFF2E2E4A),
+    divider: Color(0xFF252538),
+    inputFill: Color(0xFF252538),
+    rowEven: Color(0xFF1A1A2E),
+    tagBg: Color(0xFF252538),
+    iconBgPurple: Color(0xFF2A2A48),
+    sidebarFooter: Color(0x33000000), // black 20%
+    drawerBg: Color(0xFF1E1E2E),
     comingSoonBadge: Color(0xFF252538),
-    purple:          Color(0xFFB1A5FF),
-    success:         Color(0xFF34D399),
-    warning:         Color(0xFFFBBF24),
-    error:           Color(0xFFF87171),
+    purple: Color(0xFFB1A5FF),
+    success: Color(0xFF34D399),
+    warning: Color(0xFFFBBF24),
+    error: Color(0xFFF87171),
   );
 
   @override
   AppThemeColors copyWith({
-    Color? background, Color? surface, Color? topBarBg,
-    Color? textPrimary, Color? textSecondary, Color? textHint,
-    Color? border, Color? divider, Color? inputFill,
-    Color? rowEven, Color? tagBg, Color? iconBgPurple,
-    Color? sidebarFooter, Color? drawerBg, Color? comingSoonBadge,
-    Color? purple, Color? success, Color? warning, Color? error,
+    Color? background,
+    Color? surface,
+    Color? topBarBg,
+    Color? textPrimary,
+    Color? textSecondary,
+    Color? textHint,
+    Color? border,
+    Color? divider,
+    Color? inputFill,
+    Color? rowEven,
+    Color? tagBg,
+    Color? iconBgPurple,
+    Color? sidebarFooter,
+    Color? drawerBg,
+    Color? comingSoonBadge,
+    Color? purple,
+    Color? success,
+    Color? warning,
+    Color? error,
   }) {
     return AppThemeColors(
-      background:      background      ?? this.background,
-      surface:         surface         ?? this.surface,
-      topBarBg:        topBarBg        ?? this.topBarBg,
-      textPrimary:     textPrimary     ?? this.textPrimary,
-      textSecondary:   textSecondary   ?? this.textSecondary,
-      textHint:        textHint        ?? this.textHint,
-      border:          border          ?? this.border,
-      divider:         divider         ?? this.divider,
-      inputFill:       inputFill       ?? this.inputFill,
-      rowEven:         rowEven         ?? this.rowEven,
-      tagBg:           tagBg           ?? this.tagBg,
-      iconBgPurple:    iconBgPurple    ?? this.iconBgPurple,
-      sidebarFooter:   sidebarFooter   ?? this.sidebarFooter,
-      drawerBg:        drawerBg        ?? this.drawerBg,
+      background: background ?? this.background,
+      surface: surface ?? this.surface,
+      topBarBg: topBarBg ?? this.topBarBg,
+      textPrimary: textPrimary ?? this.textPrimary,
+      textSecondary: textSecondary ?? this.textSecondary,
+      textHint: textHint ?? this.textHint,
+      border: border ?? this.border,
+      divider: divider ?? this.divider,
+      inputFill: inputFill ?? this.inputFill,
+      rowEven: rowEven ?? this.rowEven,
+      tagBg: tagBg ?? this.tagBg,
+      iconBgPurple: iconBgPurple ?? this.iconBgPurple,
+      sidebarFooter: sidebarFooter ?? this.sidebarFooter,
+      drawerBg: drawerBg ?? this.drawerBg,
       comingSoonBadge: comingSoonBadge ?? this.comingSoonBadge,
-      purple:          purple          ?? this.purple,
-      success:         success         ?? this.success,
-      warning:         warning         ?? this.warning,
-      error:           error           ?? this.error,
+      purple: purple ?? this.purple,
+      success: success ?? this.success,
+      warning: warning ?? this.warning,
+      error: error ?? this.error,
     );
   }
 
@@ -163,25 +176,25 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
   AppThemeColors lerp(AppThemeColors? other, double t) {
     if (other == null) return this;
     return AppThemeColors(
-      background:      Color.lerp(background,      other.background,      t)!,
-      surface:         Color.lerp(surface,         other.surface,         t)!,
-      topBarBg:        Color.lerp(topBarBg,        other.topBarBg,        t)!,
-      textPrimary:     Color.lerp(textPrimary,     other.textPrimary,     t)!,
-      textSecondary:   Color.lerp(textSecondary,   other.textSecondary,   t)!,
-      textHint:        Color.lerp(textHint,        other.textHint,        t)!,
-      border:          Color.lerp(border,          other.border,          t)!,
-      divider:         Color.lerp(divider,         other.divider,         t)!,
-      inputFill:       Color.lerp(inputFill,       other.inputFill,       t)!,
-      rowEven:         Color.lerp(rowEven,         other.rowEven,         t)!,
-      tagBg:           Color.lerp(tagBg,           other.tagBg,           t)!,
-      iconBgPurple:    Color.lerp(iconBgPurple,    other.iconBgPurple,    t)!,
-      sidebarFooter:   Color.lerp(sidebarFooter,   other.sidebarFooter,   t)!,
-      drawerBg:        Color.lerp(drawerBg,        other.drawerBg,        t)!,
+      background: Color.lerp(background, other.background, t)!,
+      surface: Color.lerp(surface, other.surface, t)!,
+      topBarBg: Color.lerp(topBarBg, other.topBarBg, t)!,
+      textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
+      textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
+      textHint: Color.lerp(textHint, other.textHint, t)!,
+      border: Color.lerp(border, other.border, t)!,
+      divider: Color.lerp(divider, other.divider, t)!,
+      inputFill: Color.lerp(inputFill, other.inputFill, t)!,
+      rowEven: Color.lerp(rowEven, other.rowEven, t)!,
+      tagBg: Color.lerp(tagBg, other.tagBg, t)!,
+      iconBgPurple: Color.lerp(iconBgPurple, other.iconBgPurple, t)!,
+      sidebarFooter: Color.lerp(sidebarFooter, other.sidebarFooter, t)!,
+      drawerBg: Color.lerp(drawerBg, other.drawerBg, t)!,
       comingSoonBadge: Color.lerp(comingSoonBadge, other.comingSoonBadge, t)!,
-      purple:          Color.lerp(purple,          other.purple,          t)!,
-      success:         Color.lerp(success,         other.success,         t)!,
-      warning:         Color.lerp(warning,         other.warning,         t)!,
-      error:           Color.lerp(error,           other.error,           t)!,
+      purple: Color.lerp(purple, other.purple, t)!,
+      success: Color.lerp(success, other.success, t)!,
+      warning: Color.lerp(warning, other.warning, t)!,
+      error: Color.lerp(error, other.error, t)!,
     );
   }
 }

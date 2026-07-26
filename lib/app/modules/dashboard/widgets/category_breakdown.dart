@@ -11,10 +11,12 @@ class CategoryBreakdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: categories
-          .map((c) => Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: _CategoryRow(slice: c),
-              ))
+          .map(
+            (c) => Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: _CategoryRow(slice: c),
+            ),
+          )
           .toList(),
     );
   }
@@ -33,8 +35,24 @@ class _CategoryRow extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(slice.label, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: colors.textPrimary, fontFamily: 'Poppins')),
-            Text('${slice.percent.toStringAsFixed(0)}%', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'Poppins')),
+            Text(
+              slice.label,
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+                color: colors.textPrimary,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            Text(
+              '${slice.percent.toStringAsFixed(0)}%',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: colors.textPrimary,
+                fontFamily: 'Poppins',
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 6),

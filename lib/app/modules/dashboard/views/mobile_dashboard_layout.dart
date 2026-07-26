@@ -1,26 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/dashboard/controllers/dashboard_controller.dart';
-import 'package:shc_stock/app/modules/dashboard/widgets/stat_card.dart';
-import 'package:shc_stock/app/modules/dashboard/widgets/today_sales_card.dart';
-import 'package:shc_stock/app/modules/dashboard/widgets/quick_action_button.dart';
+import 'package:shc_stock/app/modules/dashboard/models/dashboard_models.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/bar_chart.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/sales_chart.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/category_breakdown.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/notes_dialog.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import '../widgets/app_drawer.dart';
 
-class MobileDashboardLayout extends StatelessWidget {
+class MobileDashboardLayout extends GetView<DashboardController> {
   const MobileDashboardLayout({super.key});
 
-  static const _quickActions = [
-    _QA(icon: Icons.shopping_cart_outlined, label: 'Add Sale'),
-    _QA(icon: Icons.shopping_bag_outlined, label: 'Add Purchase'),
-    _QA(icon: Icons.inventory_2_outlined, label: 'Add Product'),
-    _QA(icon: Icons.warehouse_outlined, label: 'View Stock'),
+  static const _statLabels = [
+    'Total Stock',
+    'Out of Stock',
+    'Low Stock',
+    'Dues',
   ];
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.find<DashboardController>();
+    final c = controller;
     final colors = context.appColors;
 
     return Scaffold(
@@ -32,70 +34,166 @@ class MobileDashboardLayout extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Today's Sales big card
-            const TodaySalesCard(),
+            // ── Greeting ────────────────────────────────────────────
+            Text(
+              'Good morning, ${c.greetingName}!',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: colors.textPrimary,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              "Here's what's happening today",
+              style: TextStyle(
+                fontSize: 13,
+                color: colors.textSecondary,
+                fontFamily: 'Poppins',
+              ),
+            ),
             const SizedBox(height: 16),
 
-            // 2x2 stat mini-cards
+            // ── 2x2 stat tiles ──────────────────────────────────────
             Row(
               children: [
-                Expanded(child: StatCard(data: c.webStatCards[0], compact: true)),
+                Expanded(
+                  child: _MobileStatTile(
+                    data: c.dashboardStats[0],
+                    label: _statLabels[0],
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(child: StatCard(data: c.webStatCards[1], compact: true)),
+                Expanded(
+                  child: _MobileStatTile(
+                    data: c.dashboardStats[1],
+                    label: _statLabels[1],
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
-                  child: _SimpleStatCard(label: 'Purchase (Today)', value: '₹ 40,000'),
+                  child: _MobileStatTile(
+                    data: c.dashboardStats[2],
+                    label: _statLabels[2],
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _SimpleStatCard(label: 'Sales (This Month)', value: '₹ 18,75,000'),
+                  child: _MobileStatTile(
+                    data: c.dashboardStats[3],
+                    label: _statLabels[3],
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
 
-            // Quick Actions
-            Text('Quick Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
-            const SizedBox(height: 12),
+            // ── Top selling product banner ──────────────────────────
+            _TopSellingBanner(data: c.dashboardStats[4]),
+            const SizedBox(height: 16),
+
+            // ── Incoming deliveries ──────────────────────────────────
+            _MobileCard(
+              title: 'Incoming deliveries',
+              child: Column(
+                children: c.incomingDeliveries
+                    .take(2)
+                    .map(
+                      (d) => Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: _DeliveryRow(data: d),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Charts & Trends (collapsible) ────────────────────────
+            Obx(
+              () => _ChartsAccordion(
+                expanded: c.chartsExpanded.value,
+                onToggle: () =>
+                    c.chartsExpanded.value = !c.chartsExpanded.value,
+                c: c,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Category breakdown ───────────────────────────────────
+            _MobileCard(
+              title: 'Category breakdown',
+              child: CategoryBreakdown(
+                categories: c.categorySlices.take(2).toList(),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Low stock alerts ─────────────────────────────────────
+            _MobileCard(
+              title: 'Low stock alerts',
+              child: Column(
+                children: c.lowStockAlerts
+                    .map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _LowStockRow(item: item),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Quick links grid ─────────────────────────────────────
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1.5,
-              children: _quickActions.map((qa) => QuickActionButton(icon: qa.icon, label: qa.label)).toList(),
-            ),
-            const SizedBox(height: 20),
-
-            // Stock Summary
-            Text('Stock Summary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: colors.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: colors.divider),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
-              ),
-              child: Column(
-                children: [
-                  _StockSummaryRow(label: 'Total Products', value: '1,245', isFirst: true),
-                  Divider(height: 1, color: colors.divider),
-                  _StockSummaryRow(label: 'Low Stock Items', value: '23', valueColor: const Color(0xFFEF4444)),
-                  Divider(height: 1, color: colors.divider),
-                  _StockSummaryRow(label: 'Out of Stock', value: '65', valueColor: const Color(0xFFEF4444)),
-                ],
-              ),
+              childAspectRatio: 2.6,
+              children: [
+                _QuickLinkCard(
+                  icon: Icons.edit_note_rounded,
+                  label: 'Notes',
+                  iconColor: colors.purple,
+                  onTap: () => Get.dialog(
+                    NotesDialog(
+                      notes: c.notes,
+                      onToggle: c.toggleNote,
+                      onAdd: c.addNote,
+                    ),
+                  ),
+                ),
+                _QuickLinkCard(
+                  icon: Icons.receipt_long_outlined,
+                  label: 'Transactions',
+                  iconColor: colors.purple,
+                  onTap: () {},
+                ),
+                _QuickLinkCard(
+                  icon: Icons.warning_amber_rounded,
+                  label: 'Low Stock',
+                  iconColor: const Color(0xFFF59E0B),
+                  onTap: () => Get.toNamed(AppRoutes.stock),
+                ),
+                _QuickLinkCard(
+                  icon: Icons.folder_outlined,
+                  label: 'Categories',
+                  iconColor: AppColors.primaryOrange,
+                  onTap: () => Get.toNamed(AppRoutes.categories),
+                ),
+              ],
             ),
           ],
         ),
       ),
-      bottomNavigationBar: Obx(() => _buildBottomNav(c)),
     );
   }
 
@@ -110,72 +208,29 @@ class MobileDashboardLayout extends StatelessWidget {
           onPressed: () => Scaffold.of(ctx).openDrawer(),
         ),
       ),
-      title: Image.asset(
-        "assets/logo.png",
-        width: 80,
-        height : 40,
-      ),
+      title: Image.asset('assets/logo.png', width: 80, height: 40),
       centerTitle: true,
       actions: [
-        Stack(
-          children: [
-            IconButton(icon: Icon(Icons.notifications_outlined, color: colors.textPrimary, size: 24), onPressed: () {}),
-            Positioned(top: 10, right: 10, child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle))),
-          ],
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: _AvatarMenuBtn(initials: 'CM'),
         ),
       ],
-      bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Divider(height: 1, color: colors.divider)),
-    );
-  }
-
-  Widget _buildBottomNav(DashboardController c) {
-    const items = [
-      _NavItem(icon: Icons.home_rounded, label: 'Home'),
-      _NavItem(icon: Icons.inventory_2_outlined, label: 'Products'),
-      _NavItem(icon: Icons.shopping_cart_outlined, label: 'Sales'),
-      _NavItem(icon: Icons.more_horiz_rounded, label: 'More'),
-    ];
-
-    return Container(
-      height: 72,
-      decoration: const BoxDecoration(
-        color: AppColors.primaryOrange,
-        borderRadius: BorderRadius.zero,
-      ),
-      child: Row(
-        children: items.asMap().entries.map((e) {
-          final isActive = c.selectedNavIndex.value == e.key;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => c.onNavTap(e.key),
-              child: Container(
-                color: Colors.transparent,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(e.value.icon, color: Colors.white, size: 24),
-                    const SizedBox(height: 4),
-                    Text(e.value.label,
-                        style: TextStyle(
-                          fontSize: 11.5, fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
-                          color: Colors.white, fontFamily: 'Poppins',
-                        )),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }).toList(),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Divider(height: 1, color: colors.divider),
       ),
     );
   }
 }
 
-class _SimpleStatCard extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────────────────
+// 2x2 pastel stat tile
+// ─────────────────────────────────────────────────────────────────────────────
+class _MobileStatTile extends StatelessWidget {
+  final DashboardStatData data;
   final String label;
-  final String value;
-
-  const _SimpleStatCard({required this.label, required this.value});
+  const _MobileStatTile({required this.data, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -183,55 +238,660 @@ class _SimpleStatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: data.bgColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: colors.divider),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: colors.textSecondary, fontFamily: 'Poppins')),
-          const SizedBox(height: 8),
-          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
+          Icon(data.icon, color: data.iconColor, size: 18),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w500,
+              color: data.iconColor.withValues(alpha: 0.85),
+              fontFamily: 'Poppins',
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            data.value,
+            style: TextStyle(
+              fontSize: 19,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF1A1A2E),
+              fontFamily: 'Poppins',
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
   }
 }
 
-class _StockSummaryRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color? valueColor;
-  final bool isFirst;
-
-  const _StockSummaryRow({required this.label, required this.value, this.valueColor, this.isFirst = false});
+// ─────────────────────────────────────────────────────────────────────────────
+// Top selling product — full-width lavender banner
+// ─────────────────────────────────────────────────────────────────────────────
+class _TopSellingBanner extends StatelessWidget {
+  final DashboardStatData data;
+  const _TopSellingBanner({required this.data});
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: data.bgColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.divider),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
-          Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: valueColor ?? colors.textPrimary, fontFamily: 'Poppins')),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: data.iconColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(data.icon, color: data.iconColor, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Top Selling Product',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: data.iconColor,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                data.value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1A1A2E),
+                  fontFamily: 'Poppins',
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
-class _QA {
-  final IconData icon;
-  final String label;
-  const _QA({required this.icon, required this.label});
+// ─────────────────────────────────────────────────────────────────────────────
+// Generic white bordered card with a bold title
+// ─────────────────────────────────────────────────────────────────────────────
+class _MobileCard extends StatelessWidget {
+  final String title;
+  final Widget child;
+  const _MobileCard({required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: colors.textPrimary,
+              fontFamily: 'Poppins',
+            ),
+          ),
+          const SizedBox(height: 14),
+          child,
+        ],
+      ),
+    );
+  }
 }
 
-class _NavItem {
+// ─────────────────────────────────────────────────────────────────────────────
+// Incoming delivery row — colored bar + item/PO + warehouse/eta
+// ─────────────────────────────────────────────────────────────────────────────
+class _DeliveryRow extends StatelessWidget {
+  final DeliveryItem data;
+  const _DeliveryRow({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final eta = data.eta.isEmpty
+        ? data.eta
+        : '${data.eta[0].toUpperCase()}${data.eta.substring(1)}';
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            width: 3,
+            decoration: BoxDecoration(
+              color: data.accentColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${data.item} — PO #${data.poRef}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${data.warehouse} · $eta',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Low stock alert row — inline warning icon + name + fraction + progress bar
+// ─────────────────────────────────────────────────────────────────────────────
+class _LowStockRow extends StatelessWidget {
+  final LowStockAlertItem item;
+  const _LowStockRow({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final ratio = item.max == 0
+        ? 0.0
+        : (item.current / item.max).clamp(0.0, 1.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: colors.warning, size: 16),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                item.product,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                  fontFamily: 'Poppins',
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              '${item.current}/${item.max}',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: colors.error,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: ratio,
+            minHeight: 5,
+            backgroundColor: colors.divider,
+            valueColor: AlwaysStoppedAnimation<Color>(colors.error),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Charts & Trends — collapsible accordion (Purchases / Sales / New clients)
+// ─────────────────────────────────────────────────────────────────────────────
+class _ChartsAccordion extends StatelessWidget {
+  final bool expanded;
+  final VoidCallback onToggle;
+  final DashboardController c;
+  const _ChartsAccordion({
+    required this.expanded,
+    required this.onToggle,
+    required this.c,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final labelStyle = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: colors.textPrimary,
+      fontFamily: 'Poppins',
+    );
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(14),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.bar_chart_rounded,
+                    size: 18,
+                    color: colors.textPrimary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Charts & Trends',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textPrimary,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    expanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: colors.textSecondary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (expanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Purchases (6 months)', style: labelStyle),
+                  const SizedBox(height: 10),
+                  SimpleBarChart(
+                    data: c.purchasesData,
+                    barColor: AppColors.primaryPurple,
+                    height: 110,
+                  ),
+                  const SizedBox(height: 20),
+                  Text('Sales (6 months)', style: labelStyle),
+                  const SizedBox(height: 10),
+                  SimpleBarChart(
+                    data: c.salesData,
+                    barColor: AppColors.primaryOrange,
+                    height: 110,
+                  ),
+                  const SizedBox(height: 20),
+                  Text('New clients (6 months)', style: labelStyle),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 90,
+                    child: SalesLineChart(
+                      data: c.newClientsData,
+                      lineColor: AppColors.accentPurple,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quick link card — icon chip + bold label
+// ─────────────────────────────────────────────────────────────────────────────
+class _QuickLinkCard extends StatelessWidget {
   final IconData icon;
   final String label;
-  const _NavItem({required this.icon, required this.label});
+  final Color iconColor;
+  final VoidCallback onTap;
+  const _QuickLinkCard({
+    required this.icon,
+    required this.label,
+    required this.iconColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: colors.divider),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: iconColor, size: 16),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                  fontFamily: 'Poppins',
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Avatar menu — tapping "CM" opens My Profile / Settings / Sign Out
+// ─────────────────────────────────────────────────────────────────────────────
+class _AvatarMenuBtn extends StatelessWidget {
+  final String initials;
+  const _AvatarMenuBtn({required this.initials});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return PopupMenuButton<String>(
+      offset: const Offset(0, 44),
+      color: colors.surface,
+      elevation: 6,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: colors.divider),
+      ),
+      itemBuilder: (context) => [
+        _item(
+          'profile',
+          Icons.person_outline_rounded,
+          'My Profile',
+          colors.textPrimary,
+        ),
+        _item(
+          'settings',
+          Icons.settings_outlined,
+          'Settings',
+          colors.textPrimary,
+        ),
+        const PopupMenuDivider(height: 1),
+        _item('signout', Icons.logout_rounded, 'Sign Out', colors.error),
+      ],
+      onSelected: (value) {
+        switch (value) {
+          case 'profile':
+            Get.toNamed(AppRoutes.profile);
+            break;
+          case 'settings':
+            Get.toNamed(AppRoutes.settings);
+            break;
+          case 'signout':
+            Get.dialog(const _SignOutConfirmDialog());
+            break;
+        }
+      },
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: const BoxDecoration(
+          color: AppColors.primaryPurple,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Text(
+            initials,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              fontFamily: 'Poppins',
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  PopupMenuItem<String> _item(
+    String value,
+    IconData icon,
+    String label,
+    Color fg,
+  ) {
+    return PopupMenuItem<String>(
+      value: value,
+      height: 42,
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: fg),
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              color: fg,
+              fontFamily: 'Poppins',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sign-out confirmation dialog
+// ─────────────────────────────────────────────────────────────────────────────
+class _SignOutConfirmDialog extends StatelessWidget {
+  const _SignOutConfirmDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(24),
+      child: Container(
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.20),
+              blurRadius: 36,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryOrange.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.logout_rounded,
+                    color: AppColors.primaryOrange,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Sign Out',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: colors.textPrimary,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Are you sure you want to sign out?',
+              style: TextStyle(
+                fontSize: 13.5,
+                color: colors.textSecondary,
+                fontFamily: 'Poppins',
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: Get.back,
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: colors.border),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'Poppins',
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Get.back();
+                      Get.offAllNamed(AppRoutes.login);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryOrange,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'Sign Out',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

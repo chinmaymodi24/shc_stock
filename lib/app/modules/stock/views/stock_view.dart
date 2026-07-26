@@ -5,9 +5,11 @@ class StockView extends StatelessWidget {
   const StockView({super.key});
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) {
-      if (constraints.maxWidth >= 700) return const WebStockLayout();
-      return const WebStockLayout();
-    });
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 700) return const WebStockLayout();
+        return const WebStockLayout();
+      },
+    );
   }
 }

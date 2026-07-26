@@ -3,27 +3,14 @@ import 'package:get/get.dart';
 import '../controllers/purchase_controller.dart';
 import '../models/purchase_model.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../routes/app_routes.dart';
 
-class MobilePurchaseLayout extends StatefulWidget {
+class MobilePurchaseLayout extends GetView<PurchaseController> {
   const MobilePurchaseLayout({super.key});
 
   @override
-  State<MobilePurchaseLayout> createState() => _MobilePurchaseLayoutState();
-}
-
-class _MobilePurchaseLayoutState extends State<MobilePurchaseLayout> {
-  final _searchCtrl = TextEditingController();
-  String _query = '';
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final c = Get.find<PurchaseController>();
+    final c = controller;
     final colors = context.appColors;
 
     return Scaffold(
@@ -37,16 +24,19 @@ class _MobilePurchaseLayoutState extends State<MobilePurchaseLayout> {
             onPressed: () => Scaffold.of(ctx).openDrawer(),
           ),
         ),
-        title: Text('Purchases',
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: colors.textPrimary,
-                fontFamily: 'Poppins')),
+        title: Text(
+          'Purchases',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: colors.textPrimary,
+            fontFamily: 'Poppins',
+          ),
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.add_rounded, color: AppColors.primaryOrange),
-            onPressed: () {},
+            onPressed: () => Get.toNamed(AppRoutes.addPurchase),
           ),
         ],
         bottom: PreferredSize(
@@ -56,13 +46,18 @@ class _MobilePurchaseLayoutState extends State<MobilePurchaseLayout> {
       ),
       body: Obx(() {
         final all = c.orders;
-        final filtered = _query.isEmpty
+        final query = c.searchQuery.value;
+        final filtered = query.isEmpty
             ? all.toList()
             : all
-                .where((o) =>
-                    o.supplier.toLowerCase().contains(_query.toLowerCase()) ||
-                    o.poNumber.toLowerCase().contains(_query.toLowerCase()))
-                .toList();
+                  .where(
+                    (o) =>
+                        o.supplier.toLowerCase().contains(
+                          query.toLowerCase(),
+                        ) ||
+                        o.poNumber.toLowerCase().contains(query.toLowerCase()),
+                  )
+                  .toList();
 
         return CustomScrollView(
           slivers: [
@@ -110,35 +105,42 @@ class _MobilePurchaseLayoutState extends State<MobilePurchaseLayout> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
                 child: TextField(
-                  controller: _searchCtrl,
-                  onChanged: (v) => setState(() => _query = v),
+                  onChanged: (v) => c.searchQuery.value = v,
                   style: TextStyle(
-                      fontSize: 14,
-                      color: colors.textPrimary,
-                      fontFamily: 'Poppins'),
+                    fontSize: 14,
+                    color: colors.textPrimary,
+                    fontFamily: 'Poppins',
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Search purchases...',
                     hintStyle: TextStyle(
-                        fontSize: 14,
-                        color: colors.textHint,
-                        fontFamily: 'Poppins'),
-                    prefixIcon:
-                        Icon(Icons.search_rounded, color: colors.textHint),
+                      fontSize: 14,
+                      color: colors.textHint,
+                      fontFamily: 'Poppins',
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: colors.textHint,
+                    ),
                     isDense: true,
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     filled: true,
                     fillColor: colors.inputFill,
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: colors.border)),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: colors.border),
+                    ),
                     enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: colors.border)),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: colors.border),
+                    ),
                     focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                            color: AppColors.primaryOrange, width: 1.5)),
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(
+                        color: AppColors.primaryOrange,
+                        width: 1.5,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -151,9 +153,10 @@ class _MobilePurchaseLayoutState extends State<MobilePurchaseLayout> {
                 child: Text(
                   'Showing ${filtered.length} purchases',
                   style: TextStyle(
-                      fontSize: 12.5,
-                      color: colors.textSecondary,
-                      fontFamily: 'Poppins'),
+                    fontSize: 12.5,
+                    color: colors.textSecondary,
+                    fontFamily: 'Poppins',
+                  ),
                 ),
               ),
             ),
@@ -165,12 +168,19 @@ class _MobilePurchaseLayoutState extends State<MobilePurchaseLayout> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.receipt_long_outlined,
-                          size: 48, color: colors.textHint),
+                      Icon(
+                        Icons.receipt_long_outlined,
+                        size: 48,
+                        color: colors.textHint,
+                      ),
                       const SizedBox(height: 12),
-                      Text('No purchases found',
-                          style: TextStyle(
-                              color: colors.textHint, fontFamily: 'Poppins')),
+                      Text(
+                        'No purchases found',
+                        style: TextStyle(
+                          color: colors.textHint,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -229,18 +239,24 @@ class _MobileStatCard extends StatelessWidget {
             child: Icon(icon, color: color, size: 16),
           ),
           const SizedBox(height: 8),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 10.5,
-                  color: colors.textSecondary,
-                  fontFamily: 'Poppins')),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.5,
+              color: colors.textSecondary,
+              fontFamily: 'Poppins',
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
-                  fontFamily: 'Poppins')),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: colors.textPrimary,
+              fontFamily: 'Poppins',
+            ),
+          ),
         ],
       ),
     );
@@ -252,8 +268,11 @@ class _MobilePurchaseCard extends StatelessWidget {
   final int index;
   final AppThemeColors colors;
 
-  const _MobilePurchaseCard(
-      {required this.order, required this.index, required this.colors});
+  const _MobilePurchaseCard({
+    required this.order,
+    required this.index,
+    required this.colors,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -301,12 +320,15 @@ class _MobilePurchaseCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(7),
             ),
             child: Center(
-              child: Text('${index + 1}',
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primaryOrange,
-                      fontFamily: 'Poppins')),
+              child: Text(
+                '${index + 1}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryOrange,
+                  fontFamily: 'Poppins',
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -317,64 +339,88 @@ class _MobilePurchaseCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(o.poNumber,
-                          style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF4A3AFF),
-                              fontFamily: 'Poppins')),
+                      child: Text(
+                        o.poNumber,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF4A3AFF),
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: statusBg,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Text(o.status.label,
-                          style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: statusFg,
-                              fontFamily: 'Poppins')),
+                      child: Text(
+                        o.status.label,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: statusFg,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(o.supplier,
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: colors.textPrimary,
-                        fontFamily: 'Poppins')),
+                Text(
+                  o.supplier,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.calendar_today_outlined,
-                        size: 12, color: colors.textHint),
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 12,
+                      color: colors.textHint,
+                    ),
                     const SizedBox(width: 4),
-                    Text(dateStr,
-                        style: TextStyle(
-                            fontSize: 11.5,
-                            color: colors.textSecondary,
-                            fontFamily: 'Poppins')),
+                    Text(
+                      dateStr,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: colors.textSecondary,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Icon(Icons.inventory_2_outlined,
-                        size: 12, color: colors.textHint),
+                    Icon(
+                      Icons.inventory_2_outlined,
+                      size: 12,
+                      color: colors.textHint,
+                    ),
                     const SizedBox(width: 4),
-                    Text('${o.itemCount} items',
-                        style: TextStyle(
-                            fontSize: 11.5,
-                            color: colors.textSecondary,
-                            fontFamily: 'Poppins')),
+                    Text(
+                      '${o.itemCount} items',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: colors.textSecondary,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
                     const Spacer(),
                     Text(
                       '₹ ${_fmt(o.amount)}',
                       style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: colors.textPrimary,
-                          fontFamily: 'Poppins'),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textPrimary,
+                        fontFamily: 'Poppins',
+                      ),
                     ),
                   ],
                 ),
@@ -388,8 +434,19 @@ class _MobilePurchaseCard extends StatelessWidget {
 
   String _month(int m) {
     const months = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return months[m];
   }

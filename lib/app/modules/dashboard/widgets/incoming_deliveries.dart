@@ -11,10 +11,12 @@ class IncomingDeliveries extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: deliveries
-          .map((d) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: _DeliveryRow(data: d),
-              ))
+          .map(
+            (d) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _DeliveryRow(data: d),
+            ),
+          )
           .toList(),
     );
   }
@@ -31,7 +33,13 @@ class _DeliveryRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(width: 3, decoration: BoxDecoration(color: data.accentColor, borderRadius: BorderRadius.circular(2))),
+          Container(
+            width: 3,
+            decoration: BoxDecoration(
+              color: data.accentColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -39,12 +47,21 @@ class _DeliveryRow extends StatelessWidget {
               children: [
                 Text(
                   '${data.item} — Client PO #${data.poRef}',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'Poppins'),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                    fontFamily: 'Poppins',
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   '${data.warehouse} · Arriving ${data.eta}',
-                  style: TextStyle(fontSize: 12, color: colors.textSecondary, fontFamily: 'Poppins'),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    fontFamily: 'Poppins',
+                  ),
                 ),
               ],
             ),

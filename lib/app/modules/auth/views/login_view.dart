@@ -14,9 +14,9 @@ class LoginView extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final w = constraints.maxWidth;
-        if (w >= 1100) return const WebLoginLayout();     // Desktop
-        if (w >= 600)  return const TabletLoginLayout();  // Tablet
-        return const MobileLoginLayout();                 // Mobile
+        if (w >= 1100) return const WebLoginLayout(); // Desktop
+        if (w >= 600) return const TabletLoginLayout(); // Tablet
+        return const MobileLoginLayout(); // Mobile
       },
     );
   }

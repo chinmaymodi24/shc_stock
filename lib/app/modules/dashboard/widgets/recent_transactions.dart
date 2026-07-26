@@ -17,11 +17,26 @@ class RecentTransactions extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 10),
           child: Row(
             children: [
-              Expanded(flex: 3, child: Text('Item', style: _headerStyle(colors))),
-              Expanded(flex: 2, child: Text('Type', style: _headerStyle(colors))),
-              Expanded(flex: 2, child: Text('Warehouse', style: _headerStyle(colors))),
-              Expanded(flex: 2, child: Text('Date', style: _headerStyle(colors))),
-              Expanded(flex: 2, child: Text('Status', style: _headerStyle(colors))),
+              Expanded(
+                flex: 3,
+                child: Text('Item', style: _headerStyle(colors)),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text('Type', style: _headerStyle(colors)),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text('Warehouse', style: _headerStyle(colors)),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text('Date', style: _headerStyle(colors)),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text('Status', style: _headerStyle(colors)),
+              ),
             ],
           ),
         ),
@@ -39,8 +54,12 @@ class RecentTransactions extends StatelessWidget {
     );
   }
 
-  TextStyle _headerStyle(AppThemeColors colors) =>
-      TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: colors.textSecondary, fontFamily: 'Poppins');
+  TextStyle _headerStyle(AppThemeColors colors) => TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: colors.textSecondary,
+    fontFamily: 'Poppins',
+  );
 }
 
 class _TransactionRowTile extends StatelessWidget {
@@ -57,23 +76,48 @@ class _TransactionRowTile extends StatelessWidget {
         children: [
           Expanded(
             flex: 3,
-            child: Text(data.item,
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colors.textPrimary, fontFamily: 'Poppins')),
+            child: Text(
+              data.item,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: colors.textPrimary,
+                fontFamily: 'Poppins',
+              ),
+            ),
           ),
           Expanded(
             flex: 2,
-            child: Text(data.type,
-                style: TextStyle(fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
+            child: Text(
+              data.type,
+              style: TextStyle(
+                fontSize: 13,
+                color: colors.textSecondary,
+                fontFamily: 'Poppins',
+              ),
+            ),
           ),
           Expanded(
             flex: 2,
-            child: Text(data.warehouse,
-                style: TextStyle(fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
+            child: Text(
+              data.warehouse,
+              style: TextStyle(
+                fontSize: 13,
+                color: colors.textSecondary,
+                fontFamily: 'Poppins',
+              ),
+            ),
           ),
           Expanded(
             flex: 2,
-            child: Text(data.date,
-                style: TextStyle(fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins')),
+            child: Text(
+              data.date,
+              style: TextStyle(
+                fontSize: 13,
+                color: colors.textSecondary,
+                fontFamily: 'Poppins',
+              ),
+            ),
           ),
           Expanded(flex: 2, child: _StatusChip(status: data.status)),
         ],
@@ -110,8 +154,19 @@ class _StatusChip extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
-        child: Text(status, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: fg, fontFamily: 'Poppins')),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          status,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
+            color: fg,
+            fontFamily: 'Poppins',
+          ),
+        ),
       ),
     );
   }

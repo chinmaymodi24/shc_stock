@@ -43,7 +43,9 @@ class SimpleBarChart extends StatelessWidget {
                         child: Container(
                           decoration: BoxDecoration(
                             color: barColor,
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(6),
+                            ),
                           ),
                         ),
                       ),
@@ -52,7 +54,11 @@ class SimpleBarChart extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     point.label,
-                    style: TextStyle(fontSize: 11.5, color: colors.textSecondary, fontFamily: 'Poppins'),
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: colors.textSecondary,
+                      fontFamily: 'Poppins',
+                    ),
                   ),
                 ],
               ),

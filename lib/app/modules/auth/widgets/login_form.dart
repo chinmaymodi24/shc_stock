@@ -198,7 +198,7 @@ class LoginForm extends GetView<LoginController> {
             color: AppColors.inputIcon,
             size: 20,
           ),
-          suffixIcon: GestureDetector(
+          suffixIcon: InkWell(
             onTap: controller.togglePasswordVisibility,
             child: Icon(
               controller.isPasswordVisible.value
@@ -266,7 +266,7 @@ class LoginForm extends GetView<LoginController> {
             ],
           ),
         ),
-        GestureDetector(
+        InkWell(
           onTap: controller.forgotPassword,
           child: Text(
             'Forgot Password?',
@@ -407,7 +407,7 @@ class _TBtn extends StatelessWidget {
       preferBelow: true,
       textStyle: const TextStyle(fontSize: 11, fontFamily: 'Poppins', color: Colors.white),
       decoration: BoxDecoration(color: const Color(0xFF1A1240), borderRadius: BorderRadius.circular(6)),
-      child: GestureDetector(
+      child: InkWell(
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
@@ -433,11 +433,7 @@ class LoginForm extends GetView<LoginController> {
   final bool isMobile;
   final bool showLogo;
 
-  const LoginForm({
-    super.key,
-    this.showLogo = true,
-    required this.isMobile,
-  });
+  const LoginForm({super.key, this.showLogo = true, required this.isMobile});
 
   @override
   Widget build(BuildContext context) {
@@ -518,7 +514,10 @@ class LoginForm extends GetView<LoginController> {
         hintStyle: AppTextStyles.inputHintCtx(context),
         filled: true,
         fillColor: colors.inputFill,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: colors.border, width: 1),
@@ -529,7 +528,10 @@ class LoginForm extends GetView<LoginController> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.accentPurple, width: 1.5),
+          borderSide: const BorderSide(
+            color: AppColors.accentPurple,
+            width: 1.5,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -556,7 +558,7 @@ class LoginForm extends GetView<LoginController> {
         decoration: InputDecoration(
           hintText: 'Enter your password',
           hintStyle: AppTextStyles.inputHintCtx(context),
-          suffixIcon: GestureDetector(
+          suffixIcon: InkWell(
             onTap: controller.togglePasswordVisibility,
             child: Icon(
               controller.isPasswordVisible.value
@@ -568,7 +570,10 @@ class LoginForm extends GetView<LoginController> {
           ),
           filled: true,
           fillColor: colors.inputFill,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(color: colors.border, width: 1),
@@ -579,7 +584,10 @@ class LoginForm extends GetView<LoginController> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.accentPurple, width: 1.5),
+            borderSide: const BorderSide(
+              color: AppColors.accentPurple,
+              width: 1.5,
+            ),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
@@ -613,10 +621,7 @@ class LoginForm extends GetView<LoginController> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  side: BorderSide(
-                    color: colors.textSecondary,
-                    width: 1.5,
-                  ),
+                  side: BorderSide(color: colors.textSecondary, width: 1.5),
                 ),
               ),
               const SizedBox(width: 8),
@@ -652,7 +657,9 @@ class LoginForm extends GetView<LoginController> {
           onPressed: controller.isLoading.value ? null : controller.signIn,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryOrange,
-            disabledBackgroundColor: AppColors.primaryOrange.withValues(alpha: 0.6),
+            disabledBackgroundColor: AppColors.primaryOrange.withValues(
+              alpha: 0.6,
+            ),
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

@@ -5,6 +5,7 @@ import '../../products/models/product_model.dart';
 class CategoriesController extends GetxController {
   // ── Observable category list ─────────────────────────────────
   final RxList<ProductCategory> categories = <ProductCategory>[].obs;
+  final RxnString selectedCatId = RxnString();
 
   /// Total number of top-level categories.
   int get totalCategories => categories.length;
@@ -18,7 +19,8 @@ class CategoriesController extends GetxController {
     ProductCategory(
       id: 'cat_01',
       name: 'Ceramic Fiber Products',
-      description: 'High-temperature insulation products made from ceramic fibers. '
+      description:
+          'High-temperature insulation products made from ceramic fibers. '
           'Used in industrial furnaces, kilns, and thermal processing equipment. '
           'Available in various temperature ratings from 1000°C to 1600°C.',
       subProducts: [
@@ -33,7 +35,8 @@ class CategoriesController extends GetxController {
     ProductCategory(
       id: 'cat_02',
       name: 'Ceramic Fiber Textile',
-      description: 'Woven and braided ceramic fiber products for flexible thermal '
+      description:
+          'Woven and braided ceramic fiber products for flexible thermal '
           'sealing, gasketing, and insulation in high-heat environments.',
       subProducts: [
         'Ceramic Fiber Rope',
@@ -44,7 +47,8 @@ class CategoriesController extends GetxController {
     ProductCategory(
       id: 'cat_03',
       name: 'Insulation Bricks',
-      description: 'Lightweight refractory bricks for kiln and furnace lining. '
+      description:
+          'Lightweight refractory bricks for kiln and furnace lining. '
           'Provides excellent thermal shock resistance and low thermal conductivity.',
       subProducts: [
         'HF/CF Insulation Bricks',
@@ -55,7 +59,8 @@ class CategoriesController extends GetxController {
     ProductCategory(
       id: 'cat_04',
       name: 'Refractories',
-      description: 'Dense refractory bricks and shapes designed to withstand '
+      description:
+          'Dense refractory bricks and shapes designed to withstand '
           'extreme heat and mechanical stress in furnaces and process equipment.',
       subProducts: [
         'Fire Bricks',
@@ -67,7 +72,8 @@ class CategoriesController extends GetxController {
     ProductCategory(
       id: 'cat_05',
       name: 'Mortars & Castables',
-      description: 'Refractory mortars and castable compounds used for bonding, '
+      description:
+          'Refractory mortars and castable compounds used for bonding, '
           'coating, and casting applications in high-temperature environments.',
       subProducts: [
         'Refractory Mortar (ORTEX)',
@@ -78,17 +84,16 @@ class CategoriesController extends GetxController {
     ProductCategory(
       id: 'cat_06',
       name: 'Fire & Welding Protection',
-      description: 'Fire-resistant blankets and welding protection products made '
+      description:
+          'Fire-resistant blankets and welding protection products made '
           'from ceramic fiber and other fire-grade materials for safety applications.',
-      subProducts: [
-        'Fire Blanket',
-        'Welding Blanket',
-      ],
+      subProducts: ['Fire Blanket', 'Welding Blanket'],
     ),
     ProductCategory(
       id: 'cat_07',
       name: 'Accessories & Services',
-      description: 'Anchors, fasteners, and on-site hot insulation services that '
+      description:
+          'Anchors, fasteners, and on-site hot insulation services that '
           'complement the primary product range for complete thermal solutions.',
       subProducts: [
         'Stud & Washer Anchor',
@@ -111,18 +116,25 @@ class CategoriesController extends GetxController {
   /// Add a new top-level category.
   void addCategory(String name, {String desc = '', Uint8List? imageBytes}) {
     final id = 'cat_${DateTime.now().millisecondsSinceEpoch}';
-    categories.add(ProductCategory(
-      id: id,
-      name: name.trim(),
-      description: desc.trim(),
-      subProducts: const [],
-      subDescriptions: const [],
-      imageBytes: imageBytes,
-    ));
+    categories.add(
+      ProductCategory(
+        id: id,
+        name: name.trim(),
+        description: desc.trim(),
+        subProducts: const [],
+        subDescriptions: const [],
+        imageBytes: imageBytes,
+      ),
+    );
   }
 
   /// Update an existing category's name, description, and/or image.
-  void updateCategory(String catId, String name, {String desc = '', Uint8List? imageBytes}) {
+  void updateCategory(
+    String catId,
+    String name, {
+    String desc = '',
+    Uint8List? imageBytes,
+  }) {
     final idx = categories.indexWhere((c) => c.id == catId);
     if (idx == -1) return;
     final old = categories[idx];
@@ -158,29 +170,41 @@ class CategoriesController extends GetxController {
     final idx = categories.indexWhere((c) => c.id == catId);
     if (idx == -1) return;
     final old = categories[idx];
-    final newSubs  = List<String>.from(old.subProducts)..add(name.trim());
+    final newSubs = List<String>.from(old.subProducts)..add(name.trim());
     final newDescs = List<String>.from(old.subDescriptions)..add(desc.trim());
     categories[idx] = ProductCategory(
-      id: old.id, name: old.name, description: old.description,
-      subProducts: newSubs, subDescriptions: newDescs,
+      id: old.id,
+      name: old.name,
+      description: old.description,
+      subProducts: newSubs,
+      subDescriptions: newDescs,
     );
   }
 
   /// Update an existing sub-category's name and/or description.
   void updateSubCategory(
-      String catId, int subIdx, String name, {String desc = ''}) {
+    String catId,
+    int subIdx,
+    String name, {
+    String desc = '',
+  }) {
     final idx = categories.indexWhere((c) => c.id == catId);
     if (idx == -1) return;
-    final old      = categories[idx];
-    final newSubs  = List<String>.from(old.subProducts);
+    final old = categories[idx];
+    final newSubs = List<String>.from(old.subProducts);
     final newDescs = List<String>.from(old.subDescriptions);
-    if (subIdx < newSubs.length)  newSubs[subIdx]  = name.trim();
+    if (subIdx < newSubs.length) newSubs[subIdx] = name.trim();
     // Grow descriptions list if it's shorter than subs
-    while (newDescs.length < newSubs.length) { newDescs.add(''); }
+    while (newDescs.length < newSubs.length) {
+      newDescs.add('');
+    }
     if (subIdx < newDescs.length) newDescs[subIdx] = desc.trim();
     categories[idx] = ProductCategory(
-      id: old.id, name: old.name, description: old.description,
-      subProducts: newSubs, subDescriptions: newDescs,
+      id: old.id,
+      name: old.name,
+      description: old.description,
+      subProducts: newSubs,
+      subDescriptions: newDescs,
     );
   }
 
@@ -188,14 +212,17 @@ class CategoriesController extends GetxController {
   void deleteSubCategory(String catId, int subIdx) {
     final idx = categories.indexWhere((c) => c.id == catId);
     if (idx == -1) return;
-    final old      = categories[idx];
-    final newSubs  = List<String>.from(old.subProducts);
+    final old = categories[idx];
+    final newSubs = List<String>.from(old.subProducts);
     final newDescs = List<String>.from(old.subDescriptions);
-    if (subIdx < newSubs.length)  newSubs.removeAt(subIdx);
+    if (subIdx < newSubs.length) newSubs.removeAt(subIdx);
     if (subIdx < newDescs.length) newDescs.removeAt(subIdx);
     categories[idx] = ProductCategory(
-      id: old.id, name: old.name, description: old.description,
-      subProducts: newSubs, subDescriptions: newDescs,
+      id: old.id,
+      name: old.name,
+      description: old.description,
+      subProducts: newSubs,
+      subDescriptions: newDescs,
     );
   }
 
@@ -204,17 +231,22 @@ class CategoriesController extends GetxController {
     if (oldSi == newSi) return;
     final idx = categories.indexWhere((c) => c.id == catId);
     if (idx == -1) return;
-    final old      = categories[idx];
-    final newSubs  = List<String>.from(old.subProducts);
+    final old = categories[idx];
+    final newSubs = List<String>.from(old.subProducts);
     final newDescs = List<String>.from(old.subDescriptions);
     // Keep descriptions same length as subs
-    while (newDescs.length < newSubs.length) { newDescs.add(''); }
+    while (newDescs.length < newSubs.length) {
+      newDescs.add('');
+    }
     if (newSi > oldSi) newSi -= 1;
     newSubs.insert(newSi, newSubs.removeAt(oldSi));
     newDescs.insert(newSi, newDescs.removeAt(oldSi));
     categories[idx] = ProductCategory(
-      id: old.id, name: old.name, description: old.description,
-      subProducts: newSubs, subDescriptions: newDescs,
+      id: old.id,
+      name: old.name,
+      description: old.description,
+      subProducts: newSubs,
+      subDescriptions: newDescs,
     );
   }
 }

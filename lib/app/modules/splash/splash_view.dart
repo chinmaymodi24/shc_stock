@@ -73,23 +73,19 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
       );
     }
 
-    final size   = MediaQuery.of(context).size;
-    final top    = MediaQuery.of(context).padding.top;
+    final size = MediaQuery.of(context).size;
+    final top = MediaQuery.of(context).padding.top;
     final bottom = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-
           // ── Dot grid – top-left ────────────────────────────────
           Positioned(
             top: top + 18,
             left: 18,
-            child: FadeTransition(
-              opacity: _fadeAnim,
-              child: const _DotGrid(),
-            ),
+            child: FadeTransition(opacity: _fadeAnim, child: const _DotGrid()),
           ),
 
           // ── Dot grid – bottom-right (subtle) ──────────────────
@@ -165,16 +161,16 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
 // ─────────────────────────────────────────────────────────────────────────────
 class _FeatureItem {
   final IconData icon;
-  final double   angle; // radians (0 = 3-o'clock)
+  final double angle; // radians (0 = 3-o'clock)
   const _FeatureItem(this.icon, this.angle);
 }
 
 final _kFeatures = [
-  _FeatureItem(Icons.inventory_2_outlined,  -math.pi / 2),          // Top
-  _FeatureItem(Icons.shopping_cart_outlined, math.pi),               // Left
-  _FeatureItem(Icons.bar_chart_rounded,      0.0),                   // Right
-  _FeatureItem(Icons.shield_outlined,        math.pi + math.pi / 4), // Bottom-L
-  _FeatureItem(Icons.people_outline,        -math.pi / 4),           // Bottom-R
+  _FeatureItem(Icons.inventory_2_outlined, -math.pi / 2), // Top
+  _FeatureItem(Icons.shopping_cart_outlined, math.pi), // Left
+  _FeatureItem(Icons.bar_chart_rounded, 0.0), // Right
+  _FeatureItem(Icons.shield_outlined, math.pi + math.pi / 4), // Bottom-L
+  _FeatureItem(Icons.people_outline, -math.pi / 4), // Bottom-R
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -192,14 +188,13 @@ class _OrbitalRing extends StatefulWidget {
 
 class _OrbitalRingState extends State<_OrbitalRing>
     with TickerProviderStateMixin {
-
-  static const double _size   = 320.0;
+  static const double _size = 320.0;
   static const double _orbitR = 128.0;
-  static const double _btnSz  = 40.0;
+  static const double _btnSz = 40.0;
   static const double _iconSz = 18.0;
 
-  late AnimationController _orbitCtrl;   // continuous orbit rotation
-  late AnimationController _pulseCtrl;   // inner glow pulse
+  late AnimationController _orbitCtrl; // continuous orbit rotation
+  late AnimationController _pulseCtrl; // inner glow pulse
   late AnimationController _staggerCtrl; // icon pop-in stagger
 
   @override
@@ -236,8 +231,8 @@ class _OrbitalRingState extends State<_OrbitalRing>
   /// Elastic scale for icon [index], staggered by index * 0.16
   double _iconScale(int index) {
     const interval = 0.16;
-    final delay    = index * interval;
-    final v        = _staggerCtrl.value;
+    final delay = index * interval;
+    final v = _staggerCtrl.value;
     if (v <= delay) return 0.0;
     final t = ((v - delay) / 0.38).clamp(0.0, 1.0);
     return Curves.elasticOut.transform(t);
@@ -258,7 +253,6 @@ class _OrbitalRingState extends State<_OrbitalRing>
           child: Stack(
             alignment: Alignment.center,
             children: [
-
               // ── Rotating dashed ring (counter-clockwise looks elegant) ──
               Transform.rotate(
                 angle: orbitAngle,
@@ -290,11 +284,7 @@ class _OrbitalRingState extends State<_OrbitalRing>
               ),
 
               // ── Full Secure Heat Care logo (static – does not rotate) ────
-              Image.asset(
-                'assets/logo.png',
-                width: 210,
-                fit: BoxFit.contain,
-              ),
+              Image.asset('assets/logo.png', width: 210, fit: BoxFit.contain),
 
               // ── Orbiting feature icons ───────────────────────────────────
               for (int i = 0; i < _kFeatures.length; i++) ...[
@@ -322,8 +312,9 @@ class _OrbitalRingState extends State<_OrbitalRing>
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primaryOrange
-                                  .withValues(alpha: 0.15),
+                              color: AppColors.primaryOrange.withValues(
+                                alpha: 0.15,
+                              ),
                               blurRadius: 10,
                               spreadRadius: 1,
                             ),
@@ -351,7 +342,7 @@ class _OrbitalRingState extends State<_OrbitalRing>
 // Dashed orbit ring painter + anchor dots
 // ─────────────────────────────────────────────────────────────────────────────
 class _RingPainter extends CustomPainter {
-  final double       orbitRadius;
+  final double orbitRadius;
   final List<double> iconAngles;
   const _RingPainter({required this.orbitRadius, required this.iconAngles});
 
@@ -365,18 +356,21 @@ class _RingPainter extends CustomPainter {
       ..strokeWidth = 1.5
       ..strokeCap = StrokeCap.round;
 
-    const dashLen  = 6.0;
-    const gapLen   = 4.0;
-    final circ     = 2 * math.pi * orbitRadius;
-    final steps    = circ / (dashLen + gapLen);
-    final stepAng  = 2 * math.pi / steps;
-    final dashAng  = stepAng * (dashLen / (dashLen + gapLen));
+    const dashLen = 6.0;
+    const gapLen = 4.0;
+    final circ = 2 * math.pi * orbitRadius;
+    final steps = circ / (dashLen + gapLen);
+    final stepAng = 2 * math.pi / steps;
+    final dashAng = stepAng * (dashLen / (dashLen + gapLen));
 
     for (var i = 0; i < steps.floor(); i++) {
       final start = i * stepAng;
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: orbitRadius),
-        start, dashAng, false, paint,
+        start,
+        dashAng,
+        false,
+        paint,
       );
     }
 
@@ -443,10 +437,8 @@ class _TaglineBlock extends StatelessWidget {
 class _DotGrid extends StatelessWidget {
   const _DotGrid();
   @override
-  Widget build(BuildContext context) => CustomPaint(
-        size: const Size(90, 76),
-        painter: _DotGridPainter(),
-      );
+  Widget build(BuildContext context) =>
+      CustomPaint(size: const Size(90, 76), painter: _DotGridPainter());
 }
 
 class _DotGridPainter extends CustomPainter {
@@ -454,7 +446,7 @@ class _DotGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     const cols = 5, rows = 5;
-    final sx = size.width  / (cols - 1);
+    final sx = size.width / (cols - 1);
     final sy = size.height / (rows - 1);
     for (var r = 0; r < rows; r++) {
       for (var c = 0; c < cols; c++) {
@@ -471,6 +463,7 @@ class _DotGridPainter extends CustomPainter {
       }
     }
   }
+
   @override
   bool shouldRepaint(covariant CustomPainter _) => false;
 }
@@ -487,30 +480,35 @@ class _CityPainter extends CustomPainter {
       ..color = const Color(0xFFEEECFF).withValues(alpha: 0.70)
       ..style = PaintingStyle.fill;
     final path = Path()..moveTo(0, h);
-    _rect(path, w*0.00, h*0.42, w*0.04, h);
-    _rect(path, w*0.04, h*0.55, w*0.07, h);
-    _rect(path, w*0.07, h*0.30, w*0.10, h);
-    _rect(path, w*0.10, h*0.46, w*0.13, h);
-    _rect(path, w*0.13, h*0.22, w*0.16, h);
-    _rect(path, w*0.16, h*0.14, w*0.18, h);
-    _rect(path, w*0.18, h*0.32, w*0.22, h);
-    _rect(path, w*0.22, h*0.50, w*0.28, h);
-    path.lineTo(w*0.72, h);
-    _rect(path, w*0.72, h*0.50, w*0.78, h);
-    _rect(path, w*0.78, h*0.32, w*0.82, h);
-    _rect(path, w*0.82, h*0.14, w*0.84, h);
-    _rect(path, w*0.84, h*0.22, w*0.87, h);
-    _rect(path, w*0.87, h*0.46, w*0.90, h);
-    _rect(path, w*0.90, h*0.30, w*0.93, h);
-    _rect(path, w*0.93, h*0.55, w*0.96, h);
-    _rect(path, w*0.96, h*0.42, w*1.00, h);
+    _rect(path, w * 0.00, h * 0.42, w * 0.04, h);
+    _rect(path, w * 0.04, h * 0.55, w * 0.07, h);
+    _rect(path, w * 0.07, h * 0.30, w * 0.10, h);
+    _rect(path, w * 0.10, h * 0.46, w * 0.13, h);
+    _rect(path, w * 0.13, h * 0.22, w * 0.16, h);
+    _rect(path, w * 0.16, h * 0.14, w * 0.18, h);
+    _rect(path, w * 0.18, h * 0.32, w * 0.22, h);
+    _rect(path, w * 0.22, h * 0.50, w * 0.28, h);
+    path.lineTo(w * 0.72, h);
+    _rect(path, w * 0.72, h * 0.50, w * 0.78, h);
+    _rect(path, w * 0.78, h * 0.32, w * 0.82, h);
+    _rect(path, w * 0.82, h * 0.14, w * 0.84, h);
+    _rect(path, w * 0.84, h * 0.22, w * 0.87, h);
+    _rect(path, w * 0.87, h * 0.46, w * 0.90, h);
+    _rect(path, w * 0.90, h * 0.30, w * 0.93, h);
+    _rect(path, w * 0.93, h * 0.55, w * 0.96, h);
+    _rect(path, w * 0.96, h * 0.42, w * 1.00, h);
     path.close();
     canvas.drawPath(path, paint);
   }
+
   void _rect(Path p, double x1, double y1, double x2, double y2) {
-    p.moveTo(x1, y2); p.lineTo(x1, y1);
-    p.lineTo(x2, y1); p.lineTo(x2, y2); p.lineTo(x1, y2);
+    p.moveTo(x1, y2);
+    p.lineTo(x1, y1);
+    p.lineTo(x2, y1);
+    p.lineTo(x2, y2);
+    p.lineTo(x1, y2);
   }
+
   @override
   bool shouldRepaint(covariant CustomPainter _) => false;
 }

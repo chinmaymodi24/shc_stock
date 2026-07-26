@@ -33,6 +33,6 @@ class ThemeController extends GetxController {
   }
 
   bool get isLight => _themeMode.value == ThemeMode.light;
-  bool get isDark  => _themeMode.value == ThemeMode.dark;
+  bool get isDark => _themeMode.value == ThemeMode.dark;
   bool get isSystem => _themeMode.value == ThemeMode.system;
 }

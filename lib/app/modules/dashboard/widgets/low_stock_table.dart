@@ -25,7 +25,9 @@ class _LowStockRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final ratio = item.max == 0 ? 0.0 : (item.current / item.max).clamp(0.0, 1.0);
+    final ratio = item.max == 0
+        ? 0.0
+        : (item.current / item.max).clamp(0.0, 1.0);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -35,8 +37,15 @@ class _LowStockRow extends StatelessWidget {
           Container(
             width: 32,
             height: 32,
-            decoration: BoxDecoration(color: colors.error.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-            child: Icon(Icons.warning_amber_rounded, color: colors.error, size: 17),
+            decoration: BoxDecoration(
+              color: colors.error.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.warning_amber_rounded,
+              color: colors.error,
+              size: 17,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -47,11 +56,25 @@ class _LowStockRow extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: Text(item.product,
-                          style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: colors.textPrimary, fontFamily: 'Poppins')),
+                      child: Text(
+                        item.product,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w500,
+                          color: colors.textPrimary,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
                     ),
-                    Text('${item.current}/${item.max}',
-                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: colors.error, fontFamily: 'Poppins')),
+                    Text(
+                      '${item.current}/${item.max}',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: colors.error,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 6),

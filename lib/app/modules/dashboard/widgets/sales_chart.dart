@@ -51,27 +51,36 @@ class _SalesChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (data.isEmpty) return;
 
-    final double maxVal = data.map((d) => d.value).reduce((a, b) => a > b ? a : b) * 1.15;
+    final double maxVal =
+        data.map((d) => d.value).reduce((a, b) => a > b ? a : b) * 1.15;
     final double leftPad = 8;
     final double bottomPad = 24;
     final double topPad = 12;
     final double chartW = size.width - leftPad;
     final double chartH = size.height - bottomPad - topPad;
 
-    final textStyle = TextStyle(fontSize: 11, color: labelColor, fontFamily: 'Poppins');
+    final textStyle = TextStyle(
+      fontSize: 11,
+      color: labelColor,
+      fontFamily: 'Poppins',
+    );
 
     // Compute point positions
     final points = <Offset>[];
     for (int i = 0; i < data.length; i++) {
-      final x = leftPad + (data.length == 1 ? 0 : (i / (data.length - 1)) * chartW);
-      final y = topPad + chartH * (1 - (maxVal == 0 ? 0 : data[i].value / maxVal));
+      final x =
+          leftPad + (data.length == 1 ? 0 : (i / (data.length - 1)) * chartW);
+      final y =
+          topPad + chartH * (1 - (maxVal == 0 ? 0 : data[i].value / maxVal));
       points.add(Offset(x, y));
     }
 
     // Draw filled area under the line
     final fillPath = Path();
     fillPath.moveTo(points.first.dx, topPad + chartH);
-    for (final pt in points) { fillPath.lineTo(pt.dx, pt.dy); }
+    for (final pt in points) {
+      fillPath.lineTo(pt.dx, pt.dy);
+    }
     fillPath.lineTo(points.last.dx, topPad + chartH);
     fillPath.close();
 
@@ -79,7 +88,10 @@ class _SalesChartPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [lineColor.withValues(alpha: 0.18), lineColor.withValues(alpha: 0.0)],
+        colors: [
+          lineColor.withValues(alpha: 0.18),
+          lineColor.withValues(alpha: 0.0),
+        ],
       ).createShader(Rect.fromLTWH(0, topPad, size.width, chartH));
     canvas.drawPath(fillPath, fillPaint);
 
@@ -95,14 +107,28 @@ class _SalesChartPainter extends CustomPainter {
     linePath.moveTo(points.first.dx, points.first.dy);
     for (int i = 0; i < points.length - 1; i++) {
       final cp1 = Offset((points[i].dx + points[i + 1].dx) / 2, points[i].dy);
-      final cp2 = Offset((points[i].dx + points[i + 1].dx) / 2, points[i + 1].dy);
-      linePath.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, points[i + 1].dx, points[i + 1].dy);
+      final cp2 = Offset(
+        (points[i].dx + points[i + 1].dx) / 2,
+        points[i + 1].dy,
+      );
+      linePath.cubicTo(
+        cp1.dx,
+        cp1.dy,
+        cp2.dx,
+        cp2.dy,
+        points[i + 1].dx,
+        points[i + 1].dy,
+      );
     }
     canvas.drawPath(linePath, linePaint);
 
     // Draw dots
-    final dotPaint = Paint()..color = lineColor..style = PaintingStyle.fill;
-    final dotBorderPaint = Paint()..color = dotBorderColor..style = PaintingStyle.fill;
+    final dotPaint = Paint()
+      ..color = lineColor
+      ..style = PaintingStyle.fill;
+    final dotBorderPaint = Paint()
+      ..color = dotBorderColor
+      ..style = PaintingStyle.fill;
     for (final pt in points) {
       canvas.drawCircle(pt, 5, dotBorderPaint);
       canvas.drawCircle(pt, 3.5, dotPaint);
@@ -114,11 +140,16 @@ class _SalesChartPainter extends CustomPainter {
         text: TextSpan(text: data[i].label, style: textStyle),
         textDirection: TextDirection.ltr,
       )..layout();
-      tp.paint(canvas, Offset(points[i].dx - tp.width / 2, size.height - bottomPad + 8));
+      tp.paint(
+        canvas,
+        Offset(points[i].dx - tp.width / 2, size.height - bottomPad + 8),
+      );
     }
   }
 
   @override
   bool shouldRepaint(covariant _SalesChartPainter oldDelegate) =>
-      oldDelegate.gridColor != gridColor || oldDelegate.labelColor != labelColor || oldDelegate.lineColor != lineColor;
+      oldDelegate.gridColor != gridColor ||
+      oldDelegate.labelColor != labelColor ||
+      oldDelegate.lineColor != lineColor;
 }

@@ -6,16 +6,41 @@ import '../models/dashboard_models.dart';
 class DashboardController extends GetxController {
   final RxInt selectedNavIndex = 0.obs;
   final RxString selectedSalesFilter = 'This Month'.obs;
+  final RxBool chartsExpanded = false.obs;
   final List<String> salesFilters = ['This Month', 'Last Month', 'This Year'];
 
   final String greetingName = 'Chinmay';
 
   // ── Shared with mobile_dashboard_layout.dart / StatCard widget ──────────
   final List<StatCardData> webStatCards = const [
-    StatCardData(title: 'Total Stock Items', value: '1,245', change: '+12% from last month', isPositive: true, icon: StatCardIcon.box),
-    StatCardData(title: 'Low Stock Items', value: '23', change: '-5% from last month', isPositive: false, icon: StatCardIcon.warning),
-    StatCardData(title: "Today's Sales", value: '₹ 1,25,000', change: '+18% from yesterday', isPositive: true, icon: StatCardIcon.cart),
-    StatCardData(title: 'Total Sales (This Month)', value: '₹ 18,75,000', change: '+22% from last month', isPositive: true, icon: StatCardIcon.chart),
+    StatCardData(
+      title: 'Total Stock Items',
+      value: '1,245',
+      change: '+12% from last month',
+      isPositive: true,
+      icon: StatCardIcon.box,
+    ),
+    StatCardData(
+      title: 'Low Stock Items',
+      value: '23',
+      change: '-5% from last month',
+      isPositive: false,
+      icon: StatCardIcon.warning,
+    ),
+    StatCardData(
+      title: "Today's Sales",
+      value: '₹ 1,25,000',
+      change: '+18% from yesterday',
+      isPositive: true,
+      icon: StatCardIcon.cart,
+    ),
+    StatCardData(
+      title: 'Total Sales (This Month)',
+      value: '₹ 18,75,000',
+      change: '+22% from last month',
+      isPositive: true,
+      icon: StatCardIcon.chart,
+    ),
   ];
 
   // ── Web dashboard — pastel summary tiles ─────────────────────────────────
@@ -90,26 +115,90 @@ class DashboardController extends GetxController {
   final String newClientsChange = '↑ 6 new this month';
 
   final List<CategorySlice> categorySlices = [
-    CategorySlice(label: 'Pipes & Fittings', percent: 38, color: AppColors.primaryPurple),
-    const CategorySlice(label: 'Valves', percent: 24, color: AppColors.primaryOrange),
-    const CategorySlice(label: 'Heating Units', percent: 19, color: AppColors.accentPurple),
-    CategorySlice(label: 'Insulation', percent: 19, color: AppColors.primaryPurple.withValues(alpha: 0.35)),
+    CategorySlice(
+      label: 'Pipes & Fittings',
+      percent: 38,
+      color: AppColors.primaryPurple,
+    ),
+    const CategorySlice(
+      label: 'Valves',
+      percent: 24,
+      color: AppColors.primaryOrange,
+    ),
+    const CategorySlice(
+      label: 'Heating Units',
+      percent: 19,
+      color: AppColors.accentPurple,
+    ),
+    CategorySlice(
+      label: 'Insulation',
+      percent: 19,
+      color: AppColors.primaryPurple.withValues(alpha: 0.35),
+    ),
   ];
 
   // ── Recent transactions ──────────────────────────────────────────────────
   final List<TransactionRow> recentTransactions = const [
-    TransactionRow(item: 'Copper Pipe 15mm', type: 'Inbound', warehouse: 'Ahmedabad', date: 'Jul 10', status: 'Received'),
-    TransactionRow(item: 'PEX Fitting Kit', type: 'Outbound', warehouse: 'Surat', date: 'Jul 10', status: 'Shipped'),
-    TransactionRow(item: 'Water Heater Coil', type: 'Inbound', warehouse: 'Vadodara', date: 'Jul 9', status: 'Pending'),
-    TransactionRow(item: 'Brass Valve 3/4"', type: 'Outbound', warehouse: 'Ahmedabad', date: 'Jul 8', status: 'Delivered'),
+    TransactionRow(
+      item: 'Copper Pipe 15mm',
+      type: 'Inbound',
+      warehouse: 'Ahmedabad',
+      date: 'Jul 10',
+      status: 'Received',
+    ),
+    TransactionRow(
+      item: 'PEX Fitting Kit',
+      type: 'Outbound',
+      warehouse: 'Surat',
+      date: 'Jul 10',
+      status: 'Shipped',
+    ),
+    TransactionRow(
+      item: 'Water Heater Coil',
+      type: 'Inbound',
+      warehouse: 'Vadodara',
+      date: 'Jul 9',
+      status: 'Pending',
+    ),
+    TransactionRow(
+      item: 'Brass Valve 3/4"',
+      type: 'Outbound',
+      warehouse: 'Ahmedabad',
+      date: 'Jul 8',
+      status: 'Delivered',
+    ),
   ];
 
   // ── Incoming deliveries ───────────────────────────────────────────────────
   final List<DeliveryItem> incomingDeliveries = const [
-    DeliveryItem(item: 'Copper Pipe 15mm', poRef: '4421', warehouse: 'Ahmedabad', eta: 'today', accentColor: AppColors.primaryOrange),
-    DeliveryItem(item: 'Brass Valve 3/4"', poRef: '4418', warehouse: 'Vadodara', eta: 'today', accentColor: AppColors.primaryOrange),
-    DeliveryItem(item: 'Water Heater Coil', poRef: '4425', warehouse: 'Surat', eta: 'tomorrow', accentColor: AppColors.primaryPurple),
-    DeliveryItem(item: 'PVC Elbow Joint', poRef: '4430', warehouse: 'Ahmedabad', eta: 'tomorrow', accentColor: AppColors.primaryPurple),
+    DeliveryItem(
+      item: 'Copper Pipe 15mm',
+      poRef: '4421',
+      warehouse: 'Ahmedabad',
+      eta: 'today',
+      accentColor: AppColors.primaryOrange,
+    ),
+    DeliveryItem(
+      item: 'Brass Valve 3/4"',
+      poRef: '4418',
+      warehouse: 'Vadodara',
+      eta: 'today',
+      accentColor: AppColors.primaryOrange,
+    ),
+    DeliveryItem(
+      item: 'Water Heater Coil',
+      poRef: '4425',
+      warehouse: 'Surat',
+      eta: 'tomorrow',
+      accentColor: AppColors.primaryPurple,
+    ),
+    DeliveryItem(
+      item: 'PVC Elbow Joint',
+      poRef: '4430',
+      warehouse: 'Ahmedabad',
+      eta: 'tomorrow',
+      accentColor: AppColors.primaryPurple,
+    ),
   ];
 
   // ── Low stock alerts ──────────────────────────────────────────────────────
@@ -120,7 +209,10 @@ class DashboardController extends GetxController {
 
   // ── Notes & to-dos ────────────────────────────────────────────────────────
   final RxList<NoteItem> notes = <NoteItem>[
-    NoteItem(text: 'Confirm PO #4421 delivery slot with Ahmedabad warehouse', done: true),
+    NoteItem(
+      text: 'Confirm PO #4421 delivery slot with Ahmedabad warehouse',
+      done: true,
+    ),
     NoteItem(text: 'Follow up with supplier on Copper Fitting 1/2" restock'),
     NoteItem(text: 'Reconcile Surat warehouse stock count before month-end'),
     NoteItem(text: 'Review pending order #18 approvals'),

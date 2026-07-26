@@ -57,7 +57,11 @@ class CategorySlice {
   final double percent;
   final Color color;
 
-  const CategorySlice({required this.label, required this.percent, required this.color});
+  const CategorySlice({
+    required this.label,
+    required this.percent,
+    required this.color,
+  });
 }
 
 class TransactionRow {
@@ -97,7 +101,11 @@ class LowStockAlertItem {
   final int current;
   final int max;
 
-  const LowStockAlertItem({required this.product, required this.current, required this.max});
+  const LowStockAlertItem({
+    required this.product,
+    required this.current,
+    required this.max,
+  });
 }
 
 class NoteItem {

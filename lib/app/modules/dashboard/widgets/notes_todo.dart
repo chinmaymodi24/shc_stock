@@ -41,61 +41,87 @@ class _NotesTodoState extends State<NotesTodo> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Obx(() => Column(
-              children: widget.notes.asMap().entries.map((e) {
-                final index = e.key;
-                final note = e.value;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: InkWell(
-                    onTap: () => widget.onToggle(index),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: Checkbox(
-                            value: note.done,
-                            onChanged: (_) => widget.onToggle(index),
-                            activeColor: AppColors.primaryOrange,
-                            checkColor: Colors.white,
-                            visualDensity: VisualDensity.compact,
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                            side: BorderSide(color: colors.textSecondary, width: 1.4),
+        Obx(
+          () => Column(
+            children: widget.notes.asMap().entries.map((e) {
+              final index = e.key;
+              final note = e.value;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: InkWell(
+                  onTap: () => widget.onToggle(index),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: Checkbox(
+                          value: note.done,
+                          onChanged: (_) => widget.onToggle(index),
+                          activeColor: AppColors.primaryOrange,
+                          checkColor: Colors.white,
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          side: BorderSide(
+                            color: colors.textSecondary,
+                            width: 1.4,
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            note.text,
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              color: note.done ? colors.textSecondary : colors.textPrimary,
-                              decoration: note.done ? TextDecoration.lineThrough : null,
-                              fontFamily: 'Poppins',
-                            ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          note.text,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            color: note.done
+                                ? colors.textSecondary
+                                : colors.textPrimary,
+                            decoration: note.done
+                                ? TextDecoration.lineThrough
+                                : null,
+                            fontFamily: 'Poppins',
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                );
-              }).toList(),
-            )),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
         const SizedBox(height: 4),
         Container(
-          decoration: BoxDecoration(color: colors.tagBg, borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(
+            color: colors.tagBg,
+            borderRadius: BorderRadius.circular(10),
+          ),
           child: TextField(
             controller: _controller,
             onSubmitted: (_) => _submit(),
-            style: TextStyle(fontSize: 13, color: colors.textPrimary, fontFamily: 'Poppins'),
+            style: TextStyle(
+              fontSize: 13,
+              color: colors.textPrimary,
+              fontFamily: 'Poppins',
+            ),
             decoration: InputDecoration(
               hintText: '+ Add a note...',
-              hintStyle: TextStyle(fontSize: 13, color: colors.textSecondary, fontFamily: 'Poppins'),
+              hintStyle: TextStyle(
+                fontSize: 13,
+                color: colors.textSecondary,
+                fontFamily: 'Poppins',
+              ),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
             ),
           ),
         ),

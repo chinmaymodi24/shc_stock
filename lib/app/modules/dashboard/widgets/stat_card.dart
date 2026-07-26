@@ -17,7 +17,13 @@ class StatCard extends StatelessWidget {
         color: colors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: colors.divider, width: 1),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 3, offset: const Offset(0, 1))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -27,17 +33,42 @@ class StatCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(data.title, style: TextStyle(fontSize: compact ? 12 : 13, fontWeight: FontWeight.w500, color: colors.textSecondary, fontFamily: 'Poppins')),
+                child: Text(
+                  data.title,
+                  style: TextStyle(
+                    fontSize: compact ? 12 : 13,
+                    fontWeight: FontWeight.w500,
+                    color: colors.textSecondary,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
               ),
               _buildIcon(),
             ],
           ),
           SizedBox(height: compact ? 6 : 10),
-          Text(data.value, style: TextStyle(fontSize: compact ? 20 : 24, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
+          Text(
+            data.value,
+            style: TextStyle(
+              fontSize: compact ? 20 : 24,
+              fontWeight: FontWeight.w700,
+              color: colors.textPrimary,
+              fontFamily: 'Poppins',
+            ),
+          ),
           if (data.change != null) ...[
             const SizedBox(height: 4),
-            Text(data.change!, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500,
-              color: (data.isPositive ?? true) ? const Color(0xFF22C55E) : const Color(0xFFEF4444), fontFamily: 'Poppins')),
+            Text(
+              data.change!,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                color: (data.isPositive ?? true)
+                    ? const Color(0xFF22C55E)
+                    : const Color(0xFFEF4444),
+                fontFamily: 'Poppins',
+              ),
+            ),
           ],
         ],
       ),
@@ -47,14 +78,22 @@ class StatCard extends StatelessWidget {
   Widget _buildIcon() {
     IconData icon;
     switch (data.icon) {
-      case StatCardIcon.box: icon = Icons.inventory_2_outlined;
-      case StatCardIcon.warning: icon = Icons.warning_amber_rounded;
-      case StatCardIcon.cart: icon = Icons.shopping_cart_outlined;
-      case StatCardIcon.chart: icon = Icons.bar_chart_rounded;
+      case StatCardIcon.box:
+        icon = Icons.inventory_2_outlined;
+      case StatCardIcon.warning:
+        icon = Icons.warning_amber_rounded;
+      case StatCardIcon.cart:
+        icon = Icons.shopping_cart_outlined;
+      case StatCardIcon.chart:
+        icon = Icons.bar_chart_rounded;
     }
     return Container(
-      width: 44, height: 44,
-      decoration: BoxDecoration(color: AppColors.primaryOrange.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: AppColors.primaryOrange.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Icon(icon, color: AppColors.primaryOrange, size: 22),
     );
   }

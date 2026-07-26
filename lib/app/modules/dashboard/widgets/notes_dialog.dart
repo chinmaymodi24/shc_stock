@@ -32,7 +32,11 @@ class NotesDialog extends StatelessWidget {
               color: colors.surface,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.20), blurRadius: 40, offset: const Offset(0, 12)),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.20),
+                  blurRadius: 40,
+                  offset: const Offset(0, 12),
+                ),
               ],
             ),
             child: Column(
@@ -45,27 +49,60 @@ class NotesDialog extends StatelessWidget {
                       Container(
                         width: 48,
                         height: 48,
-                        decoration: BoxDecoration(color: AppColors.primaryOrange.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(14)),
-                        child: const Icon(Icons.checklist_rounded, color: AppColors.primaryOrange, size: 24),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryOrange.withValues(
+                            alpha: 0.10,
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.checklist_rounded,
+                          color: AppColors.primaryOrange,
+                          size: 24,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Notes & To-dos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'Poppins')),
+                            Text(
+                              'Notes & To-dos',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: colors.textPrimary,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
                             const SizedBox(height: 2),
-                            Obx(() => Text('${notes.length} notes', style: TextStyle(fontSize: 12.5, color: colors.textSecondary, fontFamily: 'Poppins'))),
+                            Obx(
+                              () => Text(
+                                '${notes.length} notes',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  color: colors.textSecondary,
+                                  fontFamily: 'Poppins',
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                      GestureDetector(
+                      InkWell(
                         onTap: Get.back,
                         child: Container(
                           width: 32,
                           height: 32,
-                          decoration: BoxDecoration(color: colors.comingSoonBadge, borderRadius: BorderRadius.circular(8)),
-                          child: Icon(Icons.close_rounded, size: 18, color: colors.textSecondary),
+                          decoration: BoxDecoration(
+                            color: colors.comingSoonBadge,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 18,
+                            color: colors.textSecondary,
+                          ),
                         ),
                       ),
                     ],
@@ -78,9 +115,15 @@ class NotesDialog extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.all(24),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.5,
+                    ),
                     child: SingleChildScrollView(
-                      child: NotesTodo(notes: notes, onToggle: onToggle, onAdd: onAdd),
+                      child: NotesTodo(
+                        notes: notes,
+                        onToggle: onToggle,
+                        onAdd: onAdd,
+                      ),
                     ),
                   ),
                 ),

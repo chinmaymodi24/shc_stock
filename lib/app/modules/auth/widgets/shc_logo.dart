@@ -11,8 +11,7 @@ class SHCLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double logoWidth =
-        width ?? MediaQuery.of(context).size.width * 0.38;
+    final double logoWidth = width ?? MediaQuery.of(context).size.width * 0.38;
 
     return Image.asset(
       'assets/logo.png',

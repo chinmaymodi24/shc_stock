@@ -26,8 +26,13 @@ class WebSidebar extends StatelessWidget {
     ),
     _NavItem(
       icon: Icons.warehouse_outlined,
-      label: 'Stock',
+      label: 'Inventory',
       route: AppRoutes.stock,
+    ),
+    _NavItem(
+      icon: Icons.swap_horiz_rounded,
+      label: 'Transactions',
+      route: AppRoutes.transactions,
     ),
     _NavItem(
       icon: Icons.shopping_bag_outlined,
@@ -66,10 +71,12 @@ class WebSidebar extends StatelessWidget {
     AppRoutes.products,
     AppRoutes.categories,
     AppRoutes.stock,
+    AppRoutes.transactions,
     AppRoutes.purchase,
     AppRoutes.sales,
     AppRoutes.clients,
     AppRoutes.users,
+    AppRoutes.settings,
   };
 
   @override
@@ -197,15 +204,12 @@ class WebSidebar extends StatelessWidget {
                       ],
                     ),
                   ),
-                  MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      onTap: () => Get.dialog(const _SignOutDialog()),
-                      child: Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: colors.textSecondary,
-                        size: 20,
-                      ),
+                  InkWell(
+                    onTap: () => Get.dialog(const _SignOutDialog()),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: colors.textSecondary,
+                      size: 20,
                     ),
                   ),
                 ],
@@ -243,55 +247,50 @@ class _SidebarNavItem extends StatelessWidget {
     return Padding(
       // Vertical gap between items: 3px
       padding: const EdgeInsets.only(bottom: 3),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Material(
-          color: Colors.transparent,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(8),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(8),
-            // Splash matches active color subtly for non-active items
-            splashColor: AppColors.primaryOrange.withValues(alpha: 0.08),
-            highlightColor: AppColors.primaryOrange.withValues(alpha: 0.05),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 140),
-              // Increased left padding for icons as requested
-              padding: const EdgeInsets.fromLTRB(30, 13, 14, 13),
-              decoration: BoxDecoration(
-                // Active: solid orange; inactive: transparent
-                color: isActive ? AppColors.primaryOrange : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Icon — 19px, white when active, dark navy when inactive
-                  Icon(
-                    item.icon,
-                    size: 19,
-                    color: isActive ? Colors.white : navColor,
-                  ),
-                  // Gap between icon and label: 10px
-                  const SizedBox(width: 15),
-                  // Label
-                  Expanded(
-                    child: Text(
-                      item.label,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14,
-                        // Active: semibold; inactive: medium
-                        fontWeight: isActive
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                        color: isActive ? Colors.white : navColor,
-                        fontFamily: 'Poppins',
-                      ),
+          // Splash matches active color subtly for non-active items
+          splashColor: AppColors.primaryOrange.withValues(alpha: 0.08),
+          highlightColor: AppColors.primaryOrange.withValues(alpha: 0.05),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            // Increased left padding for icons as requested
+            padding: const EdgeInsets.fromLTRB(30, 13, 14, 13),
+            decoration: BoxDecoration(
+              // Active: solid orange; inactive: transparent
+              color: isActive ? AppColors.primaryOrange : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Icon — 19px, white when active, dark navy when inactive
+                Icon(
+                  item.icon,
+                  size: 19,
+                  color: isActive ? Colors.white : navColor,
+                ),
+                // Gap between icon and label: 10px
+                const SizedBox(width: 15),
+                // Label
+                Expanded(
+                  child: Text(
+                    item.label,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      // Active: semibold; inactive: medium
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                      color: isActive ? Colors.white : navColor,
+                      fontFamily: 'Poppins',
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -385,28 +384,24 @@ class _ThemeBtn extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     return Expanded(
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: onTap,
-          behavior: HitTestBehavior.opaque,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
+      child: InkWell(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: isActive
+                ? AppColors.primaryOrange.withValues(alpha: 0.1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Center(
+            child: Icon(
+              icon,
+              size: 20,
               color: isActive
-                  ? AppColors.primaryOrange.withValues(alpha: 0.1)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Icon(
-                icon,
-                size: 20,
-                color: isActive
-                    ? AppColors.primaryOrange
-                    : colors.textPrimary.withValues(alpha: 0.8),
-              ),
+                  ? AppColors.primaryOrange
+                  : colors.textPrimary.withValues(alpha: 0.8),
             ),
           ),
         ),
@@ -505,22 +500,19 @@ class _SignOutDialog extends StatelessWidget {
                           ],
                         ),
                       ),
-                      MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: GestureDetector(
-                          onTap: Get.back,
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: colors.comingSoonBadge,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.close_rounded,
-                              size: 18,
-                              color: colors.textSecondary,
-                            ),
+                      InkWell(
+                        onTap: Get.back,
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: colors.comingSoonBadge,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 18,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ),
