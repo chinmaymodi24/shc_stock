@@ -6,14 +6,18 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'dart:io' as io;
 import '../controllers/categories_controller.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/filter_bar.dart';
 import '../../dashboard/widgets/web_sidebar.dart';
 import '../../dashboard/widgets/web_top_bar.dart';
-import '../../products/models/product_model.dart';
+import '../models/category_model.dart';
+import '../../../core/api/api_config.dart';
 import '../../products/controllers/products_controller.dart';
+import '../../../shared/widgets/stat_cards.dart';
 
 ProductsController _productsController() {
-  if (Get.isRegistered<ProductsController>())
+  if (Get.isRegistered<ProductsController>()) {
     return Get.find<ProductsController>();
+  }
   return Get.put(ProductsController());
 }
 
@@ -41,6 +45,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                 Expanded(
                   child: Obx(() {
                     final all = c.categories;
+                    final visible = c.visibleCategories;
                     // Falls back to the first category when nothing (or a deleted
                     // category) is selected — never mutates state during build.
                     final selected = all.isEmpty
@@ -144,7 +149,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Expanded(
-                                  child: _StatCard(
+                                  child: AppSimpleStatCard(
                                     label: 'Categories',
                                     value: '${c.totalCategories}',
                                     icon: Icons.category_outlined,
@@ -156,7 +161,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
-                                  child: _StatCard(
+                                  child: AppSimpleStatCard(
                                     label: 'Subcategories',
                                     value: '${c.totalSubCategories}',
                                     icon: Icons.account_tree_outlined,
@@ -168,7 +173,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
-                                  child: _StatCard(
+                                  child: AppSimpleStatCard(
                                     label: 'Largest',
                                     value: largest?.name ?? '—',
                                     icon: Icons.star_border_rounded,
@@ -183,6 +188,21 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                             ),
                           ),
                           const SizedBox(height: 20),
+
+                          // ── Search ────────────────────────────────────────────────
+                          if (all.isNotEmpty) ...[
+                            FilterBar(
+                              search: FilterSearchField(
+                                controller: c.searchCtrl,
+                                hint: 'Search categories...',
+                                onChanged: (v) => c.searchQuery.value = v,
+                              ),
+                              clearAll: c.hasActiveFilters
+                                  ? ClearAllButton(onTap: c.resetFilters)
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
+                          ],
 
                           // ── Sidebar + Detail Panel ────────────────────────────────
                           if (all.isEmpty)
@@ -228,7 +248,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                                               ),
                                             ),
                                           ),
-                                          ...all.map(
+                                          ...visible.map(
                                             (cat) => _SidebarCategoryItem(
                                               name: cat.name,
                                               count: cat.subProducts.length,
@@ -318,14 +338,16 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
     );
   }
 
-  void _showEditDialog(CategoriesController c, ProductCategory cat) {
+  void _showEditDialog(CategoriesController c, CategoryModel cat) {
     Get.dialog(
       _CategoryFormDialog(
         isSubCategory: false,
         isEdit: true,
         initialName: cat.name,
         initialDesc: cat.description,
-        initialImageBytes: cat.imageBytes,
+        initialImageUrl: cat.imageUrl == null
+            ? null
+            : ApiConfig.resolveImageUrl(cat.imageUrl!),
         onSave: (name, desc, bytes) {
           c.updateCategory(cat.id, name, desc: desc, imageBytes: bytes);
           Get.back();
@@ -336,7 +358,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
 
   void _showEditSubDialog(
     CategoriesController c,
-    ProductCategory cat,
+    CategoryModel cat,
     int subIdx,
   ) {
     final currentDesc = subIdx < cat.subDescriptions.length
@@ -374,7 +396,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
   void _confirmDeleteCategory(
     BuildContext context,
     CategoriesController c,
-    ProductCategory cat,
+    CategoryModel cat,
   ) {
     _confirmDelete(
       context,
@@ -393,7 +415,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
   void _confirmDeleteSub(
     BuildContext context,
     CategoriesController c,
-    ProductCategory cat,
+    CategoryModel cat,
     int subIdx,
   ) {
     final subName = cat.subProducts[subIdx];
@@ -696,7 +718,7 @@ class _SidebarCategoryItem extends StatelessWidget {
 // Right detail panel — selected category's subcategories table
 // ─────────────────────────────────────────────────────────────────────────────
 class _CategoryDetailPanel extends StatelessWidget {
-  final ProductCategory cat;
+  final CategoryModel cat;
   final int globalIndex;
   final int skuCount;
   final int Function(String categoryName, String subCategory) subSkuCount;
@@ -993,83 +1015,6 @@ class _SubCategoryTableRowState extends State<_SubCategoryTableRow> {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Stat Card
-// ─────────────────────────────────────────────────────────────────────────────
-class _StatCard extends StatelessWidget {
-  final String label, value;
-  final IconData icon;
-  final Color iconColor;
-  final Color bgColor;
-  final bool isTitleValue;
-
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.iconColor,
-    required this.bgColor,
-    this.isTitleValue = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.divider),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colors.textSecondary,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: isTitleValue ? 16 : 24,
-                    fontWeight: FontWeight.w700,
-                    color: colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Header Action Button (filled Edit/Delete pill, matches target UI)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1166,6 +1111,10 @@ class _CategoryFormDialog extends StatefulWidget {
   final String initialDesc;
   final Uint8List? initialImageBytes;
 
+  /// Fully-qualified URL of an already-uploaded image (edit mode), shown as
+  /// a network preview until the user picks a replacement file.
+  final String? initialImageUrl;
+
   /// Called with (name, description, imageBytes) when the user taps Save.
   final void Function(String name, String desc, Uint8List? imageBytes) onSave;
 
@@ -1176,6 +1125,7 @@ class _CategoryFormDialog extends StatefulWidget {
     this.initialName = '',
     this.initialDesc = '',
     this.initialImageBytes,
+    this.initialImageUrl,
     required this.onSave,
   });
 
@@ -1193,6 +1143,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
   final _isDragOver = false.obs;
   late final Rx<Uint8List?> _pickedImageBytes;
   final _pickedImageName = ''.obs;
+  final _existingImageCleared = false.obs;
 
   @override
   void initState() {
@@ -1214,6 +1165,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
     _isDragOver.close();
     _pickedImageBytes.close();
     _pickedImageName.close();
+    _existingImageCleared.close();
     super.dispose();
   }
 
@@ -1500,6 +1452,73 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
                                     _pickedImageBytes.value = null;
                                     _pickedImageName.value = '';
                                   },
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFFEF4444,
+                                      ).withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Icon(
+                                      Icons.close_rounded,
+                                      color: Color(0xFFEF4444),
+                                      size: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        // No newly-picked bytes yet — show the existing
+                        // uploaded image (edit mode) as a network preview.
+                        if (widget.initialImageUrl != null &&
+                            !_existingImageCleared.value) {
+                          return Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: colors.border),
+                              borderRadius: BorderRadius.circular(10),
+                              color: colors.inputFill,
+                            ),
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    widget.initialImageUrl!,
+                                    width: 72,
+                                    height: 72,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      width: 72,
+                                      height: 72,
+                                      color: colors.divider,
+                                      child: Icon(
+                                        Icons.broken_image_outlined,
+                                        color: colors.textHint,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Current image',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: colors.textPrimary,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                  ),
+                                ),
+                                InkWell(
+                                  onTap: () => _existingImageCleared.value = true,
                                   borderRadius: BorderRadius.circular(6),
                                   child: Container(
                                     width: 28,

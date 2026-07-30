@@ -4,8 +4,9 @@
     {
       "name": "flutter-web",
       "runtimeExecutable": "flutter",
-      "runtimeArgs": ["run", "-d", "web-server", "--web-port", "56289"],
-      "port": 56289
+      "runtimeArgs": ["run", "-d", "web-server"],
+      "port": 56289,
+      "autoPort": true
     },
     {
       "name": "flutter-web-release",

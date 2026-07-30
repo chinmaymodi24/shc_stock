@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/user_model.dart';
 import '../../../routes/app_routes.dart';
+import '../../../core/utils/app_toast.dart';
 import 'users_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,13 +68,14 @@ class WizMod {
 
 const kMods = <WizMod>[
   WizMod('Dashboard', Icons.dashboard_rounded),
+  WizMod('Categories', Icons.category_outlined),
   WizMod('Products', Icons.inventory_2_outlined),
-  WizMod('Stock', Icons.warehouse_outlined),
+  WizMod('Inventory', Icons.warehouse_outlined),
   WizMod('Purchase', Icons.shopping_bag_outlined),
-  WizMod('Sales', Icons.point_of_sale_outlined),
+  WizMod('Sale', Icons.point_of_sale_outlined),
   WizMod('Clients', Icons.people_outline_rounded),
+  WizMod('Transactions', Icons.swap_horiz_rounded),
   WizMod('Reports', Icons.bar_chart_rounded),
-  WizMod('Users', Icons.manage_accounts_outlined),
   WizMod('Settings', Icons.settings_outlined),
 ];
 
@@ -85,6 +87,13 @@ const kDepts = <String>[
   'Operations',
   'HR',
   'Warehouse',
+];
+
+const kEmploymentTypes = <String>[
+  'Full-time',
+  'Part-time',
+  'Contract',
+  'Intern',
 ];
 
 class WizPerm {
@@ -110,15 +119,21 @@ class AddEmployeeWizardController extends GetxController {
   final nameCtrl = TextEditingController();
   final emailCtrl = TextEditingController();
   final phoneCtrl = TextEditingController();
+  final altPhoneCtrl = TextEditingController();
+  final designationCtrl = TextEditingController();
+  final reportingManagerCtrl = TextEditingController();
+  final employeeCodeCtrl = TextEditingController();
   final userCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   final confCtrl = TextEditingController();
   final dept = ''.obs;
+  final employmentType = 'Full-time'.obs;
   final status = 'Active'.obs;
   final welcome = true.obs;
   final showPass = false.obs;
   final showConf = false.obs;
   final doj = Rx<DateTime?>(null);
+  final dob = Rx<DateTime?>(null);
   final eName = RxnString();
   final eEmail = RxnString();
   final eUser = RxnString();
@@ -139,14 +154,7 @@ class AddEmployeeWizardController extends GetxController {
   void onInit() {
     super.onInit();
     perms = kMods
-        .map(
-          (m) => WizPerm(
-            module: m.name,
-            icon: m.icon,
-            read: true,
-            write: m.name != 'Reports' && m.name != 'Users',
-          ),
-        )
+        .map((m) => WizPerm(module: m.name, icon: m.icon, read: true, write: false))
         .toList()
         .obs;
     roleSearchCtrl.addListener(
@@ -160,6 +168,10 @@ class AddEmployeeWizardController extends GetxController {
       nameCtrl,
       emailCtrl,
       phoneCtrl,
+      altPhoneCtrl,
+      designationCtrl,
+      reportingManagerCtrl,
+      employeeCodeCtrl,
       userCtrl,
       passCtrl,
       confCtrl,
@@ -179,25 +191,26 @@ class AddEmployeeWizardController extends GetxController {
       ? null
       : kRoles.where((r) => r.id == roleId.value).firstOrNull;
 
-  String get fmtDOJ {
-    final d = doj.value;
-    if (d == null) return '-';
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${d.day} ${months[d.month - 1]} ${d.year}';
-  }
+  static const _months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  String _fmtDate(DateTime? d) =>
+      d == null ? '-' : '${d.day} ${_months[d.month - 1]} ${d.year}';
+
+  String get fmtDOJ => _fmtDate(doj.value);
+  String get fmtDOB => _fmtDate(dob.value);
 
   // ── Validation ───────────────────────────────────────────────────────
   bool v1() {
@@ -301,16 +314,12 @@ class AddEmployeeWizardController extends GetxController {
     );
 
     Get.offNamed(AppRoutes.users);
-    Get.snackbar(
+    showAppToast(
       'Employee Created',
       '$nm has been added successfully.',
       backgroundColor: const Color(0xFF22C55E),
       colorText: Colors.white,
-      snackPosition: SnackPosition.TOP,
-      margin: const EdgeInsets.all(16),
-      borderRadius: 10,
-      duration: const Duration(seconds: 3),
-      icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+      icon: Icons.check_circle_outline,
     );
   }
 }

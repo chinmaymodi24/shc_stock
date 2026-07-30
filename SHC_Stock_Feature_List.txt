@@ -1,0 +1,190 @@
+===================================================================
+SHC STOCK - PROJECT FEATURE LIST
+Generated: 2026-07-30
+===================================================================
+
+TECH STACK
+-----------
+- Framework   : Flutter (SDK ^3.8.1) - responsive for Web, Mobile & Desktop
+- State Mgmt  : GetX (get: ^4.6.6) - reactive .obs state, DI (Get.find/Bindings),
+                named-route navigation (GetPage/AppRoutes)
+- Backend/DB  : NONE currently wired. All data is static/mock seed data
+                hardcoded inside controllers (e.g. _seedProducts, kClientsSeedData).
+                Only shared_preferences is used, and only to remember the login
+                email for "Remember Me" (not real authentication).
+- Login       : Fully stubbed - LoginController.signIn() has a
+                "TODO: Replace with real Firebase Authentication" comment;
+                currently just simulates a delay and navigates to Dashboard.
+- Other Pkgs  : fl_chart (charts), google_fonts, intl, desktop_drop + file_picker
+                + cross_file (image drag-drop/upload), cupertino_icons
+- NOT included: no PDF/export/print, no barcode/QR scanning, no CSV packages
+                (Export buttons / barcode fields exist in UI only, not functional)
+
+===================================================================
+MODULE-WISE FEATURES
+===================================================================
+
+1) AUTH (Login)
+   - Responsive login screens (mobile / tablet / web)
+   - Email + password form with validation (email format, min 6 char password)
+   - Show/hide password toggle
+   - "Remember Me" (saves only email to SharedPreferences)
+   - Language selector UI (English, Hindi, Gujarati) - UI only, not wired
+   - "Sign in with another account" (SSO) - stub, shows "Coming Soon"
+   - "Forgot password" - stub, shows "Coming Soon"
+   - Simulated async sign-in (no real backend auth yet)
+   - Toast notifications for errors/info
+
+2) DASHBOARD
+   - Web & mobile dashboard layouts + shared AppDrawer for mobile nav
+   - Stat cards: Total Stock Items, Low Stock, Out of Stock, Today's Sales,
+     Total Sales (This Month), Dues from Clients, Top Selling Product
+   - Sales / Purchases / New Clients trend bar chart (fl_chart) with period
+     filter (This Month / Last Month / This Year) + expand/collapse
+   - Category breakdown donut chart
+   - Recent transactions table widget
+   - Incoming deliveries widget
+   - Low-stock alerts table
+   - Notes / To-Do list (add note, mark done/undone)
+   - Shared WebSidebar (nav: Dashboard, Products, Categories, Inventory,
+     Transactions, Purchase, Sales, Clients, Reports*, Employee, Settings)
+     (*Reports route exists but has no page bound yet - not implemented)
+   - Shared WebTopBar (search box stub, notification bell, theme toggle, avatar)
+   - Light / Dark / System theme switching (persisted)
+
+3) PRODUCTS
+   - Product list (web/mobile), seeded with 26 SHC insulation/refractory products
+   - Search by name, SKU, or category
+   - Filters: category (multi), sub-category, status (Active/Inactive),
+     stock status (In Stock/Low Stock/Out of Stock/All)
+   - Sorting: Name A-Z/Z-A, Price low-high/high-low, Stock low-high/high-low
+   - Pagination
+   - Add / Delete product
+   - Product fields: SKU, category/sub-category, unit, selling/cost price,
+     current/min stock, brand, HSN code, tax %, description, variant options
+     (density, board, thickness, reinforcement), audit fields (modified by/at)
+   - Add Product form: basic info incl. barcode field (UI only, no scanner),
+     Stock Item vs Service Item toggle, pricing & tax (purchase/selling/MRP,
+     GST, cess, discount), inventory (opening stock, reorder level, min/max
+     qty, location), additional info (shelf life, warranty, weight,
+     dimensions, active/inactive), multi-image upload with drag-and-drop
+   - Computed stats: total products, active, low-stock, out-of-stock,
+     total stock value
+   - Reset filters action
+
+4) CATEGORIES
+   - Category & sub-category management, seeded with 7 SHC categories
+   - Add / update / delete categories (name, description, optional image)
+   - Drag-and-drop reordering of categories
+   - Add / update / delete sub-categories per category
+   - Drag-and-drop reordering of sub-categories
+   - Computed totals: total categories, total sub-categories
+   - Web and mobile layouts
+
+5) CLIENTS
+   - Client list (web/mobile), seeded data (ClientModel)
+   - Search, pagination
+   - Computed stats: total clients, regular vs unregistered, states covered,
+     top 5 states by client count
+   - Add Client form: client type, name, email, phone, alt phone, GSTIN, PAN,
+     currency (default INR), payment terms, price list, customer-since date,
+     opening balance, credit limit/days, primary + billing address
+     ("same as primary" toggle), notes/terms, contact person details
+   - Reusable ClientAutocompleteField (used in Sales/Purchase forms to
+     auto-fill address, state, GSTIN, PAN)
+
+6) PURCHASE
+   - Purchase order list (web/mobile), seeded with 28 orders / 5 suppliers
+     with statuses: pending, partial, received, cancelled
+   - Search, supplier filter, pagination
+   - Computed stats: total orders, total purchase (MTD), amount paid, amount
+     due, average order value, top 4 suppliers
+   - Add / delete order, update order status
+   - Add Purchase form: supplier selection (auto-fill via ClientModel),
+     invoice/PO number & date, dispatch mode, LR number/date, vehicle number,
+     freight, place of supply, due date
+   - Line items: product, HSN, grade, density, packages, avg content/package,
+     UOM, net price; auto quantity & line amount; add/remove rows
+   - Auto totals: subtotal, SGST 9%, CGST 9%, grand total
+   - Audit fields (modified by/at)
+
+7) SALES
+   - Sales order list (web/mobile), seeded with 156 orders / ~10 clients,
+     statuses (confirmed/shipped/delivered/cancelled) & payment status
+     (paid/partial/pending/refunded)
+   - Mobile tab filters (All/Confirmed/Delivered), search, pagination
+   - Computed stats: total orders, total sales (MTD), total due, total
+     received, average order value, top 5 clients (order count/amount)
+   - Add / delete order
+   - Add Sale form: client autocomplete (auto-fill address/GSTIN/PAN),
+     invoice/PO number & date, dispatch mode, LR number/date, vehicle
+     number, freight, place of supply, due date
+   - Line items: product, HSN, quantity, unit, rate, computed line amount;
+     add/remove rows
+   - Auto totals: taxable value, CGST 9%, SGST 9%, grand total
+
+8) STOCK / INVENTORY
+   - Stock list (web), seeded with 8 items
+   - Search, category filters, status filters (In Stock/Low Stock/Out of
+     Stock/Inactive), pagination
+   - Fields: code, SKU, name, category, unit, stock in hand, available
+     stock, stock value, status, audit fields
+   - Computed stats: total items, in-stock/low-stock/out-of-stock/inactive
+     counts, total quantity, total stock value
+   - Dynamic filter lists (categories, units) derived from current data
+
+9) TRANSACTIONS
+   - Inbound/outbound transaction log (web), seeded with 6 transactions
+   - Search, type filters (inbound/outbound), status filters
+     (received/shipped/pending/delivered), pagination
+   - Fields: item, type, party, PO number, date, status, audit fields
+   - Monthly summary counters (total this month, inbound/outbound/pending -
+     currently hardcoded, not derived from data)
+
+10) USERS / EMPLOYEES
+   - User list (web/mobile), seeded with 15 users; role (Admin, Manager,
+     Salesman, Stock Manager, Accountant), active/inactive status, last
+     login, created date, color-coded avatar
+   - Search, role filter, status filter, pagination
+   - Computed stats: total users, active/inactive, admin count, per-role
+     breakdown, 5 most recently active users
+   - Add Employee Wizard (4 steps):
+     1. Basic info (name, email, phone, username, password, department,
+        status, DOJ, send-welcome-email toggle, validation)
+     2. Role assignment (predefined roles or custom role, searchable list)
+     3. Module permissions matrix (per module read/write toggles)
+     4. Review & submit -> creates user, success toast
+   - "Export Employee List" button (UI only, not wired)
+
+11) SETTINGS
+   - Web settings layout + mobile settings/profile views
+   - Tabs: Profile (name, email), Security (password change, 2FA toggle),
+     Notifications (low stock, delivery, payment, weekly summary toggles),
+     Preferences (rows-per-page, date format)
+
+12) SPLASH
+   - Splash screen shown at app launch before routing to Login/Dashboard
+
+===================================================================
+CROSS-CUTTING / SHARED
+===================================================================
+- Routes: /splash, /login, /dashboard, /products, /products/add, /categories,
+  /stock, /transactions, /purchase, /purchase/add, /sales, /sales/add,
+  /clients, /clients/add, /reports (defined but NOT implemented), /users,
+  /users/add, /settings, /profile
+- GetX Binding per module for dependency injection
+- Responsive design: separate web/mobile (and sometimes tablet) layouts
+  in almost every module
+- Shared WebSidebar & WebTopBar (web) / AppDrawer (mobile) for consistent
+  navigation shell
+- Light/Dark/System theming via ThemeController, persisted
+
+===================================================================
+NOT YET IMPLEMENTED (UI placeholders / TODO only)
+===================================================================
+- Real backend & authentication (Firebase TODO, no DB connected)
+- Forgot password / SSO login
+- Reports module (route exists, no page)
+- Barcode scanning (field exists, no scanner logic)
+- PDF generation / printing
+- Data export (CSV/Excel) - buttons present, not wired

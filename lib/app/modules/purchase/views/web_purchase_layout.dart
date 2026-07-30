@@ -4,9 +4,12 @@ import 'dart:math' as math;
 import '../controllers/purchase_controller.dart';
 import '../models/purchase_model.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/filter_bar.dart';
 import '../../dashboard/widgets/web_sidebar.dart';
+import '../../dashboard/widgets/web_top_bar.dart';
 import '../../dashboard/widgets/modified_by_cell.dart';
 import '../../../routes/app_routes.dart';
+import '../../../shared/widgets/stat_cards.dart';
 
 // ── Table column constants (header + row MUST match) ──────────────────────
 const double _kIdxW = 32.0; // # badge
@@ -37,7 +40,7 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
           Expanded(
             child: Column(
               children: [
-                _WebTopBar(colors: colors),
+                const WebTopBar(),
                 Expanded(
                   child: Obx(() {
                     final all = c.orders;
@@ -153,7 +156,21 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Expanded(
-                                  child: _StatCard(
+                                  child: AppStatCard(
+                    padding: 16,
+                    iconBoxSize: 34,
+                    iconBoxRadius: 8,
+                    iconSize: 17,
+                    labelFontSize: 11.5,
+                    smallValueFontSize: 20,
+                    gapIconToLabel: 10,
+                    gapLabelToValue: 4,
+                    gapValueToTrend: 6,
+                    sparkWidth: 56,
+                    sparkHeight: 44,
+                    showCaption: false,
+                    sparkStrokeWidth: 1.8,
+                    sparkStrokeJoin: StrokeJoin.miter,
                                     label: 'Orders',
                                     value: '${c.totalOrders}',
                                     icon: Icons.receipt_long_outlined,
@@ -174,7 +191,21 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
-                                  child: _StatCard(
+                                  child: AppStatCard(
+                    padding: 16,
+                    iconBoxSize: 34,
+                    iconBoxRadius: 8,
+                    iconSize: 17,
+                    labelFontSize: 11.5,
+                    smallValueFontSize: 20,
+                    gapIconToLabel: 10,
+                    gapLabelToValue: 4,
+                    gapValueToTrend: 6,
+                    sparkWidth: 56,
+                    sparkHeight: 44,
+                    showCaption: false,
+                    sparkStrokeWidth: 1.8,
+                    sparkStrokeJoin: StrokeJoin.miter,
                                     label: 'Purchase (MTD)',
                                     value: _formatAmt(c.totalPurchaseMTD),
                                     icon: Icons.shopping_cart_outlined,
@@ -196,7 +227,21 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
-                                  child: _StatCard(
+                                  child: AppStatCard(
+                    padding: 16,
+                    iconBoxSize: 34,
+                    iconBoxRadius: 8,
+                    iconSize: 17,
+                    labelFontSize: 11.5,
+                    smallValueFontSize: 20,
+                    gapIconToLabel: 10,
+                    gapLabelToValue: 4,
+                    gapValueToTrend: 6,
+                    sparkWidth: 56,
+                    sparkHeight: 44,
+                    showCaption: false,
+                    sparkStrokeWidth: 1.8,
+                    sparkStrokeJoin: StrokeJoin.miter,
                                     label: 'Amount Paid',
                                     value: _formatAmt(c.totalAmountPaid),
                                     icon: Icons.check_circle_outline_rounded,
@@ -218,7 +263,21 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
-                                  child: _StatCard(
+                                  child: AppStatCard(
+                    padding: 16,
+                    iconBoxSize: 34,
+                    iconBoxRadius: 8,
+                    iconSize: 17,
+                    labelFontSize: 11.5,
+                    smallValueFontSize: 20,
+                    gapIconToLabel: 10,
+                    gapLabelToValue: 4,
+                    gapValueToTrend: 6,
+                    sparkWidth: 56,
+                    sparkHeight: 44,
+                    showCaption: false,
+                    sparkStrokeWidth: 1.8,
+                    sparkStrokeJoin: StrokeJoin.miter,
                                     label: 'Amount Due',
                                     value: _formatAmt(c.totalAmountDue),
                                     icon: Icons.currency_rupee_rounded,
@@ -381,370 +440,6 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Top Bar
-// ─────────────────────────────────────────────────────────────────────────────
-class _WebTopBar extends StatelessWidget {
-  final AppThemeColors colors;
-  const _WebTopBar({required this.colors});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: BoxDecoration(
-        color: colors.topBarBg,
-        border: Border(bottom: BorderSide(color: colors.divider)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 320,
-            height: 38,
-            decoration: BoxDecoration(
-              color: colors.inputFill,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: colors.border),
-            ),
-            child: Row(
-              children: [
-                const SizedBox(width: 10),
-                Icon(Icons.search_rounded, color: colors.textHint, size: 17),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Search anything...',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: colors.textHint,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colors.divider,
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Text(
-                    'Ctrl + K',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: colors.textSecondary,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Spacer(),
-          _TopIconBtn(
-            icon: Icons.notifications_outlined,
-            badge: '3',
-            colors: colors,
-          ),
-          const SizedBox(width: 8),
-          _TopIconBtn(
-            icon: Icons.chat_bubble_outline_rounded,
-            badge: '2',
-            colors: colors,
-          ),
-          const SizedBox(width: 8),
-          _TopIconBtn(icon: Icons.calendar_today_outlined, colors: colors),
-          const SizedBox(width: 14),
-          ElevatedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.add_rounded, color: Colors.white, size: 16),
-            label: Row(
-              children: const [
-                Text(
-                  'Quick Action',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(width: 4),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ],
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryOrange,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Container(width: 1, height: 30, color: colors.divider),
-          const SizedBox(width: 14),
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: AppColors.primaryOrange.withValues(alpha: 0.15),
-            child: const Icon(
-              Icons.person_rounded,
-              color: AppColors.primaryOrange,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Admin',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: colors.textPrimary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: colors.textSecondary,
-            size: 18,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TopIconBtn extends StatelessWidget {
-  final IconData icon;
-  final String? badge;
-  final AppThemeColors colors;
-  const _TopIconBtn({required this.icon, this.badge, required this.colors});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: colors.inputFill,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: colors.border),
-          ),
-          child: Icon(icon, color: colors.textSecondary, size: 19),
-        ),
-        if (badge != null)
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Container(
-              width: 17,
-              height: 17,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryOrange,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  badge!,
-                  style: const TextStyle(
-                    fontSize: 9,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Stat Card with Sparkline
-// ─────────────────────────────────────────────────────────────────────────────
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color iconColor;
-  final String trend;
-  final bool trendUp;
-  final List<double> spark;
-  final bool smallValue;
-  /// The full-card tinted background — pass iconColor.withValues(alpha:0.08)
-  final Color cardBg;
-
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.iconColor,
-    required this.trend,
-    required this.trendUp,
-    required this.spark,
-    required this.cardBg,
-    this.smallValue = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: iconColor.withValues(alpha: 0.15)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, color: iconColor, size: 17),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: iconColor.withValues(alpha: 0.8),
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: smallValue ? 20 : 26,
-                    fontWeight: FontWeight.w700,
-                    color: colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(
-                      trendUp
-                          ? Icons.arrow_upward_rounded
-                          : Icons.arrow_downward_rounded,
-                      size: 11,
-                      color: trendUp
-                          ? const Color(0xFF22C55E)
-                          : const Color(0xFFEF4444),
-                    ),
-                    const SizedBox(width: 2),
-                    Flexible(
-                      child: Text(
-                        trend,
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w600,
-                          color: trendUp
-                              ? const Color(0xFF22C55E)
-                              : const Color(0xFFEF4444),
-                          fontFamily: 'Poppins',
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: 56,
-            height: 44,
-            child: CustomPaint(
-              painter: _SparklinePainter(points: spark, color: iconColor),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SparklinePainter extends CustomPainter {
-  final List<double> points;
-  final Color color;
-  const _SparklinePainter({required this.points, required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (points.length < 2) return;
-    final linePaint = Paint()
-      ..color = color
-      ..strokeWidth = 1.8
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    final fillPaint = Paint()
-      ..color = color.withValues(alpha: 0.10)
-      ..style = PaintingStyle.fill;
-    final path = Path();
-    final fill = Path();
-    final stepX = size.width / (points.length - 1);
-    for (int i = 0; i < points.length; i++) {
-      final x = i * stepX;
-      final y =
-          size.height - (points[i] * size.height * 0.8) - size.height * 0.05;
-      if (i == 0) {
-        path.moveTo(x, y);
-        fill.moveTo(0, size.height);
-        fill.lineTo(x, y);
-      } else {
-        final px = (i - 1) * stepX;
-        final py =
-            size.height -
-            (points[i - 1] * size.height * 0.8) -
-            size.height * 0.05;
-        final cpx = (px + x) / 2;
-        path.cubicTo(cpx, py, cpx, y, x, y);
-        fill.cubicTo(cpx, py, cpx, y, x, y);
-      }
-    }
-    fill.lineTo(size.width, size.height);
-    fill.close();
-    canvas.drawPath(fill, fillPaint);
-    canvas.drawPath(path, linePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => false;
-}
-
 
 // Table Toolbar
 // ─────────────────────────────────────────────────────────────────────────────
@@ -770,292 +465,72 @@ class _TableToolbarState extends State<_TableToolbar> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          // Search — same style as Stock module (height 40, vertical padding 10)
-          SizedBox(
-            width: 260,
-            height: 40,
-            child: TextField(
-              onChanged: widget.onSearch,
-              style: TextStyle(
-                fontSize: 13,
-                color: colors.textPrimary,
-                fontFamily: 'Poppins',
-              ),
-              decoration: InputDecoration(
-                hintText: 'Search by Item or PO...',
-                hintStyle: TextStyle(
-                  fontSize: 13,
-                  color: colors.textHint,
-                  fontFamily: 'Poppins',
-                ),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  color: colors.textHint,
-                  size: 17,
-                ),
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                filled: true,
-                fillColor: colors.inputFill,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: colors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: colors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(
-                    color: AppColors.primaryOrange,
-                    width: 1.5,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-
-          // Supplier filter pill — rounded chip with overlay (matches Stock module style)
-          _SupplierPill(
-            colors: colors,
-            selected: c.supplierFilter.value,
-            options: c.supplierNames,
+      child: FilterBar(
+        search: FilterSearchField(
+          controller: c.searchCtrl,
+          hint: 'Search by Item or PO...',
+          width: 260,
+          onChanged: widget.onSearch,
+        ),
+        pills: [
+          SingleSelectFilterPill(
+            value: c.supplierFilter.value,
+            items: c.supplierNames,
             onChanged: (v) {
               c.supplierFilter.value = v;
               c.currentPage.value = 1;
             },
           ),
-
-          const Spacer(),
-
-          // Export
-          OutlinedButton.icon(
-            onPressed: () {},
-            icon: Icon(
-              Icons.upload_outlined,
-              size: 15,
-              color: colors.textSecondary,
-            ),
-            label: Text(
-              'Export',
-              style: TextStyle(
-                fontSize: 13,
-                fontFamily: 'Poppins',
+        ],
+        clearAll: Obx(() {
+          if (!c.hasActiveFilters) return const SizedBox.shrink();
+          return ClearAllButton(onTap: c.resetFilters);
+        }),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Export
+            OutlinedButton.icon(
+              onPressed: () {},
+              icon: Icon(
+                Icons.upload_outlined,
+                size: 15,
                 color: colors.textSecondary,
               ),
-            ),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              side: BorderSide(color: colors.border),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          // View toggle icon
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: colors.inputFill,
-              border: Border.all(color: colors.border),
-              borderRadius: BorderRadius.circular(7),
-            ),
-            child: Icon(
-              Icons.table_chart_outlined,
-              size: 17,
-              color: colors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Supplier Filter Pill — rounded chip with overlay dropdown
-// ─────────────────────────────────────────────────────────────────────────────
-class _SupplierPill extends StatefulWidget {
-  final AppThemeColors colors;
-  final String selected;
-  final List<String> options;
-  final ValueChanged<String> onChanged;
-
-  const _SupplierPill({
-    required this.colors,
-    required this.selected,
-    required this.options,
-    required this.onChanged,
-  });
-
-  @override
-  State<_SupplierPill> createState() => _SupplierPillState();
-}
-
-class _SupplierPillState extends State<_SupplierPill> {
-  final _overlayController = OverlayPortalController();
-  final _link = LayerLink();
-
-  bool get _isFiltered => widget.selected != 'Supplier: All';
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = widget.colors;
-    final pillBg = colors.background.computeLuminance() > 0.5
-        ? const Color(0xFFF1F2F4)
-        : colors.inputFill;
-    final activeBg =
-        _isFiltered ? AppColors.primaryOrange.withValues(alpha: 0.10) : pillBg;
-    final activeTextColor =
-        _isFiltered ? AppColors.primaryOrange : colors.textPrimary;
-    final activeIconColor =
-        _isFiltered ? AppColors.primaryOrange : colors.textSecondary;
-
-    return CompositedTransformTarget(
-      link: _link,
-      child: OverlayPortal(
-        controller: _overlayController,
-        overlayChildBuilder: (ctx) => Positioned(
-          width: 220,
-          child: CompositedTransformFollower(
-            link: _link,
-            offset: const Offset(0, 46),
-            child: TapRegion(
-              onTapOutside: (_) => _overlayController.hide(),
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: colors.border),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.14),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _PillOption(
-                        label: 'All Suppliers',
-                        isSelected: !_isFiltered,
-                        colors: colors,
-                        onTap: () {
-                          widget.onChanged('Supplier: All');
-                          _overlayController.hide();
-                        },
-                      ),
-                      ...widget.options.map(
-                        (s) => _PillOption(
-                          label: s,
-                          isSelected: widget.selected == s,
-                          colors: colors,
-                          onTap: () {
-                            widget.onChanged(s);
-                            _overlayController.hide();
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        child: InkWell(
-          onTap: _overlayController.toggle,
-          borderRadius: BorderRadius.circular(999),
-          child: Container(
-            height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: activeBg,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.tune_rounded, size: 14, color: activeIconColor),
-                const SizedBox(width: 6),
-                Text(
-                  _isFiltered ? widget.selected : 'Supplier',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: activeTextColor,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  size: 16,
-                  color: activeIconColor,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PillOption extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final AppThemeColors colors;
-  final VoidCallback onTap;
-
-  const _PillOption({
-    required this.label,
-    required this.isSelected,
-    required this.colors,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-        child: Row(
-          children: [
-            Icon(
-              isSelected
-                  ? Icons.radio_button_checked_rounded
-                  : Icons.radio_button_unchecked_rounded,
-              size: 16,
-              color: isSelected ? AppColors.primaryOrange : colors.textHint,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                label,
+              label: Text(
+                'Export',
                 style: TextStyle(
                   fontSize: 13,
                   fontFamily: 'Poppins',
-                  color: isSelected
-                      ? AppColors.primaryOrange
-                      : colors.textPrimary,
-                  fontWeight:
-                      isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: colors.textSecondary,
                 ),
-                overflow: TextOverflow.ellipsis,
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 9,
+                ),
+                side: BorderSide(color: colors.border),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+
+            // View toggle icon
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: colors.inputFill,
+                border: Border.all(color: colors.border),
+                borderRadius: BorderRadius.circular(7),
+              ),
+              child: Icon(
+                Icons.table_chart_outlined,
+                size: 17,
+                color: colors.textSecondary,
               ),
             ),
           ],

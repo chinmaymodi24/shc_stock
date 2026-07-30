@@ -7,6 +7,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../dashboard/widgets/web_sidebar.dart';
 import '../../dashboard/widgets/web_top_bar.dart';
 import '../../dashboard/widgets/modified_by_cell.dart';
+import '../../../shared/widgets/table_footer.dart';
+import '../../../shared/widgets/filter_bar.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Widget — simple Inventory table (no stat cards, no side panel)
@@ -40,6 +42,7 @@ class WebStockLayout extends GetView<StockController> {
                     final search = c.search.value;
                     final catFilters = c.catFilters;
                     final statFilters = c.statFilters;
+                    final sortOption = c.sortOption.value;
                     final rowsPerPage = c.rowsPerPage.value;
                     final currentPage = c.currentPage.value;
                     final filtered = all.where((item) {
@@ -60,22 +63,37 @@ class WebStockLayout extends GetView<StockController> {
                       return true;
                     }).toList();
 
+                    switch (sortOption) {
+                      case 'Item Name (A-Z)':
+                        filtered.sort((a, b) => a.name.compareTo(b.name));
+                      case 'Item Name (Z-A)':
+                        filtered.sort((a, b) => b.name.compareTo(a.name));
+                      case 'Qty: Low to High':
+                        filtered.sort(
+                          (a, b) => a.stockInHand.compareTo(b.stockInHand),
+                        );
+                      case 'Qty: High to Low':
+                        filtered.sort(
+                          (a, b) => b.stockInHand.compareTo(a.stockInHand),
+                        );
+                      case 'Value: Low to High':
+                        filtered.sort(
+                          (a, b) => a.stockValue.compareTo(b.stockValue),
+                        );
+                      case 'Value: High to Low':
+                        filtered.sort(
+                          (a, b) => b.stockValue.compareTo(a.stockValue),
+                        );
+                    }
+
                     final hasActiveFilters =
                         search.isNotEmpty ||
                         catFilters.isNotEmpty ||
-                        statFilters.isNotEmpty;
+                        statFilters.isNotEmpty ||
+                        sortOption != 'Default';
                     final categoryOptions =
-                        (all.map((i) => i.category).toSet().toList()..sort())
-                            .map((cat) => _FilterOption(cat))
-                            .toList();
-                    final statusOptions = _kStatuses
-                        .map(
-                          (s) => _FilterOption(
-                            s,
-                            all.where((i) => i.statusLabel == s).length,
-                          ),
-                        )
-                        .toList();
+                        all.map((i) => i.category).toSet().toList()..sort();
+                    final statusOptions = _kStatuses.toList();
 
                     final totalPages = filtered.isEmpty
                         ? 1
@@ -154,109 +172,71 @@ class WebStockLayout extends GetView<StockController> {
                           const SizedBox(height: 20),
 
                           // ── Toolbar: search + filters ─────────────────────────────
-                          Row(
-                            children: [
-                              SizedBox(
-                                width: 320,
-                                height: 40,
-                                child: TextField(
-                                  controller: c.searchCtrl,
-                                  onChanged: (v) {
-                                    c.search.value = v;
-                                    c.currentPage.value = 1;
-                                  },
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: colors.textPrimary,
-                                    fontFamily: 'Poppins',
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: 'Search by name or SKU...',
-                                    hintStyle: TextStyle(
-                                      fontSize: 13,
-                                      color: colors.textHint,
-                                      fontFamily: 'Poppins',
-                                    ),
-                                    prefixIcon: Icon(
-                                      Icons.search_rounded,
-                                      color: colors.textHint,
-                                      size: 17,
-                                    ),
-                                    isDense: true,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 10,
-                                    ),
-                                    filled: true,
-                                    fillColor: colors.inputFill,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: BorderSide(
-                                        color: colors.border,
-                                      ),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: BorderSide(
-                                        color: colors.border,
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: const BorderSide(
-                                        color: AppColors.primaryOrange,
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              _MultiSelectFilterPill(
-                                icon: Icons.tune_rounded,
+                          FilterBar(
+                            search: FilterSearchField(
+                              controller: c.searchCtrl,
+                              hint: 'Search by name or SKU...',
+                              width: 320,
+                              onChanged: (v) {
+                                c.search.value = v;
+                                c.currentPage.value = 1;
+                              },
+                            ),
+                            pills: [
+                              MultiSelectFilterPill(
                                 label: 'Category',
-                                options: categoryOptions,
-                                selected: catFilters,
-                                onChanged: (v) {
-                                  c.catFilters.assignAll(v);
+                                items: categoryOptions,
+                                selected: c.catFilters,
+                                onToggle: (v) {
+                                  if (c.catFilters.contains(v)) {
+                                    c.catFilters.remove(v);
+                                  } else {
+                                    c.catFilters.add(v);
+                                  }
                                   c.currentPage.value = 1;
                                 },
-                                colors: colors,
                               ),
-                              const SizedBox(width: 10),
-                              _MultiSelectFilterPill(
-                                icon: Icons.tune_rounded,
+                              MultiSelectFilterPill(
                                 label: 'Status',
-                                options: statusOptions,
-                                selected: statFilters,
-                                onChanged: (v) {
-                                  c.statFilters.assignAll(v);
+                                items: statusOptions,
+                                selected: c.statFilters,
+                                onToggle: (v) {
+                                  if (c.statFilters.contains(v)) {
+                                    c.statFilters.remove(v);
+                                  } else {
+                                    c.statFilters.add(v);
+                                  }
                                   c.currentPage.value = 1;
                                 },
-                                colors: colors,
                               ),
-                              const Spacer(),
-                              Text(
-                                '${c.totalItems} items',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  color: colors.textSecondary,
-                                  fontFamily: 'Poppins',
-                                ),
+                              SingleSelectFilterPill.sort(
+                                value: c.sortOption.value,
+                                items: StockController.sortOptions
+                                    .where((o) => o != 'Default')
+                                    .toList(),
+                                onChanged: (v) => c.sortOption.value = v,
                               ),
-                              if (hasActiveFilters) ...[
-                                const SizedBox(width: 12),
-                                _ClearAllBtn(
-                                  colors: colors,
-                                  onTap: () {
-                                    c.search.value = '';
-                                    c.searchCtrl.clear();
-                                    c.catFilters.clear();
-                                    c.statFilters.clear();
-                                    c.currentPage.value = 1;
-                                  },
-                                ),
-                              ],
                             ],
+                            clearAll: hasActiveFilters
+                                ? ClearAllButton(
+                                    onTap: () {
+                                      c.search.value = '';
+                                      c.searchCtrl.clear();
+                                      c.catFilters.clear();
+                                      c.statFilters.clear();
+                                      c.sortOption.value = 'Default';
+                                      c.currentPage.value = 1;
+                                    },
+                                  )
+                                : null,
+                            trailing: Text(
+                              '${c.totalItems} items',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: colors.textSecondary,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 16),
 
@@ -307,13 +287,13 @@ class WebStockLayout extends GetView<StockController> {
                                   ),
 
                                 Divider(height: 1, color: colors.divider),
-                                _Footer(
+                                AppTableFooter(
                                   currentPage: currentPage,
                                   totalPages: totalPages,
                                   rowsPerPage: rowsPerPage,
                                   colors: colors,
-                                  onPage: (p) => c.currentPage.value = p,
-                                  onRows: (r) {
+                                  onPageChanged: (p) => c.currentPage.value = p,
+                                  onRowsChanged: (r) {
                                     c.rowsPerPage.value = r;
                                     c.currentPage.value = 1;
                                   },
@@ -330,225 +310,6 @@ class WebStockLayout extends GetView<StockController> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Multi-select filter pill — checkbox dropdown, badge shows selection count
-// ─────────────────────────────────────────────────────────────────────────────
-class _FilterOption {
-  final String label;
-  final int? count;
-  const _FilterOption(this.label, [this.count]);
-}
-
-class _MultiSelectFilterPill extends StatefulWidget {
-  final IconData icon;
-  final String label;
-  final List<_FilterOption> options;
-  final Set<String> selected;
-  final ValueChanged<Set<String>> onChanged;
-  final AppThemeColors colors;
-
-  const _MultiSelectFilterPill({
-    required this.icon,
-    required this.label,
-    required this.options,
-    required this.selected,
-    required this.onChanged,
-    required this.colors,
-  });
-
-  @override
-  State<_MultiSelectFilterPill> createState() => _MultiSelectFilterPillState();
-}
-
-class _MultiSelectFilterPillState extends State<_MultiSelectFilterPill> {
-  final _overlayController = OverlayPortalController();
-  final _link = LayerLink();
-
-  void _toggle(String v) {
-    final next = Set<String>.from(widget.selected);
-    if (!next.remove(v)) next.add(v);
-    widget.onChanged(next);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = widget.colors;
-    final count = widget.selected.length;
-    final pillBg = colors.background.computeLuminance() > 0.5
-        ? const Color(0xFFF1F2F4)
-        : colors.inputFill;
-    return CompositedTransformTarget(
-      link: _link,
-      child: OverlayPortal(
-        controller: _overlayController,
-        overlayChildBuilder: (context) => Positioned(
-          width: 230,
-          child: CompositedTransformFollower(
-            link: _link,
-            offset: const Offset(0, 46),
-            child: TapRegion(
-              onTapOutside: (_) => _overlayController.hide(),
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: colors.border),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.14),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: widget.options.map((o) {
-                      final checked = widget.selected.contains(o.label);
-                      return InkWell(
-                        onTap: () => _toggle(o.label),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                checked
-                                    ? Icons.check_box_rounded
-                                    : Icons.check_box_outline_blank_rounded,
-                                size: 18,
-                                color: checked
-                                    ? AppColors.primaryOrange
-                                    : colors.textHint,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  o.label,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontFamily: 'Poppins',
-                                    color: colors.textPrimary,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (o.count != null)
-                                Text(
-                                  '( ${o.count} )',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontFamily: 'Poppins',
-                                    color: colors.textHint,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        child: InkWell(
-          onTap: _overlayController.toggle,
-          borderRadius: BorderRadius.circular(999),
-          child: Container(
-            height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: pillBg,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(widget.icon, size: 15, color: colors.textSecondary),
-                const SizedBox(width: 6),
-                Text(
-                  widget.label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-                if (count > 0) ...[
-                  const SizedBox(width: 6),
-                  Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryPurple,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '$count',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Clear all filters button
-// ─────────────────────────────────────────────────────────────────────────────
-class _ClearAllBtn extends StatelessWidget {
-  final AppThemeColors colors;
-  final VoidCallback onTap;
-  const _ClearAllBtn({required this.colors, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.close_rounded, size: 15, color: colors.textSecondary),
-            const SizedBox(width: 4),
-            Text(
-              'Clear all',
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
-                color: colors.textSecondary,
-                fontFamily: 'Poppins',
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -817,196 +578,6 @@ class _ActBtn extends StatelessWidget {
           width: 26,
           height: 26,
           child: Icon(icon, color: color, size: 15),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Footer Pagination
-// ─────────────────────────────────────────────────────────────────────────────
-class _Footer extends StatelessWidget {
-  final int currentPage, totalPages, rowsPerPage;
-  final AppThemeColors colors;
-  final ValueChanged<int> onPage, onRows;
-  const _Footer({
-    required this.currentPage,
-    required this.totalPages,
-    required this.rowsPerPage,
-    required this.colors,
-    required this.onPage,
-    required this.onRows,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-      child: Row(
-        children: [
-          Text(
-            'Rows per page:',
-            style: TextStyle(
-              fontSize: 12.5,
-              color: colors.textSecondary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: colors.border),
-              borderRadius: BorderRadius.circular(6),
-              color: colors.surface,
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: rowsPerPage,
-                isDense: true,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: colors.textPrimary,
-                  fontFamily: 'Poppins',
-                ),
-                dropdownColor: colors.surface,
-                items: [5, 10, 20, 50]
-                    .map((v) => DropdownMenuItem(value: v, child: Text('$v')))
-                    .toList(),
-                onChanged: (v) {
-                  if (v != null) onRows(v);
-                },
-              ),
-            ),
-          ),
-          const Spacer(),
-          _PBtn(
-            icon: Icons.first_page_rounded,
-            enabled: currentPage > 1,
-            colors: colors,
-            onTap: () => onPage(1),
-          ),
-          const SizedBox(width: 4),
-          _PBtn(
-            icon: Icons.chevron_left_rounded,
-            enabled: currentPage > 1,
-            colors: colors,
-            onTap: () => onPage(currentPage - 1),
-          ),
-          const SizedBox(width: 6),
-          ..._buildPages(),
-          const SizedBox(width: 6),
-          _PBtn(
-            icon: Icons.chevron_right_rounded,
-            enabled: currentPage < totalPages,
-            colors: colors,
-            onTap: () => onPage(currentPage + 1),
-          ),
-          const SizedBox(width: 4),
-          _PBtn(
-            icon: Icons.last_page_rounded,
-            enabled: currentPage < totalPages,
-            colors: colors,
-            onTap: () => onPage(totalPages),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildPages() {
-    final result = <Widget>[];
-    final pages = <int>[];
-    if (totalPages <= 5) {
-      for (int i = 1; i <= totalPages; i++) {
-        pages.add(i);
-      }
-    } else {
-      pages.addAll([1, 2, 3]);
-      if (currentPage > 4) pages.add(-1);
-      if (currentPage > 3 && currentPage < totalPages - 1)
-        pages.add(currentPage);
-      pages.add(totalPages);
-    }
-    for (int i = 0; i < pages.length; i++) {
-      if (i > 0) result.add(const SizedBox(width: 4));
-      final p = pages[i];
-      if (p == -1) {
-        result.add(
-          Text(
-            '...',
-            style: TextStyle(
-              fontSize: 13,
-              color: colors.textSecondary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-        );
-      } else {
-        final isA = p == currentPage;
-        result.add(
-          InkWell(
-            onTap: () => onPage(p),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: isA ? AppColors.primaryOrange : colors.surface,
-                borderRadius: BorderRadius.circular(7),
-                border: Border.all(
-                  color: isA ? AppColors.primaryOrange : colors.border,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  '$p',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isA ? Colors.white : colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      }
-    }
-    return result;
-  }
-}
-
-class _PBtn extends StatelessWidget {
-  final IconData icon;
-  final bool enabled;
-  final AppThemeColors colors;
-  final VoidCallback onTap;
-  const _PBtn({
-    required this.icon,
-    required this.enabled,
-    required this.colors,
-    required this.onTap,
-  });
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          border: Border.all(color: colors.border),
-          borderRadius: BorderRadius.circular(6),
-          color: colors.surface,
-        ),
-        child: Icon(
-          icon,
-          size: 17,
-          color: enabled ? colors.textPrimary : colors.textHint,
         ),
       ),
     );

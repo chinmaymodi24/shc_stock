@@ -7,8 +7,35 @@ class SalesController extends GetxController {
   final RxList<SalesOrder> orders = <SalesOrder>[].obs;
   final RxInt mobileTabIndex = 0.obs; // 0 = All, 1 = Confirmed, 2 = Delivered
   final RxString searchQuery = ''.obs;
+  final RxSet<String> statusFilters = <String>{}.obs;
+  final RxSet<String> paymentFilters = <String>{}.obs;
+  final RxString sortOption = 'Default'.obs;
   final RxInt rowsPerPage = 10.obs;
   final RxInt currentPage = 1.obs;
+
+  static const statusOptions = [
+    'Confirmed',
+    'Processing',
+    'Shipped',
+    'Delivered',
+    'Cancelled',
+  ];
+  static const paymentOptions = ['Paid', 'Partial', 'Pending', 'Refunded'];
+  static const sortOptions = [
+    'Default',
+    'Date: Newest First',
+    'Date: Oldest First',
+    'Amount: Low to High',
+    'Amount: High to Low',
+  ];
+
+  void resetFilters() {
+    searchQuery.value = '';
+    statusFilters.clear();
+    paymentFilters.clear();
+    sortOption.value = 'Default';
+    currentPage.value = 1;
+  }
 
   // ── Client color map ─────────────────────────────────────────
   static const Map<String, Color> _clientColors = {

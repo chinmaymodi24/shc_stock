@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../controllers/products_controller.dart';
 import '../models/product_model.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/app_toast.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Add Product — compact dialog (quick-add, replaces the full add-product page)
@@ -49,15 +50,12 @@ class _AddProductDialogState extends State<AddProductDialog> {
 
   void _save() {
     if (_nameCtrl.text.trim().isEmpty) {
-      Get.snackbar(
+      showAppToast(
         'Validation Error',
         'Product Name is required.',
-        snackPosition: SnackPosition.BOTTOM,
         backgroundColor: const Color(0xFFEF4444),
         colorText: Colors.white,
         duration: const Duration(seconds: 2),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 10,
       );
       return;
     }
@@ -89,15 +87,12 @@ class _AddProductDialogState extends State<AddProductDialog> {
       ),
     );
     Get.back();
-    Get.snackbar(
+    showAppToast(
       '✅ Product Added',
       '${_nameCtrl.text.trim()} has been added.',
-      snackPosition: SnackPosition.BOTTOM,
       backgroundColor: const Color(0xFF22C55E),
       colorText: Colors.white,
       duration: const Duration(seconds: 2),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 10,
     );
   }
 

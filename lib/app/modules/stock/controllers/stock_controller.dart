@@ -8,8 +8,19 @@ class StockController extends GetxController {
   final RxString search = ''.obs;
   final RxSet<String> catFilters = <String>{}.obs;
   final RxSet<String> statFilters = <String>{}.obs;
+  final RxString sortOption = 'Default'.obs;
   final RxInt rowsPerPage = 10.obs;
   final RxInt currentPage = 1.obs;
+
+  static const List<String> sortOptions = [
+    'Default',
+    'Item Name (A-Z)',
+    'Item Name (Z-A)',
+    'Qty: Low to High',
+    'Qty: High to Low',
+    'Value: Low to High',
+    'Value: High to Low',
+  ];
 
   static final _seed = [
     StockItemModel(

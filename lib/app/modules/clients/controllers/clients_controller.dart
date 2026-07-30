@@ -1,12 +1,31 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../data/clients_seed_data.dart';
 import '../models/client_model.dart';
 
 class ClientsController extends GetxController {
   final RxList<ClientModel> clients = <ClientModel>[].obs;
+  final searchCtrl = TextEditingController();
   final RxString searchQuery = ''.obs;
+  final RxString clientType = 'Registration: All'.obs;
   final RxInt rowsPerPage = 10.obs;
   final RxInt currentPage = 1.obs;
+
+  bool get hasActiveFilters =>
+      searchQuery.value.isNotEmpty || clientType.value != 'Registration: All';
+
+  void resetFilters() {
+    searchCtrl.clear();
+    searchQuery.value = '';
+    clientType.value = 'Registration: All';
+    currentPage.value = 1;
+  }
+
+  @override
+  void onClose() {
+    searchCtrl.dispose();
+    super.onClose();
+  }
 
   @override
   void onInit() {

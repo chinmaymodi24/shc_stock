@@ -4,12 +4,14 @@ import '../../../core/theme/app_colors.dart';
 import '../../../routes/app_routes.dart';
 import '../../dashboard/widgets/app_drawer.dart';
 import '../controllers/categories_controller.dart';
-import '../../products/models/product_model.dart';
+import '../models/category_model.dart';
 import '../../products/controllers/products_controller.dart';
+import '../../../shared/widgets/stat_cards.dart';
 
 ProductsController _productsController() {
-  if (Get.isRegistered<ProductsController>())
+  if (Get.isRegistered<ProductsController>()) {
     return Get.find<ProductsController>();
+  }
   return Get.put(ProductsController());
 }
 
@@ -59,7 +61,8 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
               Row(
                 children: [
                   Expanded(
-                    child: _StatCard(
+                    child: AppSimpleStatCard(
+                      horizontal: false,
                       icon: Icons.category_outlined,
                       iconColor: AppColors.primaryOrange,
                       bgColor: AppColors.primaryOrange.withValues(alpha: 0.06),
@@ -69,7 +72,8 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _StatCard(
+                    child: AppSimpleStatCard(
+                      horizontal: false,
                       icon: Icons.account_tree_outlined,
                       iconColor: const Color(0xFF4A3AFF),
                       bgColor: const Color(0xFF4A3AFF).withValues(alpha: 0.06),
@@ -242,7 +246,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
     );
   }
 
-  void _showEditDialog(CategoriesController c, ProductCategory cat) {
+  void _showEditDialog(CategoriesController c, CategoryModel cat) {
     final ctrl = TextEditingController(text: cat.name);
     Get.dialog(
       _MobileFormDialog(
@@ -274,7 +278,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
 
   void _showEditSubDialog(
     CategoriesController c,
-    ProductCategory cat,
+    CategoryModel cat,
     int subIdx,
   ) {
     final ctrl = TextEditingController(text: cat.subProducts[subIdx]);
@@ -294,7 +298,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
   void _confirmDeleteCategory(
     BuildContext context,
     CategoriesController c,
-    ProductCategory cat,
+    CategoryModel cat,
   ) {
     _confirmDelete(
       context,
@@ -311,7 +315,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
   void _confirmDeleteSub(
     BuildContext context,
     CategoriesController c,
-    ProductCategory cat,
+    CategoryModel cat,
     int subIdx,
   ) {
     final subName = cat.subProducts[subIdx];
@@ -385,77 +389,12 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Stat Card
-// ─────────────────────────────────────────────────────────────────────────────
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final Color bgColor;
-  final String label;
-  final String value;
-
-  const _StatCard({
-    required this.icon,
-    required this.iconColor,
-    required this.bgColor,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: iconColor, size: 16),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: colors.textSecondary,
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: colors.textPrimary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Category list row
 // ─────────────────────────────────────────────────────────────────────────────
 class _CategoryListRow extends StatelessWidget {
-  final ProductCategory cat;
+  final CategoryModel cat;
   final int skuCount;
   final AppThemeColors colors;
   final VoidCallback onTap;
@@ -518,7 +457,7 @@ class _CategoryListRow extends StatelessWidget {
 // Category detail view
 // ─────────────────────────────────────────────────────────────────────────────
 class _CategoryDetail extends StatelessWidget {
-  final ProductCategory cat;
+  final CategoryModel cat;
   final int skuCount;
   final int Function(String categoryName, String subCategory) subSkuCount;
   final AppThemeColors colors;

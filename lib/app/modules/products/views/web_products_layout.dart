@@ -8,6 +8,8 @@ import '../../dashboard/widgets/web_top_bar.dart';
 import '../../dashboard/widgets/modified_by_cell.dart';
 import '../models/product_model.dart';
 import 'package:intl/intl.dart';
+import '../../../shared/widgets/stat_cards.dart';
+import '../../../shared/widgets/filter_bar.dart';
 
 class WebProductsLayout extends StatelessWidget {
   WebProductsLayout({super.key});
@@ -116,37 +118,37 @@ class WebProductsLayout extends StatelessWidget {
       () => Row(
         children: [
           Expanded(
-            child: _StatCard(
+            child: AppTintedStatCard(
               label: 'Total Products',
               value: '${c.totalProducts}',
-              bg: const Color(0xFFE3EDFB),
+              bg: const Color(0xFF3B6FC9).withValues(alpha: 0.14),
               labelColor: const Color(0xFF3B6FC9),
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: _StatCard(
+            child: AppTintedStatCard(
               label: 'Low Stock',
               value: '${c.lowStockProducts}',
-              bg: const Color(0xFFFBEBD9),
+              bg: const Color(0xFFC9822F).withValues(alpha: 0.14),
               labelColor: const Color(0xFFC9822F),
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: _StatCard(
+            child: AppTintedStatCard(
               label: 'Out of Stock',
               value: '${c.outOfStockProducts}',
-              bg: const Color(0xFFFBE2E2),
+              bg: const Color(0xFFD1494C).withValues(alpha: 0.14),
               labelColor: const Color(0xFFD1494C),
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: _StatCard(
+            child: AppTintedStatCard(
               label: 'Total Value',
               value: '₹${fmt.format(c.totalStockValue)}',
-              bg: const Color(0xFFE1F5E9),
+              bg: const Color(0xFF2E9E5B).withValues(alpha: 0.14),
               labelColor: const Color(0xFF2E9E5B),
             ),
           ),
@@ -209,122 +211,64 @@ class WebProductsLayout extends StatelessWidget {
   }
 
   // ── Filters Row ───────────────────────────────────────────────
-  // One fixed-height box + CrossAxisAlignment.stretch = every control
-  // (search, dropdowns, buttons) renders at EXACTLY the same height.
-  static const double _filterControlHeight = 44;
-
   Widget _buildFiltersRow(BuildContext context, ProductsController c) {
-    final colors = context.appColors;
-    final searchBg = colors.background.computeLuminance() > 0.5
-        ? const Color(0xFFF1F2F4)
-        : colors.inputFill;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          height: _filterControlHeight,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Search — fixed width, grey filled, borderless
-              SizedBox(
-                width: 300,
-                child: TextField(
-                  controller: _searchCtrl,
-                  onChanged: (v) => c.searchQuery.value = v,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontFamily: 'Poppins',
-                    color: colors.textPrimary,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Search products...',
-                    hintStyle: TextStyle(
-                      fontSize: 13,
-                      color: colors.textHint,
-                      fontFamily: 'Poppins',
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: colors.textHint,
-                      size: 18,
-                    ),
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(
-                        color: AppColors.primaryOrange,
-                        width: 1.5,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: searchBg,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              _CategoryFilterBtn(
-                label: 'Category',
-                selected: c.selectedCategories,
-                items: c.categoryNames
-                    .where((n) => n != 'All Categories')
-                    .toList(),
-                onToggle: (v) {
-                  if (c.selectedCategories.contains(v)) {
-                    c.selectedCategories.remove(v);
-                  } else {
-                    c.selectedCategories.add(v);
-                  }
-                },
-                colors: colors,
-              ),
-              const SizedBox(width: 12),
-              Obx(
-                () => _CategoryFilterBtn(
-                  label: 'Subcategory',
-                  selected: c.selectedSubCategories,
-                  items: c.subCategoryNames,
-                  onToggle: (v) {
-                    if (c.selectedSubCategories.contains(v)) {
-                      c.selectedSubCategories.remove(v);
-                    } else {
-                      c.selectedSubCategories.add(v);
-                    }
-                  },
-                  colors: colors,
-                ),
-              ),
-              const Spacer(),
-              Obx(() {
-                final hasActiveFilters =
-                    c.searchQuery.value.isNotEmpty ||
-                    c.selectedCategories.isNotEmpty ||
-                    c.selectedSubCategories.isNotEmpty;
-                if (!hasActiveFilters) return const SizedBox.shrink();
-                return _ClearAllBtn(
-                  colors: colors,
-                  onTap: () {
-                    _searchCtrl.clear();
-                    c.resetFilters();
-                  },
-                );
-              }),
-            ],
+    return FilterBar(
+      search: FilterSearchField(
+        controller: _searchCtrl,
+        hint: 'Search products...',
+        onChanged: (v) => c.searchQuery.value = v,
+      ),
+      pills: [
+        MultiSelectFilterPill(
+          label: 'Category',
+          selected: c.selectedCategories,
+          items: c.categoryNames.where((n) => n != 'All Categories').toList(),
+          onToggle: (v) {
+            if (c.selectedCategories.contains(v)) {
+              c.selectedCategories.remove(v);
+            } else {
+              c.selectedCategories.add(v);
+            }
+          },
+        ),
+        Obx(
+          () => MultiSelectFilterPill(
+            label: 'Subcategory',
+            selected: c.selectedSubCategories,
+            items: c.subCategoryNames,
+            onToggle: (v) {
+              if (c.selectedSubCategories.contains(v)) {
+                c.selectedSubCategories.remove(v);
+              } else {
+                c.selectedSubCategories.add(v);
+              }
+            },
+          ),
+        ),
+        Obx(
+          () => SingleSelectFilterPill.sort(
+            value: c.sortOption.value,
+            items: ProductsController.sortOptions
+                .where((o) => o != 'Default')
+                .toList(),
+            onChanged: (v) => c.sortOption.value = v,
           ),
         ),
       ],
+      clearAll: Obx(() {
+        final hasActiveFilters =
+            c.searchQuery.value.isNotEmpty ||
+            c.selectedCategories.isNotEmpty ||
+            c.selectedSubCategories.isNotEmpty ||
+            c.sortOption.value != 'Default';
+        if (!hasActiveFilters) return const SizedBox.shrink();
+        return ClearAllButton(
+          onTap: () {
+            _searchCtrl.clear();
+            c.resetFilters();
+          },
+        );
+      }),
     );
   }
 
@@ -718,259 +662,6 @@ class _ProductRow extends StatelessWidget {
 }
 
 // ── Helper Widgets ────────────────────────────────────────────────────────────
-// ── Clear all filters button ────────────────────────────────────────────────
-class _ClearAllBtn extends StatelessWidget {
-  final AppThemeColors colors;
-  final VoidCallback onTap;
-  const _ClearAllBtn({required this.colors, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.close_rounded, size: 15, color: colors.textSecondary),
-            const SizedBox(width: 4),
-            Text(
-              'Clear all',
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
-                color: colors.textSecondary,
-                fontFamily: 'Poppins',
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color bg;
-  final Color labelColor;
-
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.bg,
-    required this.labelColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w500,
-              color: labelColor,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: colors.textPrimary,
-              fontFamily: 'Poppins',
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Compact multi-select filter pill — grey chip, opens a persistent checkbox
-// dropdown for multi-select (stays open across taps, unlike PopupMenuButton).
-// Used for both Category and Subcategory filters.
-class _CategoryFilterBtn extends StatefulWidget {
-  final String label;
-  final RxSet<String> selected;
-  final List<String> items;
-  final ValueChanged<String> onToggle;
-  final AppThemeColors colors;
-
-  const _CategoryFilterBtn({
-    this.label = 'Category',
-    required this.selected,
-    required this.items,
-    required this.onToggle,
-    required this.colors,
-  });
-
-  @override
-  State<_CategoryFilterBtn> createState() => _CategoryFilterBtnState();
-}
-
-class _CategoryFilterBtnState extends State<_CategoryFilterBtn> {
-  final _overlayController = OverlayPortalController();
-  final _link = LayerLink();
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = widget.colors;
-    final pillBg = colors.background.computeLuminance() > 0.5
-        ? const Color(0xFFF1F2F4)
-        : colors.inputFill;
-    return CompositedTransformTarget(
-      link: _link,
-      child: OverlayPortal(
-        controller: _overlayController,
-        overlayChildBuilder: (context) => Positioned(
-          width: 230,
-          child: CompositedTransformFollower(
-            link: _link,
-            offset: const Offset(0, 50),
-            child: TapRegion(
-              onTapOutside: (_) => _overlayController.hide(),
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: colors.border),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.14),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: widget.items
-                        .map(
-                          (label) => Obx(() {
-                            final checked = widget.selected.contains(label);
-                            return InkWell(
-                              onTap: () => widget.onToggle(label),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      checked
-                                          ? Icons.check_box_rounded
-                                          : Icons
-                                                .check_box_outline_blank_rounded,
-                                      size: 18,
-                                      color: checked
-                                          ? AppColors.primaryOrange
-                                          : colors.textHint,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        label,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontFamily: 'Poppins',
-                                          color: colors.textPrimary,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }),
-                        )
-                        .toList(),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        child: InkWell(
-          onTap: _overlayController.toggle,
-          borderRadius: BorderRadius.circular(999),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: pillBg,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.tune_rounded, size: 15, color: colors.textSecondary),
-                const SizedBox(width: 6),
-                Text(
-                  widget.label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-                Obx(() {
-                  final count = widget.selected.length;
-                  if (count == 0) return const SizedBox.shrink();
-                  return Padding(
-                    padding: const EdgeInsets.only(left: 6),
-                    child: Container(
-                      width: 18,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryPurple,
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$count',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _ActionBtn extends StatelessWidget {
   final IconData icon;
   final Color color;

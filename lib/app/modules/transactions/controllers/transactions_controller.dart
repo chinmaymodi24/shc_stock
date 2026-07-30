@@ -8,8 +8,17 @@ class TransactionsController extends GetxController {
   final RxString search = ''.obs;
   final RxSet<String> typeFilters = <String>{}.obs;
   final RxSet<String> statusFilters = <String>{}.obs;
+  final RxString sortOption = 'Default'.obs;
   final RxInt rowsPerPage = 10.obs;
   final RxInt currentPage = 1.obs;
+
+  static const List<String> sortOptions = [
+    'Default',
+    'Item Name (A-Z)',
+    'Item Name (Z-A)',
+    'Date: Newest First',
+    'Date: Oldest First',
+  ];
 
   static final _seed = [
     TransactionModel(

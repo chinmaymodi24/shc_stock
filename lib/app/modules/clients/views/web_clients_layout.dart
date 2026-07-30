@@ -4,9 +4,13 @@ import 'dart:math' as math;
 import '../controllers/clients_controller.dart';
 import '../models/client_model.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/filter_bar.dart';
 import '../../../routes/app_routes.dart';
 import '../../dashboard/widgets/web_sidebar.dart';
+import '../../dashboard/widgets/web_top_bar.dart';
 import '../../dashboard/widgets/modified_by_cell.dart';
+import '../../../shared/widgets/stat_cards.dart';
+import '../../../shared/widgets/table_footer.dart';
 
 // ── Table column constants (header + row MUST match) ──────────────────────
 const double _kIdxW = 36.0; // # badge
@@ -39,7 +43,7 @@ class WebClientsLayout extends GetView<ClientsController> {
           Expanded(
             child: Column(
               children: [
-                _TopBar(colors: colors),
+                const WebTopBar(),
                 Expanded(
                   child: Obx(() {
                     final all = c.clients;
@@ -149,7 +153,7 @@ class WebClientsLayout extends GetView<ClientsController> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Expanded(
-                                  child: _StatCard(
+                                  child: AppStatCard(
                                     label: 'Total Clients',
                                     value: '${c.totalClients}',
                                     icon: Icons.people_outline_rounded,
@@ -169,7 +173,7 @@ class WebClientsLayout extends GetView<ClientsController> {
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
-                                  child: _StatCard(
+                                  child: AppStatCard(
                                     label: 'Registered (GST) Clients',
                                     value: '${c.registeredClients}',
                                     icon: Icons.verified_outlined,
@@ -189,7 +193,7 @@ class WebClientsLayout extends GetView<ClientsController> {
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
-                                  child: _StatCard(
+                                  child: AppStatCard(
                                     label: 'Unregistered Clients',
                                     value: '${c.unregisteredClients}',
                                     icon: Icons.person_off_outlined,
@@ -209,7 +213,7 @@ class WebClientsLayout extends GetView<ClientsController> {
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
-                                  child: _StatCard(
+                                  child: AppStatCard(
                                     label: 'States Covered',
                                     value: '${c.statesCovered}',
                                     icon: Icons.map_outlined,
@@ -308,12 +312,9 @@ class WebClientsLayout extends GetView<ClientsController> {
 
                                       // Footer
                                       Divider(height: 1, color: colors.divider),
-                                      _Footer(
-                                        total: filtered.length,
-                                        startDisplay: filtered.isEmpty
-                                            ? 0
-                                            : startIdx + 1,
-                                        endDisplay: endIdx,
+                                      AppTableFooter(
+                                        summaryText:
+                                            'Showing ${filtered.isEmpty ? 0 : startIdx + 1} to $endIdx of ${filtered.length} clients',
                                         currentPage: currentPage,
                                         totalPages: totalPages,
                                         rowsPerPage: rowsPerPage,
@@ -361,555 +362,94 @@ class WebClientsLayout extends GetView<ClientsController> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Top Bar
-// ─────────────────────────────────────────────────────────────────────────────
-class _TopBar extends StatelessWidget {
-  final AppThemeColors colors;
-  const _TopBar({required this.colors});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: BoxDecoration(
-        color: colors.topBarBg,
-        border: Border(bottom: BorderSide(color: colors.divider)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 320,
-            height: 38,
-            decoration: BoxDecoration(
-              color: colors.inputFill,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: colors.border),
-            ),
-            child: Row(
-              children: [
-                const SizedBox(width: 10),
-                Icon(Icons.search_rounded, color: colors.textHint, size: 17),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Search anything...',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: colors.textHint,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colors.divider,
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Text(
-                    'Ctrl + K',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: colors.textSecondary,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Spacer(),
-          _IconBtn(
-            icon: Icons.notifications_outlined,
-            badge: '3',
-            colors: colors,
-          ),
-          const SizedBox(width: 8),
-          _IconBtn(
-            icon: Icons.chat_bubble_outline_rounded,
-            badge: '2',
-            colors: colors,
-          ),
-          const SizedBox(width: 8),
-          _IconBtn(icon: Icons.calendar_today_outlined, colors: colors),
-          const SizedBox(width: 14),
-          ElevatedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.add_rounded, color: Colors.white, size: 16),
-            label: Row(
-              children: const [
-                Text(
-                  'Quick Action',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(width: 4),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ],
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryOrange,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Container(width: 1, height: 30, color: colors.divider),
-          const SizedBox(width: 14),
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: AppColors.primaryOrange.withValues(alpha: 0.15),
-            child: const Icon(
-              Icons.person_rounded,
-              color: AppColors.primaryOrange,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Admin',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: colors.textPrimary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: colors.textSecondary,
-            size: 18,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _IconBtn extends StatelessWidget {
-  final IconData icon;
-  final String? badge;
-  final AppThemeColors colors;
-  const _IconBtn({required this.icon, this.badge, required this.colors});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: colors.inputFill,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: colors.border),
-          ),
-          child: Icon(icon, color: colors.textSecondary, size: 19),
-        ),
-        if (badge != null)
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Container(
-              width: 17,
-              height: 17,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryOrange,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  badge!,
-                  style: const TextStyle(
-                    fontSize: 9,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Stat Card
-// ─────────────────────────────────────────────────────────────────────────────
-class _StatCard extends StatelessWidget {
-  final String label, value, trend;
-  final IconData icon;
-  final Color iconColor;
-  final bool trendUp, smallValue;
-  final List<double> spark;
-
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.iconColor,
-    required this.trend,
-    required this.trendUp,
-    required this.spark,
-    this.smallValue = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.divider),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(icon, color: iconColor, size: 20),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colors.textSecondary,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: smallValue ? 18 : 26,
-                    fontWeight: FontWeight.w700,
-                    color: colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(
-                      trendUp
-                          ? Icons.arrow_upward_rounded
-                          : Icons.arrow_downward_rounded,
-                      size: 11,
-                      color: trendUp
-                          ? const Color(0xFF22C55E)
-                          : const Color(0xFFEF4444),
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      trend,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: trendUp
-                            ? const Color(0xFF22C55E)
-                            : const Color(0xFFEF4444),
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        'from last month',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: colors.textHint,
-                          fontFamily: 'Poppins',
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: 64,
-            height: 52,
-            child: CustomPaint(
-              painter: _SparkPainter(points: spark, color: iconColor),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SparkPainter extends CustomPainter {
-  final List<double> points;
-  final Color color;
-  const _SparkPainter({required this.points, required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (points.length < 2) return;
-    final lp = Paint()
-      ..color = color
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final fp = Paint()
-      ..color = color.withValues(alpha: 0.10)
-      ..style = PaintingStyle.fill;
-    final path = Path();
-    final fill = Path();
-    final stepX = size.width / (points.length - 1);
-    for (int i = 0; i < points.length; i++) {
-      final x = i * stepX;
-      final y =
-          size.height - (points[i] * size.height * 0.8) - size.height * 0.05;
-      if (i == 0) {
-        path.moveTo(x, y);
-        fill.moveTo(0, size.height);
-        fill.lineTo(x, y);
-      } else {
-        final px = (i - 1) * stepX;
-        final py =
-            size.height -
-            (points[i - 1] * size.height * 0.8) -
-            size.height * 0.05;
-        final cx = (px + x) / 2;
-        path.cubicTo(cx, py, cx, y, x, y);
-        fill.cubicTo(cx, py, cx, y, x, y);
-      }
-    }
-    fill.lineTo(size.width, size.height);
-    fill.close();
-    canvas.drawPath(fill, fp);
-    canvas.drawPath(path, lp);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter o) => false;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Table Toolbar
 // ─────────────────────────────────────────────────────────────────────────────
-class _Toolbar extends StatefulWidget {
+class _Toolbar extends StatelessWidget {
   final AppThemeColors colors;
   final ValueChanged<String> onSearch;
   const _Toolbar({required this.colors, required this.onSearch});
-  @override
-  State<_Toolbar> createState() => _ToolbarState();
-}
-
-class _ToolbarState extends State<_Toolbar> {
-  // Local, widget-scoped dropdown value — kept as an Rx on the persistent
-  // State object (not setState).
-  final _clientType = 'Registration: All'.obs;
-
-  @override
-  void dispose() {
-    _clientType.close();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
-    final colors = widget.colors;
+    final c = Get.find<ClientsController>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          // Search
-          SizedBox(
-            width: 250,
-            height: 38,
-            child: TextField(
-              onChanged: widget.onSearch,
-              style: TextStyle(
-                fontSize: 13,
-                color: colors.textPrimary,
-                fontFamily: 'Poppins',
-              ),
-              decoration: InputDecoration(
-                hintText: 'Search clients...',
-                hintStyle: TextStyle(
-                  fontSize: 13,
-                  color: colors.textHint,
-                  fontFamily: 'Poppins',
-                ),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  color: colors.textHint,
-                  size: 17,
-                ),
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                filled: true,
-                fillColor: colors.inputFill,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: colors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: colors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(
-                    color: AppColors.primaryOrange,
-                    width: 1.5,
-                  ),
-                ),
-              ),
+      child: FilterBar(
+        search: FilterSearchField(
+          controller: c.searchCtrl,
+          hint: 'Search clients...',
+          width: 250,
+          onChanged: onSearch,
+        ),
+        pills: [
+          Obx(
+            () => SingleSelectFilterPill(
+              value: c.clientType.value,
+              items: const [
+                'Registration: All',
+                'Regular',
+                'Unregistered/Consumer',
+              ],
+              onChanged: (v) => c.clientType.value = v,
             ),
           ),
-          const Spacer(),
-
-          // Filters button
-          OutlinedButton.icon(
-            onPressed: () {},
-            icon: Icon(
-              Icons.tune_rounded,
-              size: 15,
-              color: colors.textSecondary,
-            ),
-            label: Text(
-              'Filters',
-              style: TextStyle(
-                fontSize: 13,
-                fontFamily: 'Poppins',
+        ],
+        clearAll: Obx(() {
+          if (!c.hasActiveFilters) return const SizedBox.shrink();
+          return ClearAllButton(onTap: c.resetFilters);
+        }),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Export button
+            OutlinedButton.icon(
+              onPressed: () {},
+              icon: Icon(
+                Icons.upload_outlined,
+                size: 15,
                 color: colors.textSecondary,
               ),
-            ),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              side: BorderSide(color: colors.border),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+              label: Text(
+                'Export',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontFamily: 'Poppins',
+                  color: colors.textSecondary,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 9,
+                ),
+                side: BorderSide(color: colors.border),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
+            const SizedBox(width: 8),
 
-          // Client Type dropdown
-          Obx(
-            () => Container(
+            // Grid icon
+            Container(
+              width: 36,
               height: 36,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
                 color: colors.inputFill,
                 border: Border.all(color: colors.border),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _clientType.value,
-                  isDense: true,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                  dropdownColor: colors.surface,
-                  icon: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 18,
-                    color: colors.textSecondary,
-                  ),
-                  items: ['Registration: All', 'Regular', 'Unregistered/Consumer']
-                      .map((v) => DropdownMenuItem(value: v, child: Text(v)))
-                      .toList(),
-                  onChanged: (v) {
-                    if (v != null) _clientType.value = v;
-                  },
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          // Export button
-          OutlinedButton.icon(
-            onPressed: () {},
-            icon: Icon(
-              Icons.upload_outlined,
-              size: 15,
-              color: colors.textSecondary,
-            ),
-            label: Text(
-              'Export',
-              style: TextStyle(
-                fontSize: 13,
-                fontFamily: 'Poppins',
+              child: Icon(
+                Icons.table_chart_outlined,
+                size: 17,
                 color: colors.textSecondary,
               ),
             ),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              side: BorderSide(color: colors.border),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          // Grid icon
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: colors.inputFill,
-              border: Border.all(color: colors.border),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.table_chart_outlined,
-              size: 17,
-              color: colors.textSecondary,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1269,216 +809,6 @@ class _ActBtn extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Table Footer with Pagination
-// ─────────────────────────────────────────────────────────────────────────────
-class _Footer extends StatelessWidget {
-  final int total,
-      startDisplay,
-      endDisplay,
-      currentPage,
-      totalPages,
-      rowsPerPage;
-  final AppThemeColors colors;
-  final ValueChanged<int> onPageChanged, onRowsChanged;
-
-  const _Footer({
-    required this.total,
-    required this.startDisplay,
-    required this.endDisplay,
-    required this.currentPage,
-    required this.totalPages,
-    required this.rowsPerPage,
-    required this.colors,
-    required this.onPageChanged,
-    required this.onRowsChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Text(
-            'Showing $startDisplay to $endDisplay of $total clients',
-            style: TextStyle(
-              fontSize: 12.5,
-              color: colors.textSecondary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const Spacer(),
-          Text(
-            'Rows per page:',
-            style: TextStyle(
-              fontSize: 12.5,
-              color: colors.textSecondary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: colors.border),
-              borderRadius: BorderRadius.circular(6),
-              color: colors.surface,
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: rowsPerPage,
-                isDense: true,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: colors.textPrimary,
-                  fontFamily: 'Poppins',
-                ),
-                dropdownColor: colors.surface,
-                items: [5, 10, 20, 50]
-                    .map((v) => DropdownMenuItem(value: v, child: Text('$v')))
-                    .toList(),
-                onChanged: (v) {
-                  if (v != null) onRowsChanged(v);
-                },
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          _PBtn(
-            icon: Icons.first_page_rounded,
-            enabled: currentPage > 1,
-            colors: colors,
-            onTap: () => onPageChanged(1),
-          ),
-          const SizedBox(width: 4),
-          _PBtn(
-            icon: Icons.chevron_left_rounded,
-            enabled: currentPage > 1,
-            colors: colors,
-            onTap: () => onPageChanged(currentPage - 1),
-          ),
-          const SizedBox(width: 6),
-          ..._buildPageNums(),
-          const SizedBox(width: 6),
-          _PBtn(
-            icon: Icons.chevron_right_rounded,
-            enabled: currentPage < totalPages,
-            colors: colors,
-            onTap: () => onPageChanged(currentPage + 1),
-          ),
-          const SizedBox(width: 4),
-          _PBtn(
-            icon: Icons.last_page_rounded,
-            enabled: currentPage < totalPages,
-            colors: colors,
-            onTap: () => onPageChanged(totalPages),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildPageNums() {
-    final items = <Widget>[];
-    // Show up to 3 page numbers + ellipsis + last page
-    final pages = <int>[];
-    if (totalPages <= 5) {
-      for (int i = 1; i <= totalPages; i++) {
-        pages.add(i);
-      }
-    } else {
-      pages.addAll([1, 2, 3]);
-      if (currentPage > 4) pages.add(-1); // ellipsis
-      if (currentPage > 3 && currentPage < totalPages - 1)
-        pages.add(currentPage);
-      pages.add(totalPages);
-    }
-
-    for (int i = 0; i < pages.length; i++) {
-      final p = pages[i];
-      if (i > 0) items.add(const SizedBox(width: 4));
-      if (p == -1) {
-        items.add(
-          Text(
-            '...',
-            style: TextStyle(
-              fontSize: 13,
-              color: colors.textSecondary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-        );
-      } else {
-        final isActive = p == currentPage;
-        items.add(
-          InkWell(
-            onTap: () => onPageChanged(p),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: isActive ? AppColors.primaryOrange : colors.surface,
-                borderRadius: BorderRadius.circular(7),
-                border: Border.all(
-                  color: isActive ? AppColors.primaryOrange : colors.border,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  '$p',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isActive ? Colors.white : colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      }
-    }
-    return items;
-  }
-}
-
-class _PBtn extends StatelessWidget {
-  final IconData icon;
-  final bool enabled;
-  final AppThemeColors colors;
-  final VoidCallback onTap;
-  const _PBtn({
-    required this.icon,
-    required this.enabled,
-    required this.colors,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          border: Border.all(color: colors.border),
-          borderRadius: BorderRadius.circular(6),
-          color: colors.surface,
-        ),
-        child: Icon(
-          icon,
-          size: 17,
-          color: enabled ? colors.textPrimary : colors.textHint,
-        ),
-      ),
-    );
-  }
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Right Panel — Client Summary Card
 // ─────────────────────────────────────────────────────────────────────────────

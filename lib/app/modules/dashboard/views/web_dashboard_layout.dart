@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/dashboard_controller.dart';
 import '../models/dashboard_models.dart';
 import '../widgets/web_sidebar.dart';
+import '../widgets/web_top_bar.dart';
 import '../widgets/bar_chart.dart';
 import '../widgets/donut_chart.dart';
 import '../widgets/sales_chart.dart';
@@ -144,86 +145,9 @@ class WebDashboardLayout extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            width: 260,
-            height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: colors.tagBg,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.search_rounded,
-                  size: 19,
-                  color: colors.textSecondary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      color: colors.textPrimary,
-                      fontFamily: 'Poppins',
-                    ),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      border: InputBorder.none,
-                      hintText: 'Search inventory...',
-                      hintStyle: TextStyle(
-                        fontSize: 13.5,
-                        color: colors.textSecondary,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          const HeaderSearchBox(),
           const SizedBox(width: 14),
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: colors.warning.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.notifications_rounded,
-              color: colors.warning,
-              size: 19,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              CircleAvatar(
-                radius: 19,
-                backgroundColor: AppColors.primaryPurple,
-                child: const Icon(
-                  Icons.person_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              Positioned(
-                bottom: -1,
-                right: -1,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryOrange,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: colors.topBarBg, width: 2),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          const HeaderActionsCluster(),
         ],
       ),
     );

@@ -12,8 +12,19 @@ class ProductsController extends GetxController {
   final RxSet<String> selectedSubCategories = <String>{}.obs;
   final RxString selectedStatus = 'All Status'.obs;
   final RxString selectedStockStatus = 'All'.obs;
+  final RxString sortOption = 'Default'.obs;
   final RxInt currentPage = 1.obs;
   final RxInt rowsPerPage = 10.obs;
+
+  static const List<String> sortOptions = [
+    'Default',
+    'Product Name (A-Z)',
+    'Product Name (Z-A)',
+    'Price: Low to High',
+    'Price: High to Low',
+    'Stock: Low to High',
+    'Stock: High to Low',
+  ];
 
   // ── Add Product Form ─────────────────────────────────────────
   final RxString formCategory = ''.obs;
@@ -615,6 +626,7 @@ class ProductsController extends GetxController {
     ever(selectedSubCategories, (_) => _applyFilters());
     ever(selectedStatus, (_) => _applyFilters());
     ever(selectedStockStatus, (_) => _applyFilters());
+    ever(sortOption, (_) => _applyFilters());
   }
 
   // Strips a leading "1. " / "12. " numeric prefix from a category name.
@@ -674,6 +686,21 @@ class ProductsController extends GetxController {
           .toList();
     }
 
+    switch (sortOption.value) {
+      case 'Product Name (A-Z)':
+        result.sort((a, b) => a.name.compareTo(b.name));
+      case 'Product Name (Z-A)':
+        result.sort((a, b) => b.name.compareTo(a.name));
+      case 'Price: Low to High':
+        result.sort((a, b) => a.sellingPrice.compareTo(b.sellingPrice));
+      case 'Price: High to Low':
+        result.sort((a, b) => b.sellingPrice.compareTo(a.sellingPrice));
+      case 'Stock: Low to High':
+        result.sort((a, b) => a.currentStock.compareTo(b.currentStock));
+      case 'Stock: High to Low':
+        result.sort((a, b) => b.currentStock.compareTo(a.currentStock));
+    }
+
     filteredProducts.assignAll(result);
   }
 
@@ -702,6 +729,7 @@ class ProductsController extends GetxController {
     selectedSubCategories.clear();
     selectedStatus.value = 'All Status';
     selectedStockStatus.value = 'All';
+    sortOption.value = 'Default';
   }
 
   /// Subcategory names available to filter by — scoped to the selected

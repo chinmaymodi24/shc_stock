@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../routes/app_routes.dart';
+import '../../../core/utils/app_toast.dart';
 
 class LoginController extends GetxController {
   final emailController = TextEditingController();
@@ -20,6 +22,12 @@ class LoginController extends GetxController {
   static const _keyEmail = 'saved_email';
   static const _keyPassword =
       'saved_password'; // legacy key, only used to purge old plaintext values
+
+  // ── Secure storage (password only) ──────────────────────────
+  static const _secureKeyPassword = 'saved_password';
+  final _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
 
   // ── Lifecycle ─────────────────────────────────────────────────
   @override
@@ -45,20 +53,29 @@ class LoginController extends GetxController {
     if (isRemembered) {
       rememberMe.value = true;
       emailController.text = prefs.getString(_keyEmail) ?? '';
+      try {
+        passwordController.text =
+            await _secureStorage.read(key: _secureKeyPassword) ?? '';
+      } catch (_) {}
     }
   }
 
   // ── Save or clear credentials ──────────────────────────────
-  // Only the email is persisted. Passwords are never written to disk in
-  // plaintext; the user must always re-enter their password to sign in.
+  // The email is kept in SharedPreferences; the password is kept only in
+  // the platform-encrypted secure storage (Keychain / Keystore / DPAPI).
   Future<void> _saveRememberMe() async {
     final prefs = await SharedPreferences.getInstance();
     if (rememberMe.value) {
       await prefs.setBool(_keyRemember, true);
       await prefs.setString(_keyEmail, emailController.text.trim());
+      await _secureStorage.write(
+        key: _secureKeyPassword,
+        value: passwordController.text,
+      );
     } else {
       await prefs.remove(_keyRemember);
       await prefs.remove(_keyEmail);
+      await _secureStorage.delete(key: _secureKeyPassword);
     }
   }
 
@@ -101,7 +118,7 @@ class LoginController extends GetxController {
 
       Get.offNamed(AppRoutes.dashboard);
     } catch (e) {
-      _showTopRightToast(
+      showAppToast(
         'Sign In Failed',
         'Something went wrong. Please try again.',
         backgroundColor: const Color(0xFFEF4444),
@@ -113,40 +130,16 @@ class LoginController extends GetxController {
   }
 
   void signInWithAnotherAccount() {
-    _showTopRightToast(
+    showAppToast(
       'Coming Soon',
       'Single Sign-On (SSO) will be available in a future release.',
     );
   }
 
   void forgotPassword() {
-    _showTopRightToast(
+    showAppToast(
       'Coming Soon',
       'Password reset via email will be available soon.',
-    );
-  }
-
-  // ── Shared top-right toast ─────────────────────────────────────
-  void _showTopRightToast(
-    String title,
-    String message, {
-    Color? backgroundColor,
-    Color? colorText,
-  }) {
-    const toastWidth = 380.0;
-    final screenWidth = Get.width;
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: backgroundColor,
-      colorText: colorText,
-      margin: EdgeInsets.only(
-        top: 16,
-        right: 16,
-        left: (screenWidth - toastWidth - 16).clamp(16, screenWidth - 32),
-      ),
-      borderRadius: 12,
     );
   }
 }

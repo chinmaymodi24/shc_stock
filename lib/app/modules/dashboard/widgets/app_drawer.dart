@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../routes/app_routes.dart';
+import '../../../core/utils/app_toast.dart';
 
 /// Shared drawer used by all mobile layouts.
 /// Pass the current [activeRoute] so the correct item is highlighted.
@@ -141,15 +142,12 @@ class AppDrawer extends StatelessWidget {
                       if (isEnabled && !isActive) {
                         Get.offNamed(item.route);
                       } else if (!isEnabled) {
-                        Get.snackbar(
+                        showAppToast(
                           '🚧 Coming Soon',
                           '${item.label} module is under development.',
-                          snackPosition: SnackPosition.BOTTOM,
                           backgroundColor: AppColors.primaryPurple,
                           colorText: Colors.white,
                           duration: const Duration(seconds: 2),
-                          margin: const EdgeInsets.all(16),
-                          borderRadius: 12,
                         );
                       }
                     },

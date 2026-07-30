@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:cross_file/cross_file.dart';
 import '../controllers/products_controller.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/app_toast.dart';
 import '../../../routes/app_routes.dart';
 import '../../dashboard/widgets/app_drawer.dart';
 
@@ -62,14 +63,11 @@ class MobileAddProductLayout extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      Get.snackbar(
+                      showAppToast(
                         'Success',
                         'Product saved successfully!',
-                        snackPosition: SnackPosition.BOTTOM,
                         backgroundColor: const Color(0xFF22C55E),
                         colorText: Colors.white,
-                        margin: const EdgeInsets.all(16),
-                        borderRadius: 12,
                       );
                       Get.back();
                     },

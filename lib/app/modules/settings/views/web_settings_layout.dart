@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../dashboard/widgets/web_sidebar.dart';
+import '../../dashboard/widgets/web_top_bar.dart';
 import '../controllers/settings_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -27,14 +28,12 @@ class WebSettingsLayout extends GetView<SettingsController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Header ────────────────────────────────────────────────
+                const WebTopBar(),
+
+                // ── Page title ────────────────────────────────────────────
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.fromLTRB(24, 18, 24, 18),
-                  decoration: BoxDecoration(
-                    color: colors.topBarBg,
-                    border: Border(bottom: BorderSide(color: colors.divider)),
-                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

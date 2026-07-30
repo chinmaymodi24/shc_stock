@@ -11,6 +11,19 @@ class UsersController extends GetxController {
   final RxInt rowsPerPage = 10.obs;
   final RxInt currentPage = 1.obs;
 
+  bool get hasActiveFilters =>
+      searchQuery.value.isNotEmpty ||
+      filterRole.value != 'All Roles' ||
+      filterStatus.value != 'All Status';
+
+  void resetFilters() {
+    searchCtrl.clear();
+    searchQuery.value = '';
+    filterRole.value = 'All Roles';
+    filterStatus.value = 'All Status';
+    currentPage.value = 1;
+  }
+
   // ── Palette ───────────────────────────────────────────────────────────────
   static const _colors = [
     Color(0xFFF47B20),

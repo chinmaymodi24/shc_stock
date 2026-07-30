@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/app_toast.dart';
 import '../../dashboard/widgets/web_sidebar.dart';
+import '../../dashboard/widgets/web_top_bar.dart';
 import '../controllers/add_client_controller.dart';
 
 // ── Select options ─────────────────────────────────────────────────────────
@@ -97,7 +99,7 @@ class WebAddClientLayout extends GetView<AddClientController> {
           Expanded(
             child: Column(
               children: [
-                _TopBar(colors: colors),
+                const WebTopBar(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
@@ -296,15 +298,12 @@ class WebAddClientLayout extends GetView<AddClientController> {
   void _saveClient() {
     // Validate name at minimum
     if (controller.nameCtrl.text.trim().isEmpty) {
-      Get.snackbar(
+      showAppToast(
         'Validation Error',
         'Client Name is required.',
-        snackPosition: SnackPosition.BOTTOM,
         backgroundColor: const Color(0xFFEF4444),
         colorText: Colors.white,
         duration: const Duration(seconds: 2),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 10,
       );
       return;
     }
@@ -878,192 +877,6 @@ class WebAddClientLayout extends GetView<AddClientController> {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Top Bar
-// ─────────────────────────────────────────────────────────────────────────────
-class _TopBar extends StatelessWidget {
-  final AppThemeColors colors;
-  const _TopBar({required this.colors});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: BoxDecoration(
-        color: colors.topBarBg,
-        border: Border(bottom: BorderSide(color: colors.divider)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 320,
-            height: 38,
-            decoration: BoxDecoration(
-              color: colors.inputFill,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: colors.border),
-            ),
-            child: Row(
-              children: [
-                const SizedBox(width: 10),
-                Icon(Icons.search_rounded, color: colors.textHint, size: 17),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Search anything...',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: colors.textHint,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colors.divider,
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Text(
-                    'Ctrl + K',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: colors.textSecondary,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Spacer(),
-          _IBtn(icon: Icons.notifications_outlined, badge: '3', colors: colors),
-          const SizedBox(width: 8),
-          _IBtn(
-            icon: Icons.chat_bubble_outline_rounded,
-            badge: '2',
-            colors: colors,
-          ),
-          const SizedBox(width: 8),
-          _IBtn(icon: Icons.calendar_today_outlined, colors: colors),
-          const SizedBox(width: 14),
-          ElevatedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.add_rounded, color: Colors.white, size: 16),
-            label: Row(
-              children: const [
-                Text(
-                  'Quick Action',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(width: 4),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ],
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryOrange,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Container(width: 1, height: 30, color: colors.divider),
-          const SizedBox(width: 14),
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: AppColors.primaryOrange.withValues(alpha: 0.15),
-            child: const Icon(
-              Icons.person_rounded,
-              color: AppColors.primaryOrange,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Admin',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: colors.textPrimary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: colors.textSecondary,
-            size: 18,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _IBtn extends StatelessWidget {
-  final IconData icon;
-  final String? badge;
-  final AppThemeColors colors;
-  const _IBtn({required this.icon, this.badge, required this.colors});
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: colors.inputFill,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: colors.border),
-          ),
-          child: Icon(icon, color: colors.textSecondary, size: 19),
-        ),
-        if (badge != null)
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Container(
-              width: 17,
-              height: 17,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryOrange,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  badge!,
-                  style: const TextStyle(
-                    fontSize: 9,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }

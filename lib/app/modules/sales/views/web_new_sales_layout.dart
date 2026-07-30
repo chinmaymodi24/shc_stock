@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../controllers/sales_controller.dart';
 import '../controllers/add_sale_controller.dart';
@@ -12,6 +11,9 @@ import '../../products/controllers/products_controller.dart';
 import '../../products/models/product_model.dart';
 import '../../clients/models/client_model.dart';
 import '../../clients/widgets/client_autocomplete_field.dart';
+import '../../../shared/widgets/form_fields.dart';
+import '../../../shared/widgets/section_card.dart';
+import '../../../core/utils/app_toast.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Add Sell — tax-invoice style entry form
@@ -46,15 +48,11 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
       ),
     );
     Get.back();
-    Get.snackbar(
+    showAppToast(
       '✅ Sale Saved',
       '$newSoNum has been successfully created.',
-      snackPosition: SnackPosition.BOTTOM,
       backgroundColor: const Color(0xFF22C55E),
       colorText: Colors.white,
-      duration: const Duration(seconds: 3),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
     );
   }
 
@@ -80,7 +78,7 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            _BackButton(
+                            AppBackButton(
                               colors: colors,
                               onTap: () => Get.back(),
                             ),
@@ -113,7 +111,7 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                         const SizedBox(height: 20),
 
                         // ── Section 1: Client & Invoice Details ──
-                        _NumberedSectionCard(
+                        AppNumberedSectionCard(
                           colors: colors,
                           number: 1,
                           title: 'Client & Invoice Details',
@@ -124,7 +122,7 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'Client Name',
                                         colors: colors,
                                         child: ClientAutocompleteField(
@@ -138,10 +136,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'Address',
                                         colors: colors,
-                                        child: _TextBox(
+                                        child: AppTextBox(
                                           controller: controller.addressCtrl,
                                           hint: '202, Venus Benecia',
                                           colors: colors,
@@ -150,10 +148,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'City',
                                         colors: colors,
-                                        child: _TextBox(
+                                        child: AppTextBox(
                                           controller: controller.cityCtrl,
                                           hint: 'Ahmedabad',
                                           colors: colors,
@@ -162,10 +160,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'State & PIN',
                                         colors: colors,
-                                        child: _TextBox(
+                                        child: AppTextBox(
                                           controller: controller.statePinCtrl,
                                           hint: 'Gujarat - 380001',
                                           colors: colors,
@@ -178,10 +176,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'Buyer GST No.',
                                         colors: colors,
-                                        child: _TextBox(
+                                        child: AppTextBox(
                                           controller: controller.buyerGstCtrl,
                                           hint: '24ABMFS5824P1ZH',
                                           colors: colors,
@@ -190,10 +188,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'PAN No.',
                                         colors: colors,
-                                        child: _TextBox(
+                                        child: AppTextBox(
                                           controller: controller.panCtrl,
                                           hint: 'ADVPT9528N',
                                           colors: colors,
@@ -202,10 +200,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'Invoice No.',
                                         colors: colors,
-                                        child: _TextBox(
+                                        child: AppTextBox(
                                           controller: controller.invoiceNoCtrl,
                                           hint: 'e.g. T 464',
                                           colors: colors,
@@ -214,10 +212,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'Invoice Date',
                                         colors: colors,
-                                        child: _DateBox(
+                                        child: AppDateBox(
                                           date: controller.invoiceDate.value,
                                           colors: colors,
                                           onTap: () => controller.pickDate(
@@ -233,10 +231,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'P.O. No.',
                                         colors: colors,
-                                        child: _TextBox(
+                                        child: AppTextBox(
                                           controller: controller.poNoCtrl,
                                           hint: 'E-MAIL',
                                           colors: colors,
@@ -245,10 +243,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'P.O. Dt.',
                                         colors: colors,
-                                        child: _DateBox(
+                                        child: AppDateBox(
                                           date: controller.poDate.value,
                                           colors: colors,
                                           onTap: () => controller.pickDate(
@@ -260,10 +258,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'Despatch Through',
                                         colors: colors,
-                                        child: _DropBox(
+                                        child: AppDropBox(
                                           hint: 'Select mode',
                                           value:
                                               controller.despatchThrough.value,
@@ -282,10 +280,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'L.R. No.',
                                         colors: colors,
-                                        child: _TextBox(
+                                        child: AppTextBox(
                                           controller: controller.lrNoCtrl,
                                           hint: '',
                                           colors: colors,
@@ -298,10 +296,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'L.R. Date',
                                         colors: colors,
-                                        child: _DateBox(
+                                        child: AppDateBox(
                                           date: controller.lrDate.value,
                                           colors: colors,
                                           onTap: () => controller.pickDate(
@@ -313,10 +311,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'Vehicle No.',
                                         colors: colors,
-                                        child: _TextBox(
+                                        child: AppTextBox(
                                           controller: controller.vehicleNoCtrl,
                                           hint: 'e.g. GJ-03-CT-6544',
                                           colors: colors,
@@ -325,10 +323,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'Freight',
                                         colors: colors,
-                                        child: _TextBox(
+                                        child: AppTextBox(
                                           controller: controller.freightCtrl,
                                           hint: '',
                                           colors: colors,
@@ -337,10 +335,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'Place of Supply',
                                         colors: colors,
-                                        child: _TextBox(
+                                        child: AppTextBox(
                                           controller:
                                               controller.placeOfSupplyCtrl,
                                           hint: 'e.g. Ahmedabad (Gujarat)',
@@ -354,10 +352,10 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: _Field(
+                                      child: AppField(
                                         label: 'Due Date',
                                         colors: colors,
-                                        child: _DateBox(
+                                        child: AppDateBox(
                                           date: controller.dueDate.value,
                                           colors: colors,
                                           onTap: () => controller.pickDate(
@@ -382,18 +380,18 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                         const SizedBox(height: 16),
 
                         // ── Section 2: Item Details ──────────
-                        _NumberedSectionCard(
+                        AppNumberedSectionCard(
                           colors: colors,
                           number: 2,
                           title: 'Item Details',
-                          trailing: _AddRowPillButton(
+                          trailing: AppAddRowPill(
                             colors: colors,
                             label: 'Add Row',
                             onTap: controller.addItemRow,
                           ),
                           child: Obx(
                             () => _ItemDetailsTable(
-                              items: controller.items,
+                              items: controller.items.toList(),
                               colors: colors,
                               onChanged: controller.notifyItemsChanged,
                               onDelete: controller.removeItemRow,
@@ -403,7 +401,7 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                         const SizedBox(height: 16),
 
                         // ── Section 3: GST & Totals ───────────
-                        _NumberedSectionCard(
+                        AppNumberedSectionCard(
                           colors: colors,
                           number: 3,
                           title: 'GST & Totals',
@@ -420,21 +418,21 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                   ),
                                   child: Column(
                                     children: [
-                                      _TotalRow(
+                                      AppTotalRow(
                                         label: 'Taxable Value',
                                         value:
                                             '₹${controller.taxableValue.toStringAsFixed(0)}',
                                         colors: colors,
                                       ),
                                       const SizedBox(height: 10),
-                                      _TotalRow(
+                                      AppTotalRow(
                                         label: 'CGST (9%)',
                                         value:
                                             '₹${controller.cgst.toStringAsFixed(0)}',
                                         colors: colors,
                                       ),
                                       const SizedBox(height: 10),
-                                      _TotalRow(
+                                      AppTotalRow(
                                         label: 'SGST (9%)',
                                         value:
                                             '₹${controller.sgst.toStringAsFixed(0)}',
@@ -669,7 +667,7 @@ class _ItemDetailsRow extends StatelessWidget {
           const SizedBox(width: 8),
           SizedBox(
             width: _iHsnWidth,
-            child: _SmallInput(
+            child: AppSmallInput(
               hint: 'HSN/SAC',
               value: row.hsn,
               colors: colors,
@@ -683,7 +681,7 @@ class _ItemDetailsRow extends StatelessWidget {
           const SizedBox(width: 8),
           SizedBox(
             width: _iQtyWidth,
-            child: _SmallNumber(
+            child: AppSmallNumber(
               value: row.qty,
               colors: colors,
               onChanged: (v) {
@@ -695,7 +693,7 @@ class _ItemDetailsRow extends StatelessWidget {
           const SizedBox(width: 8),
           SizedBox(
             width: _iUomWidth,
-            child: _SmallInput(
+            child: AppSmallInput(
               hint: 'UoM',
               value: row.unit,
               colors: colors,
@@ -709,7 +707,7 @@ class _ItemDetailsRow extends StatelessWidget {
           const SizedBox(width: 8),
           SizedBox(
             width: _iRateWidth,
-            child: _SmallNumber(
+            child: AppSmallNumber(
               value: row.rate,
               colors: colors,
               decimal: true,
@@ -917,538 +915,6 @@ class _ProductAutocomplete extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Reusable widgets
-// ─────────────────────────────────────────────────────────────────────────────
-class _BackButton extends StatelessWidget {
-  final AppThemeColors colors;
-  final VoidCallback onTap;
-  const _BackButton({required this.colors, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: colors.inputFill,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(
-          Icons.arrow_back_rounded,
-          color: colors.textPrimary,
-          size: 19,
-        ),
-      ),
-    );
-  }
-}
-
-class _AddRowPillButton extends StatelessWidget {
-  final AppThemeColors colors;
-  final String label;
-  final VoidCallback onTap;
-  const _AddRowPillButton({
-    required this.colors,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.primaryOrange.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.add_rounded,
-                size: 16,
-                color: AppColors.primaryOrange,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.primaryOrange,
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NumberedSectionCard extends StatelessWidget {
-  final AppThemeColors colors;
-  final int number;
-  final String title;
-  final Widget child;
-  final Widget? trailing;
-
-  const _NumberedSectionCard({
-    required this.colors,
-    required this.number,
-    required this.title,
-    required this.child,
-    this.trailing,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colors.divider),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-            child: Row(
-              children: [
-                Container(
-                  width: 22,
-                  height: 22,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primaryOrange,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$number',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w700,
-                    color: colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-                if (trailing != null) ...[const Spacer(), trailing!],
-              ],
-            ),
-          ),
-          Divider(height: 1, color: colors.divider),
-          Padding(padding: const EdgeInsets.all(20), child: child),
-        ],
-      ),
-    );
-  }
-}
-
-class _Field extends StatelessWidget {
-  final String label;
-  final AppThemeColors colors;
-  final Widget child;
-  const _Field({
-    required this.label,
-    required this.colors,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w500,
-            color: colors.textPrimary,
-            fontFamily: 'Poppins',
-          ),
-        ),
-        const SizedBox(height: 6),
-        child,
-      ],
-    );
-  }
-}
-
-class _TextBox extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-  final AppThemeColors colors;
-  const _TextBox({
-    required this.controller,
-    required this.hint,
-    required this.colors,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      style: TextStyle(
-        fontSize: 13,
-        color: colors.textPrimary,
-        fontFamily: 'Poppins',
-      ),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(
-          fontSize: 13,
-          color: colors.textHint,
-          fontFamily: 'Poppins',
-        ),
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 11,
-        ),
-        filled: true,
-        fillColor: colors.surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: colors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: colors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: AppColors.primaryOrange,
-            width: 1.5,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DropBox extends StatelessWidget {
-  final String hint;
-  final String? value;
-  final List<String> items;
-  final AppThemeColors colors;
-  final ValueChanged<String?> onChanged;
-
-  const _DropBox({
-    required this.hint,
-    required this.value,
-    required this.items,
-    required this.colors,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final safeVal = (value != null && items.contains(value)) ? value : null;
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colors.border),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: safeVal,
-          hint: Text(
-            hint,
-            style: TextStyle(
-              fontSize: 13,
-              color: colors.textHint,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          isDense: true,
-          isExpanded: true,
-          dropdownColor: colors.surface,
-          icon: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            size: 18,
-            color: colors.textSecondary,
-          ),
-          style: TextStyle(
-            fontSize: 13,
-            color: colors.textPrimary,
-            fontFamily: 'Poppins',
-          ),
-          items: items
-              .map((v) => DropdownMenuItem(value: v, child: Text(v)))
-              .toList(),
-          onChanged: onChanged,
-        ),
-      ),
-    );
-  }
-}
-
-class _DateBox extends StatefulWidget {
-  final DateTime? date;
-  final AppThemeColors colors;
-  final VoidCallback onTap;
-  const _DateBox({
-    required this.date,
-    required this.colors,
-    required this.onTap,
-  });
-
-  @override
-  State<_DateBox> createState() => _DateBoxState();
-}
-
-class _DateBoxState extends State<_DateBox> {
-  // Local, widget-scoped focus flag — kept as an Rx on the persistent State
-  // object (not setState) so only the border repaints on focus change.
-  final _focused = false.obs;
-
-  @override
-  void dispose() {
-    _focused.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final d = widget.date;
-    final colors = widget.colors;
-    final label = d == null
-        ? 'dd-mm-yyyy'
-        : '${d.day.toString().padLeft(2, '0')}-${d.month.toString().padLeft(2, '0')}-${d.year}';
-    return Focus(
-      onFocusChange: (f) => _focused.value = f,
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            (event.logicalKey == LogicalKeyboardKey.enter ||
-                event.logicalKey == LogicalKeyboardKey.space)) {
-          widget.onTap();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: InkWell(
-        onTap: widget.onTap,
-        child: Obx(
-          () => Container(
-            height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: _focused.value ? AppColors.primaryOrange : colors.border,
-                width: _focused.value ? 1.5 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: d == null ? colors.textHint : colors.textPrimary,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.calendar_month_outlined,
-                  size: 16,
-                  color: colors.textSecondary,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TotalRow extends StatelessWidget {
-  final String label, value;
-  final AppThemeColors colors;
-  const _TotalRow({
-    required this.label,
-    required this.value,
-    required this.colors,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            color: colors.textSecondary,
-            fontFamily: 'Poppins',
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: colors.textPrimary,
-            fontFamily: 'Poppins',
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SmallInput extends StatelessWidget {
-  final String hint;
-  final String value;
-  final AppThemeColors colors;
-  final bool center;
-  final ValueChanged<String> onChanged;
-
-  const _SmallInput({
-    required this.hint,
-    required this.value,
-    required this.colors,
-    this.center = false,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      initialValue: value,
-      onChanged: onChanged,
-      textAlign: center ? TextAlign.center : TextAlign.start,
-      style: TextStyle(
-        fontSize: 12,
-        color: colors.textPrimary,
-        fontFamily: 'Poppins',
-      ),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(
-          fontSize: 12,
-          color: colors.textHint,
-          fontFamily: 'Poppins',
-        ),
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        filled: true,
-        fillColor: colors.surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: BorderSide(color: colors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: BorderSide(color: colors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(
-            color: AppColors.primaryOrange,
-            width: 1.2,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SmallNumber extends StatelessWidget {
-  final double value;
-  final AppThemeColors colors;
-  final bool decimal;
-  final ValueChanged<double> onChanged;
-
-  const _SmallNumber({
-    required this.value,
-    required this.colors,
-    this.decimal = false,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      initialValue: value == 0
-          ? (decimal ? '0.00' : '0')
-          : (decimal ? value.toStringAsFixed(2) : value.toStringAsFixed(0)),
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-      ],
-      onChanged: (v) => onChanged(double.tryParse(v) ?? 0),
-      style: TextStyle(
-        fontSize: 12,
-        color: colors.textPrimary,
-        fontFamily: 'Poppins',
-      ),
-      textAlign: TextAlign.center,
-      decoration: InputDecoration(
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-        filled: true,
-        fillColor: colors.surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: BorderSide(color: colors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: BorderSide(color: colors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(
-            color: AppColors.primaryOrange,
-            width: 1.2,
-          ),
-        ),
-      ),
     );
   }
 }

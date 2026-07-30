@@ -1,13 +1,31 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/purchase_model.dart';
 
 class PurchaseController extends GetxController {
   // ── Observable list ──────────────────────────────────────────
   final RxList<PurchaseOrder> orders = <PurchaseOrder>[].obs;
+  final searchCtrl = TextEditingController();
   final RxString searchQuery = ''.obs;
   final RxString supplierFilter = 'Supplier: All'.obs;
   final RxInt rowsPerPage = 10.obs;
   final RxInt currentPage = 1.obs;
+
+  bool get hasActiveFilters =>
+      searchQuery.value.isNotEmpty || supplierFilter.value != 'Supplier: All';
+
+  void resetFilters() {
+    searchCtrl.clear();
+    searchQuery.value = '';
+    supplierFilter.value = 'Supplier: All';
+    currentPage.value = 1;
+  }
+
+  @override
+  void onClose() {
+    searchCtrl.dispose();
+    super.onClose();
+  }
 
   // ── Stats ────────────────────────────────────────────────────
   int get totalOrders => orders.length;

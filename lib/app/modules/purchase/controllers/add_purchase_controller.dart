@@ -17,15 +17,19 @@ class PurchaseItemRow {
 }
 
 class AddPurchaseController extends GetxController {
-  final consigneeCtrl = TextEditingController();
-  final buyerGstCtrl = TextEditingController();
   final client = ''.obs;
+  final addressCtrl = TextEditingController();
+  final cityCtrl = TextEditingController();
+  final statePinCtrl = TextEditingController();
+  final buyerGstCtrl = TextEditingController();
+  final panCtrl = TextEditingController();
   final invoiceNoCtrl = TextEditingController();
   final invoiceDate = Rx<DateTime?>(null);
   final poNoCtrl = TextEditingController();
   final poDate = Rx<DateTime?>(null);
   final despatchThrough = 'DIRECT VEHICLE'.obs;
   final lrNoCtrl = TextEditingController();
+  final lrDate = Rx<DateTime?>(null);
   final vehicleNoCtrl = TextEditingController();
   final freightCtrl = TextEditingController();
   final placeOfSupplyCtrl = TextEditingController();
@@ -40,7 +44,13 @@ class AddPurchaseController extends GetxController {
 
   void applyClient(ClientModel c) {
     client.value = c.name;
-    if (c.state.isNotEmpty) placeOfSupplyCtrl.text = c.state;
+    addressCtrl.text = c.address;
+    if (c.state.isNotEmpty) {
+      statePinCtrl.text = c.state;
+      placeOfSupplyCtrl.text = c.state;
+    }
+    buyerGstCtrl.text = c.gstin;
+    panCtrl.text = c.pan;
   }
 
   void addItemRow() => items.add(PurchaseItemRow());
@@ -61,8 +71,11 @@ class AddPurchaseController extends GetxController {
 
   @override
   void onClose() {
-    consigneeCtrl.dispose();
+    addressCtrl.dispose();
+    cityCtrl.dispose();
+    statePinCtrl.dispose();
     buyerGstCtrl.dispose();
+    panCtrl.dispose();
     invoiceNoCtrl.dispose();
     poNoCtrl.dispose();
     lrNoCtrl.dispose();

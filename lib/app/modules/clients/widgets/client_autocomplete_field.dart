@@ -16,6 +16,7 @@ class ClientAutocompleteField extends StatelessWidget {
   final AppThemeColors colors;
   final ValueChanged<ClientModel> onSelected;
   final String hint;
+  final Widget? suffixIcon;
 
   const ClientAutocompleteField({
     super.key,
@@ -23,6 +24,7 @@ class ClientAutocompleteField extends StatelessWidget {
     required this.colors,
     required this.onSelected,
     this.hint = 'Type to search client...',
+    this.suffixIcon,
   });
 
   @override
@@ -65,6 +67,7 @@ class ClientAutocompleteField extends StatelessWidget {
             ),
             filled: true,
             fillColor: colors.surface,
+            suffixIcon: suffixIcon,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: colors.border),
