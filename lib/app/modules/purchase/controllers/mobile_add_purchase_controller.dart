@@ -1,14 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../clients/models/client_model.dart';
+import 'package:shc_stock/app/modules/clients/models/client_model.dart';
 
 class MobilePurchaseItemRow {
+  // Stable identity for list-item Keys, and a version bump whenever fields
+  // are set programmatically (product autofill) so the small text-field
+  // cells below re-seed their displayed text instead of keeping stale
+  // TextFormField state from the initial build (TextFormField only reads
+  // `initialValue` once — it never syncs to later prop changes on its own).
+  static int _seq = 0;
+  final int id = _seq++;
+  int version = 0;
+
+  /// Backend product id, set when the row is filled from the product
+  /// autocomplete. Sent to the API so the server moves this product's stock.
+  int? productId;
   String product = '';
   String hsn = '';
   String grade = '';
   String density = '';
-  double noPkg = 0;
-  double avgContPerPkg = 0;
+
+  // Default to a single unit per row. Amount is (noPkg * avgContPerPkg) *
+  // netPrice, so starting these at 0 pinned every row's amount — and the
+  // whole invoice total — to ₹0 until the user filled in both boxes, which
+  // read as "the price isn't updating". 1 x 1 makes the selected product's
+  // price show up immediately and still scales once real packing is entered.
+  double noPkg = 1;
+  double avgContPerPkg = 1;
+
   String uom = '';
   double netPrice = 0;
 

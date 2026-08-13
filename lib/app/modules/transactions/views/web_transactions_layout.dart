@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
 import 'package:intl/intl.dart';
-import '../controllers/transactions_controller.dart';
-import '../models/transaction_model.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../dashboard/widgets/web_sidebar.dart';
-import '../../dashboard/widgets/web_top_bar.dart';
-import '../../dashboard/widgets/modified_by_cell.dart';
-import '../../../shared/widgets/stat_cards.dart';
-import '../../../shared/widgets/table_footer.dart';
-import '../../../shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/modules/transactions/controllers/transactions_controller.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/modules/transactions/models/transaction_model.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/transactions/views/transaction_form_dialog.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
+import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/table_footer.dart';
+import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Widget — Transactions: colored summary cards + searchable/filterable table
@@ -51,11 +53,13 @@ class WebTransactionsLayout extends GetView<TransactionsController> {
                         return false;
                       }
                       if (typeFilters.isNotEmpty &&
-                          !typeFilters.contains(t.typeLabel))
+                          !typeFilters.contains(t.typeLabel)) {
                         return false;
+                      }
                       if (statusFilters.isNotEmpty &&
-                          !statusFilters.contains(t.statusLabel))
+                          !statusFilters.contains(t.statusLabel)) {
                         return false;
+                      }
                       return true;
                     }).toList();
 
@@ -96,14 +100,62 @@ class WebTransactionsLayout extends GetView<TransactionsController> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // ── Page Header ──────────────────────────────────────────
-                          Text(
-                            'Transactions',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: colors.textPrimary,
-                              fontFamily: 'Poppins',
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Transactions',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w700,
+                                      color: colors.textPrimary,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    'Inbound and outbound stock movement log.',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: colors.textSecondary,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: () =>
+                                    Get.dialog(const TransactionFormDialog()),
+                                icon: const Icon(
+                                  Icons.add_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                label: const Text(
+                                  'New Transaction',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryOrange,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 20),
 
@@ -111,50 +163,38 @@ class WebTransactionsLayout extends GetView<TransactionsController> {
                           Row(
                             children: [
                               Expanded(
-                                child: AppTintedStatCard(
+                                child: AppStatCard(
                                   label: 'Total Transactions (This Month)',
                                   value: '${c.totalThisMonth}',
-                                  bg: const Color(
-                                    0xFF3B6FC9,
-                                  ).withValues(alpha: 0.14),
-                                  labelColor: const Color(0xFF3B6FC9),
-                                  valueColor: colors.textPrimary,
+                                  icon: Icons.swap_horiz_rounded,
+                                  iconColor: const Color(0xFF3B6FC9),
                                 ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
-                                child: AppTintedStatCard(
+                                child: AppStatCard(
                                   label: 'Inbound',
                                   value: '${c.inboundCount}',
-                                  bg: const Color(
-                                    0xFF2E9E5B,
-                                  ).withValues(alpha: 0.14),
-                                  labelColor: const Color(0xFF2E9E5B),
-                                  valueColor: colors.textPrimary,
+                                  icon: Icons.call_received_rounded,
+                                  iconColor: const Color(0xFF2E9E5B),
                                 ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
-                                child: AppTintedStatCard(
+                                child: AppStatCard(
                                   label: 'Outbound',
                                   value: '${c.outboundCount}',
-                                  bg: const Color(
-                                    0xFFC9822F,
-                                  ).withValues(alpha: 0.14),
-                                  labelColor: const Color(0xFFC9822F),
-                                  valueColor: colors.textPrimary,
+                                  icon: Icons.call_made_rounded,
+                                  iconColor: const Color(0xFFC9822F),
                                 ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
-                                child: AppTintedStatCard(
+                                child: AppStatCard(
                                   label: 'Pending',
                                   value: '${c.pendingCount}',
-                                  bg: const Color(
-                                    0xFFD1494C,
-                                  ).withValues(alpha: 0.14),
-                                  labelColor: const Color(0xFFD1494C),
-                                  valueColor: colors.textPrimary,
+                                  icon: Icons.schedule_rounded,
+                                  iconColor: const Color(0xFFD1494C),
                                 ),
                               ),
                             ],
@@ -242,7 +282,12 @@ class WebTransactionsLayout extends GetView<TransactionsController> {
                                 _ColHeader(colors: colors),
                                 Divider(height: 1, color: colors.divider),
 
-                                if (pageItems.isEmpty)
+                                if (c.isLoading.value)
+                                  const AppLoadingIndicator(
+                                    label: 'Loading transactions...',
+                                    padding: 40,
+                                  )
+                                else if (pageItems.isEmpty)
                                   Padding(
                                     padding: const EdgeInsets.all(48),
                                     child: Center(
@@ -305,7 +350,6 @@ class WebTransactionsLayout extends GetView<TransactionsController> {
   }
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Column Header
 // ─────────────────────────────────────────────────────────────────────────────
@@ -333,6 +377,10 @@ class _ColHeader extends StatelessWidget {
           Expanded(flex: 3, child: Text('Date', style: _s)),
           Expanded(flex: 3, child: Text('Status', style: _s)),
           Expanded(flex: 4, child: Text('Modified By', style: _s)),
+          Expanded(
+            flex: 3,
+            child: Center(child: Text('Actions', style: _s)),
+          ),
         ],
       ),
     );
@@ -492,10 +540,12 @@ class _TransactionRowState extends State<_TransactionRow> {
                   child: Builder(
                     builder: (_) {
                       final mod = resolveModifiedBy(
-                        seedId: txn.id,
                         storedName: txn.modifiedBy,
                         storedDate: txn.modifiedAt,
                       );
+                      if (mod == null) {
+                        return ModifiedByEmpty(textHint: c.textHint);
+                      }
                       return ModifiedByCell(
                         name: mod.name,
                         date: mod.date,
@@ -505,9 +555,69 @@ class _TransactionRowState extends State<_TransactionRow> {
                     },
                   ),
                 ),
+
+                // Actions
+                Expanded(
+                  flex: 3,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _TxnActBtn(
+                        icon: Icons.edit_outlined,
+                        color: AppColors.primaryOrange,
+                        tooltip: 'Edit',
+                        onTap: () =>
+                            Get.dialog(TransactionFormDialog(existing: txn)),
+                      ),
+                      const SizedBox(width: 6),
+                      _TxnActBtn(
+                        icon: Icons.delete_outline_rounded,
+                        color: const Color(0xFFEF4444),
+                        tooltip: 'Delete',
+                        onTap: () => Get.find<TransactionsController>()
+                            .deleteTransaction(txn.id),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small square icon button used by the Transactions row actions.
+class _TxnActBtn extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+  final VoidCallback onTap;
+  const _TxnActBtn({
+    required this.icon,
+    required this.color,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(7),
+        child: Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: colors.iconBgPurple,
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Icon(icon, color: color, size: 15),
         ),
       ),
     );

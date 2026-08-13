@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../routes/app_routes.dart';
-import '../../dashboard/widgets/app_drawer.dart';
-import '../controllers/categories_controller.dart';
-import '../models/category_model.dart';
-import '../../products/controllers/products_controller.dart';
-import '../../../shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
+import 'package:shc_stock/app/modules/categories/controllers/categories_controller.dart';
+import 'package:shc_stock/app/modules/categories/models/category_model.dart';
+import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
+import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 
 ProductsController _productsController() {
   if (Get.isRegistered<ProductsController>()) {
     return Get.find<ProductsController>();
   }
-  return Get.put(ProductsController());
+  return Get.put(ProductsController(), permanent: true);
 }
 
 class MobileCategoriesLayout extends GetView<CategoriesController> {
@@ -29,6 +30,9 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
       drawer: const AppDrawer(activeRoute: AppRoutes.categories),
       appBar: _buildAppBar(context),
       body: Obx(() {
+        // Only the list area loads — the cards above it used to be replaced
+        // by the spinner, blanking the page on every fetch.
+        final loading = c.isLoading.value && c.categories.isEmpty;
         final all = c.categories;
         final selected = all.isEmpty
             ? null
@@ -61,22 +65,18 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
               Row(
                 children: [
                   Expanded(
-                    child: AppSimpleStatCard(
-                      horizontal: false,
+                    child: AppStatCard(
                       icon: Icons.category_outlined,
                       iconColor: AppColors.primaryOrange,
-                      bgColor: AppColors.primaryOrange.withValues(alpha: 0.06),
                       label: 'Categories',
                       value: '${c.totalCategories}',
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: AppSimpleStatCard(
-                      horizontal: false,
+                    child: AppStatCard(
                       icon: Icons.account_tree_outlined,
                       iconColor: const Color(0xFF4A3AFF),
-                      bgColor: const Color(0xFF4A3AFF).withValues(alpha: 0.06),
                       label: 'Subcategories',
                       value: '${c.totalSubCategories}',
                     ),
@@ -137,7 +137,12 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
               const SizedBox(height: 16),
 
               // ── List or Detail ────────────────────────────────
-              if (all.isEmpty)
+              if (loading)
+                const AppLoadingIndicator(
+                  label: 'Loading categories...',
+                  padding: 72,
+                )
+              else if (all.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 40),
                   child: Center(
@@ -388,7 +393,6 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
     );
   }
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Category list row

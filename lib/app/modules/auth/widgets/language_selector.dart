@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/theme/app_colors.dart';
-import '../controllers/login_controller.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/auth/controllers/login_controller.dart';
 
 class LanguageSelector extends GetView<LoginController> {
   const LanguageSelector({super.key});

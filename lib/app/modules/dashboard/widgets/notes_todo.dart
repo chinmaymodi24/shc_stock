@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../models/dashboard_models.dart';
-import '../../../core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/dashboard/models/dashboard_models.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 
 class NotesTodo extends StatefulWidget {
   final RxList<NoteItem> notes;

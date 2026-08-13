@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared chrome for the add/edit form pages (web + mobile).
@@ -54,7 +54,12 @@ class AppNumberedSectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(pad, mobile ? 12 : 16, pad, mobile ? 12 : 16),
+            padding: EdgeInsets.fromLTRB(
+              pad,
+              mobile ? 12 : 16,
+              pad,
+              mobile ? 12 : 16,
+            ),
             child: Row(
               children: [
                 Container(

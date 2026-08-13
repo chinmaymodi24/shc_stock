@@ -23,7 +23,7 @@ router.get('/', async (req, res, next) => {
 // POST /api/categories
 router.post('/', async (req, res, next) => {
   try {
-    const { name, description = '', imageUrl } = req.body;
+    const { name, description = '' } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'name is required' });
     }
@@ -32,7 +32,6 @@ router.post('/', async (req, res, next) => {
       data: {
         name: name.trim(),
         description: description.trim(),
-        imageUrl: imageUrl || null,
         sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
       },
       include: categoryInclude,
@@ -47,12 +46,11 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const { name, description = '', imageUrl } = req.body;
+    const { name, description = '' } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'name is required' });
     }
     const data = { name: name.trim(), description: description.trim() };
-    if (imageUrl !== undefined) data.imageUrl = imageUrl || null;
     const category = await prisma.category.update({
       where: { id },
       data,

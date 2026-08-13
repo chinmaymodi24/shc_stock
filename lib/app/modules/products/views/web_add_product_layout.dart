@@ -5,12 +5,12 @@ import 'package:get/get.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:cross_file/cross_file.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/utils/app_toast.dart';
-import '../../dashboard/widgets/web_sidebar.dart';
-import '../../dashboard/widgets/web_top_bar.dart';
-import '../../../routes/app_routes.dart';
-import '../controllers/add_product_form_controller.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/modules/products/controllers/add_product_form_controller.dart';
 
 // ── Dropdown options ─────────────────────────────────────────────────────────
 const _kCategories = [

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
-import '../widgets/login_form.dart';
-import '../widgets/warehouse_illustration.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/auth/widgets/login_form.dart';
+import 'package:shc_stock/app/modules/auth/widgets/warehouse_illustration.dart';
 
 class MobileLoginLayout extends StatelessWidget {
   const MobileLoginLayout({super.key});

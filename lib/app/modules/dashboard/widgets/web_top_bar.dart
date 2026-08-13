@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/theme_controller.dart';
-import '../../../core/utils/app_toast.dart';
-import '../../../routes/app_routes.dart';
-import '../../settings/controllers/settings_controller.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
+import 'package:shc_stock/app/core/theme/theme_controller.dart';
+import 'package:shc_stock/app/core/theme/theme_switch_helper.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
 
 // Pages (+ quick-add actions) offered as search suggestions in the header.
 // `enabled: false` entries match WebSidebar's "Coming Soon" modules.
@@ -114,8 +116,10 @@ const _searchSuggestions = <_SearchSuggestion>[
 // ─────────────────────────────────────────────────────────────────────────────
 class WebTopBar extends StatelessWidget {
   /// Initials shown in the avatar (defaults to the current user's).
-  final String initials;
-  const WebTopBar({super.key, this.initials = 'CM'});
+  final String? initials;
+
+  /// Defaults to the signed-in user's initials; pass a value to override.
+  const WebTopBar({super.key, this.initials});
 
   @override
   Widget build(BuildContext context) {
@@ -141,8 +145,8 @@ class WebTopBar extends StatelessWidget {
 // shared by every page's header (including pages with their own custom top
 // bar layout, e.g. Dashboard) so it's pixel-identical everywhere.
 class HeaderActionsCluster extends StatelessWidget {
-  final String initials;
-  const HeaderActionsCluster({super.key, this.initials = 'CM'});
+  final String? initials;
+  const HeaderActionsCluster({super.key, this.initials});
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +224,8 @@ class _HeaderSearchBoxState extends State<HeaderSearchBox> {
   bool _handleDoubleShift(KeyEvent event) {
     if (event is! KeyDownEvent) return false;
 
-    final isShift = event.logicalKey == LogicalKeyboardKey.shiftLeft ||
+    final isShift =
+        event.logicalKey == LogicalKeyboardKey.shiftLeft ||
         event.logicalKey == LogicalKeyboardKey.shiftRight;
     if (!isShift) {
       _lastShiftPressTime = null;
@@ -476,47 +481,97 @@ class _HeaderBellBtn extends StatelessWidget {
 }
 
 // Compact light/dark theme toggle pill (sun ↔ moon knob).
+// Sun icon — plain switch — moon icon, laid out side by side (icons are
+// flanking the track rather than riding inside the knob).
 class _HeaderThemeToggle extends StatelessWidget {
   const _HeaderThemeToggle();
+
+  // Exact values from the approved design (Secure Heat Care Dashboard.dc.html):
+  // switchTrackBg, sunColor/sunOpacity, moonColor/moonOpacity.
+  static const _trackDark = Color(0xFF2D1B8C);
+  static const _trackLight = Color(0xFFE4E2EE);
+  static const _sunColorDark = Color(0xFFF0B45C);
+  static const _sunColorLight = Color(0xFFA05A00);
+  static const _moonColorDark = Color(0xFFA78BFA);
+  static const _moonColorLight = Color(0xFF2D1B8C);
 
   @override
   Widget build(BuildContext context) {
     final tc = Get.find<ThemeController>();
-    final colors = context.appColors;
     return Obx(() {
       final isDark = tc.isDark;
-      final track = colors.background.computeLuminance() > 0.5
-          ? const Color(0xFFF1F2F4)
-          : colors.inputFill;
-      return InkWell(
-        onTap: () => tc.setTheme(isDark ? ThemeMode.light : ThemeMode.dark),
-        child: Container(
-          width: 62,
-          height: 32,
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: track,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: AnimatedAlign(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            alignment: isDark ? Alignment.centerRight : Alignment.centerLeft,
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryPurple,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isDark ? Icons.nightlight_round : Icons.wb_sunny_rounded,
-                size: 14,
-                color: AppColors.primaryOrange,
+      final track = isDark ? _trackDark : _trackLight;
+      final sunColor = isDark ? _sunColorDark : _sunColorLight;
+      final sunOpacity = isDark ? 0.85 : 1.0;
+      final moonColor = isDark ? _moonColorDark : _moonColorLight;
+      final moonOpacity = isDark ? 1.0 : 0.35;
+
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: () => switchThemeWithRipple(context, ThemeMode.light),
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: Opacity(
+                opacity: sunOpacity,
+                child: Icon(Icons.wb_sunny_rounded, size: 17, color: sunColor),
               ),
             ),
           ),
-        ),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () => switchThemeWithRipple(
+              context,
+              isDark ? ThemeMode.light : ThemeMode.dark,
+            ),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: 44,
+              height: 26,
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: track,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: AnimatedAlign(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                alignment: isDark
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.25),
+                        blurRadius: 3,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () => switchThemeWithRipple(context, ThemeMode.dark),
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: Opacity(
+                opacity: moonOpacity,
+                child: Icon(Icons.nightlight_round, size: 17, color: moonColor),
+              ),
+            ),
+          ),
+        ],
       );
     });
   }
@@ -525,7 +580,7 @@ class _HeaderThemeToggle extends StatelessWidget {
 // Current-user avatar — filled navy circle with initials. Tap opens the
 // profile card (name/role, My Settings, Appearance, Sign Out).
 class _HeaderAvatar extends StatelessWidget {
-  final String initials;
+  final String? initials;
   const _HeaderAvatar({required this.initials});
 
   @override
@@ -540,7 +595,7 @@ class _HeaderAvatar extends StatelessWidget {
         ),
         child: Center(
           child: Text(
-            initials,
+            initials ?? _sessionInitials(),
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -560,12 +615,8 @@ class _HeaderAvatar extends StatelessWidget {
 // (e.g. Dashboard) so the profile menu behaves identically everywhere.
 class ProfileAvatarMenu extends StatefulWidget {
   final Widget trigger;
-  final String initials;
-  const ProfileAvatarMenu({
-    super.key,
-    required this.trigger,
-    this.initials = 'CM',
-  });
+  final String? initials;
+  const ProfileAvatarMenu({super.key, required this.trigger, this.initials});
 
   @override
   State<ProfileAvatarMenu> createState() => _ProfileAvatarMenuState();
@@ -620,7 +671,7 @@ class _ProfileAvatarMenuState extends State<ProfileAvatarMenu> {
                               ),
                               child: Center(
                                 child: Text(
-                                  widget.initials,
+                                  widget.initials ?? _sessionInitials(),
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
@@ -632,7 +683,8 @@ class _ProfileAvatarMenuState extends State<ProfileAvatarMenu> {
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              'Chinmay Modi',
+                              Get.find<SessionController>().user.value?.name ??
+                                  'Signed out',
                               style: TextStyle(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w700,
@@ -641,9 +693,10 @@ class _ProfileAvatarMenuState extends State<ProfileAvatarMenu> {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            const Text(
-                              'Admin',
-                              style: TextStyle(
+                            Text(
+                              Get.find<SessionController>().user.value?.role ??
+                                  '',
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.primaryOrange,
@@ -847,7 +900,9 @@ class _SignOutDialog extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF8F2),
+                      // Orange tint derived from the accent instead of a fixed
+                      // cream — a hardcoded light hex stayed white in dark mode.
+                      color: AppColors.primaryOrange.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: AppColors.primaryOrange.withValues(alpha: 0.2),
@@ -942,4 +997,11 @@ class _SignOutDialog extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Initials of the signed-in user, or '—' when signed out. Used as the default
+/// for the header avatar so it always reflects the real account.
+String _sessionInitials() {
+  if (!Get.isRegistered<SessionController>()) return '—';
+  return Get.find<SessionController>().user.value?.initials ?? '—';
 }

@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
-import '../controllers/sales_controller.dart';
-import '../models/sales_model.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/filter_bar.dart';
-import '../../dashboard/widgets/web_sidebar.dart';
-import '../../dashboard/widgets/web_top_bar.dart';
-import '../../../routes/app_routes.dart';
-import '../../../shared/widgets/stat_cards.dart';
-import '../../../shared/widgets/table_footer.dart';
+import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
+import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
+import 'package:shc_stock/app/modules/sales/views/sale_details_dialog.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
+import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/table_footer.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/shared/widgets/status_update_dialog_shell.dart';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // TABLE COLUMN CONSTANTS — used by BOTH _TableHeader and _SalesRow
@@ -146,155 +150,68 @@ class WebSalesLayout extends GetView<SalesController> {
                               children: [
                                 Expanded(
                                   child: AppStatCard(
-                    padding: 16,
-                    iconBoxSize: 36,
-                    iconBoxRadius: 9,
-                    iconSize: 18,
-                    labelFontSize: 11,
-                    valueFontSize: 24,
-                    smallValueFontSize: 16,
-                    gapIconToLabel: 10,
-                    gapLabelToValue: 3,
-                    gapValueToTrend: 5,
-                    sparkWidth: 56,
-                    sparkHeight: 44,
-                    shadowAlpha: 0.05,
-                    shadowBlur: 3,
-                    shadowOffset: const Offset(0, 1),
-                    captionFontSize: 10,
-                    sparkStrokeWidth: 1.8,
-                    sparkStrokeJoin: StrokeJoin.miter,
                                     label: 'Total Sales (MTD)',
-                                    value: '₹ 24,85,600',
+                                    value: formatRupees(
+                                      c.stats.value.doubleOf('salesMTD'),
+                                    ),
                                     icon: Icons.shopping_cart_outlined,
                                     iconColor: AppColors.primaryOrange,
-                                    trend: '+18.6%',
-                                    trendUp: true,
-                                    spark: const [
-                                      0.2,
-                                      0.4,
-                                      0.5,
-                                      0.6,
-                                      0.5,
-                                      0.7,
-                                      0.8,
-                                    ],
+                                    trend: c.stats.value.trendLabel('salesMTD'),
+                                    trendUp: c.stats.value.trendUp('salesMTD'),
+                                    showCaption: false,
                                     smallValue: true,
                                   ),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: AppStatCard(
-                    padding: 16,
-                    iconBoxSize: 36,
-                    iconBoxRadius: 9,
-                    iconSize: 18,
-                    labelFontSize: 11,
-                    valueFontSize: 24,
-                    smallValueFontSize: 16,
-                    gapIconToLabel: 10,
-                    gapLabelToValue: 3,
-                    gapValueToTrend: 5,
-                    sparkWidth: 56,
-                    sparkHeight: 44,
-                    shadowAlpha: 0.05,
-                    shadowBlur: 3,
-                    shadowOffset: const Offset(0, 1),
-                    captionFontSize: 10,
-                    sparkStrokeWidth: 1.8,
-                    sparkStrokeJoin: StrokeJoin.miter,
                                     label: 'Total Sales Orders',
-                                    value: '${c.totalOrders}',
+                                    value:
+                                        '${c.stats.value.intOf('totalOrders')}',
                                     icon: Icons.receipt_long_outlined,
                                     iconColor: const Color(0xFF4A3AFF),
-                                    trend: '+12.5%',
-                                    trendUp: true,
-                                    spark: const [
-                                      0.3,
-                                      0.5,
-                                      0.4,
-                                      0.6,
-                                      0.5,
-                                      0.7,
-                                      0.65,
-                                    ],
+                                    trend: c.stats.value.trendLabel(
+                                      'totalOrders',
+                                    ),
+                                    trendUp: c.stats.value.trendUp(
+                                      'totalOrders',
+                                    ),
+                                    showCaption: false,
                                   ),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: AppStatCard(
-                    padding: 16,
-                    iconBoxSize: 36,
-                    iconBoxRadius: 9,
-                    iconSize: 18,
-                    labelFontSize: 11,
-                    valueFontSize: 24,
-                    smallValueFontSize: 16,
-                    gapIconToLabel: 10,
-                    gapLabelToValue: 3,
-                    gapValueToTrend: 5,
-                    sparkWidth: 56,
-                    sparkHeight: 44,
-                    shadowAlpha: 0.05,
-                    shadowBlur: 3,
-                    shadowOffset: const Offset(0, 1),
-                    captionFontSize: 10,
-                    sparkStrokeWidth: 1.8,
-                    sparkStrokeJoin: StrokeJoin.miter,
                                     label: 'Total Amount Due',
-                                    value: '₹ 3,25,400',
+                                    value: formatRupees(
+                                      c.stats.value.doubleOf('amountDue'),
+                                    ),
                                     icon: Icons.currency_rupee_rounded,
                                     iconColor: const Color(0xFFF59E0B),
-                                    trend: '-8.3%',
-                                    trendUp: false,
-                                    spark: const [
-                                      0.7,
-                                      0.6,
-                                      0.55,
-                                      0.5,
-                                      0.4,
-                                      0.45,
-                                      0.35,
-                                    ],
+                                    trend: c.stats.value.trendLabel(
+                                      'amountDue',
+                                    ),
+                                    trendUp: c.stats.value.trendUp('amountDue'),
+                                    showCaption: false,
                                     smallValue: true,
                                   ),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: AppStatCard(
-                    padding: 16,
-                    iconBoxSize: 36,
-                    iconBoxRadius: 9,
-                    iconSize: 18,
-                    labelFontSize: 11,
-                    valueFontSize: 24,
-                    smallValueFontSize: 16,
-                    gapIconToLabel: 10,
-                    gapLabelToValue: 3,
-                    gapValueToTrend: 5,
-                    sparkWidth: 56,
-                    sparkHeight: 44,
-                    shadowAlpha: 0.05,
-                    shadowBlur: 3,
-                    shadowOffset: const Offset(0, 1),
-                    captionFontSize: 10,
-                    sparkStrokeWidth: 1.8,
-                    sparkStrokeJoin: StrokeJoin.miter,
                                     label: 'Total Received (MTD)',
-                                    value: '₹ 21,60,200',
+                                    value: formatRupees(
+                                      c.stats.value.doubleOf('receivedMTD'),
+                                    ),
                                     icon: Icons.check_circle_outline_rounded,
                                     iconColor: const Color(0xFF22C55E),
-                                    trend: '+15.2%',
-                                    trendUp: true,
-                                    spark: const [
-                                      0.25,
-                                      0.4,
-                                      0.5,
-                                      0.55,
-                                      0.6,
-                                      0.7,
-                                      0.75,
-                                    ],
+                                    trend: c.stats.value.trendLabel(
+                                      'receivedMTD',
+                                    ),
+                                    trendUp: c.stats.value.trendUp(
+                                      'receivedMTD',
+                                    ),
+                                    showCaption: false,
                                     smallValue: true,
                                   ),
                                 ),
@@ -431,17 +348,28 @@ class _TableCard extends StatelessWidget {
           Divider(height: 1, color: colors.divider),
 
           // Rows
-          if (pageItems.isEmpty)
-            _EmptyState(colors: colors)
-          else
-            ...pageItems.asMap().entries.map(
-              (e) => _SalesRow(
-                order: e.value,
-                displayIndex: startIdx + e.key + 1,
-                colors: colors,
-                isLast: isLast(e.key),
-              ),
-            ),
+          Obx(() {
+            if (Get.find<SalesController>().isLoading.value) {
+              return const AppLoadingIndicator(
+                label: 'Loading sales orders...',
+              );
+            }
+            if (pageItems.isEmpty) return _EmptyState(colors: colors);
+            return Column(
+              children: pageItems
+                  .asMap()
+                  .entries
+                  .map(
+                    (e) => _SalesRow(
+                      order: e.value,
+                      displayIndex: startIdx + e.key + 1,
+                      colors: colors,
+                      isLast: isLast(e.key),
+                    ),
+                  )
+                  .toList(),
+            );
+          }),
 
           // Footer
           Divider(height: 1, color: colors.divider),
@@ -944,14 +872,26 @@ class _SalesRowState extends State<_SalesRow> {
                         icon: Icons.remove_red_eye_outlined,
                         color: const Color(0xFF4A3AFF),
                         bg: const Color(0xFF4A3AFF),
-                        onTap: () {},
+                        onTap: () => Get.dialog(
+                          SaleDetailsDialog(
+                            order: widget.order,
+                            onDelete: () {
+                              Get.back();
+                              Get.find<SalesController>().deleteOrder(
+                                widget.order.id,
+                              );
+                            },
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 6),
                       _ActionBtn(
                         icon: Icons.more_vert_rounded,
                         color: c.textSecondary,
                         bg: c.iconBgPurple,
-                        onTap: () {},
+                        onTap: () => Get.dialog(
+                          _UpdateSalesStatusDialog(order: widget.order),
+                        ),
                       ),
                     ],
                   ),
@@ -1025,6 +965,64 @@ class _ActionBtn extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Update Status Dialog — the row's "⋮" action, wired to
+// SalesController.updateStatus (PATCH /sales-orders/:id/status).
+// ─────────────────────────────────────────────────────────────────────────────
+class _UpdateSalesStatusDialog extends StatefulWidget {
+  final SalesOrder order;
+  const _UpdateSalesStatusDialog({required this.order});
+
+  @override
+  State<_UpdateSalesStatusDialog> createState() =>
+      _UpdateSalesStatusDialogState();
+}
+
+class _UpdateSalesStatusDialogState extends State<_UpdateSalesStatusDialog> {
+  late final Rx<SalesStatus> _status = widget.order.status.obs;
+  late final Rx<PaymentStatus> _payment = widget.order.paymentStatus.obs;
+
+  @override
+  void dispose() {
+    _status.close();
+    _payment.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StatusUpdateDialogShell(
+      title: 'Update Status',
+      subtitle: widget.order.soNumber,
+      width: 360,
+      onSave: () => Get.find<SalesController>().updateStatus(
+        widget.order.id,
+        status: _status.value,
+        paymentStatus: _payment.value,
+      ),
+      body: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          StatusRadioGroup<SalesStatus>(
+            label: 'Order Status',
+            options: SalesStatus.values,
+            selected: _status,
+            labelOf: (s) => s.label,
+          ),
+          const SizedBox(height: 10),
+          StatusRadioGroup<PaymentStatus>(
+            label: 'Payment Status',
+            options: PaymentStatus.values,
+            selected: _payment,
+            labelOf: (p) => p.label,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _EmptyState extends StatelessWidget {
   final AppThemeColors colors;
   const _EmptyState({required this.colors});
@@ -1075,27 +1073,35 @@ class _SalesSummaryCard extends StatelessWidget {
         children: [
           _SummaryRow(
             label: 'Total Sales Orders',
-            value: '${controller.totalOrders}',
+            value: '${controller.stats.value.intOf('totalOrders')}',
             colors: colors,
           ),
           const SizedBox(height: 10),
           _SummaryRow(
             label: 'Total Sales Amount',
-            value: '₹ 24,85,600',
+            value: formatRupees(controller.stats.value.doubleOf('totalSales')),
             colors: colors,
           ),
           const SizedBox(height: 10),
           _SummaryRow(
             label: 'Total Received',
-            value: '₹ 21,60,200',
+            value: formatRupees(
+              controller.stats.value.doubleOf('totalReceived'),
+            ),
             colors: colors,
           ),
           const SizedBox(height: 10),
-          _SummaryRow(label: 'Total Due', value: '₹ 3,25,400', colors: colors),
+          _SummaryRow(
+            label: 'Total Due',
+            value: formatRupees(controller.stats.value.doubleOf('amountDue')),
+            colors: colors,
+          ),
           const SizedBox(height: 10),
           _SummaryRow(
             label: 'Average Order Value',
-            value: '₹ 15,932',
+            value: formatRupees(
+              controller.stats.value.doubleOf('avgOrderValue'),
+            ),
             colors: colors,
           ),
         ],
@@ -1350,19 +1356,23 @@ class _PanelCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // The title flexes so a long one plus an action button can't
+          // overflow the 272px side panel.
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
+                    fontFamily: 'Poppins',
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (action != null) action!,
+              if (action != null) ...[const SizedBox(width: 8), action!],
             ],
           ),
           const SizedBox(height: 14),

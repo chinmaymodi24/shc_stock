@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/purchase_controller.dart';
-import '../controllers/mobile_add_purchase_controller.dart';
-import '../models/purchase_model.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../products/controllers/products_controller.dart';
-import '../../products/models/product_model.dart';
-import '../../clients/models/client_model.dart';
-import '../../clients/widgets/client_autocomplete_field.dart';
-import '../../../shared/widgets/form_fields.dart';
-import '../../../shared/widgets/section_card.dart';
-import '../../../core/utils/app_toast.dart';
+import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
+import 'package:shc_stock/app/modules/purchase/controllers/mobile_add_purchase_controller.dart';
+import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
+import 'package:shc_stock/app/modules/products/models/product_model.dart';
+import 'package:shc_stock/app/modules/clients/models/client_model.dart';
+import 'package:shc_stock/app/modules/clients/widgets/client_autocomplete_field.dart';
+import 'package:shc_stock/app/shared/widgets/form_fields.dart';
+import 'package:shc_stock/app/shared/widgets/section_card.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Add Purchase — mobile, stacked tax-invoice style entry form
@@ -20,7 +20,7 @@ import '../../../core/utils/app_toast.dart';
 class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
   const MobileAddPurchaseLayout({super.key});
 
-  void _savePurchase() {
+  Future<void> _savePurchase() async {
     final c = Get.find<PurchaseController>();
     final newId = 'po_${DateTime.now().millisecondsSinceEpoch}';
     final newPoNum =
@@ -28,7 +28,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
     final supplierName = controller.client.value.isEmpty
         ? 'Unknown Supplier'
         : controller.client.value;
-    c.addOrder(
+    final ok = await c.addOrder(
       PurchaseOrder(
         id: newId,
         poNumber: newPoNum,
@@ -40,8 +40,25 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
         itemCount: controller.items.length,
         amount: controller.grandTotal,
         status: PurchaseStatus.pending,
+        // Items carry the productId, which is what makes the backend add the
+        // received quantity into inventory.
+        items: controller.items
+            .map(
+              (r) => PurchaseDetailItem(
+                productId: r.productId,
+                product: r.product,
+                hsn: r.hsn,
+                grade: r.grade,
+                density: r.density,
+                qty: r.totalQty,
+                unit: r.uom,
+                rate: r.netPrice,
+              ),
+            )
+            .toList(),
       ),
     );
+    if (!ok) return; // controller already showed the error toast
     Get.back();
     showAppToast(
       '✅ Purchase Saved',
@@ -103,7 +120,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
 
               // ── Section 1: Consignee, Buyer & Invoice ──
               AppNumberedSectionCard(
-            mobile: true,
+                mobile: true,
                 colors: colors,
                 number: 1,
                 title: 'Consignee, Buyer & Invoice',
@@ -111,7 +128,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                   () => Column(
                     children: [
                       AppField(
-            mobile: true,
+                        mobile: true,
                         label: 'Name & Address of Consignee',
                         colors: colors,
                         child: AppTextBox(
@@ -122,7 +139,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                       ),
                       const SizedBox(height: 14),
                       AppField(
-            mobile: true,
+                        mobile: true,
                         label: 'Buyer GST No.',
                         colors: colors,
                         child: AppTextBox(
@@ -133,7 +150,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                       ),
                       const SizedBox(height: 14),
                       AppField(
-            mobile: true,
+                        mobile: true,
                         label: 'Client',
                         colors: colors,
                         child: ClientAutocompleteField(
@@ -150,7 +167,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                         children: [
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'Invoice No.',
                               colors: colors,
                               child: AppTextBox(
@@ -163,11 +180,11 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'Invoice Date',
                               colors: colors,
                               child: AppDateBox(
-            mobile: true,
+                                mobile: true,
                                 date: controller.invoiceDate.value,
                                 colors: colors,
                                 onTap: () => controller.pickDate(
@@ -185,7 +202,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                         children: [
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'P.O. No.',
                               colors: colors,
                               child: AppTextBox(
@@ -198,11 +215,11 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'P.O. Dt.',
                               colors: colors,
                               child: AppDateBox(
-            mobile: true,
+                                mobile: true,
                                 date: controller.poDate.value,
                                 colors: colors,
                                 onTap: () => controller.pickDate(
@@ -216,11 +233,11 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                       ),
                       const SizedBox(height: 14),
                       AppField(
-            mobile: true,
+                        mobile: true,
                         label: 'Despatch Through',
                         colors: colors,
                         child: AppDropBox(
-            mobile: true,
+                          mobile: true,
                           hint: 'Select mode',
                           value: controller.despatchThrough.value,
                           items: const [
@@ -240,7 +257,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                         children: [
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'L.R. No & Dt.',
                               colors: colors,
                               child: AppTextBox(
@@ -253,7 +270,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'Vehicle No.',
                               colors: colors,
                               child: AppTextBox(
@@ -271,7 +288,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                         children: [
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'Freight',
                               colors: colors,
                               child: AppTextBox(
@@ -284,11 +301,11 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'Due Date',
                               colors: colors,
                               child: AppDateBox(
-            mobile: true,
+                                mobile: true,
                                 date: controller.dueDate.value,
                                 colors: colors,
                                 onTap: () => controller.pickDate(
@@ -302,7 +319,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                       ),
                       const SizedBox(height: 14),
                       AppField(
-            mobile: true,
+                        mobile: true,
                         label: 'Place of Supply',
                         colors: colors,
                         child: AppTextBox(
@@ -319,12 +336,12 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
 
               // ── Section 2: Item Details ──────────
               AppNumberedSectionCard(
-            mobile: true,
+                mobile: true,
                 colors: colors,
                 number: 2,
                 title: 'Item Details',
                 trailing: AppAddRowPill(
-            mobile: true,
+                  mobile: true,
                   colors: colors,
                   label: 'Add',
                   onTap: controller.addItemRow,
@@ -336,6 +353,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                         .entries
                         .map(
                           (e) => _MobileItemCard(
+                            key: ValueKey(e.value.id),
                             index: e.key,
                             row: e.value,
                             colors: colors,
@@ -352,7 +370,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
 
               // ── Section 3: GST & Totals ───────────
               AppNumberedSectionCard(
-            mobile: true,
+                mobile: true,
                 colors: colors,
                 number: 3,
                 title: 'GST & Totals',
@@ -492,6 +510,7 @@ class _MobileItemCard extends StatelessWidget {
   final VoidCallback onDelete;
 
   const _MobileItemCard({
+    super.key,
     required this.index,
     required this.row,
     required this.colors,
@@ -501,6 +520,7 @@ class _MobileItemCard extends StatelessWidget {
   });
 
   void _applyProduct(ProductModel p) {
+    row.productId = int.tryParse(p.id);
     row.product = p.name;
     row.hsn = p.hsnCode ?? '';
     row.uom = p.unit;
@@ -513,6 +533,7 @@ class _MobileItemCard extends StatelessWidget {
     }
     final g = _gradeNum.firstMatch(p.name);
     if (g != null) row.grade = g.group(1)!;
+    row.version++;
     onChanged();
   }
 
@@ -565,7 +586,8 @@ class _MobileItemCard extends StatelessWidget {
             children: [
               Expanded(
                 child: AppSmallInput(
-            mobile: true,
+                  key: ValueKey('${row.id}_hsn_${row.version}'),
+                  mobile: true,
                   hint: 'HSN',
                   value: row.hsn,
                   colors: colors,
@@ -579,7 +601,8 @@ class _MobileItemCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: AppSmallInput(
-            mobile: true,
+                  key: ValueKey('${row.id}_grade_${row.version}'),
+                  mobile: true,
                   hint: 'Grade',
                   value: row.grade,
                   colors: colors,
@@ -593,7 +616,8 @@ class _MobileItemCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: AppSmallInput(
-            mobile: true,
+                  key: ValueKey('${row.id}_density_${row.version}'),
+                  mobile: true,
                   hint: 'Density',
                   value: row.density,
                   colors: colors,
@@ -611,7 +635,7 @@ class _MobileItemCard extends StatelessWidget {
             children: [
               Expanded(
                 child: AppSmallNumber(
-            mobile: true,
+                  mobile: true,
                   hint: 'No. Pkg',
                   value: row.noPkg,
                   colors: colors,
@@ -624,7 +648,7 @@ class _MobileItemCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: AppSmallNumber(
-            mobile: true,
+                  mobile: true,
                   hint: 'Cont/Pkg',
                   value: row.avgContPerPkg,
                   colors: colors,
@@ -665,7 +689,8 @@ class _MobileItemCard extends StatelessWidget {
             children: [
               Expanded(
                 child: AppSmallInput(
-            mobile: true,
+                  key: ValueKey('${row.id}_uom_${row.version}'),
+                  mobile: true,
                   hint: 'UoM',
                   value: row.uom,
                   colors: colors,
@@ -679,7 +704,8 @@ class _MobileItemCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: AppSmallNumber(
-            mobile: true,
+                  key: ValueKey('${row.id}_netPrice_${row.version}'),
+                  mobile: true,
                   hint: 'Net Price',
                   value: row.netPrice,
                   colors: colors,

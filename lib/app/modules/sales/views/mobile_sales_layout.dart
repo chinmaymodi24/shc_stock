@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/sales_controller.dart';
-import '../models/sales_model.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../dashboard/widgets/app_drawer.dart';
-import '../../../routes/app_routes.dart';
+import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
+import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 
 class MobileSalesLayout extends GetView<SalesController> {
   const MobileSalesLayout({super.key});
@@ -87,28 +89,30 @@ class MobileSalesLayout extends GetView<SalesController> {
                   children: [
                     _MiniStat(
                       label: 'Total Sales',
-                      value: '₹ 24,85,600',
+                      value: formatRupees(c.stats.value.doubleOf('salesMTD')),
                       icon: Icons.shopping_cart_outlined,
                       color: AppColors.primaryOrange,
                     ),
                     const SizedBox(width: 10),
                     _MiniStat(
                       label: 'Orders',
-                      value: '${c.totalOrders}',
+                      value: '${c.stats.value.intOf('totalOrders')}',
                       icon: Icons.receipt_long_outlined,
                       color: const Color(0xFF4A3AFF),
                     ),
                     const SizedBox(width: 10),
                     _MiniStat(
                       label: 'Amount Due',
-                      value: '₹ 3,25,400',
+                      value: formatRupees(c.stats.value.doubleOf('amountDue')),
                       icon: Icons.currency_rupee_rounded,
                       color: const Color(0xFFF59E0B),
                     ),
                     const SizedBox(width: 10),
                     _MiniStat(
                       label: 'Received',
-                      value: '₹ 21,60,200',
+                      value: formatRupees(
+                        c.stats.value.doubleOf('receivedMTD'),
+                      ),
                       icon: Icons.check_circle_outline_rounded,
                       color: const Color(0xFF22C55E),
                     ),
@@ -147,7 +151,9 @@ class MobileSalesLayout extends GetView<SalesController> {
 
             // ── Order cards ───────────────────────────────────────
             Expanded(
-              child: filtered.isEmpty
+              child: c.isLoading.value
+                  ? const AppLoadingIndicator(label: 'Loading sales orders...')
+                  : filtered.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,

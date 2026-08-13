@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../models/user_model.dart';
+import 'package:shc_stock/app/core/api/api_client.dart';
+import 'package:shc_stock/app/core/api/stats_snapshot.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/modules/users/models/user_model.dart';
 
 class UsersController extends GetxController {
+  final _api = ApiClient.instance;
+
   final RxList<UserModel> users = <UserModel>[].obs;
+  final RxBool isLoading = false.obs;
+
+  /// Summary cards — values and trends from GET /api/stats/users.
+  final stats = StatsSnapshot.empty.obs;
+  final RxList<RoleCount> roleCounts = <RoleCount>[].obs;
   final searchCtrl = TextEditingController();
   final RxString searchQuery = ''.obs;
   final RxString filterRole = 'All Roles'.obs;
@@ -24,236 +34,133 @@ class UsersController extends GetxController {
     currentPage.value = 1;
   }
 
-  // ── Palette ───────────────────────────────────────────────────────────────
-  static const _colors = [
-    Color(0xFFF47B20),
-    Color(0xFF4A3AFF),
-    Color(0xFF22C55E),
-    Color(0xFF0EA5E9),
-    Color(0xFFF59E0B),
-    Color(0xFFEF4444),
-    Color(0xFF8B5CF6),
-    Color(0xFF14B8A6),
-    Color(0xFFEC4899),
-    Color(0xFF6366F1),
-  ];
-
-  // ── Seed data (users created by Admin) ────────────────────────────────────
-  static final _seed = [
-    UserModel(
-      id: '1',
-      code: 'USR-0001',
-      name: 'Chinmay Modi',
-      initials: 'CM',
-      badgeColor: _colors[0],
-      email: 'chinmay@shc.com',
-      phone: '+91 98765 00001',
-      role: UserRole.admin,
-      isActive: true,
-      lastLogin: '05 Jul 2026, 10:32 AM',
-      createdAt: '01 Jan 2026',
-    ),
-    UserModel(
-      id: '2',
-      code: 'USR-0002',
-      name: 'Ravi Sharma',
-      initials: 'RS',
-      badgeColor: _colors[1],
-      email: 'ravi@shc.com',
-      phone: '+91 98765 00002',
-      role: UserRole.manager,
-      isActive: true,
-      lastLogin: '05 Jul 2026, 09:15 AM',
-      createdAt: '03 Jan 2026',
-    ),
-    UserModel(
-      id: '3',
-      code: 'USR-0003',
-      name: 'Priya Patel',
-      initials: 'PP',
-      badgeColor: _colors[2],
-      email: 'priya@shc.com',
-      phone: '+91 98765 00003',
-      role: UserRole.salesman,
-      isActive: true,
-      lastLogin: '04 Jul 2026, 06:48 PM',
-      createdAt: '05 Jan 2026',
-    ),
-    UserModel(
-      id: '4',
-      code: 'USR-0004',
-      name: 'Amit Verma',
-      initials: 'AV',
-      badgeColor: _colors[3],
-      email: 'amit@shc.com',
-      phone: '+91 98765 00004',
-      role: UserRole.stockManager,
-      isActive: true,
-      lastLogin: '05 Jul 2026, 08:00 AM',
-      createdAt: '07 Jan 2026',
-    ),
-    UserModel(
-      id: '5',
-      code: 'USR-0005',
-      name: 'Sneha Gupta',
-      initials: 'SG',
-      badgeColor: _colors[4],
-      email: 'sneha@shc.com',
-      phone: '+91 98765 00005',
-      role: UserRole.accountant,
-      isActive: true,
-      lastLogin: '03 Jul 2026, 11:20 AM',
-      createdAt: '10 Jan 2026',
-    ),
-    UserModel(
-      id: '6',
-      code: 'USR-0006',
-      name: 'Vijay Joshi',
-      initials: 'VJ',
-      badgeColor: _colors[5],
-      email: 'vijay@shc.com',
-      phone: '+91 98765 00006',
-      role: UserRole.salesman,
-      isActive: true,
-      lastLogin: '05 Jul 2026, 07:55 AM',
-      createdAt: '12 Jan 2026',
-    ),
-    UserModel(
-      id: '7',
-      code: 'USR-0007',
-      name: 'Neha Iyer',
-      initials: 'NI',
-      badgeColor: _colors[6],
-      email: 'neha@shc.com',
-      phone: '+91 98765 00007',
-      role: UserRole.salesman,
-      isActive: false,
-      lastLogin: '20 Jun 2026, 03:10 PM',
-      createdAt: '15 Jan 2026',
-    ),
-    UserModel(
-      id: '8',
-      code: 'USR-0008',
-      name: 'Kiran Mehta',
-      initials: 'KM',
-      badgeColor: _colors[7],
-      email: 'kiran@shc.com',
-      phone: '+91 98765 00008',
-      role: UserRole.manager,
-      isActive: true,
-      lastLogin: '04 Jul 2026, 05:30 PM',
-      createdAt: '18 Jan 2026',
-    ),
-    UserModel(
-      id: '9',
-      code: 'USR-0009',
-      name: 'Suresh Kumar',
-      initials: 'SK',
-      badgeColor: _colors[8],
-      email: 'suresh@shc.com',
-      phone: '+91 98765 00009',
-      role: UserRole.stockManager,
-      isActive: true,
-      lastLogin: '05 Jul 2026, 08:45 AM',
-      createdAt: '20 Jan 2026',
-    ),
-    UserModel(
-      id: '10',
-      code: 'USR-0010',
-      name: 'Deepa Nair',
-      initials: 'DN',
-      badgeColor: _colors[9],
-      email: 'deepa@shc.com',
-      phone: '+91 98765 00010',
-      role: UserRole.accountant,
-      isActive: false,
-      lastLogin: '01 Jul 2026, 01:00 PM',
-      createdAt: '22 Jan 2026',
-    ),
-    UserModel(
-      id: '11',
-      code: 'USR-0011',
-      name: 'Rajesh Kapoor',
-      initials: 'RK',
-      badgeColor: _colors[0],
-      email: 'rajesh@shc.com',
-      phone: '+91 98765 00011',
-      role: UserRole.salesman,
-      isActive: true,
-      lastLogin: '05 Jul 2026, 10:05 AM',
-      createdAt: '25 Jan 2026',
-    ),
-    UserModel(
-      id: '12',
-      code: 'USR-0012',
-      name: 'Anita Singh',
-      initials: 'AS',
-      badgeColor: _colors[1],
-      email: 'anita@shc.com',
-      phone: '+91 98765 00012',
-      role: UserRole.salesman,
-      isActive: true,
-      lastLogin: '04 Jul 2026, 04:20 PM',
-      createdAt: '28 Jan 2026',
-    ),
-    UserModel(
-      id: '13',
-      code: 'USR-0013',
-      name: 'Manoj Patil',
-      initials: 'MP',
-      badgeColor: _colors[2],
-      email: 'manoj@shc.com',
-      phone: '+91 98765 00013',
-      role: UserRole.stockManager,
-      isActive: true,
-      lastLogin: '03 Jul 2026, 09:00 AM',
-      createdAt: '01 Feb 2026',
-    ),
-    UserModel(
-      id: '14',
-      code: 'USR-0014',
-      name: 'Lakshmi Rao',
-      initials: 'LR',
-      badgeColor: _colors[3],
-      email: 'lakshmi@shc.com',
-      phone: '+91 98765 00014',
-      role: UserRole.accountant,
-      isActive: true,
-      lastLogin: '02 Jul 2026, 02:15 PM',
-      createdAt: '05 Feb 2026',
-    ),
-    UserModel(
-      id: '15',
-      code: 'USR-0015',
-      name: 'Ganesh Iyer',
-      initials: 'GI',
-      badgeColor: _colors[4],
-      email: 'ganesh@shc.com',
-      phone: '+91 98765 00015',
-      role: UserRole.salesman,
-      isActive: false,
-      lastLogin: '15 Jun 2026, 11:00 AM',
-      createdAt: '10 Feb 2026',
-    ),
-  ];
-
+  // ── RETIRED: badge palette + static seed ──────────────────────────────
+  // The old 10-color palette and 15-employee seed list are archived in
+  // static_data.txt at the project root. Employees now come from
+  // GET /api/users, and badge colors are derived from the employee name.
+  // ───────────────────────────────────────────────────────────────────────
   @override
   void onInit() {
     super.onInit();
-    users.addAll(_seed);
+    // Fetch-once: registered permanent, so re-entering the Employee route
+    // reuses the loaded list instead of refetching.
+    fetchUsers();
+    fetchStats();
   }
 
-  // ── Computed stats ────────────────────────────────────────────────────────
-  int get totalUsers => users.length;
-  int get activeUsers => users.where((u) => u.isActive).length;
-  int get inactiveUsers => users.where((u) => !u.isActive).length;
-  int get adminCount => users.where((u) => u.role == UserRole.admin).length;
+  void _showError(String message) {
+    showAppToast(
+      'Error',
+      message,
+      backgroundColor: const Color(0xFFEF4444),
+      colorText: Colors.white,
+    );
+  }
 
-  /// Count of users per role
+  // ── Fetch ─────────────────────────────────────────────────────────────────
+  Future<void> fetchUsers() async {
+    isLoading.value = true;
+    try {
+      final data = await _api.get('/users') as List<dynamic>;
+      users.assignAll(
+        data.map((e) => UserModel.fromJson(e as Map<String, dynamic>)),
+      );
+      _clampPage();
+    } catch (e) {
+      _showError('Failed to load employees. Is the backend running?');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> fetchStats() async {
+    try {
+      final json = await _api.get('/stats/users') as Map<String, dynamic>;
+      stats.value = StatsSnapshot.fromJson(json);
+      roleCounts.assignAll(
+        ((json['roleBreakdown'] as List?) ?? []).map(
+          (e) => RoleCount.fromJson(e as Map<String, dynamic>),
+        ),
+      );
+    } catch (e) {
+      // Cards fall back to zeros; the list fetch already reported any outage.
+    }
+  }
+
+  // ── CRUD ──────────────────────────────────────────────────────────────────
+
+  /// Creates an employee. The backend assigns the USR-#### code and hashes a
+  /// starter password. Returns the saved row, or null on failure.
+  Future<UserModel?> addUser(Map<String, dynamic> body) async {
+    try {
+      final json = await _api.post('/users', body);
+      final created = UserModel.fromJson(json as Map<String, dynamic>);
+      users.add(created);
+      await fetchStats();
+      return created;
+    } catch (e) {
+      _showError(e is ApiException ? e.message : 'Failed to add employee.');
+      return null;
+    }
+  }
+
+  Future<UserModel?> updateUser(String id, Map<String, dynamic> body) async {
+    try {
+      final json = await _api.put('/users/$id', body);
+      final updated = UserModel.fromJson(json as Map<String, dynamic>);
+      final idx = users.indexWhere((u) => u.id == id);
+      if (idx != -1) users[idx] = updated;
+      await fetchStats();
+      return updated;
+    } catch (e) {
+      _showError(e is ApiException ? e.message : 'Failed to update employee.');
+      return null;
+    }
+  }
+
+  /// Activate / deactivate without touching anything else.
+  Future<void> setActive(String id, bool isActive) async {
+    try {
+      final json = await _api.patch('/users/$id/status', {
+        'isActive': isActive,
+      });
+      final updated = UserModel.fromJson(json as Map<String, dynamic>);
+      final idx = users.indexWhere((u) => u.id == id);
+      if (idx != -1) users[idx] = updated;
+      await fetchStats();
+    } catch (e) {
+      _showError(e is ApiException ? e.message : 'Failed to update status.');
+    }
+  }
+
+  Future<void> deleteUser(String id) async {
+    try {
+      await _api.delete('/users/$id');
+      users.removeWhere((u) => u.id == id);
+      _clampPage();
+      await fetchStats();
+    } catch (e) {
+      // e.g. refusing to delete the last Admin comes back as a 409.
+      _showError(e is ApiException ? e.message : 'Failed to delete employee.');
+    }
+  }
+
+  void _clampPage() {
+    final pages = users.isEmpty ? 1 : (users.length / rowsPerPage.value).ceil();
+    if (currentPage.value > pages) currentPage.value = pages;
+  }
+
+  // ── Summary cards — served by GET /api/stats/users ────────────────────────
+  int get totalUsers => stats.value.intOf('totalUsers');
+  int get activeUsers => stats.value.intOf('activeUsers');
+  int get inactiveUsers => stats.value.intOf('inactiveUsers');
+  int get adminCount => stats.value.intOf('adminCount');
+
+  /// Count of users per role, from the API.
   Map<UserRole, int> get roleBreakdown {
-    final map = <UserRole, int>{};
-    for (final r in UserRole.values) {
-      map[r] = users.where((u) => u.role == r).length;
+    final map = {for (final r in UserRole.values) r: 0};
+    for (final rc in roleCounts) {
+      map[userRoleFromLabel(rc.role)] = rc.count;
     }
     return map;
   }

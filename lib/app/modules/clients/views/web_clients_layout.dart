@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
-import '../controllers/clients_controller.dart';
-import '../models/client_model.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/filter_bar.dart';
-import '../../../routes/app_routes.dart';
-import '../../dashboard/widgets/web_sidebar.dart';
-import '../../dashboard/widgets/web_top_bar.dart';
-import '../../dashboard/widgets/modified_by_cell.dart';
-import '../../../shared/widgets/stat_cards.dart';
-import '../../../shared/widgets/table_footer.dart';
+import 'package:shc_stock/app/modules/clients/controllers/clients_controller.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/modules/clients/models/client_model.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/table_footer.dart';
+import 'package:shc_stock/app/modules/clients/views/client_details_dialog.dart';
 
 // ── Table column constants (header + row MUST match) ──────────────────────
 const double _kIdxW = 36.0; // # badge
 const double _kGap = 10.0; // column gap
 const int _kCodeFlex = 10; // CLT-0001
-const int _kNameFlex = 22; // Client Name + badge
+const int _kNameFlex = 20; // Client Name + badge
 const int _kAddrFlex = 22; // Address
-const int _kStateFlex = 10; // State
 const int _kGstFlex = 14; // GSTIN/UIN
-const int _kRegFlex = 10; // Registration Type badge
-const int _kModFlex = 16; // Modified By
-const int _kActFlex = 8; // Actions
+const int _kRegFlex = 12; // Registration Type badge
+const int _kContactFlex = 18; // Contact person + phone
+const int _kActFlex = 16; // Actions — View + Edit + Delete
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Widget
@@ -48,27 +48,30 @@ class WebClientsLayout extends GetView<ClientsController> {
                   child: Obx(() {
                     final all = c.clients;
                     final searchQuery = c.searchQuery.value;
+                    final stateFilters = c.stateFilters;
+                    final cityFilters = c.cityFilters;
                     final rowsPerPage = c.rowsPerPage.value;
                     final currentPage = c.currentPage.value;
-                    final filtered = searchQuery.isEmpty
-                        ? all.toList()
-                        : all
-                              .where(
-                                (cl) =>
-                                    cl.name.toLowerCase().contains(
-                                      searchQuery.toLowerCase(),
-                                    ) ||
-                                    cl.code.toLowerCase().contains(
-                                      searchQuery.toLowerCase(),
-                                    ) ||
-                                    cl.address.toLowerCase().contains(
-                                      searchQuery.toLowerCase(),
-                                    ) ||
-                                    cl.gstin.toLowerCase().contains(
-                                      searchQuery.toLowerCase(),
-                                    ),
-                              )
-                              .toList();
+                    final filtered = all.where((cl) {
+                      if (searchQuery.isNotEmpty) {
+                        final q = searchQuery.toLowerCase();
+                        final matches =
+                            cl.name.toLowerCase().contains(q) ||
+                            cl.code.toLowerCase().contains(q) ||
+                            cl.address.toLowerCase().contains(q) ||
+                            cl.gstin.toLowerCase().contains(q);
+                        if (!matches) return false;
+                      }
+                      if (stateFilters.isNotEmpty &&
+                          !stateFilters.contains(cl.state)) {
+                        return false;
+                      }
+                      if (cityFilters.isNotEmpty &&
+                          !cityFilters.contains(cl.city)) {
+                        return false;
+                      }
+                      return true;
+                    }).toList();
 
                     final totalPages = filtered.isEmpty
                         ? 1
@@ -84,165 +87,170 @@ class WebClientsLayout extends GetView<ClientsController> {
 
                     return SingleChildScrollView(
                       padding: const EdgeInsets.all(24),
-                      child: Column(
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // ── Page Header ──────────────────────────────────────────
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Clients',
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w700,
-                                      color: colors.textPrimary,
-                                      fontFamily: 'Poppins',
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    'Manage your clients and track their business relationship.',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: colors.textSecondary,
-                                      fontFamily: 'Poppins',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              ElevatedButton.icon(
-                                onPressed: () =>
-                                    Get.toNamed(AppRoutes.addClient),
-                                icon: const Icon(
-                                  Icons.add_rounded,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                                label: const Text(
-                                  'Add New Client',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                    fontFamily: 'Poppins',
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryOrange,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-
-                          // ── Stat Cards ───────────────────────────────────────────
-                          IntrinsicHeight(
-                            child: Row(
+                          // ── LEFT COLUMN ──────────────────────────────────────────
+                          // Header, summary cards, toolbar, table and footer all
+                          // live here so the right panel can run alongside the
+                          // whole lot, starting level with the page header rather
+                          // than below the summary row.
+                          Expanded(
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Total Clients',
-                                    value: '${c.totalClients}',
-                                    icon: Icons.people_outline_rounded,
-                                    iconColor: AppColors.primaryOrange,
-                                    trend: '+18.6%',
-                                    trendUp: true,
-                                    spark: const [
-                                      0.3,
-                                      0.5,
-                                      0.4,
-                                      0.6,
-                                      0.55,
-                                      0.7,
-                                      0.65,
-                                    ],
-                                  ),
+                                // ── Page Header ──────────────────────────────────────────
+                                Row(
+                                  children: [
+                                    // Flexible: the title block and the Add
+                                    // button together overflowed the header at
+                                    // laptop widths.
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Clients',
+                                            style: TextStyle(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.w700,
+                                              color: colors.textPrimary,
+                                              fontFamily: 'Poppins',
+                                            ),
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            'Manage your clients and track their business relationship',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: colors.textSecondary,
+                                              fontFamily: 'Poppins',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    ElevatedButton.icon(
+                                      onPressed: () =>
+                                          Get.toNamed(AppRoutes.addClient),
+                                      icon: const Icon(
+                                        Icons.add_rounded,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                      label: const Text(
+                                        'Add New Client',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                          fontFamily: 'Poppins',
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            AppColors.primaryOrange,
+                                        elevation: 0,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 14,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Registered (GST) Clients',
-                                    value: '${c.registeredClients}',
-                                    icon: Icons.verified_outlined,
-                                    iconColor: const Color(0xFF4A3AFF),
-                                    trend: '+12.3%',
-                                    trendUp: true,
-                                    spark: const [
-                                      0.3,
-                                      0.4,
-                                      0.5,
-                                      0.45,
-                                      0.6,
-                                      0.55,
-                                      0.7,
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Unregistered Clients',
-                                    value: '${c.unregisteredClients}',
-                                    icon: Icons.person_off_outlined,
-                                    iconColor: const Color(0xFFF59E0B),
-                                    trend: '-8.3%',
-                                    trendUp: false,
-                                    spark: const [
-                                      0.7,
-                                      0.65,
-                                      0.55,
-                                      0.5,
-                                      0.4,
-                                      0.45,
-                                      0.35,
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'States Covered',
-                                    value: '${c.statesCovered}',
-                                    icon: Icons.map_outlined,
-                                    iconColor: const Color(0xFF22C55E),
-                                    trend: '+15.2%',
-                                    trendUp: true,
-                                    spark: const [
-                                      0.3,
-                                      0.35,
-                                      0.5,
-                                      0.45,
-                                      0.6,
-                                      0.7,
-                                      0.8,
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
+                                const SizedBox(height: 20),
 
-                          // ── Body: Table + Right Panel ────────────────────────────
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // ── LEFT: Table Card ─────────────────────────────────
-                              Expanded(
-                                child: Container(
+                                // ── Stat Cards ───────────────────────────────────────────
+                                IntrinsicHeight(
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Expanded(
+                                        child: AppStatCard(
+                                          label: 'Total Clients',
+                                          value: '${c.totalClients}',
+                                          icon: Icons.groups_rounded,
+                                          iconColor: AppColors.primaryOrange,
+                                          trend: c.stats.value.trendLabel(
+                                            'totalClients',
+                                          ),
+                                          trendUp: c.stats.value.trendUp(
+                                            'totalClients',
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: AppStatCard(
+                                          label: 'GST Registered',
+                                          value: '${c.registeredClients}',
+                                          icon: Icons
+                                              .check_circle_outline_rounded,
+                                          iconColor: const Color(0xFF4A3AFF),
+                                          trend: c.stats.value.trendLabel(
+                                            'gstRegistered',
+                                          ),
+                                          trendUp: c.stats.value.trendUp(
+                                            'gstRegistered',
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: AppStatCard(
+                                          label: 'Unregistered Clients',
+                                          value: '${c.unregisteredClients}',
+                                          icon: Icons.block_rounded,
+                                          iconColor: const Color(0xFFF59E0B),
+                                          trend: c.stats.value.trendLabel(
+                                            'unregistered',
+                                          ),
+                                          trendUp: c.stats.value.trendUp(
+                                            'unregistered',
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: AppStatCard(
+                                          label: 'States Covered',
+                                          value: '${c.statesCovered}',
+                                          icon: Icons.map_outlined,
+                                          iconColor: const Color(0xFF22C55E),
+                                          trend: c.stats.value.trendLabel(
+                                            'statesCovered',
+                                          ),
+                                          trendUp: c.stats.value.trendUp(
+                                            'statesCovered',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+
+                                // Reference design keeps the toolbar above and
+                                // the pagination below the bordered table card,
+                                // both sitting on the page background.
+                                _Toolbar(
+                                  colors: colors,
+                                  onSearch: (v) {
+                                    c.searchQuery.value = v;
+                                    c.currentPage.value = 1;
+                                  },
+                                ),
+                                const SizedBox(height: 12),
+                                Container(
                                   decoration: BoxDecoration(
                                     color: colors.surface,
                                     borderRadius: BorderRadius.circular(14),
@@ -259,22 +267,17 @@ class WebClientsLayout extends GetView<ClientsController> {
                                   ),
                                   child: Column(
                                     children: [
-                                      // Toolbar
-                                      _Toolbar(
-                                        colors: colors,
-                                        onSearch: (v) {
-                                          c.searchQuery.value = v;
-                                          c.currentPage.value = 1;
-                                        },
-                                      ),
-                                      Divider(height: 1, color: colors.divider),
-
                                       // Column Header
                                       _ColumnHeader(colors: colors),
                                       Divider(height: 1, color: colors.divider),
 
                                       // Rows
-                                      if (pageItems.isEmpty)
+                                      if (c.isLoading.value)
+                                        const AppLoadingIndicator(
+                                          label: 'Loading clients...',
+                                          padding: 40,
+                                        )
+                                      else if (pageItems.isEmpty)
                                         Padding(
                                           padding: const EdgeInsets.all(48),
                                           child: Center(
@@ -309,44 +312,43 @@ class WebClientsLayout extends GetView<ClientsController> {
                                                 e.key == pageItems.length - 1,
                                           ),
                                         ),
-
-                                      // Footer
-                                      Divider(height: 1, color: colors.divider),
-                                      AppTableFooter(
-                                        summaryText:
-                                            'Showing ${filtered.isEmpty ? 0 : startIdx + 1} to $endIdx of ${filtered.length} clients',
-                                        currentPage: currentPage,
-                                        totalPages: totalPages,
-                                        rowsPerPage: rowsPerPage,
-                                        colors: colors,
-                                        onPageChanged: (p) =>
-                                            c.currentPage.value = p,
-                                        onRowsChanged: (r) {
-                                          c.rowsPerPage.value = r;
-                                          c.currentPage.value = 1;
-                                        },
-                                      ),
                                     ],
                                   ),
                                 ),
-                              ),
-
-                              const SizedBox(width: 16),
-
-                              // ── RIGHT: Panel ─────────────────────────────────────
-                              SizedBox(
-                                width: 272,
-                                child: Column(
-                                  children: [
-                                    _ClientSummaryCard(colors: colors, c: c),
-                                    const SizedBox(height: 14),
-                                    _TopClientsCard(colors: colors, c: c),
-                                    const SizedBox(height: 14),
-                                    _QuickActionsCard(colors: colors),
-                                  ],
+                                const SizedBox(height: 6),
+                                AppTableFooter(
+                                  currentPage: currentPage,
+                                  totalPages: totalPages,
+                                  rowsPerPage: rowsPerPage,
+                                  colors: colors,
+                                  onPageChanged: (p) => c.currentPage.value = p,
+                                  onRowsChanged: (r) {
+                                    c.rowsPerPage.value = r;
+                                    c.currentPage.value = 1;
+                                  },
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(width: 16),
+
+                          // ── RIGHT: Panel ─────────────────────────────────────────
+                          // Starts at the top of the page, level with the header
+                          // and summary cards.
+                          SizedBox(
+                            width: 272,
+                            child: Column(
+                              children: [
+                                _TopClientsCard(colors: colors, c: c),
+                                const SizedBox(height: 14),
+                                _QuickStatsCard(c: c),
+                                const SizedBox(height: 14),
+                                _NewThisMonthCard(colors: colors, c: c),
+                                const SizedBox(height: 14),
+                                _QuickActionsCard(colors: colors),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -362,8 +364,6 @@ class WebClientsLayout extends GetView<ClientsController> {
   }
 }
 
-
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Table Toolbar
 // ─────────────────────────────────────────────────────────────────────────────
@@ -375,80 +375,60 @@ class _Toolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<ClientsController>();
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: FilterBar(
-        search: FilterSearchField(
-          controller: c.searchCtrl,
-          hint: 'Search clients...',
-          width: 250,
-          onChanged: onSearch,
-        ),
-        pills: [
-          Obx(
-            () => SingleSelectFilterPill(
-              value: c.clientType.value,
-              items: const [
-                'Registration: All',
-                'Regular',
-                'Unregistered/Consumer',
-              ],
-              onChanged: (v) => c.clientType.value = v,
-            ),
+    // Sits on the page background above the table card, so it carries no
+    // inner card padding — it lines up with the table's left/right edges.
+    return FilterBar(
+      search: FilterSearchField(
+        controller: c.searchCtrl,
+        hint: 'Search clients...',
+        width: 250,
+        onChanged: onSearch,
+      ),
+      pills: [
+        Obx(
+          () => MultiSelectFilterPill(
+            label: 'State',
+            selected: c.stateFilters,
+            items: c.stateOptions,
+            onToggle: (v) {
+              if (c.stateFilters.contains(v)) {
+                c.stateFilters.remove(v);
+              } else {
+                c.stateFilters.add(v);
+              }
+              // Selected cities may no longer belong to the narrowed
+              // state set — matches the design's cascading behaviour.
+              c.cityFilters.removeWhere(
+                (city) => !c.cityOptions.contains(city),
+              );
+              c.currentPage.value = 1;
+            },
           ),
-        ],
-        clearAll: Obx(() {
-          if (!c.hasActiveFilters) return const SizedBox.shrink();
-          return ClearAllButton(onTap: c.resetFilters);
-        }),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Export button
-            OutlinedButton.icon(
-              onPressed: () {},
-              icon: Icon(
-                Icons.upload_outlined,
-                size: 15,
-                color: colors.textSecondary,
-              ),
-              label: Text(
-                'Export',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontFamily: 'Poppins',
-                  color: colors.textSecondary,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 9,
-                ),
-                side: BorderSide(color: colors.border),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-
-            // Grid icon
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: colors.inputFill,
-                border: Border.all(color: colors.border),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.table_chart_outlined,
-                size: 17,
-                color: colors.textSecondary,
-              ),
-            ),
-          ],
+        ),
+      ],
+      clearAll: Obx(() {
+        if (!c.hasActiveFilters) return const SizedBox.shrink();
+        return ClearAllButton(onTap: c.resetFilters);
+      }),
+      trailing: OutlinedButton.icon(
+        onPressed: () {},
+        icon: Icon(
+          Icons.upload_outlined,
+          size: 15,
+          color: colors.textSecondary,
+        ),
+        label: Text(
+          'Export',
+          style: TextStyle(
+            fontSize: 13,
+            fontFamily: 'Poppins',
+            color: colors.textSecondary,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          side: BorderSide(color: colors.border),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
     );
@@ -494,10 +474,6 @@ class _ColumnHeader extends StatelessWidget {
             child: Text('Address', style: _s),
           ),
           Expanded(
-            flex: _kStateFlex,
-            child: Text('State', style: _s),
-          ),
-          Expanded(
             flex: _kGstFlex,
             child: Text('GSTIN/UIN', style: _s),
           ),
@@ -506,8 +482,8 @@ class _ColumnHeader extends StatelessWidget {
             child: Center(child: Text('Reg. Type', style: _s)),
           ),
           Expanded(
-            flex: _kModFlex,
-            child: Text('Modified By', style: _s),
+            flex: _kContactFlex,
+            child: Text('Contact', style: _s),
           ),
           Expanded(
             flex: _kActFlex,
@@ -601,7 +577,7 @@ class _ClientRowState extends State<_ClientRow> {
                     style: const TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF4A3AFF),
+                      color: AppColors.primaryOrange,
                       fontFamily: 'Poppins',
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -664,20 +640,6 @@ class _ClientRowState extends State<_ClientRow> {
                   ),
                 ),
 
-                // State
-                Expanded(
-                  flex: _kStateFlex,
-                  child: Text(
-                    cl.state.isEmpty ? '—' : cl.state,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: c.textSecondary,
-                      fontFamily: 'Poppins',
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-
                 // GSTIN/UIN
                 Expanded(
                   flex: _kGstFlex,
@@ -723,24 +685,86 @@ class _ClientRowState extends State<_ClientRow> {
                   ),
                 ),
 
-                // Modified By
+                // Contact
                 Expanded(
-                  flex: _kModFlex,
-                  child: Builder(
-                    builder: (_) {
-                      final mod = resolveModifiedBy(
-                        seedId: cl.id,
-                        storedName: cl.modifiedBy,
-                        storedDate: cl.modifiedAt,
-                      );
-                      return ModifiedByCell(
-                        name: mod.name,
-                        date: mod.date,
-                        textPrimary: c.textPrimary,
-                        textHint: c.textHint,
-                      );
-                    },
-                  ),
+                  flex: _kContactFlex,
+                  child: cl.contactPerson.isEmpty
+                      ? Row(
+                          children: [
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: c.textHint.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.remove_rounded,
+                                size: 12,
+                                color: c.textHint,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '—',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: c.textHint,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: const BoxDecoration(
+                                color: AppColors.primaryPurple,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  cl.contactInitials,
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    cl.contactPerson,
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      color: c.textPrimary,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (cl.contactPhone.isNotEmpty)
+                                    Text(
+                                      cl.contactPhone,
+                                      style: TextStyle(
+                                        fontSize: 9.5,
+                                        color: c.textHint,
+                                        fontFamily: 'Poppins',
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                 ),
 
                 // Actions
@@ -753,14 +777,30 @@ class _ClientRowState extends State<_ClientRow> {
                         icon: Icons.remove_red_eye_outlined,
                         color: const Color(0xFF4A3AFF),
                         tooltip: 'View',
+                        onTap: () => Get.dialog(
+                          ClientDetailsDialog(
+                            client: cl,
+                            onDelete: () {
+                              Get.back();
+                              Get.find<ClientsController>().deleteClient(cl.id);
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      _ActBtn(
+                        icon: Icons.edit_outlined,
+                        color: const Color(0xFFF59E0B),
+                        tooltip: 'Edit',
                         onTap: () {},
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 5),
                       _ActBtn(
-                        icon: Icons.more_vert_rounded,
-                        color: c.textSecondary,
-                        tooltip: 'More',
-                        onTap: () {},
+                        icon: Icons.delete_outline_rounded,
+                        color: const Color(0xFFEF4444),
+                        tooltip: 'Delete',
+                        onTap: () =>
+                            Get.find<ClientsController>().deleteClient(cl.id),
                       ),
                     ],
                   ),
@@ -809,16 +849,15 @@ class _ActBtn extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Right Panel — Quick Stats Card (Avg. Order Value / Repeat Clients)
 // ─────────────────────────────────────────────────────────────────────────────
-// Right Panel — Client Summary Card
-// ─────────────────────────────────────────────────────────────────────────────
-class _ClientSummaryCard extends StatelessWidget {
-  final AppThemeColors colors;
+class _QuickStatsCard extends StatelessWidget {
   final ClientsController c;
-  const _ClientSummaryCard({required this.colors, required this.c});
+  const _QuickStatsCard({required this.c});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       decoration: BoxDecoration(
         color: colors.surface,
@@ -838,7 +877,7 @@ class _ClientSummaryCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: Text(
-              'Client Summary',
+              'Quick Stats',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -848,29 +887,150 @@ class _ClientSummaryCard extends StatelessWidget {
             ),
           ),
           Divider(height: 1, color: colors.divider),
-          _SumRow(
-            label: 'Total Clients',
-            value: '${c.totalClients}',
-            colors: colors,
+          Obx(
+            () => _SumRow(
+              label: 'Avg. Order Value',
+              value: '₹${c.avgOrderValue.value.round()}',
+              colors: colors,
+            ),
           ),
           _SumRow(
-            label: 'Registered (GST)',
-            value: '${c.registeredClients}',
-            colors: colors,
-            valueColor: const Color(0xFF22C55E),
-          ),
-          _SumRow(
-            label: 'Unregistered',
-            value: '${c.unregisteredClients}',
-            colors: colors,
-            valueColor: const Color(0xFFF59E0B),
-          ),
-          _SumRow(
-            label: 'States Covered',
-            value: '${c.statesCovered}',
+            label: 'Repeat Clients',
+            value: '${c.repeatClientsPct.value}%',
             colors: colors,
             isLast: true,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Right Panel — New This Month Card
+// ─────────────────────────────────────────────────────────────────────────────
+class _NewThisMonthCard extends StatelessWidget {
+  final AppThemeColors colors;
+  final ClientsController c;
+  const _NewThisMonthCard({required this.colors, required this.c});
+
+  @override
+  Widget build(BuildContext context) {
+    final recent = c.newThisMonth;
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Text(
+              'New This Month',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: colors.textPrimary,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ),
+          Divider(height: 1, color: colors.divider),
+          if (recent.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'No new clients yet this month.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colors.textHint,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+            )
+          else
+            ...recent.asMap().entries.map((e) {
+              final cl = e.value;
+              return InkWell(
+                onTap: () {
+                  // The panel row is a lightweight summary; pull the full
+                  // client out of the loaded list to show its details.
+                  final full = c.clients.firstWhereOrNull((x) => x.id == cl.id);
+                  if (full == null) return;
+                  Get.dialog(
+                    ClientDetailsDialog(
+                      client: full,
+                      onDelete: () {
+                        Get.back();
+                        c.deleteClient(full.id);
+                      },
+                    ),
+                  );
+                },
+                child: Container(
+                  decoration: e.key == recent.length - 1
+                      ? null
+                      : BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: colors.divider,
+                              width: 0.5,
+                            ),
+                          ),
+                        ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: cl.badgeColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Text(
+                            cl.initials,
+                            style: TextStyle(
+                              fontSize: cl.initials.length > 2 ? 9 : 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: cl.badgeColor,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          cl.name,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                            fontFamily: 'Poppins',
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
         ],
       ),
     );
@@ -982,8 +1142,8 @@ class _TopClientsCard extends StatelessWidget {
           ),
           Divider(height: 1, color: colors.divider),
           ...top.asMap().entries.map((e) {
-            final state = e.value.key;
-            final count = e.value.value;
+            final state = e.value.state;
+            final count = e.value.count;
             return Container(
               decoration: e.key == top.length - 1
                   ? null
@@ -1084,6 +1244,7 @@ class _QuickActionsCard extends StatelessWidget {
             label: 'Add New Client',
             iconColor: AppColors.primaryOrange,
             colors: colors,
+            onTap: () => Get.toNamed(AppRoutes.addClient),
           ),
           Divider(height: 1, color: colors.divider),
           _QAction(
@@ -1091,6 +1252,14 @@ class _QuickActionsCard extends StatelessWidget {
             label: 'Client Ledger Report',
             iconColor: const Color(0xFF4A3AFF),
             colors: colors,
+          ),
+          Divider(height: 1, color: colors.divider),
+          _QAction(
+            icon: Icons.history_rounded,
+            label: 'All Transactions History',
+            iconColor: const Color(0xFF2D1B8C),
+            colors: colors,
+            onTap: () => Get.toNamed(AppRoutes.transactions),
           ),
           Divider(height: 1, color: colors.divider),
           _QAction(
@@ -1112,12 +1281,14 @@ class _QAction extends StatefulWidget {
   final Color iconColor;
   final AppThemeColors colors;
   final bool isLast;
+  final VoidCallback? onTap;
   const _QAction({
     required this.icon,
     required this.label,
     required this.iconColor,
     required this.colors,
     this.isLast = false,
+    this.onTap,
   });
   @override
   State<_QAction> createState() => _QActionState();
@@ -1141,36 +1312,39 @@ class _QActionState extends State<_QAction> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => _hovered.value = true,
       onExit: (_) => _hovered.value = false,
-      child: Obx(
-        () => AnimatedContainer(
-          duration: const Duration(milliseconds: 100),
-          decoration: BoxDecoration(
-            color: _hovered.value ? c.rowEven : Colors.transparent,
-            borderRadius: widget.isLast
-                ? const BorderRadius.only(
-                    bottomLeft: Radius.circular(14),
-                    bottomRight: Radius.circular(14),
-                  )
-                : BorderRadius.zero,
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              Icon(widget.icon, color: widget.iconColor, size: 18),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  widget.label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: c.textPrimary,
-                    fontFamily: 'Poppins',
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Obx(
+          () => AnimatedContainer(
+            duration: const Duration(milliseconds: 100),
+            decoration: BoxDecoration(
+              color: _hovered.value ? c.rowEven : Colors.transparent,
+              borderRadius: widget.isLast
+                  ? const BorderRadius.only(
+                      bottomLeft: Radius.circular(14),
+                      bottomRight: Radius.circular(14),
+                    )
+                  : BorderRadius.zero,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Icon(widget.icon, color: widget.iconColor, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: c.textPrimary,
+                      fontFamily: 'Poppins',
+                    ),
                   ),
                 ),
-              ),
-              Icon(Icons.chevron_right_rounded, color: c.textHint, size: 18),
-            ],
+                Icon(Icons.chevron_right_rounded, color: c.textHint, size: 18),
+              ],
+            ),
           ),
         ),
       ),

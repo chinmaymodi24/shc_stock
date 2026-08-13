@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/theme_controller.dart';
-import '../../dashboard/widgets/web_sidebar.dart';
-import '../../dashboard/widgets/web_top_bar.dart';
-import '../controllers/settings_controller.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
+import 'package:shc_stock/app/core/theme/theme_controller.dart';
+import 'package:shc_stock/app/core/theme/theme_switch_helper.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Settings — left tab nav (Profile / Notifications / Security / Preferences)
@@ -93,7 +95,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
                       Expanded(
                         child: SingleChildScrollView(
                           padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
-                          child: Obx(() => _buildContent(colors)),
+                          child: Obx(() => _buildContent(context, colors)),
                         ),
                       ),
                     ],
@@ -107,14 +109,14 @@ class WebSettingsLayout extends GetView<SettingsController> {
     );
   }
 
-  Widget _buildContent(AppThemeColors colors) {
+  Widget _buildContent(BuildContext context, AppThemeColors colors) {
     switch (controller.tab.value) {
       case 1:
         return _notificationsTab(colors);
       case 2:
         return _securityTab(colors);
       case 3:
-        return _preferencesTab(colors);
+        return _preferencesTab(context, colors);
       default:
         return _profileTab(colors);
     }
@@ -136,10 +138,10 @@ class WebSettingsLayout extends GetView<SettingsController> {
                 color: AppColors.primaryPurple,
                 shape: BoxShape.circle,
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
-                  'CM',
-                  style: TextStyle(
+                  _sessionUser?.initials ?? '—',
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
@@ -165,12 +167,12 @@ class WebSettingsLayout extends GetView<SettingsController> {
         _field(
           label: 'Role',
           ctrl: null,
-          hint: 'Admin',
+          hint: _sessionUser?.role ?? '—',
           enabled: false,
           colors: colors,
         ),
         const SizedBox(height: 24),
-        _orangeButton(label: 'Save Changes', onTap: () {}),
+        _orangeButton(label: 'Save Changes', onTap: controller.saveSettings),
       ],
     );
   }
@@ -182,25 +184,25 @@ class WebSettingsLayout extends GetView<SettingsController> {
         'Low stock alerts',
         'Get notified when items fall below reorder point',
         controller.lowStock.value,
-        (bool v) => controller.lowStock.value = v,
+        (bool v) => controller.toggle(controller.lowStock, v),
       ),
       (
         'Delivery updates',
         'Incoming and outgoing shipment status changes',
         controller.delivery.value,
-        (bool v) => controller.delivery.value = v,
+        (bool v) => controller.toggle(controller.delivery, v),
       ),
       (
         'Payment reminders',
         'Client dues and supplier payments coming due',
         controller.payment.value,
-        (bool v) => controller.payment.value = v,
+        (bool v) => controller.toggle(controller.payment, v),
       ),
       (
         'Weekly summary email',
         'A digest of activity every Monday morning',
         controller.weekly.value,
-        (bool v) => controller.weekly.value = v,
+        (bool v) => controller.toggle(controller.weekly, v),
       ),
     ];
     return Column(
@@ -252,7 +254,10 @@ class WebSettingsLayout extends GetView<SettingsController> {
           colors: colors,
         ),
         const SizedBox(height: 24),
-        _purpleButton(label: 'Update Password', onTap: () {}),
+        _purpleButton(
+          label: 'Update Password',
+          onTap: controller.changePassword,
+        ),
         const SizedBox(height: 24),
         Divider(height: 1, color: colors.divider),
         const SizedBox(height: 20),
@@ -260,7 +265,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
           title: 'Two-factor authentication',
           subtitle: 'Add an extra layer of security to your account',
           value: controller.twoFactor.value,
-          onChanged: (v) => controller.twoFactor.value = v,
+          onChanged: (v) => controller.toggle(controller.twoFactor, v),
           colors: colors,
           padded: false,
         ),
@@ -269,7 +274,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
   }
 
   // ── Preferences ─────────────────────────────────────────────────
-  Widget _preferencesTab(AppThemeColors colors) {
+  Widget _preferencesTab(BuildContext context, AppThemeColors colors) {
     final tc = Get.find<ThemeController>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,7 +308,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
                 label: 'Light',
                 selected: tc.isLight,
                 colors: colors,
-                onTap: () => tc.setTheme(ThemeMode.light),
+                onTap: () => switchThemeWithRipple(context, ThemeMode.light),
               ),
               const SizedBox(width: 12),
               _themeChip(
@@ -311,7 +316,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
                 label: 'Dark',
                 selected: tc.isDark,
                 colors: colors,
-                onTap: () => tc.setTheme(ThemeMode.dark),
+                onTap: () => switchThemeWithRipple(context, ThemeMode.dark),
               ),
               const SizedBox(width: 12),
               _themeChip(
@@ -319,7 +324,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
                 label: 'System',
                 selected: tc.isSystem,
                 colors: colors,
-                onTap: () => tc.setTheme(ThemeMode.system),
+                onTap: () => switchThemeWithRipple(context, ThemeMode.system),
               ),
             ],
           ),
@@ -378,7 +383,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
               },
             ),
             const SizedBox(width: 12),
-            _orangeButton(label: 'Apply', onTap: () {}),
+            _orangeButton(label: 'Apply', onTap: controller.saveSettings),
           ],
         ),
       ],
@@ -735,3 +740,8 @@ class _NavTab extends StatelessWidget {
     );
   }
 }
+
+/// The signed-in user, for the avatar initials and the read-only Role field.
+SessionUser? get _sessionUser => Get.isRegistered<SessionController>()
+    ? Get.find<SessionController>().user.value
+    : null;

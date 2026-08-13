@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/theme_controller.dart';
-import '../../../routes/app_routes.dart';
-import '../../../core/utils/app_toast.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/theme/theme_controller.dart';
+import 'package:shc_stock/app/core/theme/theme_switch_helper.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
 
 /// Shared drawer used by all mobile layouts.
 /// Pass the current [activeRoute] so the correct item is highlighted.
@@ -168,7 +169,9 @@ class AppDrawer extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF0E8),
+                      // Accent-derived tint so the badge follows the theme —
+                      // the old fixed cream stayed light in dark mode.
+                      color: AppColors.primaryOrange.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
@@ -256,19 +259,22 @@ class _DrawerThemeSelector extends StatelessWidget {
                         icon: Icons.wb_sunny_rounded,
                         label: 'Light',
                         isActive: tc.isLight,
-                        onTap: () => tc.setTheme(ThemeMode.light),
+                        onTap: () =>
+                            switchThemeWithRipple(context, ThemeMode.light),
                       ),
                       _DrawerThemeBtn(
                         icon: Icons.nightlight_round,
                         label: 'Dark',
                         isActive: tc.isDark,
-                        onTap: () => tc.setTheme(ThemeMode.dark),
+                        onTap: () =>
+                            switchThemeWithRipple(context, ThemeMode.dark),
                       ),
                       _DrawerThemeBtn(
                         icon: Icons.devices_rounded,
                         label: 'System',
                         isActive: tc.isSystem,
-                        onTap: () => tc.setTheme(ThemeMode.system),
+                        onTap: () =>
+                            switchThemeWithRipple(context, ThemeMode.system),
                       ),
                     ],
                   ),

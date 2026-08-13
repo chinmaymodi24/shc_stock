@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../clients/models/client_model.dart';
+import 'package:shc_stock/app/modules/clients/models/client_model.dart';
 
 class SaleItemRow {
+  /// Backend product id, set when the row is filled from the product
+  /// autocomplete. Sent to the API so the server moves this product's stock.
+  int? productId;
   String product = '';
   String hsn = '';
   double qty = 0;

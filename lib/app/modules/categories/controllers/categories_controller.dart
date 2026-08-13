@@ -1,11 +1,24 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/api/api_client.dart';
-import '../../../core/utils/app_toast.dart';
-import '../models/category_model.dart';
+import 'package:shc_stock/app/core/api/api_client.dart';
+import 'package:shc_stock/app/core/api/stats_snapshot.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/modules/categories/models/category_model.dart';
 
 class CategoriesController extends GetxController {
+  /// Summary cards for this page — values *and* month-over-month trends come
+  /// from GET /api/stats/categories, so nothing on the cards is computed here or
+  /// hardcoded.
+  final stats = StatsSnapshot.empty.obs;
+
+  Future<void> fetchStats() async {
+    try {
+      stats.value = await StatsSnapshot.fetch('categories');
+    } catch (e) {
+      // Cards fall back to zeros; the list fetch already reported any outage.
+    }
+  }
+
   final _api = ApiClient.instance;
 
   // ── Observable category list ─────────────────────────────────
@@ -39,6 +52,7 @@ class CategoriesController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    fetchStats();
     fetchCategories();
   }
 
@@ -59,6 +73,12 @@ class CategoriesController extends GetxController {
       categories.assignAll(
         data.map((e) => CategoryModel.fromJson(e as Map<String, dynamic>)),
       );
+      // Keep the sidebar highlight in sync with the detail panel's fallback
+      // selection (first category) when nothing is selected yet.
+      if (categories.isNotEmpty &&
+          !categories.any((c) => c.id == selectedCatId.value)) {
+        selectedCatId.value = categories.first.id;
+      }
     } catch (e) {
       _showError('Failed to load categories. Is the backend running?');
     } finally {
@@ -69,20 +89,11 @@ class CategoriesController extends GetxController {
   // ── CRUD — Categories ─────────────────────────────────────────
 
   /// Add a new top-level category.
-  Future<void> addCategory(
-    String name, {
-    String desc = '',
-    Uint8List? imageBytes,
-  }) async {
+  Future<void> addCategory(String name, {String desc = ''}) async {
     try {
-      String? imageUrl;
-      if (imageBytes != null) {
-        imageUrl = await _api.uploadImage(imageBytes, 'category.png');
-      }
       final json = await _api.post('/categories', {
         'name': name.trim(),
         'description': desc.trim(),
-        if (imageUrl != null) 'imageUrl': imageUrl,
       });
       categories.add(CategoryModel.fromJson(json as Map<String, dynamic>));
     } catch (e) {
@@ -90,22 +101,16 @@ class CategoriesController extends GetxController {
     }
   }
 
-  /// Update an existing category's name, description, and/or image.
+  /// Update an existing category's name and/or description.
   Future<void> updateCategory(
     String catId,
     String name, {
     String desc = '',
-    Uint8List? imageBytes,
   }) async {
     try {
-      String? imageUrl;
-      if (imageBytes != null) {
-        imageUrl = await _api.uploadImage(imageBytes, 'category.png');
-      }
       final json = await _api.put('/categories/$catId', {
         'name': name.trim(),
         'description': desc.trim(),
-        if (imageUrl != null) 'imageUrl': imageUrl,
       });
       final idx = categories.indexWhere((c) => c.id == catId);
       if (idx != -1) {

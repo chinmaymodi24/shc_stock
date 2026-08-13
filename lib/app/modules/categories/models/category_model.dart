@@ -29,14 +29,12 @@ class CategoryModel {
   final String id;
   final String name;
   final String description;
-  final String? imageUrl;
   final List<SubCategoryItem> subCategories;
 
   const CategoryModel({
     required this.id,
     required this.name,
     this.description = '',
-    this.imageUrl,
     this.subCategories = const [],
   });
 
@@ -55,7 +53,6 @@ class CategoryModel {
       id: (json['id'] as int).toString(),
       name: json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      imageUrl: json['imageUrl'] as String?,
       subCategories: (json['subCategories'] as List<dynamic>? ?? [])
           .map((e) => SubCategoryItem.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -65,14 +62,12 @@ class CategoryModel {
   CategoryModel copyWith({
     String? name,
     String? description,
-    String? imageUrl,
     List<SubCategoryItem>? subCategories,
   }) {
     return CategoryModel(
       id: id,
       name: name ?? this.name,
       description: description ?? this.description,
-      imageUrl: imageUrl ?? this.imageUrl,
       subCategories: subCategories ?? this.subCategories,
     );
   }

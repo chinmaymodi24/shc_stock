@@ -4,11 +4,11 @@ import 'dart:io' as io;
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:cross_file/cross_file.dart';
-import '../controllers/products_controller.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/utils/app_toast.dart';
-import '../../../routes/app_routes.dart';
-import '../../dashboard/widgets/app_drawer.dart';
+import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
 
 class MobileAddProductLayout extends StatelessWidget {
   const MobileAddProductLayout({super.key});
@@ -427,9 +427,7 @@ class _MobileAddInfoSectionState extends State<_MobileAddInfoSection> {
                 value: c.formCategory.value.isEmpty
                     ? null
                     : c.formCategory.value,
-                items: ProductsController.allCategories
-                    .map((e) => e.name)
-                    .toList(),
+                items: c.realCategories.map((e) => e.name).toList(),
                 onChanged: (v) {
                   if (v != null) c.onCategoryChanged(v);
                 },

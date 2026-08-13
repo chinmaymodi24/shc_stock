@@ -2,8 +2,9 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../core/theme/app_colors.dart';
-import '../../routes/app_routes.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Splash View
@@ -132,19 +133,10 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
 
               const SizedBox(height: 20),
 
-              // Orange loading indicator at bottom-center
+              // The app's three-dot indicator, same as every page uses.
               FadeTransition(
                 opacity: _textFadeAnim,
-                child: SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.0,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.primaryOrange,
-                    ),
-                  ),
-                ),
+                child: const AppLoadingIndicator(padding: 0),
               ),
 
               SizedBox(height: bottom + 28),

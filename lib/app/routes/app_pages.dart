@@ -1,23 +1,25 @@
 import 'package:get/get.dart';
-import '../modules/splash/splash_view.dart';
-import '../modules/auth/views/login_view.dart';
-import '../modules/dashboard/views/dashboard_view.dart';
-import '../modules/products/views/products_view.dart';
-import '../modules/products/views/add_product_view.dart';
-import '../modules/categories/views/categories_view.dart';
-import '../modules/purchase/views/purchase_view.dart';
-import '../modules/purchase/views/add_purchase_view.dart';
-import '../modules/sales/views/sales_view.dart';
-import '../modules/sales/views/add_sales_view.dart';
-import '../modules/clients/views/clients_view.dart';
-import '../modules/clients/views/add_client_view.dart';
-import '../modules/stock/views/stock_view.dart';
-import '../modules/transactions/views/transactions_view.dart';
-import '../modules/users/views/users_view.dart';
-import '../modules/users/views/add_employee_view.dart';
-import '../modules/settings/views/settings_view.dart';
-import '../modules/settings/views/mobile_profile_view.dart';
+import 'package:shc_stock/app/modules/splash/splash_view.dart';
+import 'package:shc_stock/app/modules/auth/views/login_view.dart';
+import 'package:shc_stock/app/modules/dashboard/views/dashboard_view.dart';
+import 'package:shc_stock/app/modules/products/views/products_view.dart';
+import 'package:shc_stock/app/modules/products/views/add_product_view.dart';
+import 'package:shc_stock/app/modules/categories/views/categories_view.dart';
+import 'package:shc_stock/app/modules/purchase/views/purchase_view.dart';
+import 'package:shc_stock/app/modules/purchase/views/add_purchase_view.dart';
+import 'package:shc_stock/app/modules/sales/views/sales_view.dart';
+import 'package:shc_stock/app/modules/sales/views/add_sales_view.dart';
+import 'package:shc_stock/app/modules/clients/views/clients_view.dart';
+import 'package:shc_stock/app/modules/clients/views/add_client_view.dart';
+import 'package:shc_stock/app/modules/stock/views/stock_view.dart';
+import 'package:shc_stock/app/modules/transactions/views/transactions_view.dart';
+import 'package:shc_stock/app/modules/users/views/users_view.dart';
+import 'package:shc_stock/app/modules/users/views/add_employee_view.dart';
+import 'package:shc_stock/app/modules/settings/views/settings_view.dart';
+import 'package:shc_stock/app/modules/settings/views/mobile_profile_view.dart';
 import 'app_routes.dart';
+import 'package:shc_stock/app/modules/reports/views/reports_view.dart';
+import 'package:shc_stock/app/routes/reports_binding.dart';
 import 'products_binding.dart';
 import 'categories_binding.dart';
 import 'purchase_binding.dart';
@@ -125,6 +127,12 @@ class AppPages {
       name: AppRoutes.addEmployee,
       page: () => const AddEmployeeView(),
       binding: UsersBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.reports,
+      page: () => const ReportsView(),
+      binding: ReportsBinding(),
       transition: Transition.fadeIn,
     ),
     GetPage(

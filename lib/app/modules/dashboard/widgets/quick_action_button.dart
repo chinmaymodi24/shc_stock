@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 
 class QuickActionButton extends StatelessWidget {
   final IconData icon;

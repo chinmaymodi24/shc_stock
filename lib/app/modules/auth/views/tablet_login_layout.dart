@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/theme_controller.dart';
-import '../widgets/login_form.dart';
-import '../widgets/warehouse_illustration.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/theme/theme_controller.dart';
+import 'package:shc_stock/app/core/theme/theme_switch_helper.dart';
+import 'package:shc_stock/app/modules/auth/widgets/login_form.dart';
+import 'package:shc_stock/app/modules/auth/widgets/warehouse_illustration.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tablet Login Layout
@@ -129,13 +130,13 @@ class _TabletThemeToggle extends StatelessWidget {
               icon: Icons.wb_sunny_rounded,
               label: 'Light',
               isActive: tc.isLight,
-              onTap: () => tc.setTheme(ThemeMode.light),
+              onTap: () => switchThemeWithRipple(context, ThemeMode.light),
             ),
             _TBtn(
               icon: Icons.devices_rounded,
               label: 'System',
               isActive: tc.isSystem,
-              onTap: () => tc.setTheme(ThemeMode.system),
+              onTap: () => switchThemeWithRipple(context, ThemeMode.system),
             ),
           ],
         ),

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/purchase_controller.dart';
-import '../models/purchase_model.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../routes/app_routes.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
+import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
+import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 
 class MobilePurchaseLayout extends GetView<PurchaseController> {
   const MobilePurchaseLayout({super.key});
@@ -70,28 +73,30 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
                   children: [
                     _MobileStatCard(
                       label: 'Total Orders',
-                      value: '${c.totalOrders}',
+                      value: '${c.stats.value.intOf('totalOrders')}',
                       icon: Icons.receipt_long_outlined,
                       color: const Color(0xFF4A3AFF),
                     ),
                     const SizedBox(width: 10),
                     _MobileStatCard(
                       label: 'Purchase (MTD)',
-                      value: '₹12,45,000',
+                      value: formatRupees(
+                        c.stats.value.doubleOf('purchaseMTD'),
+                      ),
                       icon: Icons.shopping_cart_outlined,
                       color: AppColors.primaryOrange,
                     ),
                     const SizedBox(width: 10),
                     _MobileStatCard(
                       label: 'Amount Due',
-                      value: '₹1,18,500',
+                      value: formatRupees(c.stats.value.doubleOf('amountDue')),
                       icon: Icons.currency_rupee_rounded,
                       color: const Color(0xFFF59E0B),
                     ),
                     const SizedBox(width: 10),
                     _MobileStatCard(
-                      label: 'Items (MTD)',
-                      value: '156',
+                      label: 'Amount Paid',
+                      value: formatRupees(c.stats.value.doubleOf('amountPaid')),
                       icon: Icons.inventory_2_outlined,
                       color: const Color(0xFF22C55E),
                     ),
@@ -162,7 +167,11 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
             ),
 
             // Purchase cards
-            if (filtered.isEmpty)
+            if (c.isLoading.value)
+              const SliverFillRemaining(
+                child: AppLoadingIndicator(label: 'Loading purchase orders...'),
+              )
+            else if (filtered.isEmpty)
               SliverFillRemaining(
                 child: Center(
                   child: Column(
@@ -203,6 +212,8 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
   }
 }
 
+/// Same summary card as every other page, sized for the horizontal strip on
+/// a phone: fixed width, smaller value so rupee totals still fit.
 class _MobileStatCard extends StatelessWidget {
   final String label, value;
   final IconData icon;
@@ -217,47 +228,14 @@ class _MobileStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Container(
-      width: 130,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 16),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10.5,
-              color: colors.textSecondary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: colors.textPrimary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-        ],
+    return SizedBox(
+      width: 168,
+      child: AppStatCard(
+        label: label,
+        value: value,
+        icon: icon,
+        iconColor: color,
+        smallValue: true,
       ),
     );
   }

@@ -1,44 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../core/theme/app_colors.dart';
-
-/// Pool of realistic names used to fill in "Modified By" data for seed
-/// records that were never given a real modifier (i.e. still carry the
-/// generic 'Admin' default). Kept in one place so every list in the app
-/// draws from the same set and reads as one consistent team.
-const List<String> kDemoModifiers = [
-  'Chinmay Modi',
-  'Riya Patel',
-  'Ravi Sharma',
-  'Priya Patel',
-  'Amit Verma',
-  'Sneha Gupta',
-  'Vijay Joshi',
-  'Neha Iyer',
-  'Kiran Mehta',
-  'Suresh Kumar',
-];
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 
 /// Resolves the (name, date) pair a "Modified By" cell should render.
 ///
-/// Real data (anything where [storedName] isn't the generic 'Admin' seed
-/// default, with a non-null [storedDate]) always wins. Otherwise a name and
-/// a recent date are derived deterministically from [seedId], so the same
-/// row always renders the same way instead of flashing "Admin" everywhere.
-({String name, DateTime date}) resolveModifiedBy({
-  required String seedId,
+/// Returns null when the row has no real modifier yet — the caller then shows
+/// a dash. This used to invent a name from a pool of ten fake employees and a
+/// random-looking recent date, which made every list look busier than the data
+/// actually was; now the column only ever shows what the API stored.
+({String name, DateTime date})? resolveModifiedBy({
   required String storedName,
   DateTime? storedDate,
 }) {
-  if (storedName != 'Admin' && storedDate != null) {
-    return (name: storedName, date: storedDate);
-  }
-  final h = seedId.hashCode.abs();
-  final name = kDemoModifiers[h % kDemoModifiers.length];
-  final date = DateTime.now().subtract(
-    Duration(days: h % 90, hours: (h ~/ 7) % 24, minutes: (h ~/ 13) % 60),
+  final name = storedName.trim();
+  if (name.isEmpty || storedDate == null) return null;
+  return (name: name, date: storedDate);
+}
+
+/// Placeholder for a row that has never been modified.
+class ModifiedByEmpty extends StatelessWidget {
+  final Color textHint;
+  const ModifiedByEmpty({super.key, required this.textHint});
+
+  @override
+  Widget build(BuildContext context) => Text(
+    '—',
+    style: TextStyle(fontSize: 12.5, color: textHint, fontFamily: 'Poppins'),
   );
-  return (name: name, date: date);
 }
 
 /// Shared "Modified By" table-cell UI: a solid brand-purple avatar with the

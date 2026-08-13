@@ -1,11 +1,33 @@
 import 'package:cross_file/cross_file.dart';
 import 'package:get/get.dart';
-import '../models/product_model.dart';
+import 'package:shc_stock/app/core/api/api_client.dart';
+import 'package:shc_stock/app/core/api/stats_snapshot.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/modules/products/models/product_model.dart';
+import 'package:shc_stock/app/modules/categories/controllers/categories_controller.dart';
+import 'package:shc_stock/app/modules/categories/models/category_model.dart';
+import 'package:flutter/material.dart';
 
 class ProductsController extends GetxController {
+  /// Summary cards for this page — values *and* month-over-month trends come
+  /// from GET /api/stats/products, so nothing on the cards is computed here or
+  /// hardcoded.
+  final stats = StatsSnapshot.empty.obs;
+
+  Future<void> fetchStats() async {
+    try {
+      stats.value = await StatsSnapshot.fetch('products');
+    } catch (e) {
+      // Cards fall back to zeros; the list fetch already reported any outage.
+    }
+  }
+
+  final _api = ApiClient.instance;
+
   // ── Observables ──────────────────────────────────────────────
   final RxList<ProductModel> products = <ProductModel>[].obs;
   final RxList<ProductModel> filteredProducts = <ProductModel>[].obs;
+  final RxBool isLoading = false.obs;
   final RxString searchQuery = ''.obs;
   final RxString selectedCategory = 'All Categories'.obs;
   final RxSet<String> selectedCategories = <String>{}.obs;
@@ -44,74 +66,18 @@ class ProductsController extends GetxController {
   final RxString formStatus = 'Active'.obs;
   final RxList<XFile> formImages = <XFile>[].obs;
 
-  // ── Static Categories & Sub-products (SHC specific) ─────────
-  static final List<ProductCategory> allCategories = [
-    ProductCategory(
-      id: 'cat_01',
-      name: '1. Ceramic Fiber Products',
-      subProducts: [
-        'Ceramic Fiber Blanket',
-        'Ceramic Fiber Bulk (Loose Fiber)',
-        'Ceramic Fiber Module',
-        'Ceramic Fiber Board',
-        'Ceramic Fiber Paper',
-        'Heatshield Blanket',
-      ],
-    ),
-    ProductCategory(
-      id: 'cat_02',
-      name: '2. Ceramic Fiber Textile',
-      subProducts: [
-        'Ceramic Fiber Rope',
-        'Ceramic Fiber Cloth',
-        'Ceramic Fiber Tape',
-      ],
-    ),
-    ProductCategory(
-      id: 'cat_03',
-      name: '3. Insulation Bricks',
-      subProducts: [
-        'HF/CF Insulation Bricks',
-        'HFK Insulation Bricks',
-        'Porosint Bricks',
-      ],
-    ),
-    ProductCategory(
-      id: 'cat_04',
-      name: '4. Refractories',
-      subProducts: [
-        'Fire Bricks',
-        'Sillimanite & Mullite Bricks',
-        'Burner Block',
-        'Hollow Bricks',
-      ],
-    ),
-    ProductCategory(
-      id: 'cat_05',
-      name: '5. Mortars & Castables',
-      subProducts: [
-        'Refractory Mortar (ORTEX)',
-        'Air Setting Mortar (ORTEX-HT)',
-        'Castable Refractory',
-      ],
-    ),
-    ProductCategory(
-      id: 'cat_06',
-      name: '6. Fire & Welding Protection',
-      subProducts: ['Fire Blanket', 'Welding Blanket'],
-    ),
-    ProductCategory(
-      id: 'cat_07',
-      name: '7. Accessories & Services',
-      subProducts: [
-        'Stud & Washer Anchor',
-        'Ceramic Fiber Lining Anchor',
-        'Brick Anchor',
-        'Refractory Anchor',
-        'Hot Insulation Service',
-      ],
-    ),
-  ];
+  // ── Categories & Sub-products ────────────────────────────────
+  // The old hardcoded taxonomy (7 categories) is archived in static_data.txt
+  // at the project root. Category/sub-category pickers now read live from
+  // CategoriesController (see `realCategories` below and
+  // `categoryNames`/`subProductsForCategory`, which use it).
+
+  /// Live categories from the real, API-backed Categories module — shared,
+  /// permanent instance. Registration happens once in [onInit], not here:
+  /// a getter that can silently `Get.put` a new global singleton the first
+  /// time it's read is a surprise for whoever calls it next.
+  List<CategoryModel> get realCategories =>
+      Get.find<CategoriesController>().categories;
 
   static const List<String> units = [
     'Kilogram (kg)',
@@ -168,458 +134,44 @@ class ProductsController extends GetxController {
   ];
 
   // ── Seed data — Static SHC Products ─────────────────────────
-  static final List<ProductModel> _seedProducts = [
-    ProductModel(
-      id: 'p001',
-      name: 'CF Blanket 1260°C (64 kg/m³)',
-      sku: 'CFB-1260-64',
-      categoryId: 'cat_01',
-      categoryName: 'Ceramic Fiber Products',
-      subCategory: 'Ceramic Fiber Blanket',
-      unit: 'Roll',
-      sellingPrice: 2800,
-      costPrice: 1900,
-      currentStock: 45,
-      minimumStock: 10,
-      brand: 'SIMWOOL',
-      hsnCode: '68061000',
-      description:
-          'Standard grade ceramic fiber blanket for high temperature insulation up to 1260°C.',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 1),
-      densityVariants: ['64 kg/m³'],
-      modifiedBy: 'Chinmay Modi',
-      modifiedAt: DateTime(2026, 7, 10, 14, 40),
-    ),
-    ProductModel(
-      id: 'p002',
-      name: 'CF Blanket 1260°C (96 kg/m³)',
-      sku: 'CFB-1260-96',
-      categoryId: 'cat_01',
-      categoryName: 'Ceramic Fiber Products',
-      subCategory: 'Ceramic Fiber Blanket',
-      unit: 'Roll',
-      sellingPrice: 3500,
-      costPrice: 2400,
-      currentStock: 32,
-      minimumStock: 10,
-      brand: 'SIMWOOL',
-      hsnCode: '68061000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 2),
-      densityVariants: ['96 kg/m³'],
-      modifiedBy: 'Riya Patel',
-      modifiedAt: DateTime(2026, 6, 30, 9, 2),
-    ),
-    ProductModel(
-      id: 'p003',
-      name: 'CF Blanket 1260°C (128 kg/m³)',
-      sku: 'CFB-1260-128',
-      categoryId: 'cat_01',
-      categoryName: 'Ceramic Fiber Products',
-      subCategory: 'Ceramic Fiber Blanket',
-      unit: 'Roll',
-      sellingPrice: 4200,
-      costPrice: 2900,
-      currentStock: 8,
-      minimumStock: 10,
-      brand: 'SIMWOOL',
-      hsnCode: '68061000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 3),
-      densityVariants: ['128 kg/m³'],
-    ),
-    ProductModel(
-      id: 'p004',
-      name: 'CF Blanket 1425°C (96 kg/m³)',
-      sku: 'CFB-1425-96',
-      categoryId: 'cat_01',
-      categoryName: 'Ceramic Fiber Products',
-      subCategory: 'Ceramic Fiber Blanket',
-      unit: 'Roll',
-      sellingPrice: 6500,
-      costPrice: 4500,
-      currentStock: 15,
-      minimumStock: 5,
-      brand: 'SIMWOOL',
-      hsnCode: '68061000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 4),
-      densityVariants: ['96 kg/m³'],
-    ),
-    ProductModel(
-      id: 'p005',
-      name: 'CF Bulk (Standard 1260°C)',
-      sku: 'CFB-SBF-001',
-      categoryId: 'cat_01',
-      categoryName: 'Ceramic Fiber Products',
-      subCategory: 'Ceramic Fiber Bulk (Loose Fiber)',
-      unit: 'Kilogram (kg)',
-      sellingPrice: 350,
-      costPrice: 250,
-      currentStock: 120,
-      minimumStock: 25,
-      brand: 'SIMWOOL',
-      hsnCode: '68061000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 5),
-    ),
-    ProductModel(
-      id: 'p006',
-      name: 'CF Module (1260°C)',
-      sku: 'CFM-1260-001',
-      categoryId: 'cat_01',
-      categoryName: 'Ceramic Fiber Products',
-      subCategory: 'Ceramic Fiber Module',
-      unit: 'Piece (pcs)',
-      sellingPrice: 1200,
-      costPrice: 850,
-      currentStock: 28,
-      minimumStock: 5,
-      brand: 'SIMWOOL',
-      hsnCode: '68061000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 6),
-    ),
-    ProductModel(
-      id: 'p007',
-      name: 'CF Board Grade 1260',
-      sku: 'CFBD-1260',
-      categoryId: 'cat_01',
-      categoryName: 'Ceramic Fiber Products',
-      subCategory: 'Ceramic Fiber Board',
-      unit: 'Piece (pcs)',
-      sellingPrice: 850,
-      costPrice: 600,
-      currentStock: 40,
-      minimumStock: 10,
-      brand: 'SIMVAC',
-      hsnCode: '68061000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 7),
-      boardVariants: ['Normal Board'],
-    ),
-    ProductModel(
-      id: 'p008',
-      name: 'CF Board Grade 1425 (Zirconia)',
-      sku: 'CFBD-1425',
-      categoryId: 'cat_01',
-      categoryName: 'Ceramic Fiber Products',
-      subCategory: 'Ceramic Fiber Board',
-      unit: 'Piece (pcs)',
-      sellingPrice: 1650,
-      costPrice: 1100,
-      currentStock: 0,
-      minimumStock: 5,
-      brand: 'SIMVAC',
-      hsnCode: '68061000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 7),
-      boardVariants: ['Vacuum Formed Board'],
-    ),
-    ProductModel(
-      id: 'p009',
-      name: 'CF Paper (1260°C, 5mm)',
-      sku: 'CFP-1260-5',
-      categoryId: 'cat_01',
-      categoryName: 'Ceramic Fiber Products',
-      subCategory: 'Ceramic Fiber Paper',
-      unit: 'Roll',
-      sellingPrice: 480,
-      costPrice: 320,
-      currentStock: 22,
-      minimumStock: 5,
-      brand: 'SIMWOOL',
-      hsnCode: '68061000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 8),
-      thicknessVariants: ['5 mm'],
-    ),
-    ProductModel(
-      id: 'p010',
-      name: 'Heatshield Blanket',
-      sku: 'HSB-001',
-      categoryId: 'cat_01',
-      categoryName: 'Ceramic Fiber Products',
-      subCategory: 'Heatshield Blanket',
-      unit: 'Piece (pcs)',
-      sellingPrice: 3200,
-      costPrice: 2200,
-      currentStock: 12,
-      minimumStock: 3,
-      hsnCode: '68061000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 9),
-    ),
-    ProductModel(
-      id: 'p011',
-      name: 'CF Rope (13mm dia, 1260°C)',
-      sku: 'CFR-13-1260',
-      categoryId: 'cat_02',
-      categoryName: 'Ceramic Fiber Textile',
-      subCategory: 'Ceramic Fiber Rope',
-      unit: 'Meter (m)',
-      sellingPrice: 95,
-      costPrice: 65,
-      currentStock: 200,
-      minimumStock: 50,
-      brand: 'SIMWOOL',
-      hsnCode: '70190000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 10),
-      reinforcementTypes: ['Fiberglass reinforced'],
-    ),
-    ProductModel(
-      id: 'p012',
-      name: 'CF Rope (25mm dia, 1260°C)',
-      sku: 'CFR-25-1260',
-      categoryId: 'cat_02',
-      categoryName: 'Ceramic Fiber Textile',
-      subCategory: 'Ceramic Fiber Rope',
-      unit: 'Meter (m)',
-      sellingPrice: 175,
-      costPrice: 120,
-      currentStock: 150,
-      minimumStock: 30,
-      brand: 'SIMWOOL',
-      hsnCode: '70190000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 10),
-      reinforcementTypes: ['SS wire reinforced'],
-    ),
-    ProductModel(
-      id: 'p013',
-      name: 'CF Cloth (1260°C)',
-      sku: 'CFC-1260',
-      categoryId: 'cat_02',
-      categoryName: 'Ceramic Fiber Textile',
-      subCategory: 'Ceramic Fiber Cloth',
-      unit: 'Meter (m)',
-      sellingPrice: 420,
-      costPrice: 290,
-      currentStock: 80,
-      minimumStock: 20,
-      hsnCode: '70190000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 11),
-    ),
-    ProductModel(
-      id: 'p014',
-      name: 'CF Tape (1260°C, 25mm)',
-      sku: 'CFT-25-1260',
-      categoryId: 'cat_02',
-      categoryName: 'Ceramic Fiber Textile',
-      subCategory: 'Ceramic Fiber Tape',
-      unit: 'Meter (m)',
-      sellingPrice: 85,
-      costPrice: 58,
-      currentStock: 5,
-      minimumStock: 20,
-      hsnCode: '70190000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 11),
-    ),
-    ProductModel(
-      id: 'p015',
-      name: 'HF/CF Insulation Bricks (Hot Face)',
-      sku: 'HFCF-HF',
-      categoryId: 'cat_03',
-      categoryName: 'Insulation Bricks',
-      subCategory: 'HF/CF Insulation Bricks',
-      unit: 'Piece (pcs)',
-      sellingPrice: 65,
-      costPrice: 45,
-      currentStock: 500,
-      minimumStock: 100,
-      hsnCode: '69021000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 12),
-    ),
-    ProductModel(
-      id: 'p016',
-      name: 'HF/CF Insulation Bricks (Cold Face)',
-      sku: 'HFCF-CF',
-      categoryId: 'cat_03',
-      categoryName: 'Insulation Bricks',
-      subCategory: 'HF/CF Insulation Bricks',
-      unit: 'Piece (pcs)',
-      sellingPrice: 55,
-      costPrice: 38,
-      currentStock: 350,
-      minimumStock: 100,
-      hsnCode: '69021000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 12),
-    ),
-    ProductModel(
-      id: 'p017',
-      name: 'HFK Insulation Bricks',
-      sku: 'HFK-001',
-      categoryId: 'cat_03',
-      categoryName: 'Insulation Bricks',
-      subCategory: 'HFK Insulation Bricks',
-      unit: 'Piece (pcs)',
-      sellingPrice: 72,
-      costPrice: 50,
-      currentStock: 280,
-      minimumStock: 50,
-      hsnCode: '69021000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 13),
-    ),
-    ProductModel(
-      id: 'p018',
-      name: 'Porosint Bricks (Grade 23)',
-      sku: 'POR-23',
-      categoryId: 'cat_03',
-      categoryName: 'Insulation Bricks',
-      subCategory: 'Porosint Bricks',
-      unit: 'Piece (pcs)',
-      sellingPrice: 88,
-      costPrice: 62,
-      currentStock: 0,
-      minimumStock: 50,
-      hsnCode: '69021000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 13),
-    ),
-    ProductModel(
-      id: 'p019',
-      name: 'Refractory Mortar (ORTEX)',
-      sku: 'RM-ORTEX',
-      categoryId: 'cat_05',
-      categoryName: 'Mortars & Castables',
-      subCategory: 'Refractory Mortar (ORTEX)',
-      unit: 'Bag',
-      sellingPrice: 950,
-      costPrice: 680,
-      currentStock: 30,
-      minimumStock: 10,
-      brand: 'ORTEX',
-      hsnCode: '38244000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 14),
-    ),
-    ProductModel(
-      id: 'p020',
-      name: 'Air Setting Mortar (ORTEX-HT)',
-      sku: 'RM-ORTEX-HT',
-      categoryId: 'cat_05',
-      categoryName: 'Mortars & Castables',
-      subCategory: 'Air Setting Mortar (ORTEX-HT)',
-      unit: 'Bag',
-      sellingPrice: 1200,
-      costPrice: 850,
-      currentStock: 18,
-      minimumStock: 10,
-      brand: 'ORTEX',
-      hsnCode: '38244000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 14),
-    ),
-    ProductModel(
-      id: 'p021',
-      name: 'Castable Refractory',
-      sku: 'CR-001',
-      categoryId: 'cat_05',
-      categoryName: 'Mortars & Castables',
-      subCategory: 'Castable Refractory',
-      unit: 'Bag',
-      sellingPrice: 1450,
-      costPrice: 980,
-      currentStock: 25,
-      minimumStock: 8,
-      hsnCode: '38244000',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 15),
-    ),
-    ProductModel(
-      id: 'p022',
-      name: 'Fire Blanket (1×1m, 650°C)',
-      sku: 'FB-1x1-650',
-      categoryId: 'cat_06',
-      categoryName: 'Fire & Welding Protection',
-      subCategory: 'Fire Blanket',
-      unit: 'Piece (pcs)',
-      sellingPrice: 1800,
-      costPrice: 1200,
-      currentStock: 20,
-      minimumStock: 5,
-      hsnCode: '63049200',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 16),
-    ),
-    ProductModel(
-      id: 'p023',
-      name: 'Fire Blanket (2×2m, 1200°C)',
-      sku: 'FB-2x2-1200',
-      categoryId: 'cat_06',
-      categoryName: 'Fire & Welding Protection',
-      subCategory: 'Fire Blanket',
-      unit: 'Piece (pcs)',
-      sellingPrice: 4500,
-      costPrice: 3100,
-      currentStock: 8,
-      minimumStock: 3,
-      hsnCode: '63049200',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 16),
-    ),
-    ProductModel(
-      id: 'p024',
-      name: 'Welding Blanket (2×3m)',
-      sku: 'WB-2x3',
-      categoryId: 'cat_06',
-      categoryName: 'Fire & Welding Protection',
-      subCategory: 'Welding Blanket',
-      unit: 'Piece (pcs)',
-      sellingPrice: 3800,
-      costPrice: 2600,
-      currentStock: 12,
-      minimumStock: 3,
-      hsnCode: '63049200',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 17),
-    ),
-    ProductModel(
-      id: 'p025',
-      name: 'Stud & Washer Anchor (SS 304)',
-      sku: 'SWA-SS304',
-      categoryId: 'cat_07',
-      categoryName: 'Accessories & Services',
-      subCategory: 'Stud & Washer Anchor',
-      unit: 'Piece (pcs)',
-      sellingPrice: 45,
-      costPrice: 30,
-      currentStock: 800,
-      minimumStock: 200,
-      hsnCode: '73182900',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 18),
-    ),
-    ProductModel(
-      id: 'p026',
-      name: 'Refractory Anchor (SS 310)',
-      sku: 'RA-SS310',
-      categoryId: 'cat_07',
-      categoryName: 'Accessories & Services',
-      subCategory: 'Refractory Anchor',
-      unit: 'Piece (pcs)',
-      sellingPrice: 85,
-      costPrice: 58,
-      currentStock: 350,
-      minimumStock: 100,
-      hsnCode: '73182900',
-      taxPercent: 18,
-      createdAt: DateTime(2024, 5, 19),
-    ),
-  ];
+  // The old 26-product seed list is archived in static_data.txt at the
+  // project root. Products now load dynamically via fetchProducts() below.
+
+  void _showError(String message) {
+    showAppToast(
+      'Error',
+      message,
+      backgroundColor: const Color(0xFFEF4444),
+      colorText: Colors.white,
+    );
+  }
+
+  // ── Fetch ────────────────────────────────────────────────────
+  Future<void> fetchProducts() async {
+    isLoading.value = true;
+    try {
+      final data = await _api.get('/products') as List<dynamic>;
+      products.assignAll(
+        data.map((e) => ProductModel.fromJson(e as Map<String, dynamic>)),
+      );
+      _applyFilters();
+    } catch (e) {
+      _showError('Failed to load products. Is the backend running?');
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
   @override
   void onInit() {
     super.onInit();
-    products.addAll(_seedProducts);
-    filteredProducts.addAll(_seedProducts);
+    // realCategories depends on CategoriesController — ensure it's
+    // registered (permanent, fetch-once) before anything reads from it.
+    if (!Get.isRegistered<CategoriesController>()) {
+      Get.put(CategoriesController(), permanent: true);
+    }
+    fetchStats();
+    fetchProducts();
     ever(searchQuery, (_) => _applyFilters());
     ever(selectedCategory, (_) => _applyFilters());
     ever(selectedCategories, (_) => _applyFilters());
@@ -650,8 +202,8 @@ class ProductsController extends GetxController {
     }
 
     if (selectedCategories.isNotEmpty) {
-      // Filter option names carry a "1. " numeric prefix (from allCategories)
-      // while product.categoryName does not — strip it on both sides to match.
+      // Historically, category names carried a "1. " numeric prefix — strip
+      // it on both sides just in case any stored data still has it.
       final selectedStripped = selectedCategories.map(_stripCatPrefix).toSet();
       result = result
           .where(
@@ -745,19 +297,111 @@ class ProductsController extends GetxController {
     return (source.map((p) => p.subCategory).toSet().toList()..sort());
   }
 
-  void deleteProduct(String id) {
-    products.removeWhere((p) => p.id == id);
-    _applyFilters();
+  Future<void> deleteProduct(String id) async {
+    try {
+      await _api.delete('/products/$id');
+      products.removeWhere((p) => p.id == id);
+      _applyFilters();
+    } catch (e) {
+      _showError('Failed to delete product.');
+    }
   }
 
-  void addProduct(ProductModel product) {
-    products.insert(0, product);
-    _applyFilters();
+  /// Creates a product via the backend `/products` API.
+  ///
+  /// [categoryId]/[subCategoryId] must be the real DB ids (from
+  /// `CategoriesController`) — pass the fields the API needs directly rather
+  /// than a pre-built [ProductModel], since the server assigns the id and
+  /// resolves the category/sub-category names.
+  Future<bool> addProduct({
+    required String name,
+    required String sku,
+    required int categoryId,
+    int? subCategoryId,
+    required String unit,
+    required double sellingPrice,
+    required double costPrice,
+    int currentStock = 0,
+    int minimumStock = 0,
+    String? brand,
+    String? hsnCode,
+    String? description,
+    double taxPercent = 18.0,
+  }) async {
+    try {
+      final json = await _api.post('/products', {
+        'name': name.trim(),
+        'sku': sku.trim(),
+        'categoryId': categoryId,
+        if (subCategoryId != null) 'subCategoryId': subCategoryId,
+        'unit': unit,
+        'sellingPrice': sellingPrice,
+        'costPrice': costPrice,
+        'currentStock': currentStock,
+        'minimumStock': minimumStock,
+        if (brand != null && brand.isNotEmpty) 'brand': brand,
+        if (hsnCode != null && hsnCode.isNotEmpty) 'hsnCode': hsnCode,
+        if (description != null && description.isNotEmpty)
+          'description': description,
+        'taxPercent': taxPercent,
+      });
+      products.insert(0, ProductModel.fromJson(json as Map<String, dynamic>));
+      _applyFilters();
+      return true;
+    } catch (e) {
+      _showError('Failed to add product.');
+      return false;
+    }
+  }
+
+  /// Updates an existing product via `PUT /products/:id`.
+  Future<bool> updateProduct({
+    required String id,
+    required String name,
+    required String sku,
+    required int categoryId,
+    int? subCategoryId,
+    required String unit,
+    required double sellingPrice,
+    required double costPrice,
+    int currentStock = 0,
+    int minimumStock = 0,
+    String? brand,
+    String? hsnCode,
+    String? description,
+    double taxPercent = 18.0,
+  }) async {
+    try {
+      final json = await _api.put('/products/$id', {
+        'name': name.trim(),
+        'sku': sku.trim(),
+        'categoryId': categoryId,
+        if (subCategoryId != null) 'subCategoryId': subCategoryId,
+        'unit': unit,
+        'sellingPrice': sellingPrice,
+        'costPrice': costPrice,
+        'currentStock': currentStock,
+        'minimumStock': minimumStock,
+        if (brand != null && brand.isNotEmpty) 'brand': brand,
+        if (hsnCode != null && hsnCode.isNotEmpty) 'hsnCode': hsnCode,
+        if (description != null && description.isNotEmpty)
+          'description': description,
+        'taxPercent': taxPercent,
+      });
+      final updated = ProductModel.fromJson(json as Map<String, dynamic>);
+      final idx = products.indexWhere((p) => p.id == id);
+      if (idx != -1) products[idx] = updated;
+      _applyFilters();
+      return true;
+    } catch (e) {
+      _showError('Failed to update product.');
+      return false;
+    }
   }
 
   List<String> get subProductsForCategory {
     if (formCategory.value.isEmpty) return [];
-    final cat = allCategories.firstWhereOrNull(
+    final cat = realCategories.firstWhereOrNull(
       (c) => c.name == formCategory.value,
     );
     return cat?.subProducts ?? [];
@@ -765,7 +409,7 @@ class ProductsController extends GetxController {
 
   List<String> get categoryNames => [
     'All Categories',
-    ...allCategories.map((c) => c.name),
+    ...realCategories.map((c) => c.name),
   ];
 
   void onCategoryChanged(String cat) {

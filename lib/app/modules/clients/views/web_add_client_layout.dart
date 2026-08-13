@@ -1,89 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/utils/app_toast.dart';
-import '../../dashboard/widgets/web_sidebar.dart';
-import '../../dashboard/widgets/web_top_bar.dart';
-import '../controllers/add_client_controller.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/modules/clients/controllers/add_client_controller.dart';
+import 'package:shc_stock/app/modules/clients/controllers/clients_controller.dart';
+import 'package:shc_stock/app/shared/widgets/form_fields.dart';
+import 'package:shc_stock/app/shared/widgets/section_card.dart';
 
-// ── Select options ─────────────────────────────────────────────────────────
-const _kClientTypes = [
-  'Regular',
-  'VIP',
-  'Walk-in',
-  'Government',
-  'Dealer',
-  'Distributor',
-];
-const _kCurrencies = [
-  'INR - Indian Rupee (₹)',
-  'USD - US Dollar (\$)',
-  'EUR - Euro (€)',
-  'GBP - British Pound (£)',
-  'AED - UAE Dirham',
-];
-const _kPaymentTerms = [
-  'Immediate',
-  'Net 7',
-  'Net 15',
-  'Net 30',
-  'Net 45',
-  'Net 60',
-  'Net 90',
-];
-const _kPriceLists = [
-  'Standard Price',
-  'Wholesale Price',
-  'Retail Price',
-  'Special Price',
-];
-const _kStates = [
-  'Select state',
-  'Andhra Pradesh',
-  'Arunachal Pradesh',
-  'Assam',
-  'Bihar',
-  'Chhattisgarh',
-  'Goa',
-  'Gujarat',
-  'Haryana',
-  'Himachal Pradesh',
-  'Jharkhand',
-  'Karnataka',
-  'Kerala',
-  'Madhya Pradesh',
-  'Maharashtra',
-  'Manipur',
-  'Meghalaya',
-  'Mizoram',
-  'Nagaland',
-  'Odisha',
-  'Punjab',
-  'Rajasthan',
-  'Sikkim',
-  'Tamil Nadu',
-  'Telangana',
-  'Tripura',
-  'Uttar Pradesh',
-  'Uttarakhand',
-  'West Bengal',
-  'Delhi',
-  'Jammu & Kashmir',
-  'Ladakh',
-  'Puducherry',
-];
-const _kCountries = [
-  'India',
-  'USA',
-  'UK',
-  'UAE',
-  'Singapore',
-  'Germany',
-  'Australia',
-];
+// ── Select options — match the approved design exactly ─────────────────────
+const _kClientTypes = ['Business', 'Individual', 'Government'];
+const _kPaymentTerms = ['Advance', 'Net 15', 'Net 30', 'Net 45'];
+const _kPriceLists = ['Standard', 'Wholesale', 'Retail'];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main Widget
+// Main Widget — mirrors "Secure Heat Care Add Client.dc.html": a numbered
+// 4-section form on the left, a live-summary sidebar on the right.
 // ─────────────────────────────────────────────────────────────────────────────
 class WebAddClientLayout extends GetView<AddClientController> {
   const WebAddClientLayout({super.key});
@@ -100,191 +33,46 @@ class WebAddClientLayout extends GetView<AddClientController> {
             child: Column(
               children: [
                 const WebTopBar(),
+                _buildPageHeader(context, colors),
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ── Breadcrumb ──────────────────────────────────────────────
-                        Row(
-                          children: [
-                            InkWell(
-                              onTap: () => Get.back(),
-                              child: Text(
-                                'Clients',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.primaryOrange,
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                              ),
-                              child: Icon(
-                                Icons.chevron_right_rounded,
-                                size: 16,
-                                color: colors.textHint,
-                              ),
-                            ),
-                            Text(
-                              'Add New Client',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: colors.textSecondary,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                          ],
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // LEFT: scrollable form sections
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            children: [
+                              _clientDetailsSection(colors),
+                              const SizedBox(height: 16),
+                              _shippingAddressSection(colors),
+                              const SizedBox(height: 16),
+                              _billingAddressSection(colors),
+                              const SizedBox(height: 16),
+                              _creditTermsSection(colors),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 16),
+                      ),
 
-                        // ── Page Header + Action Buttons ────────────────────────────
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Add New Client',
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w700,
-                                    color: colors.textPrimary,
-                                    fontFamily: 'Poppins',
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  'Add a new client and manage their business information.',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: colors.textSecondary,
-                                    fontFamily: 'Poppins',
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            OutlinedButton(
-                              onPressed: () => Get.back(),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: colors.border),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text(
-                                'Cancel',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: colors.textSecondary,
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            OutlinedButton(
-                              onPressed: () {},
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: colors.border),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text(
-                                'Save as Draft',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: colors.textPrimary,
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            ElevatedButton.icon(
-                              onPressed: _saveClient,
-                              icon: const Icon(
-                                Icons.save_rounded,
-                                color: Colors.white,
-                                size: 17,
-                              ),
-                              label: const Text(
-                                'Save Client',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryOrange,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ],
+                      // RIGHT: live-summary sidebar
+                      SizedBox(
+                        width: 280,
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(0, 24, 24, 24),
+                          child: Column(
+                            children: [
+                              _creditSummaryCard(colors),
+                              const SizedBox(height: 16),
+                              _registeredAddressPreviewCard(colors),
+                              const SizedBox(height: 16),
+                              _contactPersonCard(colors),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 20),
-
-                        // ── Body: Left form + Right panel ────────────────────────────
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // LEFT: Form sections
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  _clientInfoSection(colors),
-                                  const SizedBox(height: 16),
-                                  _billingSection(colors),
-                                  const SizedBox(height: 16),
-                                  _additionalSection(colors),
-                                  const SizedBox(height: 16),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(width: 20),
-
-                            // RIGHT: Panel
-                            SizedBox(
-                              width: 284,
-                              child: Column(
-                                children: [
-                                  _creditSummaryCard(colors),
-                                  const SizedBox(height: 14),
-                                  _primaryAddressCard(colors),
-                                  const SizedBox(height: 14),
-                                  _contactPersonCard(colors),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -295,8 +83,114 @@ class WebAddClientLayout extends GetView<AddClientController> {
     );
   }
 
-  void _saveClient() {
-    // Validate name at minimum
+  // ── Page header: back + title/subtitle + Cancel/Save ─────────────────────
+  Widget _buildPageHeader(BuildContext context, AppThemeColors colors) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(bottom: BorderSide(color: colors.divider)),
+      ),
+      child: Row(
+        children: [
+          AppBackButton(colors: colors, onTap: () => Get.back()),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Add Client',
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Client details as per GST registration / KYC',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colors.textHint,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          InkWell(
+            onTap: () => Get.back(),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+              decoration: BoxDecoration(
+                color: colors.inputFill,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Obx(() {
+            final saving = controller.isSaving.value;
+            return InkWell(
+              onTap: saving ? null : _saveClient,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 11,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryOrange.withValues(
+                    alpha: saving ? 0.6 : 1,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (saving) ...[
+                      const SizedBox(
+                        width: 13,
+                        height: 13,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      saving ? 'Saving…' : 'Save Client',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveClient() async {
     if (controller.nameCtrl.text.trim().isEmpty) {
       showAppToast(
         'Validation Error',
@@ -307,509 +201,205 @@ class WebAddClientLayout extends GetView<AddClientController> {
       );
       return;
     }
+    controller.isSaving.value = true;
+    // ClientsBinding registers this permanently, so the new client lands in
+    // the already-loaded list without a full refetch.
+    final saved = await Get.find<ClientsController>().addClient(
+      controller.toPayload(),
+    );
+    controller.isSaving.value = false;
+    // addClient() already surfaced the API error toast on failure — keep the
+    // form open so the entered data isn't lost.
+    if (saved == null) return;
     Get.back();
-  }
-
-  // ── SECTION: Client Information ────────────────────────────────────────
-  Widget _clientInfoSection(AppThemeColors colors) {
-    return _SectionCard(
-      title: 'Client Information',
-      colors: colors,
-      child: Obx(
-        () => Column(
-          children: [
-            // Row 1: Client Type | Client Code | Client Name
-            Row(
-              children: [
-                Expanded(
-                  child: _Dropdown(
-                    label: 'Client Type',
-                    required: true,
-                    value: controller.clientType.value.isEmpty
-                        ? null
-                        : controller.clientType.value,
-                    hint: 'Select client type',
-                    items: _kClientTypes,
-                    colors: colors,
-                    onChange: (v) => controller.clientType.value = v ?? '',
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _Field(
-                    label: 'Client Code',
-                    required: true,
-                    ctrl: TextEditingController(text: 'Auto generated'),
-                    hint: 'Auto generated',
-                    readOnly: true,
-                    colors: colors,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _Field(
-                    label: 'Client Name',
-                    required: true,
-                    ctrl: controller.nameCtrl,
-                    hint: 'Enter client name',
-                    colors: colors,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            // Row 2: Email | Phone | Alternate Phone
-            Row(
-              children: [
-                Expanded(
-                  child: _Field(
-                    label: 'Email',
-                    ctrl: controller.emailCtrl,
-                    hint: 'Enter email address',
-                    colors: colors,
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _PhoneField(
-                    label: 'Phone',
-                    required: true,
-                    ctrl: controller.phoneCtrl,
-                    colors: colors,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _PhoneField(
-                    label: 'Alternate Phone',
-                    ctrl: controller.altPhCtrl,
-                    colors: colors,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            // Row 3: GSTIN | PAN | Currency
-            Row(
-              children: [
-                Expanded(
-                  child: _Field(
-                    label: 'GSTIN',
-                    ctrl: controller.gstinCtrl,
-                    hint: 'Enter GSTIN',
-                    colors: colors,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _Field(
-                    label: 'PAN',
-                    ctrl: controller.panCtrl,
-                    hint: 'Enter PAN',
-                    colors: colors,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _Dropdown(
-                    label: 'Currency',
-                    required: true,
-                    value: controller.currency.value,
-                    hint: 'Select currency',
-                    items: _kCurrencies,
-                    colors: colors,
-                    onChange: (v) => controller.currency.value =
-                        v ?? controller.currency.value,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            // Row 4: Payment Terms | Price List | Client Since
-            Row(
-              children: [
-                Expanded(
-                  child: _Dropdown(
-                    label: 'Payment Terms',
-                    value: controller.pyTerms.value.isEmpty
-                        ? null
-                        : controller.pyTerms.value,
-                    hint: 'Select payment terms',
-                    items: _kPaymentTerms,
-                    colors: colors,
-                    onChange: (v) => controller.pyTerms.value = v ?? '',
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _Dropdown(
-                    label: 'Price List',
-                    value: controller.priceList.value.isEmpty
-                        ? null
-                        : controller.priceList.value,
-                    hint: 'Select price list',
-                    items: _kPriceLists,
-                    colors: colors,
-                    onChange: (v) => controller.priceList.value = v ?? '',
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _DateField(
-                    label: 'Client Since',
-                    value: controller.since.value,
-                    colors: colors,
-                    onPick: (d) => controller.since.value = d,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-
-            // Row 5: Opening Balance | Credit Limit | Credit Days
-            Row(
-              children: [
-                Expanded(
-                  child: _Field(
-                    label: 'Opening Balance (₹)',
-                    ctrl: controller.opBalCtrl,
-                    hint: '0.00',
-                    keyboardType: TextInputType.number,
-                    colors: colors,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _Field(
-                    label: 'Credit Limit (₹)',
-                    ctrl: controller.crLimCtrl,
-                    hint: '0.00',
-                    keyboardType: TextInputType.number,
-                    colors: colors,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _Field(
-                    label: 'Credit Days',
-                    ctrl: controller.crDaysCtrl,
-                    hint: '0',
-                    keyboardType: TextInputType.number,
-                    colors: colors,
-                    suffix: 'days',
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    showAppToast(
+      '✅ Client Saved',
+      '${saved.name} (${saved.code}) has been added.',
+      backgroundColor: const Color(0xFF22C55E),
+      colorText: Colors.white,
     );
   }
 
-  // ── SECTION: Billing Address ────────────────────────────────────────────
-  Widget _billingSection(AppThemeColors colors) {
-    return _SectionCard(
+  // ── Section 1: Client Details ─────────────────────────────────────────────
+  Widget _clientDetailsSection(AppThemeColors colors) {
+    return AppNumberedSectionCard(
       colors: colors,
-      title: '',
-      customHeader: Obx(
-        () => Row(
+      number: 1,
+      title: 'Client Details',
+      child: Obx(
+        () => Column(
           children: [
-            Text(
-              'Billing Address',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: colors.textPrimary,
-                fontFamily: 'Poppins',
-              ),
-            ),
-            const Spacer(),
-            // Checkbox: Same as Primary Address
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: Checkbox(
-                    value: controller.sameAsPrim.value,
-                    onChanged: (v) => controller.sameAsPrim.value = v ?? false,
-                    activeColor: AppColors.primaryOrange,
-                    side: BorderSide(color: colors.border, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
+                Expanded(
+                  child: AppField(
+                    label: 'Client Type',
+                    required: true,
+                    colors: colors,
+                    child: AppDropBox(
+                      hint: 'Select client type',
+                      value: controller.clientType.value.isEmpty
+                          ? null
+                          : controller.clientType.value,
+                      items: _kClientTypes,
+                      colors: colors,
+                      onChanged: (v) => controller.clientType.value = v ?? '',
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'Same as Primary Address',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      child: Obx(() {
-        final sameAsPrim = controller.sameAsPrim.value;
-        return Column(
-          children: [
-            // Row 1: Address Line 1 | Address Line 2
-            Row(
-              children: [
+                const SizedBox(width: 14),
                 Expanded(
-                  child: _Field(
-                    label: 'Address Line 1',
+                  child: AppField(
+                    label: 'Client Code',
                     required: true,
-                    ctrl: controller.bAddr1Ctrl,
-                    hint: 'Enter address line 1',
-                    readOnly: sameAsPrim,
                     colors: colors,
+                    child: IgnorePointer(
+                      child: Opacity(
+                        opacity: 0.6,
+                        child: AppTextBox(
+                          controller: controller.clientCodeCtrl,
+                          hint: 'Auto generated',
+                          colors: colors,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: _Field(
-                    label: 'Address Line 2',
-                    ctrl: controller.bAddr2Ctrl,
-                    hint: 'Enter address line 2',
-                    readOnly: sameAsPrim,
+                  child: AppField(
+                    label: 'Client Name',
+                    required: true,
                     colors: colors,
+                    child: AppTextBox(
+                      controller: controller.nameCtrl,
+                      hint: 'Enter client name',
+                      colors: colors,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 14),
-
-            // Row 2: City | State | PIN Code | Country
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: _Field(
-                    label: 'City',
-                    required: true,
-                    ctrl: controller.bCityCtrl,
-                    hint: 'Enter city',
-                    readOnly: sameAsPrim,
+                  child: AppField(
+                    label: 'Email',
                     colors: colors,
+                    child: AppTextBox(
+                      controller: controller.emailCtrl,
+                      hint: 'Enter email address',
+                      colors: colors,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: _Dropdown(
-                    label: 'State',
+                  child: AppField(
+                    label: 'Phone',
                     required: true,
-                    value: controller.bState.value,
-                    hint: 'Select state',
-                    items: _kStates,
                     colors: colors,
-                    enabled: !sameAsPrim,
-                    onChange: (v) {
-                      if (!sameAsPrim)
-                        controller.bState.value = v ?? controller.bState.value;
-                    },
+                    child: AppTextBox(
+                      controller: controller.phoneCtrl,
+                      hint: 'Enter phone number',
+                      colors: colors,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: _Field(
-                    label: 'PIN Code',
-                    required: true,
-                    ctrl: controller.bPinCtrl,
-                    hint: 'Enter PIN code',
-                    readOnly: sameAsPrim,
-                    keyboardType: TextInputType.number,
+                  child: AppField(
+                    label: 'Alternate Phone',
                     colors: colors,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _Dropdown(
-                    label: 'Country',
-                    required: true,
-                    value: controller.bCountry.value,
-                    hint: 'Select country',
-                    items: _kCountries,
-                    colors: colors,
-                    enabled: !sameAsPrim,
-                    onChange: (v) {
-                      if (!sameAsPrim)
-                        controller.bCountry.value =
-                            v ?? controller.bCountry.value;
-                    },
+                    child: AppTextBox(
+                      controller: controller.altPhCtrl,
+                      hint: 'Enter phone number',
+                      colors: colors,
+                    ),
                   ),
                 ),
               ],
             ),
-          ],
-        );
-      }),
-    );
-  }
-
-  // ── SECTION: Additional Information ────────────────────────────────────
-  Widget _additionalSection(AppThemeColors colors) {
-    return _SectionCard(
-      title: 'Additional Information',
-      colors: colors,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Client Note
-          Expanded(
-            child: _TextAreaField(
-              label: 'Client Note',
-              ctrl: controller.noteCtrl,
-              hint: 'Enter any notes about the client...',
-              maxLength: 500,
-              colors: colors,
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Terms & Conditions
-          Expanded(
-            child: _TextAreaField(
-              label: 'Terms & Conditions',
-              ctrl: controller.termsCtrl,
-              hint: 'Enter terms and conditions...',
-              maxLength: 500,
-              colors: colors,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── RIGHT PANEL: Credit & Summary ─────────────────────────────────────
-  Widget _creditSummaryCard(AppThemeColors colors) {
-    return _RightCard(
-      title: 'Credit & Summary',
-      colors: colors,
-      child: Column(
-        children: [
-          _CreditRow(
-            label: 'Opening Balance (₹)',
-            value: controller.opBalCtrl.text.isEmpty
-                ? '0.00'
-                : controller.opBalCtrl.text,
-            colors: colors,
-          ),
-          _CreditRow(
-            label: 'Credit Limit (₹)',
-            value: controller.crLimCtrl.text.isEmpty
-                ? '0.00'
-                : controller.crLimCtrl.text,
-            colors: colors,
-          ),
-          _CreditRow(
-            label: 'Credit Days',
-            value:
-                '${controller.crDaysCtrl.text.isEmpty ? "0" : controller.crDaysCtrl.text} days',
-            colors: colors,
-          ),
-          _CreditRow(
-            label: 'Outstanding Amount (₹)',
-            value: '0.00',
-            colors: colors,
-          ),
-          _CreditRow(
-            label: 'Total Sales (MTD):',
-            value: '0.00',
-            colors: colors,
-            isLast: true,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── RIGHT PANEL: Primary Address ──────────────────────────────────────
-  Widget _primaryAddressCard(AppThemeColors colors) {
-    return _RightCard(
-      title: 'Primary Address',
-      colors: colors,
-      child: Obx(
-        () => Column(
-          children: [
-            _Field(
-              label: 'Address Line 1',
-              required: true,
-              ctrl: controller.pAddr1Ctrl,
-              hint: 'Enter address line 1',
-              colors: colors,
-            ),
-            const SizedBox(height: 12),
-            _Field(
-              label: 'Address Line 2',
-              ctrl: controller.pAddr2Ctrl,
-              hint: 'Enter address line 2',
-              colors: colors,
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: _Field(
-                    label: 'City',
-                    required: true,
-                    ctrl: controller.pCityCtrl,
-                    hint: 'Enter city',
+                  child: AppField(
+                    label: 'GSTIN',
                     colors: colors,
+                    child: AppTextBox(
+                      controller: controller.gstinCtrl,
+                      hint: 'Enter GSTIN',
+                      colors: colors,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 14),
                 Expanded(
-                  child: _Dropdown(
-                    label: 'State',
-                    required: true,
-                    value: controller.pState.value,
-                    hint: 'Select state',
-                    items: _kStates,
+                  child: AppField(
+                    label: 'PAN',
                     colors: colors,
-                    onChange: (v) =>
-                        controller.pState.value = v ?? controller.pState.value,
+                    child: AppTextBox(
+                      controller: controller.panCtrl,
+                      hint: 'Enter PAN',
+                      colors: colors,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: AppField(
+                    label: 'Client Since',
+                    colors: colors,
+                    child: AppDateBox(
+                      date: controller.clientSince.value,
+                      colors: colors,
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: Get.context!,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2035),
+                        );
+                        if (picked != null) {
+                          controller.clientSince.value = picked;
+                        }
+                      },
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _Field(
-                    label: 'PIN Code',
-                    required: true,
-                    ctrl: controller.pPinCtrl,
-                    hint: 'Enter PIN code',
-                    keyboardType: TextInputType.number,
-                    colors: colors,
-                  ),
+            const SizedBox(height: 16),
+            Divider(height: 1, color: colors.divider),
+            const SizedBox(height: 14),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'REGISTERED ADDRESS',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textHint,
+                  fontFamily: 'Poppins',
+                  letterSpacing: 0.4,
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _Dropdown(
-                    label: 'Country',
-                    required: true,
-                    value: controller.pCountry.value,
-                    hint: 'Select country',
-                    items: _kCountries,
-                    colors: colors,
-                    onChange: (v) => controller.pCountry.value =
-                        v ?? controller.pCountry.value,
-                  ),
-                ),
-              ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            _addressGrid(
+              colors: colors,
+              addr1Ctrl: controller.regAddr1Ctrl,
+              addr2Ctrl: controller.regAddr2Ctrl,
+              cityCtrl: controller.regCityCtrl,
+              stateCtrl: controller.regStateCtrl,
+              pinCtrl: controller.regPinCtrl,
+              countryCtrl: controller.regCountryCtrl,
+              addr1Label: 'Address Line 1',
             ),
           ],
         ),
@@ -817,63 +407,445 @@ class WebAddClientLayout extends GetView<AddClientController> {
     );
   }
 
-  // ── RIGHT PANEL: Contact Person ───────────────────────────────────────
-  Widget _contactPersonCard(AppThemeColors colors) {
-    return _RightCard(
-      title: 'Contact Person',
-      titleTrailing: Row(
+  // ── Section 2: Shipping Address ───────────────────────────────────────────
+  Widget _shippingAddressSection(AppThemeColors colors) {
+    return AppNumberedSectionCard(
+      colors: colors,
+      number: 2,
+      title: 'Shipping Address',
+      child: Obx(
+        () => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _checkRow(
+              colors: colors,
+              label: 'Same as Registered Address',
+              value: controller.shippingSameAsRegistered.value,
+              onChanged: controller.toggleShippingSameAsRegistered,
+            ),
+            const SizedBox(height: 6),
+            _checkRow(
+              colors: colors,
+              label: 'Same as Billing Address',
+              value: controller.shippingSameAsBilling.value,
+              onChanged: controller.toggleShippingSameAsBilling,
+            ),
+            if (controller.showShippingFields) ...[
+              const SizedBox(height: 14),
+              _addressGrid(
+                colors: colors,
+                addr1Ctrl: controller.shipAddr1Ctrl,
+                addr2Ctrl: controller.shipAddr2Ctrl,
+                cityCtrl: controller.shipCityCtrl,
+                stateCtrl: controller.shipStateCtrl,
+                pinCtrl: controller.shipPinCtrl,
+                countryCtrl: controller.shipCountryCtrl,
+                addr1Label: 'Address Line 1',
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Section 3: Billing Address ────────────────────────────────────────────
+  Widget _billingAddressSection(AppThemeColors colors) {
+    return AppNumberedSectionCard(
+      colors: colors,
+      number: 3,
+      title: 'Billing Address',
+      child: Obx(
+        () => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _checkRow(
+              colors: colors,
+              label: 'Same as Shipping Address',
+              value:
+                  controller.billingAddressMode.value ==
+                  BillingAddressMode.shipping,
+              onChanged: controller.toggleBillingSameAsShipping,
+            ),
+            const SizedBox(height: 6),
+            _checkRow(
+              colors: colors,
+              label: 'Same as Registered Address',
+              value:
+                  controller.billingAddressMode.value ==
+                  BillingAddressMode.registered,
+              onChanged: controller.toggleBillingSameAsRegistered,
+            ),
+            if (controller.showBillingFields) ...[
+              const SizedBox(height: 14),
+              _addressGrid(
+                colors: colors,
+                addr1Ctrl: controller.billAddr1Ctrl,
+                addr2Ctrl: controller.billAddr2Ctrl,
+                cityCtrl: controller.billCityCtrl,
+                stateCtrl: controller.billStateCtrl,
+                pinCtrl: controller.billPinCtrl,
+                countryCtrl: controller.billCountryCtrl,
+                addr1Label: 'Billing Address Line 1',
+                addr2Label: 'Billing Address Line 2',
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Section 4: Credit & Payment Terms ─────────────────────────────────────
+  Widget _creditTermsSection(AppThemeColors colors) {
+    return AppNumberedSectionCard(
+      colors: colors,
+      number: 4,
+      title: 'Credit & Payment Terms',
+      child: Obx(
+        () => Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: AppField(
+                label: 'Payment Terms',
+                colors: colors,
+                child: AppDropBox(
+                  hint: 'Select payment terms',
+                  value: controller.paymentTerms.value.isEmpty
+                      ? null
+                      : controller.paymentTerms.value,
+                  items: _kPaymentTerms,
+                  colors: colors,
+                  onChanged: (v) => controller.paymentTerms.value = v ?? '',
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: AppField(
+                label: 'Price List',
+                colors: colors,
+                child: AppDropBox(
+                  hint: 'Select price list',
+                  value: controller.priceList.value.isEmpty
+                      ? null
+                      : controller.priceList.value,
+                  items: _kPriceLists,
+                  colors: colors,
+                  onChanged: (v) => controller.priceList.value = v ?? '',
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: AppField(
+                label: 'Opening Balance (₹)',
+                colors: colors,
+                child: AppTextBox(
+                  controller: controller.opBalCtrl,
+                  hint: '0.00',
+                  colors: colors,
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: AppField(
+                label: 'Credit Limit (₹)',
+                colors: colors,
+                child: AppTextBox(
+                  controller: controller.crLimCtrl,
+                  hint: '0.00',
+                  colors: colors,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Shared: 2-column address field grid ───────────────────────────────────
+  Widget _addressGrid({
+    required AppThemeColors colors,
+    required TextEditingController addr1Ctrl,
+    required TextEditingController addr2Ctrl,
+    required TextEditingController cityCtrl,
+    required TextEditingController stateCtrl,
+    required TextEditingController pinCtrl,
+    required TextEditingController countryCtrl,
+    String addr1Label = 'Address Line 1',
+    String addr2Label = 'Address Line 2',
+  }) {
+    return Column(
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: AppField(
+                label: addr1Label,
+                required: true,
+                colors: colors,
+                child: AppTextBox(
+                  controller: addr1Ctrl,
+                  hint: 'Enter address line 1',
+                  colors: colors,
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: AppField(
+                label: addr2Label,
+                colors: colors,
+                child: AppTextBox(
+                  controller: addr2Ctrl,
+                  hint: 'Enter address line 2',
+                  colors: colors,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: AppField(
+                label: 'City',
+                required: true,
+                colors: colors,
+                child: AppTextBox(
+                  controller: cityCtrl,
+                  hint: 'Enter city',
+                  colors: colors,
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: AppField(
+                label: 'State',
+                required: true,
+                colors: colors,
+                child: AppTextBox(
+                  controller: stateCtrl,
+                  hint: 'Select state',
+                  colors: colors,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: AppField(
+                label: 'PIN Code',
+                required: true,
+                colors: colors,
+                child: AppTextBox(
+                  controller: pinCtrl,
+                  hint: 'Enter PIN code',
+                  colors: colors,
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: AppField(
+                label: 'Country',
+                required: true,
+                colors: colors,
+                child: AppTextBox(
+                  controller: countryCtrl,
+                  hint: 'India',
+                  colors: colors,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ── Shared: checkbox row for the "Same as…" toggles ───────────────────────
+  Widget _checkRow({
+    required AppThemeColors colors,
+    required String label,
+    required bool value,
+    required ValueChanged<bool?> onChanged,
+  }) {
+    return InkWell(
+      onTap: () => onChanged(!value),
+      borderRadius: BorderRadius.circular(6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.add_rounded, color: AppColors.primaryOrange, size: 15),
-          const SizedBox(width: 4),
-          const Text(
-            'Add More',
+          SizedBox(
+            width: 18,
+            height: 18,
+            child: Checkbox(
+              value: value,
+              onChanged: onChanged,
+              activeColor: AppColors.primaryOrange,
+              checkColor: Colors.white,
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+              side: BorderSide(color: colors.textSecondary, width: 1.3),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
             style: TextStyle(
               fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primaryOrange,
+              color: colors.textSecondary,
               fontFamily: 'Poppins',
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // ── Right sidebar: Credit & Summary ───────────────────────────────────────
+  Widget _creditSummaryCard(AppThemeColors colors) {
+    return _SidebarCard(
       colors: colors,
+      title: 'Credit & Summary',
+      // These three values come from TextEditingControllers, not Rx fields, so
+      // an Obx here has nothing observable to subscribe to — GetX throws
+      // "improper use of a GetX" and the values never refresh while typing.
+      // Listen to the controllers directly, same as the address preview below.
+      child: AnimatedBuilder(
+        animation: Listenable.merge([
+          controller.opBalCtrl,
+          controller.crLimCtrl,
+          controller.crDaysCtrl,
+        ]),
+        builder: (context, _) => Column(
+          children: [
+            AppTotalRow(
+              label: 'Opening Balance (₹)',
+              value: (double.tryParse(controller.opBalCtrl.text) ?? 0)
+                  .toStringAsFixed(2),
+              colors: colors,
+            ),
+            const SizedBox(height: 14),
+            AppTotalRow(
+              label: 'Credit Limit (₹)',
+              value: (double.tryParse(controller.crLimCtrl.text) ?? 0)
+                  .toStringAsFixed(2),
+              colors: colors,
+            ),
+            const SizedBox(height: 14),
+            AppTotalRow(
+              label: 'Credit Days',
+              value:
+                  '${controller.crDaysCtrl.text.isEmpty ? '0' : controller.crDaysCtrl.text} days',
+              colors: colors,
+            ),
+            const SizedBox(height: 14),
+            AppTotalRow(
+              label: 'Outstanding Amount (₹)',
+              value: '0.00',
+              colors: colors,
+            ),
+            const SizedBox(height: 14),
+            AppTotalRow(
+              label: 'Total Sales (MTD)',
+              value: '0.00',
+              colors: colors,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Right sidebar: live Registered Address preview ────────────────────────
+  Widget _registeredAddressPreviewCard(AppThemeColors colors) {
+    return _SidebarCard(
+      colors: colors,
+      title: 'Registered Address',
+      child: AnimatedBuilder(
+        animation: Listenable.merge([
+          controller.regAddr1Ctrl,
+          controller.regAddr2Ctrl,
+          controller.regCityCtrl,
+          controller.regStateCtrl,
+          controller.regPinCtrl,
+          controller.regCountryCtrl,
+        ]),
+        builder: (context, _) => Text(
+          controller.registeredAddressPreview,
+          style: TextStyle(
+            fontSize: 12.5,
+            color: colors.textPrimary,
+            fontFamily: 'Poppins',
+            height: 1.6,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Right sidebar: Contact Person ─────────────────────────────────────────
+  Widget _contactPersonCard(AppThemeColors colors) {
+    return _SidebarCard(
+      colors: colors,
+      title: 'Contact Person',
       child: Column(
         children: [
-          // Contact Person Name | Designation (2 col)
-          Row(
-            children: [
-              Expanded(
-                child: _Field(
-                  label: 'Contact Person Name',
-                  ctrl: controller.cpNameCtrl,
-                  hint: 'Enter contact person name',
-                  colors: colors,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _Field(
-                  label: 'Designation',
-                  ctrl: controller.cpDesigCtrl,
-                  hint: 'Enter designation',
-                  colors: colors,
-                ),
-              ),
-            ],
+          AppField(
+            label: 'Contact Person Name',
+            colors: colors,
+            child: AppTextBox(
+              controller: controller.cpNameCtrl,
+              hint: 'Enter contact name',
+              colors: colors,
+            ),
           ),
-          const SizedBox(height: 12),
-          _PhoneField(
+          const SizedBox(height: 14),
+          AppField(
+            label: 'Designation',
+            colors: colors,
+            child: AppTextBox(
+              controller: controller.cpDesigCtrl,
+              hint: 'Enter designation',
+              colors: colors,
+            ),
+          ),
+          const SizedBox(height: 14),
+          AppField(
             label: 'Phone',
-            ctrl: controller.cpPhCtrl,
             colors: colors,
+            child: AppTextBox(
+              controller: controller.cpPhCtrl,
+              hint: 'Enter phone number',
+              colors: colors,
+            ),
           ),
-          const SizedBox(height: 12),
-          _Field(
+          const SizedBox(height: 14),
+          AppField(
             label: 'Email',
-            ctrl: controller.cpEmailCtrl,
-            hint: 'Enter email address',
-            keyboardType: TextInputType.emailAddress,
             colors: colors,
+            child: AppTextBox(
+              controller: controller.cpEmailCtrl,
+              hint: 'Enter email address',
+              colors: colors,
+            ),
           ),
         ],
       ),
@@ -882,163 +854,35 @@ class WebAddClientLayout extends GetView<AddClientController> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section Card (main left form sections)
+// Sidebar card — matches `.section-card` with a titled, divider-underlined
+// header (no numbered badge, unlike the main form's section cards).
 // ─────────────────────────────────────────────────────────────────────────────
-class _SectionCard extends StatelessWidget {
-  final String title;
-  final Widget? customHeader;
-  final Widget child;
+class _SidebarCard extends StatelessWidget {
   final AppThemeColors colors;
+  final String title;
+  final Widget child;
 
-  const _SectionCard({
+  const _SidebarCard({
+    required this.colors,
     required this.title,
     required this.child,
-    required this.colors,
-    this.customHeader,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: colors.divider),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          customHeader ??
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-          const SizedBox(height: 16),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Right Panel Card
-// ─────────────────────────────────────────────────────────────────────────────
-class _RightCard extends StatelessWidget {
-  final String title;
-  final Widget? titleTrailing;
-  final Widget child;
-  final AppThemeColors colors;
-
-  const _RightCard({
-    required this.title,
-    required this.child,
-    required this.colors,
-    this.titleTrailing,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.divider),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: colors.textPrimary,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                ),
-                if (titleTrailing != null) ...[
-                  MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: titleTrailing!,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          Divider(height: 1, color: colors.divider),
-          Padding(padding: const EdgeInsets.all(14), child: child),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Credit & Summary Row
-// ─────────────────────────────────────────────────────────────────────────────
-class _CreditRow extends StatelessWidget {
-  final String label, value;
-  final AppThemeColors colors;
-  final bool isLast;
-  const _CreditRow({
-    required this.label,
-    required this.value,
-    required this.colors,
-    this.isLast = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: isLast
-          ? null
-          : BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: colors.divider, width: 0.5),
-              ),
-            ),
-      padding: const EdgeInsets.symmetric(vertical: 9),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.5,
-                color: colors.textSecondary,
-                fontFamily: 'Poppins',
-              ),
-            ),
-          ),
           Text(
-            value,
+            title,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -1046,488 +890,10 @@ class _CreditRow extends StatelessWidget {
               fontFamily: 'Poppins',
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Labeled Text Field
-// ─────────────────────────────────────────────────────────────────────────────
-class _Field extends StatelessWidget {
-  final String label;
-  final TextEditingController ctrl;
-  final String hint;
-  final bool required, readOnly;
-  final TextInputType keyboardType;
-  final AppThemeColors colors;
-  final String? suffix;
-
-  const _Field({
-    required this.label,
-    required this.ctrl,
-    this.hint = '',
-    this.required = false,
-    this.readOnly = false,
-    this.keyboardType = TextInputType.text,
-    required this.colors,
-    this.suffix,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _LabelText(label, required: required, colors: colors),
-        const SizedBox(height: 6),
-        TextField(
-          controller: ctrl,
-          readOnly: readOnly,
-          keyboardType: keyboardType,
-          style: TextStyle(
-            fontSize: 13,
-            color: readOnly ? colors.textHint : colors.textPrimary,
-            fontFamily: 'Poppins',
-          ),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(
-              fontSize: 13,
-              color: colors.textHint,
-              fontFamily: 'Poppins',
-            ),
-            filled: true,
-            fillColor: readOnly
-                ? colors.background.withValues(alpha: 0.6)
-                : colors.inputFill,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 11,
-            ),
-            suffixText: suffix,
-            suffixStyle: TextStyle(
-              fontSize: 13,
-              color: colors.textSecondary,
-              fontFamily: 'Poppins',
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: AppColors.primaryOrange,
-                width: 1.5,
-              ),
-            ),
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colors.divider),
-            ),
-            isDense: true,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Labeled Dropdown Field
-// ─────────────────────────────────────────────────────────────────────────────
-class _Dropdown extends StatelessWidget {
-  final String label;
-  final String? value, hint;
-  final List<String> items;
-  final ValueChanged<String?> onChange;
-  final bool required, enabled;
-  final AppThemeColors colors;
-
-  const _Dropdown({
-    required this.label,
-    this.value,
-    this.hint,
-    required this.items,
-    required this.onChange,
-    this.required = false,
-    this.enabled = true,
-    required this.colors,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _LabelText(label, required: required, colors: colors),
-        const SizedBox(height: 6),
-        Container(
-          height: 42,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: enabled
-                ? colors.inputFill
-                : colors.background.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: enabled ? colors.border : colors.divider),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: value,
-              isExpanded: true,
-              hint: Text(
-                hint ?? 'Select',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: colors.textHint,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-              style: TextStyle(
-                fontSize: 13,
-                color: colors.textPrimary,
-                fontFamily: 'Poppins',
-              ),
-              dropdownColor: colors.surface,
-              icon: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                size: 18,
-                color: enabled ? colors.textSecondary : colors.textHint,
-              ),
-              items: items
-                  .map((v) => DropdownMenuItem(value: v, child: Text(v)))
-                  .toList(),
-              onChanged: enabled ? onChange : null,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Phone Field with Country Code
-// ─────────────────────────────────────────────────────────────────────────────
-class _PhoneField extends StatelessWidget {
-  final String label;
-  final TextEditingController ctrl;
-  final bool required;
-  final AppThemeColors colors;
-
-  const _PhoneField({
-    required this.label,
-    required this.ctrl,
-    this.required = false,
-    required this.colors,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _LabelText(label, required: required, colors: colors),
-        const SizedBox(height: 6),
-        Container(
-          height: 42,
-          decoration: BoxDecoration(
-            border: Border.all(color: colors.border),
-            borderRadius: BorderRadius.circular(8),
-            color: colors.inputFill,
-          ),
-          child: Row(
-            children: [
-              // Flag + country code
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(
-                  color: colors.comingSoonBadge,
-                  border: Border(right: BorderSide(color: colors.border)),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(7),
-                    bottomLeft: Radius.circular(7),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('🇮🇳', style: TextStyle(fontSize: 16)),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 14,
-                      color: colors.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '+91',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontFamily: 'Poppins',
-                        color: colors.textPrimary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Phone number input
-              Expanded(
-                child: TextField(
-                  controller: ctrl,
-                  keyboardType: TextInputType.phone,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Enter phone number',
-                    hintStyle: TextStyle(
-                      fontSize: 13,
-                      color: colors.textHint,
-                      fontFamily: 'Poppins',
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 11,
-                    ),
-                    isDense: true,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Date Picker Field
-// ─────────────────────────────────────────────────────────────────────────────
-class _DateField extends StatelessWidget {
-  final String label;
-  final DateTime? value;
-  final AppThemeColors colors;
-  final ValueChanged<DateTime?> onPick;
-
-  const _DateField({
-    required this.label,
-    this.value,
-    required this.colors,
-    required this.onPick,
-  });
-
-  String get _display => value == null
-      ? 'Select date'
-      : '${value!.day.toString().padLeft(2, '0')} / ${value!.month.toString().padLeft(2, '0')} / ${value!.year}';
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _LabelText(label, colors: colors),
-        const SizedBox(height: 6),
-        InkWell(
-          onTap: () async {
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: value ?? DateTime.now(),
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2100),
-              builder: (ctx, child) => Theme(
-                data: Theme.of(ctx).copyWith(
-                  colorScheme: const ColorScheme.light(
-                    primary: AppColors.primaryOrange,
-                  ),
-                ),
-                child: child!,
-              ),
-            );
-            onPick(picked);
-          },
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: colors.inputFill,
-              border: Border.all(color: colors.border),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.calendar_month_outlined,
-                  size: 17,
-                  color: colors.textSecondary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _display,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: value == null ? colors.textHint : colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Multiline Text Area
-// ─────────────────────────────────────────────────────────────────────────────
-class _TextAreaField extends StatefulWidget {
-  final String label, hint;
-  final TextEditingController ctrl;
-  final int maxLength;
-  final AppThemeColors colors;
-  const _TextAreaField({
-    required this.label,
-    required this.ctrl,
-    required this.hint,
-    required this.maxLength,
-    required this.colors,
-  });
-  @override
-  State<_TextAreaField> createState() => _TextAreaFieldState();
-}
-
-class _TextAreaFieldState extends State<_TextAreaField> {
-  // Local, widget-scoped char counter — kept as an Rx on the persistent
-  // State object (not setState).
-  final _count = 0.obs;
-
-  @override
-  void initState() {
-    super.initState();
-    _count.value = widget.ctrl.text.length;
-    widget.ctrl.addListener(() => _count.value = widget.ctrl.text.length);
-  }
-
-  @override
-  void dispose() {
-    _count.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = widget.colors;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _LabelText(widget.label, colors: colors),
-        const SizedBox(height: 6),
-        TextField(
-          controller: widget.ctrl,
-          maxLines: 5,
-          maxLength: widget.maxLength,
-          style: TextStyle(
-            fontSize: 13,
-            color: colors.textPrimary,
-            fontFamily: 'Poppins',
-          ),
-          decoration: InputDecoration(
-            hintText: widget.hint,
-            hintStyle: TextStyle(
-              fontSize: 13,
-              color: colors.textHint,
-              fontFamily: 'Poppins',
-            ),
-            filled: true,
-            fillColor: colors.inputFill,
-            counterText: '',
-            contentPadding: const EdgeInsets.all(12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: AppColors.primaryOrange,
-                width: 1.5,
-              ),
-            ),
-            isDense: true,
-          ),
-        ),
-        Obx(
-          () => Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 4, right: 4),
-              child: Text(
-                '${_count.value}/${widget.maxLength}',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: colors.textHint,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Label Text (with optional required asterisk)
-// ─────────────────────────────────────────────────────────────────────────────
-class _LabelText extends StatelessWidget {
-  final String label;
-  final bool required;
-  final AppThemeColors colors;
-  const _LabelText(this.label, {this.required = false, required this.colors});
-
-  @override
-  Widget build(BuildContext context) {
-    return RichText(
-      text: TextSpan(
-        children: [
-          TextSpan(
-            text: label,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w500,
-              color: colors.textPrimary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          if (required)
-            const TextSpan(
-              text: ' *',
-              style: TextStyle(
-                color: Color(0xFFEF4444),
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+          const SizedBox(height: 14),
+          Divider(height: 1, color: colors.divider),
+          const SizedBox(height: 14),
+          child,
         ],
       ),
     );

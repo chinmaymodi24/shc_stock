@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
-import '../../../core/theme/app_colors.dart';
-import '../controllers/clients_controller.dart';
-import '../models/client_model.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/clients/controllers/clients_controller.dart';
+import 'package:shc_stock/app/modules/clients/models/client_model.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Client autocomplete — typing filters the universal client list by name;
@@ -35,9 +35,7 @@ class ClientAutocompleteField extends StatelessWidget {
       optionsBuilder: (textEditingValue) {
         final q = textEditingValue.text.trim().toLowerCase();
         if (q.isEmpty) return const Iterable<ClientModel>.empty();
-        return clients
-            .where((c) => c.name.toLowerCase().contains(q))
-            .take(30);
+        return clients.where((c) => c.name.toLowerCase().contains(q)).take(30);
       },
       onSelected: onSelected,
       fieldViewBuilder: (context, controller, focusNode, onSubmit) {

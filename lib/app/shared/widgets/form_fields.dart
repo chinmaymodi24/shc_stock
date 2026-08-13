@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import '../../core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared form-field widgets used by every add/edit form (web + mobile).
@@ -277,17 +277,23 @@ class AppTotalRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The label flexes (and ellipsises) so long labels like "Outstanding
+    // Amount (₹)" don't overflow the narrow sidebar cards; the value keeps
+    // its natural width, hard right.
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            color: colors.textSecondary,
-            fontFamily: 'Poppins',
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: colors.textSecondary,
+              fontFamily: 'Poppins',
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
+        const SizedBox(width: 8),
         Text(
           value,
           style: TextStyle(

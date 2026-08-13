@@ -1,24 +1,20 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:desktop_drop/desktop_drop.dart';
-import 'dart:io' as io;
-import '../controllers/categories_controller.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/filter_bar.dart';
-import '../../dashboard/widgets/web_sidebar.dart';
-import '../../dashboard/widgets/web_top_bar.dart';
-import '../models/category_model.dart';
-import '../../../core/api/api_config.dart';
-import '../../products/controllers/products_controller.dart';
-import '../../../shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/modules/categories/controllers/categories_controller.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/modules/categories/models/category_model.dart';
+import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
+import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 
 ProductsController _productsController() {
   if (Get.isRegistered<ProductsController>()) {
     return Get.find<ProductsController>();
   }
-  return Get.put(ProductsController());
+  return Get.put(ProductsController(), permanent: true);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -44,6 +40,11 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                 const WebTopBar(),
                 Expanded(
                   child: Obx(() {
+                    // The loader used to replace the entire page — header,
+                    // summary cards and all — so every fetch (including the
+                    // refetch after an add or delete) blanked the screen. The
+                    // shell now stays put and only the tree area loads.
+                    final loading = c.isLoading.value && c.categories.isEmpty;
                     final all = c.categories;
                     final visible = c.visibleCategories;
                     // Falls back to the first category when nothing (or a deleted
@@ -149,39 +150,32 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Expanded(
-                                  child: AppSimpleStatCard(
+                                  child: AppStatCard(
                                     label: 'Categories',
-                                    value: '${c.totalCategories}',
+                                    value:
+                                        '${c.stats.value.intOf('totalCategories')}',
                                     icon: Icons.category_outlined,
                                     iconColor: AppColors.primaryOrange,
-                                    bgColor: AppColors.primaryOrange.withValues(
-                                      alpha: 0.06,
-                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
-                                  child: AppSimpleStatCard(
+                                  child: AppStatCard(
                                     label: 'Subcategories',
-                                    value: '${c.totalSubCategories}',
+                                    value:
+                                        '${c.stats.value.intOf('totalSubCategories')}',
                                     icon: Icons.account_tree_outlined,
                                     iconColor: const Color(0xFF4A3AFF),
-                                    bgColor: const Color(
-                                      0xFF4A3AFF,
-                                    ).withValues(alpha: 0.06),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
-                                  child: AppSimpleStatCard(
+                                  child: AppStatCard(
                                     label: 'Largest',
                                     value: largest?.name ?? '—',
                                     icon: Icons.star_border_rounded,
                                     iconColor: colors.textSecondary,
-                                    bgColor: colors.textSecondary.withValues(
-                                      alpha: 0.06,
-                                    ),
-                                    isTitleValue: true,
+                                    smallValue: true,
                                   ),
                                 ),
                               ],
@@ -190,7 +184,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                           const SizedBox(height: 20),
 
                           // ── Search ────────────────────────────────────────────────
-                          if (all.isNotEmpty) ...[
+                          if (!loading && all.isNotEmpty) ...[
                             FilterBar(
                               search: FilterSearchField(
                                 controller: c.searchCtrl,
@@ -205,7 +199,12 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                           ],
 
                           // ── Sidebar + Detail Panel ────────────────────────────────
-                          if (all.isEmpty)
+                          if (loading)
+                            const AppLoadingIndicator(
+                              label: 'Loading categories...',
+                              padding: 96,
+                            )
+                          else if (all.isEmpty)
                             _EmptyState(
                               colors: colors,
                               onAdd: () => _showAddCategoryDialog(c),
@@ -217,7 +216,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                                 children: [
                                   // Left: category list
                                   SizedBox(
-                                    width: 240,
+                                    width: 260,
                                     child: Container(
                                       decoration: BoxDecoration(
                                         color: colors.surface,
@@ -234,18 +233,59 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                                             padding: const EdgeInsets.fromLTRB(
                                               16,
                                               14,
-                                              16,
+                                              12,
                                               8,
                                             ),
-                                            child: Text(
-                                              'CATEGORIES',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w700,
-                                                color: colors.textHint,
-                                                fontFamily: 'Poppins',
-                                                letterSpacing: 0.6,
-                                              ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'CATEGORIES',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: colors.textHint,
+                                                    fontFamily: 'Poppins',
+                                                    letterSpacing: 0.6,
+                                                  ),
+                                                ),
+                                                Tooltip(
+                                                  message: 'Add Category',
+                                                  child: InkWell(
+                                                    onTap: () =>
+                                                        _showAddCategoryDialog(
+                                                          c,
+                                                        ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          7,
+                                                        ),
+                                                    child: Container(
+                                                      width: 22,
+                                                      height: 22,
+                                                      decoration: BoxDecoration(
+                                                        color: AppColors
+                                                            .primaryOrange
+                                                            .withValues(
+                                                              alpha: 0.12,
+                                                            ),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              7,
+                                                            ),
+                                                      ),
+                                                      child: const Icon(
+                                                        Icons.add_rounded,
+                                                        size: 15,
+                                                        color: AppColors
+                                                            .primaryOrange,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                           ...visible.map(
@@ -327,11 +367,10 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
   // ── Dialogs ───────────────────────────────────────────────────────────────
   void _showAddCategoryDialog(CategoriesController c) {
     Get.dialog(
-      _CategoryFormDialog(
-        isSubCategory: false,
-        isEdit: false,
-        onSave: (name, desc, bytes) {
-          c.addCategory(name, desc: desc, imageBytes: bytes);
+      _SimpleFormDialog(
+        title: 'Add Category',
+        onSave: (name) {
+          c.addCategory(name);
           Get.back();
         },
       ),
@@ -340,16 +379,13 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
 
   void _showEditDialog(CategoriesController c, CategoryModel cat) {
     Get.dialog(
-      _CategoryFormDialog(
-        isSubCategory: false,
-        isEdit: true,
+      _SimpleFormDialog(
+        title: 'Edit Category',
         initialName: cat.name,
-        initialDesc: cat.description,
-        initialImageUrl: cat.imageUrl == null
-            ? null
-            : ApiConfig.resolveImageUrl(cat.imageUrl!),
-        onSave: (name, desc, bytes) {
-          c.updateCategory(cat.id, name, desc: desc, imageBytes: bytes);
+        onSave: (name) {
+          // The simplified dialog only edits the name — pass the existing
+          // description through untouched so the API PUT doesn't blank it.
+          c.updateCategory(cat.id, name, desc: cat.description);
           Get.back();
         },
       ),
@@ -365,14 +401,11 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
         ? cat.subDescriptions[subIdx]
         : '';
     Get.dialog(
-      _CategoryFormDialog(
-        isSubCategory: true,
-        isEdit: true,
-        parentCategoryName: cat.name,
+      _SimpleFormDialog(
+        title: 'Edit Subcategory',
         initialName: cat.subProducts[subIdx],
-        initialDesc: currentDesc,
-        onSave: (name, desc, _) {
-          c.updateSubCategory(cat.id, subIdx, name, desc: desc);
+        onSave: (name) {
+          c.updateSubCategory(cat.id, subIdx, name, desc: currentDesc);
           Get.back();
         },
       ),
@@ -381,12 +414,10 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
 
   void _showAddSubDialog(CategoriesController c, String catId, String catName) {
     Get.dialog(
-      _CategoryFormDialog(
-        isSubCategory: true,
-        isEdit: false,
-        parentCategoryName: catName,
-        onSave: (name, desc, _) {
-          c.addSubCategory(catId, name, desc: desc);
+      _SimpleFormDialog(
+        title: 'Add Subcategory',
+        onSave: (name) {
+          c.addSubCategory(catId, name);
           Get.back();
         },
       ),
@@ -1015,6 +1046,7 @@ class _SubCategoryTableRowState extends State<_SubCategoryTableRow> {
     );
   }
 }
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Header Action Button (filled Edit/Delete pill, matches target UI)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1100,743 +1132,174 @@ class _ActionBtn extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Unified Category Form Dialog
-// Handles: Add Category, Edit Category, Add Sub-Category, Edit Sub-Category
+// Simple Name-only Form Dialog — used for Add/Edit Category and
+// Add/Edit Sub-Category, matching the approved design (single "Name" field,
+// Cancel/Save row).
 // ─────────────────────────────────────────────────────────────────────────────
-class _CategoryFormDialog extends StatefulWidget {
-  final bool isSubCategory;
-  final bool isEdit;
-  final String? parentCategoryName;
+class _SimpleFormDialog extends StatefulWidget {
+  final String title;
   final String initialName;
-  final String initialDesc;
-  final Uint8List? initialImageBytes;
+  final ValueChanged<String> onSave;
 
-  /// Fully-qualified URL of an already-uploaded image (edit mode), shown as
-  /// a network preview until the user picks a replacement file.
-  final String? initialImageUrl;
-
-  /// Called with (name, description, imageBytes) when the user taps Save.
-  final void Function(String name, String desc, Uint8List? imageBytes) onSave;
-
-  const _CategoryFormDialog({
-    required this.isSubCategory,
-    required this.isEdit,
-    this.parentCategoryName,
+  const _SimpleFormDialog({
+    required this.title,
     this.initialName = '',
-    this.initialDesc = '',
-    this.initialImageBytes,
-    this.initialImageUrl,
     required this.onSave,
   });
 
   @override
-  State<_CategoryFormDialog> createState() => _CategoryFormDialogState();
+  State<_SimpleFormDialog> createState() => _SimpleFormDialogState();
 }
 
-class _CategoryFormDialogState extends State<_CategoryFormDialog> {
+class _SimpleFormDialogState extends State<_SimpleFormDialog> {
   late final TextEditingController _nameCtrl;
-  late final TextEditingController _descCtrl;
-  // Dialog-local reactive fields — kept as Rx on the persistent State object
-  // (not setState) so only the parts that depend on them repaint.
-  late final RxBool _isActive;
-  late final RxInt _descLen;
-  final _isDragOver = false.obs;
-  late final Rx<Uint8List?> _pickedImageBytes;
-  final _pickedImageName = ''.obs;
-  final _existingImageCleared = false.obs;
 
   @override
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.initialName);
-    _descCtrl = TextEditingController(text: widget.initialDesc);
-    _isActive = true.obs;
-    _descLen = _descCtrl.text.length.obs;
-    _pickedImageBytes = Rx<Uint8List?>(widget.initialImageBytes);
-    _descCtrl.addListener(() => _descLen.value = _descCtrl.text.length);
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
-    _descCtrl.dispose();
-    _isActive.close();
-    _descLen.close();
-    _isDragOver.close();
-    _pickedImageBytes.close();
-    _pickedImageName.close();
-    _existingImageCleared.close();
     super.dispose();
   }
 
-  String get _title {
-    if (widget.isEdit) {
-      return widget.isSubCategory ? 'Edit Sub-Category' : 'Edit Category';
-    }
-    return widget.isSubCategory ? 'Add Sub-Category' : 'Add Category';
-  }
-
-  String get _saveLabel {
-    if (widget.isEdit) {
-      return widget.isSubCategory ? 'Update Sub-Category' : 'Update Category';
-    }
-    return widget.isSubCategory ? 'Save Sub-Category' : 'Save Category';
-  }
-
-  Future<void> _pickImage() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      withData: true, // always get bytes (works on web + desktop)
-    );
-    if (result == null || result.files.isEmpty) return;
-    final f = result.files.first;
-    Uint8List? bytes = f.bytes;
-    if (bytes == null && f.path != null) {
-      bytes = await io.File(f.path!).readAsBytes();
-    }
-    if (bytes != null) {
-      _pickedImageBytes.value = bytes;
-      _pickedImageName.value = f.name;
-    }
+  void _save() {
+    final name = _nameCtrl.text.trim();
+    if (name.isNotEmpty) widget.onSave(name);
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final isSub = widget.isSubCategory;
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(32),
+      insetPadding: const EdgeInsets.all(24),
       child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: Container(
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.18),
-                  blurRadius: 40,
-                  offset: const Offset(0, 10),
+        child: Container(
+          width: 340,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.20),
+                blurRadius: 32,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.title,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                  fontFamily: 'Poppins',
                 ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // ── Header ──────────────────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 22, 22, 16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _title,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: colors.textPrimary,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            if (isSub &&
-                                widget.parentCategoryName != null &&
-                                !widget.isEdit) ...[
-                              Text(
-                                'Add a new sub-category under',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: colors.textSecondary,
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                widget.parentCategoryName!,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: colors.textPrimary,
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                            ] else
-                              Text(
-                                widget.isEdit
-                                    ? 'Update the ${isSub ? "sub-" : ""}category details.'
-                                    : 'Create a new product ${isSub ? "sub-" : ""}category.',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: colors.textSecondary,
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      InkWell(
-                        onTap: Get.back,
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: colors.comingSoonBadge,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 18,
-                            color: colors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _nameCtrl,
+                autofocus: true,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: colors.textPrimary,
+                  fontFamily: 'Poppins',
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Name…',
+                  hintStyle: TextStyle(
+                    color: colors.textHint,
+                    fontFamily: 'Poppins',
+                    fontSize: 13,
+                  ),
+                  filled: true,
+                  fillColor: colors.surface,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 9,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: colors.border, width: 1.5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: colors.border, width: 1.5),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: AppColors.primaryOrange,
+                      width: 1.5,
+                    ),
                   ),
                 ),
-                Divider(height: 1, color: colors.divider),
-
-                // ── Body ────────────────────────────────────────────────────
-                SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Name
-                      _DlgLabel(
-                        isSub ? 'Sub-Category Name' : 'Category Name',
-                        required: true,
-                        colors: colors,
-                      ),
-                      const SizedBox(height: 6),
-                      _DlgTF(
-                        ctrl: _nameCtrl,
-                        hint: isSub
-                            ? 'Enter sub-category name'
-                            : 'Enter category name',
-                        autofocus: true,
-                        colors: colors,
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Description
-                      _DlgLabel('Description (optional)', colors: colors),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: _descCtrl,
-                        maxLines: 3,
-                        maxLength: 250,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          color: colors.textPrimary,
-                          fontFamily: 'Poppins',
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Enter description',
-                          hintStyle: TextStyle(
-                            color: colors.textHint,
-                            fontFamily: 'Poppins',
-                            fontSize: 13.5,
-                          ),
-                          filled: true,
-                          fillColor: colors.inputFill,
-                          counterText: '',
-                          contentPadding: const EdgeInsets.all(12),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: colors.border),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: colors.border),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: AppColors.primaryOrange,
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Obx(
-                        () => Align(
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            '${_descLen.value}/250',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              color: colors.textHint,
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Image upload zone
-                      _DlgLabel(
-                        isSub
-                            ? 'Sub-Category Image (optional)'
-                            : 'Category Image (optional)',
-                        colors: colors,
-                      ),
-                      const SizedBox(height: 8),
-
-                      // If an image has been picked, show preview + clear button
-                      Obx(() {
-                        final pickedBytes = _pickedImageBytes.value;
-                        if (pickedBytes != null) {
-                          return Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: AppColors.primaryOrange.withValues(
-                                  alpha: 0.40,
-                                ),
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                              color: colors.inputFill,
-                            ),
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.memory(
-                                    pickedBytes,
-                                    width: 72,
-                                    height: 72,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _pickedImageName.value.isNotEmpty
-                                            ? _pickedImageName.value
-                                            : 'Existing image',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: colors.textPrimary,
-                                          fontFamily: 'Poppins',
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Image selected',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: AppColors.primaryOrange,
-                                          fontFamily: 'Poppins',
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                InkWell(
-                                  onTap: () {
-                                    _pickedImageBytes.value = null;
-                                    _pickedImageName.value = '';
-                                  },
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: Container(
-                                    width: 28,
-                                    height: 28,
-                                    decoration: BoxDecoration(
-                                      color: const Color(
-                                        0xFFEF4444,
-                                      ).withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: const Icon(
-                                      Icons.close_rounded,
-                                      color: Color(0xFFEF4444),
-                                      size: 14,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                        // No newly-picked bytes yet — show the existing
-                        // uploaded image (edit mode) as a network preview.
-                        if (widget.initialImageUrl != null &&
-                            !_existingImageCleared.value) {
-                          return Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: colors.border),
-                              borderRadius: BorderRadius.circular(10),
-                              color: colors.inputFill,
-                            ),
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    widget.initialImageUrl!,
-                                    width: 72,
-                                    height: 72,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Container(
-                                      width: 72,
-                                      height: 72,
-                                      color: colors.divider,
-                                      child: Icon(
-                                        Icons.broken_image_outlined,
-                                        color: colors.textHint,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Current image',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: colors.textPrimary,
-                                      fontFamily: 'Poppins',
-                                    ),
-                                  ),
-                                ),
-                                InkWell(
-                                  onTap: () => _existingImageCleared.value = true,
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: Container(
-                                    width: 28,
-                                    height: 28,
-                                    decoration: BoxDecoration(
-                                      color: const Color(
-                                        0xFFEF4444,
-                                      ).withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: const Icon(
-                                      Icons.close_rounded,
-                                      color: Color(0xFFEF4444),
-                                      size: 14,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                        // Drag & Drop + click-to-browse zone
-                        final isDragOver = _isDragOver.value;
-                        return DropTarget(
-                          onDragEntered: (_) => _isDragOver.value = true,
-                          onDragExited: (_) => _isDragOver.value = false,
-                          onDragDone: (detail) async {
-                            _isDragOver.value = false;
-                            if (detail.files.isNotEmpty) {
-                              final bytes = await detail.files.first
-                                  .readAsBytes();
-                              final name = detail.files.first.name;
-                              _pickedImageBytes.value = bytes;
-                              _pickedImageName.value = name;
-                            }
-                          },
-                          child: InkWell(
-                            onTap: _pickImage,
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              width: double.infinity,
-                              height: 118,
-                              decoration: BoxDecoration(
-                                color: isDragOver
-                                    ? AppColors.primaryOrange.withValues(
-                                        alpha: 0.06,
-                                      )
-                                    : colors.inputFill,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: isDragOver
-                                      ? AppColors.primaryOrange
-                                      : colors.border,
-                                  width: isDragOver ? 1.8 : 1,
-                                ),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  AnimatedContainer(
-                                    duration: const Duration(milliseconds: 150),
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primaryOrange.withValues(
-                                        alpha: isDragOver ? 0.14 : 0.08,
-                                      ),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(
-                                      isDragOver
-                                          ? Icons.download_rounded
-                                          : Icons.cloud_upload_outlined,
-                                      size: 24,
-                                      color: AppColors.primaryOrange,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text.rich(
-                                    TextSpan(
-                                      style: TextStyle(
-                                        fontSize: 12.5,
-                                        color: colors.textSecondary,
-                                        fontFamily: 'Poppins',
-                                        height: 1.5,
-                                      ),
-                                      children: [
-                                        TextSpan(
-                                          text: isDragOver
-                                              ? 'Release to upload'
-                                              : 'Drag & drop an image here\n',
-                                          style: isDragOver
-                                              ? const TextStyle(
-                                                  color:
-                                                      AppColors.primaryOrange,
-                                                  fontWeight: FontWeight.w600,
-                                                )
-                                              : null,
-                                        ),
-                                        if (!isDragOver)
-                                          TextSpan(
-                                            text: 'or click to ',
-                                            style: TextStyle(
-                                              color: colors.textHint,
-                                            ),
-                                          ),
-                                        if (!isDragOver)
-                                          const TextSpan(
-                                            text: 'browse',
-                                            style: TextStyle(
-                                              color: AppColors.primaryOrange,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Allowed formats: JPG, PNG, WEBP (Max 2MB)',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: colors.textHint,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Status
-                      _DlgLabel('Status', colors: colors),
-                      const SizedBox(height: 8),
-                      Obx(
-                        () => Row(
-                          children: [
-                            Switch(
-                              value: _isActive.value,
-                              onChanged: (v) => _isActive.value = v,
-                              activeColor: AppColors.primaryOrange,
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _isActive.value ? 'Active' : 'Inactive',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: colors.textPrimary,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Divider(height: 1, color: colors.divider),
-
-                // ── Footer ──────────────────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 14, 24, 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      OutlinedButton(
-                        onPressed: Get.back,
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: colors.border),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                onSubmitted: (_) => _save(),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: Get.back,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        decoration: BoxDecoration(
+                          color: colors.background.computeLuminance() > 0.5
+                              ? const Color(0xFFF3F1EC)
+                              : colors.inputFill,
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           'Cancel',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontFamily: 'Poppins',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
                             color: colors.textPrimary,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: () {
-                          final name = _nameCtrl.text.trim();
-                          if (name.isNotEmpty) {
-                            widget.onSave(
-                              name,
-                              _descCtrl.text.trim(),
-                              _pickedImageBytes.value,
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryOrange,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          _saveLabel,
-                          style: const TextStyle(
                             fontFamily: 'Poppins',
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared dialog label + text-field helpers
-// ─────────────────────────────────────────────────────────────────────────────
-class _DlgLabel extends StatelessWidget {
-  final String label;
-  final bool required;
-  final AppThemeColors colors;
-  const _DlgLabel(this.label, {this.required = false, required this.colors});
-  @override
-  Widget build(BuildContext context) {
-    return RichText(
-      text: TextSpan(
-        children: [
-          TextSpan(
-            text: label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: colors.textPrimary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          if (required)
-            const TextSpan(
-              text: ' *',
-              style: TextStyle(color: Color(0xFFEF4444), fontSize: 13),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DlgTF extends StatelessWidget {
-  final TextEditingController ctrl;
-  final String hint;
-  final bool autofocus;
-  final AppThemeColors colors;
-  const _DlgTF({
-    required this.ctrl,
-    required this.hint,
-    this.autofocus = false,
-    required this.colors,
-  });
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: ctrl,
-      autofocus: autofocus,
-      style: TextStyle(
-        fontSize: 13.5,
-        color: colors.textPrimary,
-        fontFamily: 'Poppins',
-      ),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(
-          color: colors.textHint,
-          fontFamily: 'Poppins',
-          fontSize: 13.5,
-        ),
-        filled: true,
-        fillColor: colors.inputFill,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 13,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: colors.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: colors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: AppColors.primaryOrange,
-            width: 1.5,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: InkWell(
+                      onTap: _save,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryOrange,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'Save',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

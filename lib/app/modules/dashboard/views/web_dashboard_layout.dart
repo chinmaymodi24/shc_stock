@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/dashboard_controller.dart';
-import '../models/dashboard_models.dart';
-import '../widgets/web_sidebar.dart';
-import '../widgets/web_top_bar.dart';
-import '../widgets/bar_chart.dart';
-import '../widgets/donut_chart.dart';
-import '../widgets/sales_chart.dart';
-import '../widgets/recent_transactions.dart';
-import '../widgets/low_stock_table.dart';
-import '../widgets/incoming_deliveries.dart';
-import '../widgets/category_breakdown.dart';
-import '../widgets/notes_todo.dart';
-import '../widgets/notes_dialog.dart';
-import '../../../core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/dashboard/controllers/dashboard_controller.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/modules/dashboard/models/dashboard_models.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/bar_chart.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/donut_chart.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/sales_chart.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/recent_transactions.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/low_stock_table.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/incoming_deliveries.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/category_breakdown.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/notes_todo.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/notes_dialog.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
+import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 
 class WebDashboardLayout extends StatelessWidget {
   const WebDashboardLayout({super.key});
@@ -33,73 +36,110 @@ class WebDashboardLayout extends StatelessWidget {
               children: [
                 _buildTopBar(context, c),
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: c.dashboardStats.asMap().entries.map((e) {
-                            final isLast = e.key == c.dashboardStats.length - 1;
-                            return Expanded(
-                              child: Padding(
-                                padding: EdgeInsets.only(
-                                  right: isLast ? 0 : 16,
+                  // Obx: the page used to read the controller's lists straight
+                  // out of build(), with no reactive wrapper anywhere — so it
+                  // rendered whatever had arrived by the time some *unrelated*
+                  // rebuild happened (a theme switch, a hover) and showed
+                  // nothing at all when the fetch landed after the first
+                  // frame. Every observable this page draws is touched below
+                  // so the whole body redraws the moment the API answers.
+                  child: Obx(() {
+                    c.dashboardStats.length;
+                    c.purchasesData.length;
+                    c.salesData.length;
+                    c.newClientsData.length;
+                    c.categorySlices.length;
+                    c.recentTransactions.length;
+                    c.incomingDeliveries.length;
+                    c.lowStockAlerts.length;
+                    c.notes.length;
+                    c.purchasesChange.value;
+                    c.salesChange.value;
+                    c.newClientsChange.value;
+
+                    // First load only: the top bar stays, the body loads —
+                    // a later refetch keeps the current numbers on screen
+                    // instead of flashing back to a spinner.
+                    if (c.isLoading.value && c.dashboardStats.isEmpty) {
+                      return const AppLoadingIndicator(
+                        label: 'Loading dashboard...',
+                        padding: 120,
+                      );
+                    }
+
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: c.dashboardStats.asMap().entries.map((e) {
+                              final isLast =
+                                  e.key == c.dashboardStats.length - 1;
+                              return Expanded(
+                                child: Padding(
+                                  padding: EdgeInsets.only(
+                                    right: isLast ? 0 : 16,
+                                  ),
+                                  child: _DashboardStatTile(data: e.value),
                                 ),
-                                child: _DashboardStatTile(data: e.value),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(child: _buildPurchasesChart(context, c)),
-                            const SizedBox(width: 16),
-                            Expanded(child: _buildSalesChart(context, c)),
-                            const SizedBox(width: 16),
-                            Expanded(child: _buildNewClientsChart(context, c)),
-                            const SizedBox(width: 16),
-                            Expanded(child: _buildCategoryDonut(context, c)),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        IntrinsicHeight(
-                          child: Row(
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                flex: 65,
-                                child: _buildRecentTransactions(context, c),
-                              ),
+                              Expanded(child: _buildPurchasesChart(context, c)),
+                              const SizedBox(width: 16),
+                              Expanded(child: _buildSalesChart(context, c)),
                               const SizedBox(width: 16),
                               Expanded(
-                                flex: 35,
-                                child: _buildIncomingDeliveries(context, c),
+                                child: _buildNewClientsChart(context, c),
                               ),
+                              const SizedBox(width: 16),
+                              Expanded(child: _buildCategoryDonut(context, c)),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: 20),
-                        IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: _buildCategoryBreakdown(context, c),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(child: _buildLowStockAlerts(context, c)),
-                              const SizedBox(width: 16),
-                              Expanded(child: _buildNotesTodo(context, c)),
-                            ],
+                          const SizedBox(height: 20),
+                          IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  flex: 65,
+                                  child: _buildRecentTransactions(context, c),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  flex: 35,
+                                  child: _buildIncomingDeliveries(context, c),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
+                          const SizedBox(height: 20),
+                          IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: _buildCategoryBreakdown(context, c),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildLowStockAlerts(context, c),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(child: _buildNotesTodo(context, c)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
                 ),
               ],
             ),
@@ -157,11 +197,12 @@ class WebDashboardLayout extends StatelessWidget {
   Widget _buildPurchasesChart(BuildContext context, DashboardController c) {
     return _ChartCard(
       title: 'Purchases (6 months)',
-      changeText: c.purchasesChange,
+      changeText: c.purchasesChange.value,
       child: SimpleBarChart(
         data: c.purchasesData,
         barColor: AppColors.primaryPurple,
         height: 150,
+        valueFormatter: formatRupees,
       ),
     );
   }
@@ -169,11 +210,12 @@ class WebDashboardLayout extends StatelessWidget {
   Widget _buildSalesChart(BuildContext context, DashboardController c) {
     return _ChartCard(
       title: 'Sales (6 months)',
-      changeText: c.salesChange,
+      changeText: c.salesChange.value,
       child: SimpleBarChart(
         data: c.salesData,
         barColor: AppColors.primaryOrange,
         height: 150,
+        valueFormatter: formatRupees,
       ),
     );
   }
@@ -181,15 +223,23 @@ class WebDashboardLayout extends StatelessWidget {
   Widget _buildNewClientsChart(BuildContext context, DashboardController c) {
     return _ChartCard(
       title: 'New clients (6 months)',
-      changeText: c.newClientsChange,
+      changeText: c.newClientsChange.value,
       child: SizedBox(
         height: 150,
         child: SalesLineChart(
           data: c.newClientsData,
           lineColor: AppColors.accentPurple,
+          valueFormatter: _clientCount,
         ),
       ),
     );
+  }
+
+  /// Hover-tooltip wording for the New clients line — the series is a count,
+  /// not an amount, so it must not go through the rupee formatter.
+  static String _clientCount(double v) {
+    final n = v.round();
+    return n == 1 ? '1 new client' : '$n new clients';
   }
 
   Widget _buildCategoryDonut(BuildContext context, DashboardController c) {
@@ -214,7 +264,10 @@ class WebDashboardLayout extends StatelessWidget {
   Widget _buildIncomingDeliveries(BuildContext context, DashboardController c) {
     return _SectionCard(
       title: 'Incoming deliveries',
-      child: IncomingDeliveries(deliveries: c.incomingDeliveries),
+      child: IncomingDeliveries(
+        deliveries: c.incomingDeliveries,
+        onToggle: c.toggleDeliveryDone,
+      ),
     );
   }
 
@@ -259,65 +312,22 @@ class WebDashboardLayout extends StatelessWidget {
 }
 
 // ── Pastel summary tile ────────────────────────────────────────────────────
+/// The dashboard's five summary tiles are the same card every other page's
+/// KPI row uses — icon boxed on the left, flat tint, no border or shadow.
 class _DashboardStatTile extends StatelessWidget {
   final DashboardStatData data;
   const _DashboardStatTile({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: data.bgColor,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(data.icon, color: data.iconColor, size: 20),
-          const SizedBox(height: 10),
-          Text(
-            data.title,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w500,
-              color: data.iconColor.withValues(alpha: 0.85),
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            data.value,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1240),
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 4),
-          // Always reserve the caption line's space (invisible when there's
-          // no change value) so every tile is the same height naturally,
-          // without hardcoding a height that can drift out of sync with
-          // actual (async-loaded web font) text metrics.
-          Visibility(
-            visible: data.change != null,
-            maintainSize: true,
-            maintainAnimation: true,
-            maintainState: true,
-            child: Text(
-              data.change ?? '',
-              style: const TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF2FA85C),
-                fontFamily: 'Poppins',
-              ),
-            ),
-          ),
-        ],
-      ),
+    return AppStatCard(
+      label: data.title,
+      value: data.value,
+      icon: data.icon,
+      iconColor: data.iconColor,
+      trend: data.change ?? '',
+      trendUp: data.isPositive,
+      showCaption: false,
     );
   }
 }
@@ -351,19 +361,23 @@ class _SectionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // The title flexes so a long one plus a trailing action can't
+          // overflow the card at laptop widths.
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
+                    fontFamily: 'Poppins',
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (trailing != null) trailing!,
+              if (trailing != null) ...[const SizedBox(width: 8), trailing!],
             ],
           ),
           const SizedBox(height: 16),

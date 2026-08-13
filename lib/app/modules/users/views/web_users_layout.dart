@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
-import '../controllers/users_controller.dart';
-import '../models/user_model.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/filter_bar.dart';
-import '../../../routes/app_routes.dart';
-import '../../dashboard/widgets/web_sidebar.dart';
-import '../../dashboard/widgets/web_top_bar.dart';
-import '../../dashboard/widgets/modified_by_cell.dart';
-import '../../../shared/widgets/stat_cards.dart';
-import '../../../shared/widgets/table_footer.dart';
+import 'package:shc_stock/app/modules/users/controllers/users_controller.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/modules/users/models/user_model.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
+import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 
 // ── Table column flex constants ────────────────────────────────────────────
 const double _kIdxW = 36.0;
@@ -23,7 +24,7 @@ const int _kRoleFlex = 14;
 const int _kLoginFlex = 14;
 const int _kStatFlex = 9;
 const int _kModFlex = 16;
-const int _kActFlex = 8;
+const int _kActFlex = 18; // View + Edit + Delete (Delete added later)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Widget
@@ -161,17 +162,12 @@ class WebUsersLayout extends GetView<UsersController> {
                                     value: '${c.totalUsers}',
                                     icon: Icons.group_outlined,
                                     iconColor: AppColors.primaryOrange,
-                                    trend: '+12.5%',
-                                    trendUp: true,
-                                    spark: const [
-                                      0.4,
-                                      0.55,
-                                      0.5,
-                                      0.65,
-                                      0.6,
-                                      0.75,
-                                      0.7,
-                                    ],
+                                    trend: c.stats.value.trendLabel(
+                                      'totalUsers',
+                                    ),
+                                    trendUp: c.stats.value.trendUp(
+                                      'totalUsers',
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -181,17 +177,12 @@ class WebUsersLayout extends GetView<UsersController> {
                                     value: '${c.activeUsers}',
                                     icon: Icons.person_outline_rounded,
                                     iconColor: const Color(0xFF22C55E),
-                                    trend: '+8.3%',
-                                    trendUp: true,
-                                    spark: const [
-                                      0.3,
-                                      0.4,
-                                      0.5,
-                                      0.45,
-                                      0.6,
-                                      0.55,
-                                      0.7,
-                                    ],
+                                    trend: c.stats.value.trendLabel(
+                                      'activeUsers',
+                                    ),
+                                    trendUp: c.stats.value.trendUp(
+                                      'activeUsers',
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -201,17 +192,12 @@ class WebUsersLayout extends GetView<UsersController> {
                                     value: '${c.adminCount}',
                                     icon: Icons.admin_panel_settings_outlined,
                                     iconColor: const Color(0xFF4A3AFF),
-                                    trend: '0.0%',
-                                    trendUp: true,
-                                    spark: const [
-                                      0.5,
-                                      0.5,
-                                      0.5,
-                                      0.5,
-                                      0.5,
-                                      0.5,
-                                      0.5,
-                                    ],
+                                    trend: c.stats.value.trendLabel(
+                                      'adminCount',
+                                    ),
+                                    trendUp: c.stats.value.trendUp(
+                                      'adminCount',
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -221,17 +207,12 @@ class WebUsersLayout extends GetView<UsersController> {
                                     value: '${c.inactiveUsers}',
                                     icon: Icons.person_off_outlined,
                                     iconColor: const Color(0xFFEF4444),
-                                    trend: '-5.0%',
-                                    trendUp: false,
-                                    spark: const [
-                                      0.6,
-                                      0.55,
-                                      0.5,
-                                      0.45,
-                                      0.4,
-                                      0.38,
-                                      0.35,
-                                    ],
+                                    trend: c.stats.value.trendLabel(
+                                      'inactiveUsers',
+                                    ),
+                                    trendUp: c.stats.value.trendUp(
+                                      'inactiveUsers',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -288,7 +269,12 @@ class WebUsersLayout extends GetView<UsersController> {
                                       Divider(height: 1, color: colors.divider),
 
                                       // Rows
-                                      if (pageItems.isEmpty)
+                                      if (c.isLoading.value)
+                                        const AppLoadingIndicator(
+                                          label: 'Loading employees...',
+                                          padding: 40,
+                                        )
+                                      else if (pageItems.isEmpty)
                                         Padding(
                                           padding: const EdgeInsets.all(48),
                                           child: Center(
@@ -764,30 +750,35 @@ class _UserRowState extends State<_UserRow> {
                   flex: _kRoleFlex,
                   child: Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: u.role.color.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(u.role.icon, size: 12, color: u.role.color),
-                            const SizedBox(width: 5),
-                            Text(
-                              u.role.label,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: u.role.color,
-                                fontFamily: 'Poppins',
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: u.role.color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(u.role.icon, size: 12, color: u.role.color),
+                              const SizedBox(width: 5),
+                              Flexible(
+                                child: Text(
+                                  u.role.label,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: u.role.color,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -808,30 +799,44 @@ class _UserRowState extends State<_UserRow> {
                   ),
                 ),
 
-                // Status badge
+                // Status badge — tap to activate / deactivate
                 Expanded(
                   flex: _kStatFlex,
                   child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: u.isActive
-                            ? const Color(0xFF22C55E).withValues(alpha: 0.10)
-                            : c.comingSoonBadge,
+                    child: Tooltip(
+                      message: u.isActive
+                          ? 'Deactivate employee'
+                          : 'Activate employee',
+                      child: InkWell(
                         borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        u.isActive ? 'Active' : 'Inactive',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: u.isActive
-                              ? const Color(0xFF22C55E)
-                              : c.textSecondary,
-                          fontFamily: 'Poppins',
+                        onTap: () => Get.find<UsersController>().setActive(
+                          u.id,
+                          !u.isActive,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: u.isActive
+                                ? const Color(
+                                    0xFF22C55E,
+                                  ).withValues(alpha: 0.10)
+                                : c.comingSoonBadge,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            u.isActive ? 'Active' : 'Inactive',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: u.isActive
+                                  ? const Color(0xFF22C55E)
+                                  : c.textSecondary,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -844,10 +849,12 @@ class _UserRowState extends State<_UserRow> {
                   child: Builder(
                     builder: (_) {
                       final mod = resolveModifiedBy(
-                        seedId: u.id,
                         storedName: u.modifiedBy,
                         storedDate: u.modifiedAt,
                       );
+                      if (mod == null) {
+                        return ModifiedByEmpty(textHint: c.textHint);
+                      }
                       return ModifiedByCell(
                         name: mod.name,
                         date: mod.date,
@@ -870,12 +877,20 @@ class _UserRowState extends State<_UserRow> {
                         tooltip: 'View',
                         onTap: () {},
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 4),
                       _ActBtn(
                         icon: Icons.edit_outlined,
                         color: AppColors.primaryOrange,
                         tooltip: 'Edit',
                         onTap: () {},
+                      ),
+                      const SizedBox(width: 4),
+                      _ActBtn(
+                        icon: Icons.delete_outline_rounded,
+                        color: const Color(0xFFEF4444),
+                        tooltip: 'Delete',
+                        onTap: () =>
+                            Get.find<UsersController>().deleteUser(u.id),
                       ),
                     ],
                   ),

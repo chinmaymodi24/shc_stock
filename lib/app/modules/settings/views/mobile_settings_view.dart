@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/theme_controller.dart';
-import '../../../routes/app_routes.dart';
-import '../controllers/settings_controller.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/theme/theme_controller.dart';
+import 'package:shc_stock/app/core/theme/theme_switch_helper.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mobile Settings — back-bar header + horizontal tabs
@@ -74,24 +75,24 @@ class MobileSettingsView extends GetView<SettingsController> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: Obx(() => _buildContent(colors)),
+        child: Obx(() => _buildContent(context, colors)),
       ),
     );
   }
 
-  Widget _buildContent(AppThemeColors colors) {
+  Widget _buildContent(BuildContext context, AppThemeColors colors) {
     switch (controller.mobileTab.value) {
       case 1:
         return _securityTab(colors);
       case 2:
         return _notificationsTab(colors);
       default:
-        return _preferencesTab(colors);
+        return _preferencesTab(context, colors);
     }
   }
 
   // ── Preferences ─────────────────────────────────────────────────
-  Widget _preferencesTab(AppThemeColors colors) {
+  Widget _preferencesTab(BuildContext context, AppThemeColors colors) {
     final tc = Get.find<ThemeController>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,7 +125,7 @@ class MobileSettingsView extends GetView<SettingsController> {
                   label: 'Light',
                   selected: tc.isLight,
                   colors: colors,
-                  onTap: () => tc.setTheme(ThemeMode.light),
+                  onTap: () => switchThemeWithRipple(context, ThemeMode.light),
                 ),
               ),
               const SizedBox(width: 10),
@@ -134,7 +135,7 @@ class MobileSettingsView extends GetView<SettingsController> {
                   label: 'Dark',
                   selected: tc.isDark,
                   colors: colors,
-                  onTap: () => tc.setTheme(ThemeMode.dark),
+                  onTap: () => switchThemeWithRipple(context, ThemeMode.dark),
                 ),
               ),
               const SizedBox(width: 10),
@@ -144,7 +145,7 @@ class MobileSettingsView extends GetView<SettingsController> {
                   label: 'System',
                   selected: tc.isSystem,
                   colors: colors,
-                  onTap: () => tc.setTheme(ThemeMode.system),
+                  onTap: () => switchThemeWithRipple(context, ThemeMode.system),
                 ),
               ),
             ],
@@ -207,7 +208,10 @@ class MobileSettingsView extends GetView<SettingsController> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _orangeButton(label: 'Apply', onTap: () {}),
+              child: _orangeButton(
+                label: 'Apply',
+                onTap: controller.saveSettings,
+              ),
             ),
           ],
         ),
@@ -245,7 +249,10 @@ class MobileSettingsView extends GetView<SettingsController> {
         const SizedBox(height: 22),
         SizedBox(
           width: double.infinity,
-          child: _purpleButton(label: 'Update Password', onTap: () {}),
+          child: _purpleButton(
+            label: 'Update Password',
+            onTap: controller.changePassword,
+          ),
         ),
         const SizedBox(height: 24),
         Divider(height: 1, color: colors.divider),
@@ -254,7 +261,7 @@ class MobileSettingsView extends GetView<SettingsController> {
           title: 'Two-factor authentication',
           subtitle: 'Add an extra layer of security',
           value: controller.twoFactor.value,
-          onChanged: (v) => controller.twoFactor.value = v,
+          onChanged: (v) => controller.toggle(controller.twoFactor, v),
           colors: colors,
         ),
       ],
@@ -268,25 +275,25 @@ class MobileSettingsView extends GetView<SettingsController> {
         'Low stock alerts',
         'Get notified when items fall below reorder point',
         controller.lowStock.value,
-        (bool v) => controller.lowStock.value = v,
+        (bool v) => controller.toggle(controller.lowStock, v),
       ),
       (
         'Delivery updates',
         'Incoming and outgoing shipment status changes',
         controller.delivery.value,
-        (bool v) => controller.delivery.value = v,
+        (bool v) => controller.toggle(controller.delivery, v),
       ),
       (
         'Payment reminders',
         'Client dues and supplier payments coming due',
         controller.payment.value,
-        (bool v) => controller.payment.value = v,
+        (bool v) => controller.toggle(controller.payment, v),
       ),
       (
         'Weekly summary email',
         'A digest of activity every Monday morning',
         controller.weekly.value,
-        (bool v) => controller.weekly.value = v,
+        (bool v) => controller.toggle(controller.weekly, v),
       ),
     ];
     return Column(

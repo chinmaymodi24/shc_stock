@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../models/dashboard_models.dart';
-import '../../../core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/dashboard/models/dashboard_models.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'notes_todo.dart';
 
 /// "View All" dialog for the Notes & To-dos card — shows every note in a

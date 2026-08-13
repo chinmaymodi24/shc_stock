@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../models/user_model.dart';
-import '../../../routes/app_routes.dart';
-import '../../../core/utils/app_toast.dart';
+import 'package:shc_stock/app/modules/users/models/user_model.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
 import 'users_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -11,8 +11,7 @@ import 'users_controller.dart';
 class RoleOpt {
   final String id, name, desc;
   final IconData icon;
-  final int count;
-  const RoleOpt(this.id, this.name, this.desc, this.icon, this.count);
+  const RoleOpt(this.id, this.name, this.desc, this.icon);
 }
 
 const kRoles = <RoleOpt>[
@@ -21,44 +20,66 @@ const kRoles = <RoleOpt>[
     'Super Admin',
     'Full access to all modules and settings',
     Icons.stars_rounded,
-    1,
   ),
   RoleOpt(
     'admin',
     'Admin',
     'Manage most modules and system settings',
     Icons.admin_panel_settings_outlined,
-    3,
   ),
   RoleOpt(
     'manager',
     'Manager',
     'Manage stock, purchases, sales and reports',
     Icons.manage_accounts_outlined,
-    5,
   ),
   RoleOpt(
     'sales',
     'Sales',
     'Access to sales, customers and invoices',
     Icons.point_of_sale_outlined,
-    8,
   ),
   RoleOpt(
     'store_staff',
     'Store Staff',
     'Access to stock and warehouse operations',
     Icons.warehouse_outlined,
-    7,
   ),
   RoleOpt(
     'custom',
     'Custom Role',
     'Custom role with specific permissions',
     Icons.tune_rounded,
-    2,
   ),
 ];
+
+/// Maps a wizard role-option id to the backend's [UserRole] enum — the same
+/// mapping [AddEmployeeWizardController.submit] uses when saving.
+UserRole userRoleForOptId(String id) {
+  switch (id) {
+    case 'super_admin':
+    case 'admin':
+      return UserRole.admin;
+    case 'manager':
+    case 'custom':
+      return UserRole.manager;
+    case 'sales':
+      return UserRole.salesman;
+    case 'store_staff':
+      return UserRole.stockManager;
+    default:
+      return UserRole.salesman;
+  }
+}
+
+/// Live "N users with this role" count, from the real `/api/users` role
+/// breakdown — not a hardcoded number. Two wizard options can share one
+/// [UserRole] bucket (e.g. Super Admin & Admin both map to `UserRole.admin`)
+/// since the backend doesn't track "custom" as its own role.
+int roleOptUserCount(String id) {
+  if (!Get.isRegistered<UsersController>()) return 0;
+  return Get.find<UsersController>().roleBreakdown[userRoleForOptId(id)] ?? 0;
+}
 
 class WizMod {
   final String name;
@@ -154,7 +175,10 @@ class AddEmployeeWizardController extends GetxController {
   void onInit() {
     super.onInit();
     perms = kMods
-        .map((m) => WizPerm(module: m.name, icon: m.icon, read: true, write: false))
+        .map(
+          (m) =>
+              WizPerm(module: m.name, icon: m.icon, read: true, write: false),
+        )
         .toList()
         .obs;
     roleSearchCtrl.addListener(
@@ -266,57 +290,35 @@ class AddEmployeeWizardController extends GetxController {
     }
   }
 
-  void submit() {
+  /// True while the create call is in flight — the wizard's finish button
+  /// reads this to avoid double submits.
+  final isSaving = false.obs;
+
+  Future<void> submit() async {
     final c = Get.find<UsersController>();
-    final nm = nameCtrl.text.trim();
-    final pts = nm.split(' ');
-    final ini = pts.length >= 2
-        ? '${pts.first[0]}${pts.last[0]}'.toUpperCase()
-        : nm.substring(0, nm.length >= 2 ? 2 : 1).toUpperCase();
+    final ur = userRoleForOptId(roleId.value ?? 'sales');
 
-    UserRole ur = UserRole.salesman;
-    switch (roleId.value) {
-      case 'super_admin':
-      case 'admin':
-        ur = UserRole.admin;
-        break;
-      case 'manager':
-        ur = UserRole.manager;
-        break;
-      case 'sales':
-        ur = UserRole.salesman;
-        break;
-      case 'store_staff':
-        ur = UserRole.stockManager;
-        break;
-      case 'custom':
-        ur = UserRole.manager;
-        break;
-    }
+    isSaving.value = true;
+    // The backend assigns the USR-#### code, hashes a starter password and
+    // returns the saved row — no locally invented ids or codes.
+    final created = await c.addUser({
+      'name': nameCtrl.text.trim(),
+      'email': emailCtrl.text.trim(),
+      'phone': phoneCtrl.text.trim(),
+      'role': ur.label,
+      'department': dept.value.isEmpty ? 'General' : dept.value,
+      'isActive': status.value == 'Active',
+    });
+    isSaving.value = false;
 
-    c.users.add(
-      UserModel(
-        id: '${c.users.length + 1}',
-        code: 'EMP-${(c.users.length + 1).toString().padLeft(4, '0')}',
-        name: nm,
-        initials: ini,
-        badgeColor: ur.color,
-        email: emailCtrl.text.trim(),
-        phone: phoneCtrl.text.trim().isEmpty ? '-' : phoneCtrl.text.trim(),
-        role: ur,
-        isActive: status.value == 'Active',
-        lastLogin: 'Never',
-        createdAt: fmtDOJ == '-'
-            ? '${DateTime.now().day} Jul ${DateTime.now().year}'
-            : fmtDOJ,
-        department: dept.value.isEmpty ? 'General' : dept.value,
-      ),
-    );
+    // addUser() already surfaced the API error — keep the wizard open so the
+    // entered details aren't lost.
+    if (created == null) return;
 
     Get.offNamed(AppRoutes.users);
     showAppToast(
       'Employee Created',
-      '$nm has been added successfully.',
+      '${created.name} (${created.code}) has been added successfully.',
       backgroundColor: const Color(0xFF22C55E),
       colorText: Colors.white,
       icon: Icons.check_circle_outline,

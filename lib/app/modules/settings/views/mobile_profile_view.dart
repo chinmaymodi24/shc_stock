@@ -1,31 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../routes/app_routes.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Standalone mobile "Profile" page — reached from the dashboard avatar menu.
 // ─────────────────────────────────────────────────────────────────────────────
-class MobileProfileView extends StatefulWidget {
+/// Reuses [SettingsController] so this page and the desktop Settings screen
+/// load from and save to the same place — /api/settings for the signed-in
+/// user. It used to hold a hardcoded name/email and a no-op Save button.
+class MobileProfileView extends StatelessWidget {
   const MobileProfileView({super.key});
-  @override
-  State<MobileProfileView> createState() => _MobileProfileViewState();
-}
 
-class _MobileProfileViewState extends State<MobileProfileView> {
-  final _nameCtrl = TextEditingController(text: 'Chinmay Modi');
-  final _emailCtrl = TextEditingController(text: 'chinmaymodi24@gmail.com');
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _emailCtrl.dispose();
-    super.dispose();
+  SettingsController get _c {
+    if (!Get.isRegistered<SettingsController>()) {
+      Get.put(SettingsController());
+    }
+    return Get.find<SettingsController>();
   }
+
+  SessionUser? get _user => Get.isRegistered<SessionController>()
+      ? Get.find<SessionController>().user.value
+      : null;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final c = _c;
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
@@ -74,10 +77,10 @@ class _MobileProfileViewState extends State<MobileProfileView> {
                     color: AppColors.primaryPurple,
                     shape: BoxShape.circle,
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
-                      'CM',
-                      style: TextStyle(
+                      _user?.initials ?? '—',
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -96,14 +99,14 @@ class _MobileProfileViewState extends State<MobileProfileView> {
               ],
             ),
             const SizedBox(height: 24),
-            _field(label: 'Full Name', ctrl: _nameCtrl, colors: colors),
+            _field(label: 'Full Name', ctrl: c.nameCtrl, colors: colors),
             const SizedBox(height: 16),
-            _field(label: 'Email', ctrl: _emailCtrl, colors: colors),
+            _field(label: 'Email', ctrl: c.emailCtrl, colors: colors),
             const SizedBox(height: 16),
             _field(
               label: 'Role',
               ctrl: null,
-              hint: 'Admin',
+              hint: _user?.role ?? '—',
               enabled: false,
               colors: colors,
             ),
@@ -111,7 +114,7 @@ class _MobileProfileViewState extends State<MobileProfileView> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: c.saveSettings,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryOrange,
                   elevation: 0,

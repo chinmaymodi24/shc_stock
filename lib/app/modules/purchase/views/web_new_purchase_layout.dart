@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
-import '../controllers/purchase_controller.dart';
-import '../controllers/add_purchase_controller.dart';
-import '../models/purchase_model.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../dashboard/widgets/web_sidebar.dart';
-import '../../dashboard/widgets/web_top_bar.dart';
-import '../../products/controllers/products_controller.dart';
-import '../../products/models/product_model.dart';
-import '../../clients/models/client_model.dart';
-import '../../clients/widgets/client_autocomplete_field.dart';
-import '../../../shared/widgets/form_fields.dart';
-import '../../../shared/widgets/section_card.dart';
-import '../../../core/utils/app_toast.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
+import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
+import 'package:shc_stock/app/modules/purchase/controllers/add_purchase_controller.dart';
+import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
+import 'package:shc_stock/app/modules/products/models/product_model.dart';
+import 'package:shc_stock/app/modules/clients/models/client_model.dart';
+import 'package:shc_stock/app/modules/clients/widgets/client_autocomplete_field.dart';
+import 'package:shc_stock/app/shared/widgets/form_fields.dart';
+import 'package:shc_stock/app/shared/widgets/section_card.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Add Purchase — tax-invoice style entry form
@@ -23,7 +24,7 @@ import '../../../core/utils/app_toast.dart';
 class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
   const WebNewPurchaseLayout({super.key});
 
-  void _savePurchase() {
+  Future<void> _savePurchase() async {
     final c = Get.find<PurchaseController>();
     final newId = 'po_${DateTime.now().millisecondsSinceEpoch}';
     final newPoNum =
@@ -31,7 +32,7 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
     final supplierName = controller.client.value.isEmpty
         ? 'Unknown Supplier'
         : controller.client.value;
-    c.addOrder(
+    final ok = await c.addOrder(
       PurchaseOrder(
         id: newId,
         poNumber: newPoNum,
@@ -41,8 +42,39 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
         itemCount: controller.items.length,
         amount: controller.grandTotal,
         status: PurchaseStatus.pending,
+        modifiedBy: currentActorName,
+        modifiedAt: DateTime.now(),
+        supplierAddress: controller.addressCtrl.text.trim(),
+        buyerGst: controller.buyerGstCtrl.text.trim(),
+        pan: controller.panCtrl.text.trim(),
+        invoiceNo: controller.invoiceNoCtrl.text.trim().isEmpty
+            ? newPoNum
+            : controller.invoiceNoCtrl.text.trim(),
+        invoiceDate: controller.invoiceDate.value,
+        despatchThrough: controller.despatchThrough.value,
+        lrNo: controller.lrNoCtrl.text.trim(),
+        lrDate: controller.lrDate.value,
+        vehicleNo: controller.vehicleNoCtrl.text.trim(),
+        freight: double.tryParse(controller.freightCtrl.text.trim()) ?? 0,
+        placeOfSupply: controller.placeOfSupplyCtrl.text.trim(),
+        dueDate: controller.dueDate.value,
+        items: controller.items
+            .map(
+              (r) => PurchaseDetailItem(
+                productId: r.productId,
+                product: r.product,
+                hsn: r.hsn,
+                grade: r.grade,
+                density: r.density,
+                qty: r.totalQty,
+                unit: r.uom,
+                rate: r.netPrice,
+              ),
+            )
+            .toList(),
       ),
     );
+    if (!ok) return; // controller already showed the error toast
     Get.back();
     showAppToast(
       '✅ Purchase Saved',
@@ -644,6 +676,7 @@ class _ItemDetailsTable extends StatelessWidget {
         Divider(height: 1, color: colors.divider),
         ...items.asMap().entries.map(
           (e) => _ItemDetailsRow(
+            key: ValueKey(e.value.id),
             row: e.value,
             colors: colors,
             onChanged: onChanged,
@@ -665,6 +698,7 @@ class _ItemDetailsRow extends StatelessWidget {
   final VoidCallback onDelete;
 
   const _ItemDetailsRow({
+    super.key,
     required this.row,
     required this.colors,
     required this.onChanged,
@@ -672,6 +706,7 @@ class _ItemDetailsRow extends StatelessWidget {
   });
 
   void _applyProduct(ProductModel p) {
+    row.productId = int.tryParse(p.id);
     row.product = p.name;
     row.hsn = p.hsnCode ?? '';
     row.uom = p.unit;
@@ -684,6 +719,7 @@ class _ItemDetailsRow extends StatelessWidget {
     }
     final g = _gradeNum.firstMatch(p.name);
     if (g != null) row.grade = g.group(1)!;
+    row.version++;
     onChanged();
   }
 
@@ -709,6 +745,7 @@ class _ItemDetailsRow extends StatelessWidget {
           Expanded(
             flex: _cHsn,
             child: AppSmallInput(
+              key: ValueKey('${row.id}_hsn_${row.version}'),
               hint: '—',
               value: row.hsn,
               colors: colors,
@@ -723,6 +760,7 @@ class _ItemDetailsRow extends StatelessWidget {
           Expanded(
             flex: _cGrade,
             child: AppSmallInput(
+              key: ValueKey('${row.id}_grade_${row.version}'),
               hint: '—',
               value: row.grade,
               colors: colors,
@@ -737,6 +775,7 @@ class _ItemDetailsRow extends StatelessWidget {
           Expanded(
             flex: _cDensity,
             child: AppSmallInput(
+              key: ValueKey('${row.id}_density_${row.version}'),
               hint: '—',
               value: row.density,
               colors: colors,
@@ -810,6 +849,7 @@ class _ItemDetailsRow extends StatelessWidget {
           Expanded(
             flex: _cNetPrice,
             child: AppSmallNumber(
+              key: ValueKey('${row.id}_netPrice_${row.version}'),
               value: row.netPrice,
               colors: colors,
               decimal: true,

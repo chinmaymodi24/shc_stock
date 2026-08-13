@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
-import '../controllers/purchase_controller.dart';
-import '../models/purchase_model.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/filter_bar.dart';
-import '../../dashboard/widgets/web_sidebar.dart';
-import '../../dashboard/widgets/web_top_bar.dart';
-import '../../dashboard/widgets/modified_by_cell.dart';
-import '../../../routes/app_routes.dart';
-import '../../../shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
+import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
+import 'package:shc_stock/app/modules/purchase/views/purchase_details_dialog.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
+import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/shared/widgets/status_update_dialog_shell.dart';
 
 // ── Table column constants (header + row MUST match) ──────────────────────
 const double _kIdxW = 32.0; // # badge
@@ -21,7 +25,7 @@ const int _kItemFlex = 8; // Items
 const int _kAmtFlex = 14; // Amount
 const int _kStsFlex = 12; // Status
 const int _kModFlex = 18; // Modified By
-const int _kActFlex = 10; // Actions
+const int _kActFlex = 16; // Actions — View + Edit + Delete
 
 // ─────────────────────────────────────────────────────────────────────────────
 class WebPurchaseLayout extends GetView<PurchaseController> {
@@ -157,143 +161,63 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                               children: [
                                 Expanded(
                                   child: AppStatCard(
-                    padding: 16,
-                    iconBoxSize: 34,
-                    iconBoxRadius: 8,
-                    iconSize: 17,
-                    labelFontSize: 11.5,
-                    smallValueFontSize: 20,
-                    gapIconToLabel: 10,
-                    gapLabelToValue: 4,
-                    gapValueToTrend: 6,
-                    sparkWidth: 56,
-                    sparkHeight: 44,
-                    showCaption: false,
-                    sparkStrokeWidth: 1.8,
-                    sparkStrokeJoin: StrokeJoin.miter,
                                     label: 'Orders',
-                                    value: '${c.totalOrders}',
+                                    value:
+                                        '${c.stats.value.intOf('totalOrders')}',
                                     icon: Icons.receipt_long_outlined,
                                     iconColor: const Color(0xFF4A3AFF),
-                                    cardBg: const Color(0xFF4A3AFF).withValues(alpha: 0.06),
-                                    trend: '+12.5% vs last month',
-                                    trendUp: true,
-                                    spark: const [
-                                      0.3,
-                                      0.5,
-                                      0.4,
-                                      0.6,
-                                      0.5,
-                                      0.7,
-                                      0.65,
-                                    ],
+                                    trend: c.stats.value.trendLabel(
+                                      'totalOrders',
+                                    ),
+                                    showCaption: false,
                                   ),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: AppStatCard(
-                    padding: 16,
-                    iconBoxSize: 34,
-                    iconBoxRadius: 8,
-                    iconSize: 17,
-                    labelFontSize: 11.5,
-                    smallValueFontSize: 20,
-                    gapIconToLabel: 10,
-                    gapLabelToValue: 4,
-                    gapValueToTrend: 6,
-                    sparkWidth: 56,
-                    sparkHeight: 44,
-                    showCaption: false,
-                    sparkStrokeWidth: 1.8,
-                    sparkStrokeJoin: StrokeJoin.miter,
                                     label: 'Purchase (MTD)',
-                                    value: _formatAmt(c.totalPurchaseMTD),
+                                    value: formatRupees(
+                                      c.stats.value.doubleOf('purchaseMTD'),
+                                    ),
                                     icon: Icons.shopping_cart_outlined,
                                     iconColor: AppColors.primaryOrange,
-                                    cardBg: AppColors.primaryOrange.withValues(alpha: 0.06),
-                                    trend: '+18.6% vs last month',
-                                    trendUp: true,
-                                    spark: const [
-                                      0.2,
-                                      0.4,
-                                      0.5,
-                                      0.6,
-                                      0.5,
-                                      0.7,
-                                      0.8,
-                                    ],
+                                    trend: c.stats.value.trendLabel(
+                                      'purchaseMTD',
+                                    ),
+                                    showCaption: false,
                                     smallValue: true,
                                   ),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: AppStatCard(
-                    padding: 16,
-                    iconBoxSize: 34,
-                    iconBoxRadius: 8,
-                    iconSize: 17,
-                    labelFontSize: 11.5,
-                    smallValueFontSize: 20,
-                    gapIconToLabel: 10,
-                    gapLabelToValue: 4,
-                    gapValueToTrend: 6,
-                    sparkWidth: 56,
-                    sparkHeight: 44,
-                    showCaption: false,
-                    sparkStrokeWidth: 1.8,
-                    sparkStrokeJoin: StrokeJoin.miter,
                                     label: 'Amount Paid',
-                                    value: _formatAmt(c.totalAmountPaid),
+                                    value: formatRupees(
+                                      c.stats.value.doubleOf('amountPaid'),
+                                    ),
                                     icon: Icons.check_circle_outline_rounded,
                                     iconColor: const Color(0xFF22C55E),
-                                    cardBg: const Color(0xFF22C55E).withValues(alpha: 0.06),
-                                    trend: '+15.3% vs last month',
-                                    trendUp: true,
-                                    spark: const [
-                                      0.25,
-                                      0.4,
-                                      0.5,
-                                      0.55,
-                                      0.6,
-                                      0.7,
-                                      0.75,
-                                    ],
+                                    trend: c.stats.value.trendLabel(
+                                      'amountPaid',
+                                    ),
+                                    showCaption: false,
                                     smallValue: true,
                                   ),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: AppStatCard(
-                    padding: 16,
-                    iconBoxSize: 34,
-                    iconBoxRadius: 8,
-                    iconSize: 17,
-                    labelFontSize: 11.5,
-                    smallValueFontSize: 20,
-                    gapIconToLabel: 10,
-                    gapLabelToValue: 4,
-                    gapValueToTrend: 6,
-                    sparkWidth: 56,
-                    sparkHeight: 44,
-                    showCaption: false,
-                    sparkStrokeWidth: 1.8,
-                    sparkStrokeJoin: StrokeJoin.miter,
                                     label: 'Amount Due',
-                                    value: _formatAmt(c.totalAmountDue),
+                                    value: formatRupees(
+                                      c.stats.value.doubleOf('amountDue'),
+                                    ),
                                     icon: Icons.currency_rupee_rounded,
                                     iconColor: const Color(0xFFF59E0B),
-                                    cardBg: const Color(0xFFF59E0B).withValues(alpha: 0.06),
-                                    trend: '-8.3% vs last month',
+                                    trend: c.stats.value.trendLabel(
+                                      'amountDue',
+                                    ),
                                     trendUp: false,
-                                    spark: const [
-                                      0.7,
-                                      0.6,
-                                      0.55,
-                                      0.5,
-                                      0.4,
-                                      0.45,
-                                      0.35,
-                                    ],
+                                    showCaption: false,
                                     smallValue: true,
                                   ),
                                 ),
@@ -334,20 +258,18 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                           c.currentPage.value = 1;
                                         },
                                       ),
-                                      Divider(
-                                        height: 1,
-                                        color: colors.divider,
-                                      ),
+                                      Divider(height: 1, color: colors.divider),
 
                                       // Column Headers
                                       _ColumnHeader(colors: colors),
-                                      Divider(
-                                        height: 1,
-                                        color: colors.divider,
-                                      ),
+                                      Divider(height: 1, color: colors.divider),
 
                                       // Data rows
-                                      if (pageItems.isEmpty)
+                                      if (c.isLoading.value)
+                                        const AppLoadingIndicator(
+                                          label: 'Loading purchase orders...',
+                                        )
+                                      else if (pageItems.isEmpty)
                                         _EmptyState(colors: colors)
                                       else
                                         ...pageItems.asMap().entries.map((e) {
@@ -364,10 +286,7 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                         }),
 
                                       // Footer
-                                      Divider(
-                                        height: 1,
-                                        color: colors.divider,
-                                      ),
+                                      Divider(height: 1, color: colors.divider),
                                       _TableFooter(
                                         total: filtered.length,
                                         startDisplay: filtered.isEmpty
@@ -397,10 +316,7 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                 width: 272,
                                 child: Column(
                                   children: [
-                                    _PurchaseSummaryCard(
-                                      colors: colors,
-                                      c: c,
-                                    ),
+                                    _PurchaseSummaryCard(colors: colors, c: c),
                                     const SizedBox(height: 14),
                                     _TopSuppliersCard(colors: colors, c: c),
                                   ],
@@ -420,26 +336,7 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
       ),
     );
   }
-
-  static String _formatAmt(double v) {
-    if (v >= 100000) {
-      final lakh = v ~/ 100000;
-      final thousands = (v % 100000) ~/ 1000;
-      final rem = (v % 1000).toInt();
-      if (thousands > 0) {
-        return '₹$lakh,${thousands.toString().padLeft(2, '0')},${rem.toString().padLeft(3, '0')}';
-      }
-      return '₹$lakh,${rem.toString().padLeft(5, '0')}';
-    }
-    final s = v.toInt();
-    if (s >= 1000) {
-      final str = s.toString();
-      return '₹${str.substring(0, str.length - 3)},${str.substring(str.length - 3)}';
-    }
-    return '₹$s';
-  }
 }
-
 
 // Table Toolbar
 // ─────────────────────────────────────────────────────────────────────────────
@@ -561,21 +458,39 @@ class _ColumnHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
       child: Row(
         children: [
-          SizedBox(width: _kIdxW, child: Text('#', style: _s)),
+          SizedBox(
+            width: _kIdxW,
+            child: Text('#', style: _s),
+          ),
           const SizedBox(width: _kGap),
-          Expanded(flex: _kPoFlex, child: Text('PO Number', style: _s)),
-          Expanded(flex: _kSupFlex, child: Text('Supplier', style: _s)),
-          Expanded(flex: _kDateFlex, child: Text('Date', style: _s)),
+          Expanded(
+            flex: _kPoFlex,
+            child: Text('PO Number', style: _s),
+          ),
+          Expanded(
+            flex: _kSupFlex,
+            child: Text('Supplier', style: _s),
+          ),
+          Expanded(
+            flex: _kDateFlex,
+            child: Text('Date', style: _s),
+          ),
           Expanded(
             flex: _kItemFlex,
             child: Center(child: Text('Items', style: _s)),
           ),
-          Expanded(flex: _kAmtFlex, child: Text('Amount', style: _s)),
+          Expanded(
+            flex: _kAmtFlex,
+            child: Text('Amount', style: _s),
+          ),
           Expanded(
             flex: _kStsFlex,
             child: Center(child: Text('Status', style: _s)),
           ),
-          Expanded(flex: _kModFlex, child: Text('Modified By', style: _s)),
+          Expanded(
+            flex: _kModFlex,
+            child: Text('Modified By', style: _s),
+          ),
           Expanded(
             flex: _kActFlex,
             child: Center(child: Text('Actions', style: _s)),
@@ -626,7 +541,6 @@ class _PurchaseRowState extends State<_PurchaseRow> {
 
     // Resolve modified by
     final mod = resolveModifiedBy(
-      seedId: o.id,
       storedName: o.modifiedBy,
       storedDate: o.modifiedAt,
     );
@@ -641,9 +555,7 @@ class _PurchaseRowState extends State<_PurchaseRow> {
             color: _hovered.value ? colors.rowEven : colors.surface,
             border: widget.isLast
                 ? null
-                : Border(
-                    bottom: BorderSide(color: colors.divider, width: 0.8),
-                  ),
+                : Border(bottom: BorderSide(color: colors.divider, width: 0.8)),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -695,7 +607,9 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                         width: 30,
                         height: 30,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF4A3AFF).withValues(alpha: 0.09),
+                          color: const Color(
+                            0xFF4A3AFF,
+                          ).withValues(alpha: 0.09),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
@@ -773,12 +687,14 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                 // Modified By
                 Expanded(
                   flex: _kModFlex,
-                  child: ModifiedByCell(
-                    name: mod.name,
-                    date: mod.date,
-                    textPrimary: colors.textPrimary,
-                    textHint: colors.textHint,
-                  ),
+                  child: mod == null
+                      ? ModifiedByEmpty(textHint: colors.textHint)
+                      : ModifiedByCell(
+                          name: mod.name,
+                          date: mod.date,
+                          textPrimary: colors.textPrimary,
+                          textHint: colors.textHint,
+                        ),
                 ),
 
                 // Actions: View, Edit, Delete
@@ -791,14 +707,24 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                         icon: Icons.remove_red_eye_outlined,
                         color: const Color(0xFF4A3AFF),
                         tooltip: 'View',
-                        onTap: () {},
+                        onTap: () => Get.dialog(
+                          PurchaseDetailsDialog(
+                            order: widget.order,
+                            onDelete: () {
+                              Get.back();
+                              widget.onDelete();
+                            },
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 5),
                       _ActBtn(
                         icon: Icons.edit_outlined,
                         color: const Color(0xFFF59E0B),
-                        tooltip: 'Edit',
-                        onTap: () {},
+                        tooltip: 'Update Status',
+                        onTap: () => Get.dialog(
+                          _UpdateStatusDialog(order: widget.order),
+                        ),
                       ),
                       const SizedBox(width: 5),
                       _ActBtn(
@@ -959,6 +885,45 @@ class _EmptyState extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Update Status Dialog — the "Edit" action for a purchase order, wired to
+// PurchaseController.updateStatus (PATCH /purchase-orders/:id/status).
+// ─────────────────────────────────────────────────────────────────────────────
+class _UpdateStatusDialog extends StatefulWidget {
+  final PurchaseOrder order;
+  const _UpdateStatusDialog({required this.order});
+
+  @override
+  State<_UpdateStatusDialog> createState() => _UpdateStatusDialogState();
+}
+
+class _UpdateStatusDialogState extends State<_UpdateStatusDialog> {
+  late final Rx<PurchaseStatus> _selected = widget.order.status.obs;
+
+  @override
+  void dispose() {
+    _selected.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StatusUpdateDialogShell(
+      title: 'Update Status',
+      subtitle: widget.order.poNumber,
+      onSave: () => Get.find<PurchaseController>().updateStatus(
+        widget.order.id,
+        _selected.value,
+      ),
+      body: StatusRadioGroup<PurchaseStatus>(
+        options: PurchaseStatus.values,
+        selected: _selected,
+        labelOf: (s) => s.label,
       ),
     );
   }
@@ -1347,7 +1312,10 @@ class _TopSuppliersCard extends StatelessWidget {
 
   String _initials(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
-    return parts.take(2).map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join();
+    return parts
+        .take(2)
+        .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
+        .join();
   }
 
   @override
@@ -1411,8 +1379,7 @@ class _TopSuppliersCard extends StatelessWidget {
                     ? null
                     : BoxDecoration(
                         border: Border(
-                          bottom:
-                              BorderSide(color: colors.divider, width: 0.5),
+                          bottom: BorderSide(color: colors.divider, width: 0.5),
                         ),
                       ),
                 padding: const EdgeInsets.symmetric(

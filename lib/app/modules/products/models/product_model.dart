@@ -65,6 +65,46 @@ class ProductModel {
     return 'In Stock';
   }
 
+  /// Builds a [ProductModel] from the backend `/products` JSON shape
+  /// (Product row with its `category`/`subCategory` relations included).
+  factory ProductModel.fromJson(Map<String, dynamic> json) {
+    final category = json['category'] as Map<String, dynamic>?;
+    final subCategory = json['subCategory'] as Map<String, dynamic>?;
+    return ProductModel(
+      id: (json['id'] as int).toString(),
+      name: json['name'] as String? ?? '',
+      sku: json['sku'] as String? ?? '',
+      categoryId: json['categoryId'].toString(),
+      categoryName: category?['name'] as String? ?? '',
+      subCategory: subCategory?['name'] as String? ?? '',
+      unit: json['unit'] as String? ?? '',
+      sellingPrice: (json['sellingPrice'] as num).toDouble(),
+      costPrice: (json['costPrice'] as num).toDouble(),
+      currentStock: json['currentStock'] as int? ?? 0,
+      minimumStock: json['minimumStock'] as int? ?? 0,
+      isActive: json['isActive'] as bool? ?? true,
+      brand: json['brand'] as String?,
+      hsnCode: json['hsnCode'] as String?,
+      description: json['description'] as String?,
+      taxPercent: (json['taxPercent'] as num?)?.toDouble() ?? 18.0,
+      stockLocation: json['stockLocation'] as String? ?? 'Main Warehouse',
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      modifiedBy: json['modifiedBy'] as String? ?? 'Admin',
+      modifiedAt: json['modifiedAt'] != null
+          ? DateTime.parse(json['modifiedAt'] as String)
+          : null,
+      densityVariants: (json['densityVariants'] as List<dynamic>? ?? [])
+          .cast<String>(),
+      boardVariants: (json['boardVariants'] as List<dynamic>? ?? [])
+          .cast<String>(),
+      thicknessVariants: (json['thicknessVariants'] as List<dynamic>? ?? [])
+          .cast<String>(),
+      reinforcementTypes: (json['reinforcementTypes'] as List<dynamic>? ?? [])
+          .cast<String>(),
+      otherSpecs: json['otherSpecs'] as String?,
+    );
+  }
+
   ProductModel copyWith({
     String? name,
     String? sku,

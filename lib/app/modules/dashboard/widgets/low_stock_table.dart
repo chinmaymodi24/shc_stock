@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
-import '../models/dashboard_models.dart';
+import 'package:shc_stock/app/modules/dashboard/models/dashboard_models.dart';
 
 /// "Low stock alerts" panel — warning icon + product name + a red progress
 /// bar showing current/max stock.

@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/theme/app_text_styles.dart';
-import '../controllers/login_controller.dart';
+import 'package:shc_stock/app/modules/auth/controllers/login_controller.dart';
 import 'shc_logo.dart';
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -384,8 +384,8 @@ class _LoginThemeToggle extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _TBtn(icon: Icons.wb_sunny_rounded,  label: 'Light',  isActive: tc.isLight,  onTap: () => tc.setTheme(ThemeMode.light)),
-          _TBtn(icon: Icons.devices_rounded,    label: 'System', isActive: tc.isSystem, onTap: () => tc.setTheme(ThemeMode.system)),
+          _TBtn(icon: Icons.wb_sunny_rounded,  label: 'Light',  isActive: tc.isLight,  onTap: () => switchThemeWithRipple(context, ThemeMode.light)),
+          _TBtn(icon: Icons.devices_rounded,    label: 'System', isActive: tc.isSystem, onTap: () => switchThemeWithRipple(context, ThemeMode.system)),
         ],
       ),
     ));

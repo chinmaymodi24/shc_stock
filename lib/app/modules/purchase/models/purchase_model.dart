@@ -11,6 +11,23 @@ class PurchaseOrder {
   final String modifiedBy;
   final DateTime? modifiedAt;
 
+  // ── Full invoice detail — populated when created via the "Add Purchase"
+  // form; blank/empty on older/seed orders that predate this. The "View"
+  // details panel falls back to "—" for anything missing.
+  final String supplierAddress;
+  final String buyerGst;
+  final String pan;
+  final String invoiceNo;
+  final DateTime? invoiceDate;
+  final String despatchThrough;
+  final String lrNo;
+  final DateTime? lrDate;
+  final String vehicleNo;
+  final double freight;
+  final String placeOfSupply;
+  final DateTime? dueDate;
+  final List<PurchaseDetailItem> items;
+
   const PurchaseOrder({
     required this.id,
     required this.poNumber,
@@ -22,7 +39,136 @@ class PurchaseOrder {
     required this.status,
     this.modifiedBy = 'Admin',
     this.modifiedAt,
+    this.supplierAddress = '',
+    this.buyerGst = '',
+    this.pan = '',
+    this.invoiceNo = '',
+    this.invoiceDate,
+    this.despatchThrough = '',
+    this.lrNo = '',
+    this.lrDate,
+    this.vehicleNo = '',
+    this.freight = 0,
+    this.placeOfSupply = '',
+    this.dueDate,
+    this.items = const [],
   });
+
+  double get subTotal => items.fold(0.0, (s, i) => s + i.amount);
+  double get sgst => subTotal * 0.09;
+  double get cgst => subTotal * 0.09;
+
+  /// Builds a [PurchaseOrder] from the backend `/purchase-orders` JSON shape.
+  factory PurchaseOrder.fromJson(Map<String, dynamic> json) {
+    DateTime? parseDate(dynamic v) =>
+        v == null ? null : DateTime.parse(v as String);
+    return PurchaseOrder(
+      id: (json['id'] as int).toString(),
+      poNumber: json['poNumber'] as String? ?? '',
+      supplier: json['supplier'] as String? ?? '',
+      supplierIcon: json['supplierIcon'] as String? ?? '',
+      date: DateTime.parse(json['date'] as String),
+      itemCount: (json['items'] as List<dynamic>? ?? []).length,
+      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      status: PurchaseStatus.values.firstWhere(
+        (s) => s.label == json['status'],
+        orElse: () => PurchaseStatus.pending,
+      ),
+      modifiedBy: json['modifiedBy'] as String? ?? 'Admin',
+      modifiedAt: parseDate(json['modifiedAt']),
+      supplierAddress: json['supplierAddress'] as String? ?? '',
+      buyerGst: json['buyerGst'] as String? ?? '',
+      pan: json['pan'] as String? ?? '',
+      invoiceNo: json['invoiceNo'] as String? ?? '',
+      invoiceDate: parseDate(json['invoiceDate']),
+      despatchThrough: json['despatchThrough'] as String? ?? '',
+      lrNo: json['lrNo'] as String? ?? '',
+      lrDate: parseDate(json['lrDate']),
+      vehicleNo: json['vehicleNo'] as String? ?? '',
+      freight: (json['freight'] as num?)?.toDouble() ?? 0,
+      placeOfSupply: json['placeOfSupply'] as String? ?? '',
+      dueDate: parseDate(json['dueDate']),
+      items: (json['items'] as List<dynamic>? ?? [])
+          .map((e) => PurchaseDetailItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  /// Body for `POST /purchase-orders`.
+  Map<String, dynamic> toCreateJson() => {
+    'poNumber': poNumber,
+    'supplier': supplier,
+    'supplierIcon': supplierIcon,
+    'date': date.toIso8601String(),
+    'amount': amount,
+    'status': status.label,
+    'modifiedBy': modifiedBy,
+    'supplierAddress': supplierAddress,
+    'buyerGst': buyerGst,
+    'pan': pan,
+    'invoiceNo': invoiceNo,
+    if (invoiceDate != null) 'invoiceDate': invoiceDate!.toIso8601String(),
+    'despatchThrough': despatchThrough,
+    'lrNo': lrNo,
+    if (lrDate != null) 'lrDate': lrDate!.toIso8601String(),
+    'vehicleNo': vehicleNo,
+    'freight': freight,
+    'placeOfSupply': placeOfSupply,
+    if (dueDate != null) 'dueDate': dueDate!.toIso8601String(),
+    'items': items.map((i) => i.toJson()).toList(),
+  };
+}
+
+/// A single line item as shown on the Purchase Details view.
+class PurchaseDetailItem {
+  /// Backend product id when the line was picked from the product
+  /// autocomplete — this is what lets the server move that product's stock.
+  /// Null for free-typed lines, which are recorded but move no stock.
+  final int? productId;
+  final String product;
+  final String hsn;
+  final String grade;
+  final String density;
+  final double qty;
+  final String unit;
+  final double rate;
+
+  const PurchaseDetailItem({
+    this.productId,
+    required this.product,
+    this.hsn = '',
+    this.grade = '',
+    this.density = '',
+    required this.qty,
+    this.unit = '',
+    required this.rate,
+  });
+
+  double get amount => qty * rate;
+
+  factory PurchaseDetailItem.fromJson(Map<String, dynamic> json) {
+    return PurchaseDetailItem(
+      productId: (json['productId'] as num?)?.toInt(),
+      product: json['product'] as String? ?? '',
+      hsn: json['hsn'] as String? ?? '',
+      grade: json['grade'] as String? ?? '',
+      density: json['density'] as String? ?? '',
+      qty: (json['qty'] as num).toDouble(),
+      unit: json['unit'] as String? ?? '',
+      rate: (json['rate'] as num).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    if (productId != null) 'productId': productId,
+    'product': product,
+    'hsn': hsn,
+    'grade': grade,
+    'density': density,
+    'qty': qty,
+    'unit': unit,
+    'rate': rate,
+  };
 }
 
 enum PurchaseStatus { received, partial, pending, cancelled }

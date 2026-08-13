@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../../routes/app_routes.dart';
-import '../../../core/utils/app_toast.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/core/api/api_client.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
 
 class LoginController extends GetxController {
+  final _api = ApiClient.instance;
+
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final formKey = GlobalKey<FormState>();
@@ -108,8 +112,12 @@ class LoginController extends GetxController {
 
     isLoading.value = true;
     try {
-      // TODO: Replace with real Firebase Authentication
-      await Future.delayed(const Duration(milliseconds: 600));
+      final res = await _api.post('/auth/login', {
+        'email': emailController.text.trim(),
+        'password': passwordController.text,
+      });
+      // Remember who signed in — drives the top bar and audit stamps.
+      await Get.find<SessionController>().signIn(res as Map<String, dynamic>);
 
       // Save remember-me silently — never block navigation
       try {
@@ -117,6 +125,15 @@ class LoginController extends GetxController {
       } catch (_) {}
 
       Get.offNamed(AppRoutes.dashboard);
+    } on ApiException catch (e) {
+      showAppToast(
+        'Sign In Failed',
+        e.statusCode == 401
+            ? 'Invalid email or password.'
+            : 'Something went wrong. Please try again.',
+        backgroundColor: const Color(0xFFEF4444),
+        colorText: const Color(0xFFFFFFFF),
+      );
     } catch (e) {
       showAppToast(
         'Sign In Failed',

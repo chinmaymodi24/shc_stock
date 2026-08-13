@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/products_controller.dart';
-import '../../../core/theme/app_colors.dart';
-import 'add_product_dialog.dart';
-import '../../dashboard/widgets/web_sidebar.dart';
-import '../../dashboard/widgets/web_top_bar.dart';
-import '../../dashboard/widgets/modified_by_cell.dart';
-import '../models/product_model.dart';
+import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/products/views/add_product_dialog.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
+import 'package:shc_stock/app/modules/products/models/product_model.dart';
 import 'package:intl/intl.dart';
-import '../../../shared/widgets/stat_cards.dart';
-import '../../../shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 
 class WebProductsLayout extends StatelessWidget {
   WebProductsLayout({super.key});
@@ -118,38 +119,39 @@ class WebProductsLayout extends StatelessWidget {
       () => Row(
         children: [
           Expanded(
-            child: AppTintedStatCard(
+            child: AppStatCard(
               label: 'Total Products',
-              value: '${c.totalProducts}',
-              bg: const Color(0xFF3B6FC9).withValues(alpha: 0.14),
-              labelColor: const Color(0xFF3B6FC9),
+              value: '${c.stats.value.intOf('totalProducts')}',
+              icon: Icons.inventory_2_outlined,
+              iconColor: const Color(0xFF3B6FC9),
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: AppTintedStatCard(
+            child: AppStatCard(
               label: 'Low Stock',
-              value: '${c.lowStockProducts}',
-              bg: const Color(0xFFC9822F).withValues(alpha: 0.14),
-              labelColor: const Color(0xFFC9822F),
+              value: '${c.stats.value.intOf('lowStock')}',
+              icon: Icons.warning_amber_rounded,
+              iconColor: const Color(0xFFC9822F),
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: AppTintedStatCard(
+            child: AppStatCard(
               label: 'Out of Stock',
-              value: '${c.outOfStockProducts}',
-              bg: const Color(0xFFD1494C).withValues(alpha: 0.14),
-              labelColor: const Color(0xFFD1494C),
+              value: '${c.stats.value.intOf('outOfStock')}',
+              icon: Icons.block_rounded,
+              iconColor: const Color(0xFFD1494C),
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: AppTintedStatCard(
+            child: AppStatCard(
               label: 'Total Value',
-              value: '₹${fmt.format(c.totalStockValue)}',
-              bg: const Color(0xFF2E9E5B).withValues(alpha: 0.14),
-              labelColor: const Color(0xFF2E9E5B),
+              value: '₹${fmt.format(c.stats.value.doubleOf('totalValue'))}',
+              icon: Icons.currency_rupee_rounded,
+              iconColor: const Color(0xFF2E9E5B),
+              smallValue: true,
             ),
           ),
         ],
@@ -178,6 +180,9 @@ class WebProductsLayout extends StatelessWidget {
           _buildTableHeader(context),
           Divider(height: 1, color: colors.divider),
           Obx(() {
+            if (c.isLoading.value) {
+              return const AppLoadingIndicator(label: 'Loading products...');
+            }
             final products = c.paginatedProducts;
             if (products.isEmpty) {
               return Padding(
@@ -614,10 +619,12 @@ class _ProductRow extends StatelessWidget {
               child: Builder(
                 builder: (_) {
                   final mod = resolveModifiedBy(
-                    seedId: product.id,
                     storedName: product.modifiedBy,
                     storedDate: product.modifiedAt,
                   );
+                  if (mod == null) {
+                    return ModifiedByEmpty(textHint: colors.textHint);
+                  }
                   return ModifiedByCell(
                     name: mod.name,
                     date: mod.date,
@@ -635,7 +642,7 @@ class _ProductRow extends StatelessWidget {
                   _ActionBtn(
                     icon: Icons.edit_outlined,
                     color: colors.purple,
-                    onTap: () {},
+                    onTap: () => Get.dialog(AddProductDialog(product: product)),
                   ),
                   const SizedBox(width: 6),
                   _ActionBtn(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/login_controller.dart';
+import 'package:shc_stock/app/modules/auth/controllers/login_controller.dart';
 import 'mobile_login_layout.dart';
 import 'tablet_login_layout.dart';
 import 'web_login_layout.dart';

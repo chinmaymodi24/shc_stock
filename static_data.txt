@@ -1,0 +1,342 @@
+================================================================================
+SHC STOCK — ARCHIVED STATIC / HARDCODED DATA
+================================================================================
+This file is a permanent archive of every static/hardcoded data list that
+used to live directly in the Flutter source code, before each module was
+made fully dynamic (backend API + PostgreSQL via Prisma, Dio-based
+ApiClient). The source files have since had these blocks DELETED (they were
+previously kept as commented-out code for reference; that reference now
+lives here instead).
+
+Where the exact same data was also seeded into the database via a backend
+script, that script is noted — run it again any time to restore this
+reference data into a fresh/empty DB.
+
+Archived: 2026-08-09
+================================================================================
+
+
+--------------------------------------------------------------------------------
+1. PRODUCTS — Category/Sub-category taxonomy
+--------------------------------------------------------------------------------
+Source: lib/app/modules/products/controllers/products_controller.dart
+Was: static final List<ProductCategory> allCategories
+Replaced by: ProductsController.realCategories (reads live from
+             CategoriesController / GET /api/categories)
+Backend equivalent: backend/prisma/seed.js (same 7 categories + sub-categories,
+                     seeded into the categories/sub_categories tables)
+
+  1. Ceramic Fiber Products
+     - Ceramic Fiber Blanket
+     - Ceramic Fiber Bulk (Loose Fiber)
+     - Ceramic Fiber Module
+     - Ceramic Fiber Board
+     - Ceramic Fiber Paper
+     - Heatshield Blanket
+
+  2. Ceramic Fiber Textile
+     - Ceramic Fiber Rope
+     - Ceramic Fiber Cloth
+     - Ceramic Fiber Tape
+
+  3. Insulation Bricks
+     - HF/CF Insulation Bricks
+     - HFK Insulation Bricks
+     - Porosint Bricks
+
+  4. Refractories
+     - Fire Bricks
+     - Sillimanite & Mullite Bricks
+     - Burner Block
+     - Hollow Bricks
+
+  5. Mortars & Castables
+     - Refractory Mortar (ORTEX)
+     - Air Setting Mortar (ORTEX-HT)
+     - Castable Refractory
+
+  6. Fire & Welding Protection
+     - Fire Blanket
+     - Welding Blanket
+
+  7. Accessories & Services
+     - Stud & Washer Anchor
+     - Ceramic Fiber Lining Anchor
+     - Brick Anchor
+     - Refractory Anchor
+     - Hot Insulation Service
+
+
+--------------------------------------------------------------------------------
+2. PRODUCTS — 26 seed products
+--------------------------------------------------------------------------------
+Source: lib/app/modules/products/controllers/products_controller.dart
+Was: static final List<ProductModel> _seedProducts
+Replaced by: ProductsController.fetchProducts() → GET /api/products
+Backend equivalent: backend/prisma/seedProducts.js — run with:
+                     cd backend && node prisma/seedProducts.js
+
+Columns: id | name | sku | category | subCategory | unit | sellingPrice |
+         costPrice | currentStock | minimumStock | brand | hsnCode |
+         taxPercent | variants | modifiedBy/modifiedAt
+
+p001 | CF Blanket 1260°C (64 kg/m³)          | CFB-1260-64   | Ceramic Fiber Products | Ceramic Fiber Blanket           | Roll           | 2800 | 1900 | 45  | 10  | SIMWOOL | 68061000 | 18% | density: 64 kg/m³   | Chinmay Modi (2026-07-10 14:40)
+p002 | CF Blanket 1260°C (96 kg/m³)          | CFB-1260-96   | Ceramic Fiber Products | Ceramic Fiber Blanket           | Roll           | 3500 | 2400 | 32  | 10  | SIMWOOL | 68061000 | 18% | density: 96 kg/m³   | Riya Patel (2026-06-30 09:02)
+p003 | CF Blanket 1260°C (128 kg/m³)         | CFB-1260-128  | Ceramic Fiber Products | Ceramic Fiber Blanket           | Roll           | 4200 | 2900 | 8   | 10  | SIMWOOL | 68061000 | 18% | density: 128 kg/m³  |
+p004 | CF Blanket 1425°C (96 kg/m³)          | CFB-1425-96   | Ceramic Fiber Products | Ceramic Fiber Blanket           | Roll           | 6500 | 4500 | 15  | 5   | SIMWOOL | 68061000 | 18% | density: 96 kg/m³   |
+p005 | CF Bulk (Standard 1260°C)             | CFB-SBF-001   | Ceramic Fiber Products | Ceramic Fiber Bulk (Loose Fiber)| Kilogram (kg)  | 350  | 250  | 120 | 25  | SIMWOOL | 68061000 | 18% |                      |
+p006 | CF Module (1260°C)                    | CFM-1260-001  | Ceramic Fiber Products | Ceramic Fiber Module            | Piece (pcs)    | 1200 | 850  | 28  | 5   | SIMWOOL | 68061000 | 18% |                      |
+p007 | CF Board Grade 1260                   | CFBD-1260     | Ceramic Fiber Products | Ceramic Fiber Board             | Piece (pcs)    | 850  | 600  | 40  | 10  | SIMVAC  | 68061000 | 18% | board: Normal Board  |
+p008 | CF Board Grade 1425 (Zirconia)        | CFBD-1425     | Ceramic Fiber Products | Ceramic Fiber Board             | Piece (pcs)    | 1650 | 1100 | 0   | 5   | SIMVAC  | 68061000 | 18% | board: Vacuum Formed |
+p009 | CF Paper (1260°C, 5mm)                | CFP-1260-5    | Ceramic Fiber Products | Ceramic Fiber Paper             | Roll           | 480  | 320  | 22  | 5   | SIMWOOL | 68061000 | 18% | thickness: 5 mm      |
+p010 | Heatshield Blanket                    | HSB-001       | Ceramic Fiber Products | Heatshield Blanket              | Piece (pcs)    | 3200 | 2200 | 12  | 3   |         | 68061000 | 18% |                      |
+p011 | CF Rope (13mm dia, 1260°C)            | CFR-13-1260   | Ceramic Fiber Textile  | Ceramic Fiber Rope              | Meter (m)      | 95   | 65   | 200 | 50  | SIMWOOL | 70190000 | 18% | reinforcement: Fiberglass |
+p012 | CF Rope (25mm dia, 1260°C)            | CFR-25-1260   | Ceramic Fiber Textile  | Ceramic Fiber Rope              | Meter (m)      | 175  | 120  | 150 | 30  | SIMWOOL | 70190000 | 18% | reinforcement: SS wire    |
+p013 | CF Cloth (1260°C)                     | CFC-1260      | Ceramic Fiber Textile  | Ceramic Fiber Cloth             | Meter (m)      | 420  | 290  | 80  | 20  |         | 70190000 | 18% |                      |
+p014 | CF Tape (1260°C, 25mm)                | CFT-25-1260   | Ceramic Fiber Textile  | Ceramic Fiber Tape              | Meter (m)      | 85   | 58   | 5   | 20  |         | 70190000 | 18% |                      |
+p015 | HF/CF Insulation Bricks (Hot Face)    | HFCF-HF       | Insulation Bricks      | HF/CF Insulation Bricks         | Piece (pcs)    | 65   | 45   | 500 | 100 |         | 69021000 | 18% |                      |
+p016 | HF/CF Insulation Bricks (Cold Face)   | HFCF-CF       | Insulation Bricks      | HF/CF Insulation Bricks         | Piece (pcs)    | 55   | 38   | 350 | 100 |         | 69021000 | 18% |                      |
+p017 | HFK Insulation Bricks                 | HFK-001       | Insulation Bricks      | HFK Insulation Bricks           | Piece (pcs)    | 72   | 50   | 280 | 50  |         | 69021000 | 18% |                      |
+p018 | Porosint Bricks (Grade 23)            | POR-23        | Insulation Bricks      | Porosint Bricks                 | Piece (pcs)    | 88   | 62   | 0   | 50  |         | 69021000 | 18% |                      |
+p019 | Refractory Mortar (ORTEX)             | RM-ORTEX      | Mortars & Castables    | Refractory Mortar (ORTEX)       | Bag            | 950  | 680  | 30  | 10  | ORTEX   | 38244000 | 18% |                      |
+p020 | Air Setting Mortar (ORTEX-HT)         | RM-ORTEX-HT   | Mortars & Castables    | Air Setting Mortar (ORTEX-HT)   | Bag            | 1200 | 850  | 18  | 10  | ORTEX   | 38244000 | 18% |                      |
+p021 | Castable Refractory                   | CR-001        | Mortars & Castables    | Castable Refractory             | Bag            | 1450 | 980  | 25  | 8   |         | 38244000 | 18% |                      |
+p022 | Fire Blanket (1×1m, 650°C)            | FB-1x1-650    | Fire & Welding Protection | Fire Blanket                 | Piece (pcs)    | 1800 | 1200 | 20  | 5   |         | 63049200 | 18% |                      |
+p023 | Fire Blanket (2×2m, 1200°C)           | FB-2x2-1200   | Fire & Welding Protection | Fire Blanket                 | Piece (pcs)    | 4500 | 3100 | 8   | 3   |         | 63049200 | 18% |                      |
+p024 | Welding Blanket (2×3m)                | WB-2x3        | Fire & Welding Protection | Welding Blanket              | Piece (pcs)    | 3800 | 2600 | 12  | 3   |         | 63049200 | 18% |                      |
+p025 | Stud & Washer Anchor (SS 304)         | SWA-SS304     | Accessories & Services | Stud & Washer Anchor            | Piece (pcs)    | 45   | 30   | 800 | 200 |         | 73182900 | 18% |                      |
+p026 | Refractory Anchor (SS 310)            | RA-SS310      | Accessories & Services | Refractory Anchor               | Piece (pcs)    | 85   | 58   | 350 | 100 |         | 73182900 | 18% |                      |
+
+Note: p001 description = "Standard grade ceramic fiber blanket for high
+temperature insulation up to 1260°C." (only product with a description).
+createdAt for p001..p026 = 2024-05-01 through 2024-05-19 sequentially.
+
+
+--------------------------------------------------------------------------------
+3. PURCHASE — 28 seed purchase orders
+--------------------------------------------------------------------------------
+Source: lib/app/modules/purchase/controllers/purchase_controller.dart
+Was: static final List<PurchaseOrder> _seed
+Replaced by: PurchaseController.fetchOrders() → GET /api/purchase-orders
+Backend equivalent: NONE — DB intentionally left empty per user instruction
+                     (purchase orders start blank, created fresh via the app).
+
+po_01 | PO-2201 | Ashoka Metals (AM)           | 2026-07-10 | items:1 | ₹102000 | Received  | Chinmay Modi (2026-07-10 10:30)
+po_02 | PO-1187 | Precision Valves Co. (PV)    | 2026-07-08 | items:1 | ₹16800  | Partial   | Riya Patel (2026-07-08 11:15)
+po_03 | PO-5502 | ThermoTech Industries (TT)   | 2026-07-06 | items:1 | ₹14500  | Pending   | Chinmay Modi (2026-07-06 09:20)
+po_04 | PO-3312 | Gujarat Polymers (GP)        | 2026-07-03 | items:1 | ₹21000  | Received  | Riya Patel (2026-07-03 16:00)
+po_05 | PO-2980 | Ashoka Metals (AM)           | 2026-07-01 | items:2 | ₹54500  | Received  | Ravi Sharma (2026-07-01 14:45)
+po_06 | PO-2750 | National Insulation Co. (NI) | 2026-06-28 | items:3 | ₹38200  | Pending   | Amit Verma (2026-06-28 10:00)
+po_07 | PO-2611 | Gujarat Polymers (GP)        | 2026-06-25 | items:2 | ₹29100  | Partial   | Sneha Gupta (2026-06-25 16:30)
+po_08 | PO-2480 | ThermoTech Industries (TT)   | 2026-06-22 | items:1 | ₹18600  | Received  | Chinmay Modi (2026-06-22 11:00)
+po_09 | PO-2310 | Precision Valves Co. (PV)    | 2026-06-20 | items:1 | ₹22400  | Cancelled | Riya Patel (2026-06-20 09:15)
+po_10 | PO-2150 | Ashoka Metals (AM)           | 2026-06-18 | items:2 | ₹67800  | Received  | Ravi Sharma (2026-06-18 15:20)
+po_11 | PO-1990 | National Insulation Co. (NI) | 2026-06-15 | items:3 | ₹41000  | Pending   | Vijay Joshi (2026-06-15 13:30)
+po_12 | PO-1820 | Gujarat Polymers (GP)        | 2026-06-12 | items:1 | ₹15300  | Received  | Neha Iyer (2026-06-12 10:00)
+po_13 | PO-1650 | ThermoTech Industries (TT)   | 2026-06-10 | items:2 | ₹28900  | Partial   | Chinmay Modi (2026-06-10 16:45)
+po_14 | PO-1480 | Precision Valves Co. (PV)    | 2026-06-07 | items:1 | ₹19700  | Received  | Kiran Mehta (2026-06-07 11:00)
+po_15 | PO-1300 | Ashoka Metals (AM)           | 2026-06-05 | items:1 | ₹33000  | Pending   | Suresh Kumar (2026-06-05 14:20)
+
+po_16..po_28 — generated programmatically (not hand-authored):
+  for i in 16..28:
+    poNumber      = "PO-" + (1300 - (i-15)*120)
+    supplier      = cycle through [Ashoka Metals(AM), Gujarat Polymers(GP),
+                    ThermoTech Industries(TT), Precision Valves Co.(PV),
+                    National Insulation Co.(NI)] by (i-16) % 5
+    date          = 2026-06-(4-(i-16))   [dates go backward, can go negative-day
+                    which Dart normalizes into earlier months]
+    itemCount     = i % 3 + 1
+    amount        = i * 3450.0
+    status        = PurchaseStatus.values[i % 4]  (received/partial/pending/cancelled cycle)
+    modifiedBy    = "Admin", modifiedAt = null
+
+
+--------------------------------------------------------------------------------
+4. SALES — client badge → color map
+--------------------------------------------------------------------------------
+Source: lib/app/modules/sales/controllers/sales_controller.dart
+Was: static const Map<String, Color> _clientColors + _colorFor(badge)
+Replaced by: SalesOrder.fromJson's own badge→color map (same values, moved
+             into the model so it applies to orders loaded from the API too)
+
+  AE  (Arvind Enterprises)     → 0xFFF47B20 (orange)
+  SRT (Shree Ram Traders)      → 0xFF3B82F6 (blue)
+  JMD (Jai Mata Di Suppliers)  → 0xFF7C3AED (purple)
+  GH  (Gupta Hardware)         → 0xFF64748B (slate)
+  NIC (National Insulation)    → 0xFF0D9488 (teal)
+  TMC (Thermo Materials)       → 0xFFDC2626 (red)
+  BS  (Buildwell Supply)       → 0xFF16A34A (green)
+  OST (Om Sai Traders)         → 0xFF1D4ED8 (indigo)
+  SE  (Shakti Enterprises)     → 0xFF9333EA (purple)
+  LI  (Lakshmi Industries)     → 0xFF4F46E5 (indigo)
+  RS  (Rajesh & Sons)          → 0xFF0891B2 (cyan)
+  PS  (Patel Suppliers)        → 0xFFB45309 (amber)
+  BT  (Bharat Traders)         → 0xFF059669 (emerald)
+  VE  (Vimal Enterprises)      → 0xFF6D28D9 (violet)
+  SI  (Sriram Industries)      → 0xFF0369A1 (sky)
+  fallback (any other badge)   → 0xFF4A3AFF
+
+
+--------------------------------------------------------------------------------
+5. SALES — 15 hand-authored seed orders + 141 generated (156 total)
+--------------------------------------------------------------------------------
+Source: lib/app/modules/sales/controllers/sales_controller.dart
+Was: static final List<SalesOrder> _seed  +  static List<SalesOrder> _generate()
+Replaced by: SalesController.fetchOrders() → GET /api/sales-orders
+Backend equivalent: NONE — DB intentionally left empty per user instruction
+                     (sales orders start blank, created fresh via the app).
+
+so_01 | SO-2024-00156 | Arvind Enterprises (AE)          | 2024-05-31 | items:12 | ₹85600  | Delivered | Paid
+so_02 | SO-2024-00155 | Shree Ram Traders (SRT)          | 2024-05-30 | items:8  | ₹48750  | Shipped   | Partial
+so_03 | SO-2024-00154 | Jai Mata Di Suppliers (JMD)      | 2024-05-30 | items:15 | ₹102300 | Delivered | Paid
+so_04 | SO-2024-00153 | Gupta Hardware (GH)              | 2024-05-29 | items:10 | ₹35600  | Confirmed | Paid
+so_05 | SO-2024-00152 | National Insulation Co. (NIC)    | 2024-05-28 | items:20 | ₹125800 | Shipped   | Partial
+so_06 | SO-2024-00151 | Thermo Materials Pvt. Ltd. (TMC) | 2024-05-27 | items:6  | ₹22400  | Cancelled | Refunded
+so_07 | SO-2024-00150 | Buildwell Supply (BS)            | 2024-05-26 | items:9  | ₹41600  | Delivered | Paid
+so_08 | SO-2024-00149 | Om Sai Traders (OST)             | 2024-05-25 | items:11 | ₹56700  | Shipped   | Partial
+so_09 | SO-2024-00148 | Shakti Enterprises (SE)          | 2024-05-24 | items:7  | ₹29450  | Confirmed | Paid
+so_10 | SO-2024-00147 | Lakshmi Industries (LI)          | 2024-05-23 | items:14 | ₹74800  | Delivered | Paid
+so_11 | SO-2024-00146 | Rajesh & Sons (RS)               | 2024-05-22 | items:5  | ₹18900  | Delivered | Paid
+so_12 | SO-2024-00145 | Patel Suppliers (PS)             | 2024-05-21 | items:16 | ₹95400  | Shipped   | Partial
+so_13 | SO-2024-00144 | Bharat Traders (BT)              | 2024-05-20 | items:3  | ₹12600  | Confirmed | Paid
+so_14 | SO-2024-00143 | Vimal Enterprises (VE)           | 2024-05-19 | items:18 | ₹108750 | Delivered | Paid
+so_15 | SO-2024-00142 | Sriram Industries (SI)           | 2024-05-18 | items:22 | ₹134500 | Shipped   | Partial
+
+so_16..so_156 — generated programmatically (141 more orders, not hand-authored):
+  clients cycle (10, by (i-1) % 10): Arvind Enterprises(AE), Shree Ram Traders(SRT),
+    Jai Mata Di Suppliers(JMD), Gupta Hardware(GH), National Insulation Co.(NIC),
+    Buildwell Supply(BS), Om Sai Traders(OST), Shakti Enterprises(SE),
+    Lakshmi Industries(LI), Rajesh & Sons(RS)
+  for i in 16..156:
+    soNumber   = "SO-2024-00" + (156-i+1), left-padded to 11 chars
+    client     = clients[(i-1) % 10]
+    date       = 2024-05-18 minus (i-15) days
+    itemCount  = (i % 15) + 3
+    amount     = ((i * 4350) % 98000 + 12000)
+    status     = SalesStatus.values[(i-1) % 5]      (confirmed/shipped/delivered/cancelled/processing cycle)
+    payment    = PaymentStatus.values[(i-1) % 4]    (paid/partial/refunded/pending cycle)
+
+
+--------------------------------------------------------------------------------
+6. STOCK / INVENTORY — 8 seed items
+--------------------------------------------------------------------------------
+Source: lib/app/modules/stock/controllers/stock_controller.dart
+Was: static final _seed
+Replaced by: GET /api/inventory (derives every row from the products table +
+             the stock_movements ledger; purchases add stock, sales remove it)
+Backend equivalent: NONE — inventory is fully derived, never seeded directly.
+
+1 | CFB-1042 | Ceramic Fiber Blanket 128 kg/m³   | Ceramic Fiber Products    | Roll   | onHand:612 | avail:612 | value:₹208080 | In Stock    | Chinmay Modi (2026-07-10 14:40)
+2 | CFL-2201 | Ceramic Fiber Bulk (Loose Fiber)  | Ceramic Fiber Products    | Kg     | onHand:4   | avail:4   | value:₹880    | Low Stock   | Riya Patel (2026-06-22 11:15)
+3 | CFR-3312 | Ceramic Fiber Rope 12mm           | Ceramic Fiber Textile     | Meter  | onHand:15  | avail:15  | value:₹3150   | Low Stock   | Chinmay Modi (2026-06-30 09:02)
+4 | FB-1187  | Fire Bricks (Standard)            | Refractories              | Piece  | onHand:18  | avail:18  | value:₹26100  | Low Stock   | Riya Patel (2026-07-05 16:20)
+5 | RMO-5502 | Refractory Mortar (ORTEX) 25kg    | Mortars & Castables       | Bag    | onHand:84  | avail:84  | value:₹47040  | In Stock    | Chinmay Modi (2026-07-09 10:47)
+6 | FBL-0087 | Fire Blanket 1.2m x 1.2m          | Fire & Welding Protection | Piece  | onHand:9   | avail:9   | value:₹16200  | Low Stock   | Riya Patel (2026-06-18 15:08)
+7 | SWA-7710 | Stud & Washer Anchor              | Accessories & Services    | Piece  | onHand:0   | avail:0   | value:₹0      | Out of Stock| Chinmay Modi (2026-05-28 17:33)
+8 | HFC-1204 | HF/CF Insulation Bricks           | Insulation Bricks         | Piece  | onHand:231 | avail:231 | value:₹15015  | In Stock    | Riya Patel (2026-07-08 13:19)
+
+
+--------------------------------------------------------------------------------
+7. TRANSACTIONS — 6 seed transactions
+--------------------------------------------------------------------------------
+Source: lib/app/modules/transactions/controllers/transactions_controller.dart
+Was: static final _seed
+Replaced by: TransactionsController.fetchTransactions() → GET /api/transactions
+Backend equivalent: backend/prisma/seedTransactions.js — run with:
+                     cd backend && node prisma/seedTransactions.js
+
+1 | Copper Pipe 15mm      | Inbound  | Ashoka Metals       | #4421 | 2026-07-10 | Received  | Chinmay Modi (2026-07-10 14:40)
+2 | PEX Fitting Kit       | Outbound | Patel Plumbing Co.  | #4419 | 2026-07-10 | Shipped   | Riya Patel (2026-07-10 11:05)
+3 | Water Heater Coil     | Inbound  | ThermoTech Industries| #4425 | 2026-07-09 | Pending   | Chinmay Modi (2026-07-09 09:30)
+4 | Brass Valve 3/4"      | Outbound | Shah Hardware       | #4408 | 2026-07-08 | Delivered | Riya Patel (2026-07-08 16:12)
+5 | Insulation Tape       | Inbound  | Gujarat Polymers    | #4402 | 2026-07-06 | Received  | Chinmay Modi (2026-07-06 13:47)
+6 | Ball Valve 1"         | Outbound | Mehta Constructions | #4396 | 2026-07-04 | Delivered | Riya Patel (2026-07-04 10:58)
+
+
+--------------------------------------------------------------------------------
+8. EMPLOYEES / USERS — badge color palette + 15 seed users
+--------------------------------------------------------------------------------
+Source: lib/app/modules/users/controllers/users_controller.dart
+Was: static const _colors (palette) + static final _seed
+Replaced by: UsersController.fetchUsers() → GET /api/users (badge colors now
+             derived from the employee name in UserModel.fromJson)
+Backend equivalent: backend/prisma/seedUsers.js — run with:
+                     cd backend && node prisma/seedUsers.js
+                     (seeds the same 14 rows below, plus the dev login account)
+
+Palette (cycled by index % 10):
+  0xFFF47B20, 0xFF4A3AFF, 0xFF22C55E, 0xFF0EA5E9, 0xFFF59E0B,
+  0xFFEF4444, 0xFF8B5CF6, 0xFF14B8A6, 0xFFEC4899, 0xFF6366F1
+
+1  | USR-0001 | Chinmay Modi  | CM | chinmay@shc.com | +91 98765 00001 | Admin        | Active   | last: 05 Jul 2026, 10:32 AM | created: 01 Jan 2026
+2  | USR-0002 | Ravi Sharma   | RS | ravi@shc.com    | +91 98765 00002 | Manager      | Active   | last: 05 Jul 2026, 09:15 AM | created: 03 Jan 2026
+3  | USR-0003 | Priya Patel   | PP | priya@shc.com   | +91 98765 00003 | Salesman     | Active   | last: 04 Jul 2026, 06:48 PM | created: 05 Jan 2026
+4  | USR-0004 | Amit Verma    | AV | amit@shc.com    | +91 98765 00004 | Stock Manager| Active   | last: 05 Jul 2026, 08:00 AM | created: 07 Jan 2026
+5  | USR-0005 | Sneha Gupta   | SG | sneha@shc.com   | +91 98765 00005 | Accountant   | Active   | last: 03 Jul 2026, 11:20 AM | created: 10 Jan 2026
+6  | USR-0006 | Vijay Joshi   | VJ | vijay@shc.com   | +91 98765 00006 | Salesman     | Active   | last: 05 Jul 2026, 07:55 AM | created: 12 Jan 2026
+7  | USR-0007 | Neha Iyer     | NI | neha@shc.com    | +91 98765 00007 | Salesman     | Inactive | last: 20 Jun 2026, 03:10 PM | created: 15 Jan 2026
+8  | USR-0008 | Kiran Mehta   | KM | kiran@shc.com   | +91 98765 00008 | Manager      | Active   | last: 04 Jul 2026, 05:30 PM | created: 18 Jan 2026
+9  | USR-0009 | Suresh Kumar  | SK | suresh@shc.com  | +91 98765 00009 | Stock Manager| Active   | last: 05 Jul 2026, 08:45 AM | created: 20 Jan 2026
+10 | USR-0010 | Deepa Nair    | DN | deepa@shc.com   | +91 98765 00010 | Accountant   | Inactive | last: 01 Jul 2026, 01:00 PM | created: 22 Jan 2026
+11 | USR-0011 | Rajesh Kapoor | RK | rajesh@shc.com  | +91 98765 00011 | Salesman     | Active   | last: 05 Jul 2026, 10:05 AM | created: 25 Jan 2026
+12 | USR-0012 | Anita Singh   | AS | anita@shc.com   | +91 98765 00012 | Salesman     | Active   | last: 04 Jul 2026, 04:20 PM | created: 28 Jan 2026
+13 | USR-0013 | Manoj Patil   | MP | manoj@shc.com   | +91 98765 00013 | Stock Manager| Active   | last: 03 Jul 2026, 09:00 AM | created: 01 Feb 2026
+14 | USR-0014 | Lakshmi Rao   | LR | lakshmi@shc.com | +91 98765 00014 | Accountant   | Active   | last: 02 Jul 2026, 02:15 PM | created: 05 Feb 2026
+15 | USR-0015 | Ganesh Iyer   | GI | ganesh@shc.com  | +91 98765 00015 | Salesman     | Inactive | last: 15 Jun 2026, 11:00 AM | created: 10 Feb 2026
+
+
+--------------------------------------------------------------------------------
+9. ADD-EMPLOYEE WIZARD — hardcoded per-role user counts (removed, not just archived)
+--------------------------------------------------------------------------------
+Source: lib/app/modules/users/controllers/add_employee_wizard_controller.dart
+Was: RoleOpt.count field on each role in kRoles
+Replaced by: roleOptUserCount(id) — computed live from
+             UsersController.roleBreakdown (GET /api/users role counts)
+
+  super_admin (Super Admin) → 1
+  admin       (Admin)       → 3
+  manager     (Manager)     → 5
+  sales       (Sales)       → 8
+  store_staff (Store Staff) → 7
+  custom      (Custom Role) → 2
+
+
+--------------------------------------------------------------------------------
+10. LOGIN — dev auto-fill credentials (removed, not archived elsewhere)
+--------------------------------------------------------------------------------
+Source: lib/app/modules/auth/controllers/login_controller.dart
+Was: emailController/passwordController pre-filled on every app start
+Replaced by: nothing — login form now starts blank (remember-me still
+             restores real saved credentials if the user opted in)
+
+  email:    shc@gmail.com
+  password: 123456
+
+(For actual login testing, use the real admin account seeded into the
+`users` table: shc@gmail.com — see backend/prisma/seed.js or whichever
+script seeded the login user for the current password.)
+
+
+--------------------------------------------------------------------------------
+11. CLIENTS — 1037 rows (NOT duplicated here — see below)
+--------------------------------------------------------------------------------
+Source: lib/app/modules/clients/data/clients_seed_data.dart
+Was: final List<ClientModel> kClientsSeedData (1037 real client records
+     sourced from the company's accounting export — Day Book: All Parties
+     under Sundry Creditors)
+Replaced by: ClientsController → GET /api/clients
+
+NOT copied into this file: 1037 rows would make this archive unreasonably
+large and the exact same data is already permanently preserved, verbatim,
+in:
+
+  backend/prisma/seedClients.js
+
+Run `cd backend && node prisma/seedClients.js` any time to re-seed all
+1037 clients into an empty `clients` table. That script (plus the DB itself)
+is the source of truth for this dataset, not this text file.
+
+
+================================================================================
+END OF ARCHIVE
+================================================================================

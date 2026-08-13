@@ -7,28 +7,327 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           Int    @id @default(autoincrement())
+  /// USR-0001 — the employee code shown in the Employee list. The default is
+  /// only there so the column could be added to an existing table; every
+  /// insert goes through POST /api/users, which always assigns a real code.
+  code         String @unique @default("")
+  name         String
+  email        String @unique
+  passwordHash String
+  /// Admin | Manager | Salesman | Stock Manager | Accountant
+  role         String @default("Admin")
+
+  phone       String    @default("")
+  department  String    @default("")
+  isActive    Boolean   @default(true)
+  lastLoginAt DateTime?
+
+  // Settings page — per-user preferences.
+  notifyLowStock Boolean @default(true)
+  notifyDelivery Boolean @default(true)
+  notifyPayment  Boolean @default(false)
+  notifyWeekly   Boolean @default(true)
+  twoFactor      Boolean @default(false)
+  rowsPerPage    Int     @default(10)
+  dateFormat     String  @default("MMM D, YYYY (Jul 18, 2026)")
+
+  notes DashboardNote[]
+
+  modifiedBy String    @default("Admin")
+  modifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("users")
+}
+
 model Category {
   id            Int           @id @default(autoincrement())
   name          String
   description   String        @default("")
-  imageUrl      String?
   sortOrder     Int           @default(0)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   subCategories SubCategory[]
+  products      Product[]
 
   @@map("categories")
 }
 
 model SubCategory {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   categoryId  Int
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   name        String
-  description String   @default("")
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  description String    @default("")
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
 
   @@map("sub_categories")
+}
+
+model Product {
+  id                 Int          @id @default(autoincrement())
+  name               String
+  sku                String       @unique
+  categoryId         Int
+  category           Category     @relation(fields: [categoryId], references: [id])
+  subCategoryId      Int?
+  subCategory        SubCategory? @relation(fields: [subCategoryId], references: [id])
+  unit               String
+  sellingPrice       Float
+  costPrice          Float
+  currentStock       Int          @default(0)
+  minimumStock       Int          @default(0)
+  isActive           Boolean      @default(true)
+  brand              String?
+  hsnCode            String?
+  description        String?
+  taxPercent         Float        @default(18.0)
+  stockLocation      String       @default("Main Warehouse")
+  modifiedBy         String       @default("Admin")
+  modifiedAt         DateTime?
+  densityVariants    String[]     @default([])
+  boardVariants      String[]     @default([])
+  thicknessVariants  String[]     @default([])
+  reinforcementTypes String[]     @default([])
+  otherSpecs         String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  purchaseItems  PurchaseItem[]
+  saleItems      SaleItem[]
+  stockMovements StockMovement[]
+
+  @@map("products")
+}
+
+model PurchaseOrder {
+  id              Int            @id @default(autoincrement())
+  poNumber        String         @unique
+  supplier        String
+  supplierIcon    String         @default("")
+  date            DateTime
+  amount          Float          @default(0)
+  status          String         @default("Pending") // Received | Partial | Pending | Cancelled
+  modifiedBy      String         @default("Admin")
+  modifiedAt      DateTime?
+  supplierAddress String         @default("")
+  buyerGst        String         @default("")
+  pan             String         @default("")
+  invoiceNo       String         @default("")
+  invoiceDate     DateTime?
+  despatchThrough String         @default("")
+  lrNo            String         @default("")
+  lrDate          DateTime?
+  vehicleNo       String         @default("")
+  freight         Float          @default(0)
+  placeOfSupply   String         @default("")
+  dueDate         DateTime?
+  items           PurchaseItem[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@map("purchase_orders")
+}
+
+model PurchaseItem {
+  id              Int           @id @default(autoincrement())
+  purchaseOrderId Int
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  // Set when the row was picked from the product autocomplete; drives which
+  // product's stock this line moves. Null for free-typed legacy rows.
+  productId       Int?
+  productRef      Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  product         String
+  hsn             String        @default("")
+  grade           String        @default("")
+  density         String        @default("")
+  qty             Float
+  unit            String        @default("")
+  rate            Float
+
+  @@map("purchase_items")
+}
+
+model SalesOrder {
+  id                Int        @id @default(autoincrement())
+  soNumber          String     @unique
+  client            String
+  clientBadge       String     @default("")
+  date              DateTime
+  amount            Float      @default(0)
+  status            String     @default("Confirmed") // Confirmed | Processing | Shipped | Delivered | Cancelled
+  paymentStatus     String     @default("Pending") // Paid | Partial | Refunded | Pending
+  modifiedBy        String     @default("Admin")
+  modifiedAt        DateTime?
+  clientAddress     String     @default("")
+  buyerGstin        String     @default("")
+  pan               String     @default("")
+  invoiceNo         String     @default("")
+  invoiceDate       DateTime?
+  despatchedThrough String     @default("")
+  destination       String     @default("")
+  items             SaleItem[]
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@map("sales_orders")
+}
+
+model SaleItem {
+  id           Int        @id @default(autoincrement())
+  salesOrderId Int
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  productId    Int?
+  productRef   Product?   @relation(fields: [productId], references: [id], onDelete: SetNull)
+  product      String
+  hsn          String     @default("")
+  qty          Float
+  unit         String     @default("")
+  rate         Float
+
+  @@map("sale_items")
+}
+
+model Client {
+  id               Int       @id @default(autoincrement())
+  code             String    @unique
+  name             String
+  clientType       String    @default("")
+  registrationType String    @default("Regular")
+  email            String    @default("")
+  phone            String    @default("")
+  altPhone         String    @default("")
+  gstin            String    @default("")
+  pan              String    @default("")
+  clientSince      DateTime?
+
+  // Display address shown in the clients list. Legacy rows imported from the
+  // accounting export only have this free-text blob; rows created through the
+  // Add Client form get it composed from the registered-address fields below.
+  address    String @default("")
+  regAddr1   String @default("")
+  regAddr2   String @default("")
+  regCity    String @default("")
+  regState   String @default("")
+  regPin     String @default("")
+  regCountry String @default("India")
+
+  shipSameAsRegistered Boolean @default(true)
+  shipSameAsBilling    Boolean @default(false)
+  shipAddr1            String  @default("")
+  shipAddr2            String  @default("")
+  shipCity             String  @default("")
+  shipState            String  @default("")
+  shipPin              String  @default("")
+  shipCountry          String  @default("India")
+
+  // shipping | registered | custom
+  billingMode String @default("shipping")
+  billAddr1   String @default("")
+  billAddr2   String @default("")
+  billCity    String @default("")
+  billState   String @default("")
+  billPin     String @default("")
+  billCountry String @default("India")
+
+  paymentTerms   String @default("")
+  priceList      String @default("")
+  openingBalance Float  @default(0)
+  creditLimit    Float  @default(0)
+  creditDays     Int    @default(0)
+
+  contactPerson      String @default("")
+  contactDesignation String @default("")
+  contactPhone       String @default("")
+  contactEmail       String @default("")
+
+  modifiedBy String    @default("Admin")
+  modifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("clients")
+}
+
+/// Append-only ledger of every stock change. Product.currentStock is the
+/// running total; these rows are what makes it auditable and reversible —
+/// deleting a purchase/sales order reverses exactly the rows it created.
+model StockMovement {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  /// IN | OUT | ADJUST
+  type String
+
+  /// Always positive; `type` carries the direction.
+  qty Float
+
+  /// purchase | sale | manual
+  refType String @default("manual")
+
+  /// purchase_orders.id / sales_orders.id when refType isn't manual.
+  refId Int?
+
+  /// Human-readable origin, e.g. "PO-2024-10001".
+  reference String @default("")
+  note      String @default("")
+
+  createdBy String   @default("Admin")
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([refType, refId])
+  @@map("stock_movements")
+}
+
+/// Goods movement log shown on the Transactions page: what moved, for whom,
+/// against which PO. Separate from `stock_movements`, which is the numeric
+/// ledger behind Product.currentStock.
+model Transaction {
+  id   Int    @id @default(autoincrement())
+  item String
+
+  /// Inbound | Outbound
+  type String
+
+  party    String   @default("")
+  poNumber String   @default("")
+  date     DateTime
+
+  /// Received | Shipped | Pending | Delivered
+  status String @default("Pending")
+
+  notes String @default("")
+
+  modifiedBy String   @default("Admin")
+  modifiedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([date])
+  @@map("transactions")
+}
+
+/// Notes / to-do items on the dashboard. Owned by the user who created them.
+model DashboardNote {
+  id     Int     @id @default(autoincrement())
+  userId Int?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text   String
+  done   Boolean @default(false)
+
+  /// Manual ordering in the widget.
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("dashboard_notes")
 }

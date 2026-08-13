@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/sales_controller.dart';
-import '../controllers/mobile_add_sale_controller.dart';
-import '../models/sales_model.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../products/controllers/products_controller.dart';
-import '../../products/models/product_model.dart';
-import '../../clients/models/client_model.dart';
-import '../../clients/widgets/client_autocomplete_field.dart';
-import '../../../shared/widgets/form_fields.dart';
-import '../../../shared/widgets/section_card.dart';
-import '../../../core/utils/app_toast.dart';
+import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
+import 'package:shc_stock/app/modules/sales/controllers/mobile_add_sale_controller.dart';
+import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
+import 'package:shc_stock/app/modules/products/models/product_model.dart';
+import 'package:shc_stock/app/modules/clients/models/client_model.dart';
+import 'package:shc_stock/app/modules/clients/widgets/client_autocomplete_field.dart';
+import 'package:shc_stock/app/shared/widgets/form_fields.dart';
+import 'package:shc_stock/app/shared/widgets/section_card.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Add Sell — mobile, stacked tax-invoice style entry form
@@ -20,7 +20,7 @@ import '../../../core/utils/app_toast.dart';
 class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
   const MobileAddSalesLayout({super.key});
 
-  void _saveSale() {
+  Future<void> _saveSale() async {
     final c = Get.find<SalesController>();
     final newId = 'so_${DateTime.now().millisecondsSinceEpoch}';
     final newSoNum =
@@ -28,7 +28,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
     final clientName = controller.client.value.isEmpty
         ? 'New Client'
         : controller.client.value;
-    c.addOrder(
+    final ok = await c.addOrder(
       SalesOrder(
         id: newId,
         soNumber: newSoNum,
@@ -42,8 +42,23 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
         amount: controller.grandTotal,
         status: SalesStatus.confirmed,
         paymentStatus: PaymentStatus.pending,
+        // Items carry the productId, which is what makes the backend take the
+        // sold quantity out of inventory.
+        items: controller.items
+            .map(
+              (r) => SaleDetailItem(
+                productId: r.productId,
+                product: r.product,
+                hsn: r.hsn,
+                qty: r.qty,
+                unit: r.unit,
+                rate: r.rate,
+              ),
+            )
+            .toList(),
       ),
     );
+    if (!ok) return; // controller already showed the error toast
     Get.back();
     showAppToast(
       '✅ Sale Saved',
@@ -105,7 +120,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
 
               // ── Section 1: Buyer & Invoice ────────
               AppNumberedSectionCard(
-            mobile: true,
+                mobile: true,
                 colors: colors,
                 number: 1,
                 title: 'Buyer & Invoice',
@@ -113,7 +128,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                   () => Column(
                     children: [
                       AppField(
-            mobile: true,
+                        mobile: true,
                         label: 'Client',
                         colors: colors,
                         child: ClientAutocompleteField(
@@ -126,7 +141,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                       ),
                       const SizedBox(height: 14),
                       AppField(
-            mobile: true,
+                        mobile: true,
                         label: 'Buyer Address',
                         colors: colors,
                         child: AppTextBox(
@@ -137,7 +152,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                       ),
                       const SizedBox(height: 14),
                       AppField(
-            mobile: true,
+                        mobile: true,
                         label: 'Buyer GSTIN/UIN',
                         colors: colors,
                         child: AppTextBox(
@@ -152,7 +167,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                         children: [
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'Invoice No.',
                               colors: colors,
                               child: AppTextBox(
@@ -165,11 +180,11 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'Invoice Date',
                               colors: colors,
                               child: AppDateBox(
-            mobile: true,
+                                mobile: true,
                                 date: controller.invoiceDate.value,
                                 colors: colors,
                                 onTap: () => controller.pickDate(
@@ -187,7 +202,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                         children: [
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'Delivery Note',
                               colors: colors,
                               child: AppTextBox(
@@ -200,7 +215,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'Mode/Terms of Payment',
                               colors: colors,
                               child: AppTextBox(
@@ -218,7 +233,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                         children: [
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: "Buyer's Order No.",
                               colors: colors,
                               child: AppTextBox(
@@ -231,7 +246,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'Dispatch Doc No.',
                               colors: colors,
                               child: AppTextBox(
@@ -249,11 +264,11 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                         children: [
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'Delivery Note Date',
                               colors: colors,
                               child: AppDateBox(
-            mobile: true,
+                                mobile: true,
                                 date: controller.deliveryNoteDate.value,
                                 colors: colors,
                                 onTap: () => controller.pickDate(
@@ -266,7 +281,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: AppField(
-            mobile: true,
+                              mobile: true,
                               label: 'Dispatched Through',
                               colors: colors,
                               child: AppTextBox(
@@ -280,7 +295,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                       ),
                       const SizedBox(height: 14),
                       AppField(
-            mobile: true,
+                        mobile: true,
                         label: 'Destination',
                         colors: colors,
                         child: AppTextBox(
@@ -291,7 +306,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                       ),
                       const SizedBox(height: 14),
                       AppField(
-            mobile: true,
+                        mobile: true,
                         label: 'Terms of Delivery',
                         colors: colors,
                         child: AppTextBox(
@@ -308,12 +323,12 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
 
               // ── Section 2: Item Details ──────────
               AppNumberedSectionCard(
-            mobile: true,
+                mobile: true,
                 colors: colors,
                 number: 2,
                 title: 'Item Details',
                 trailing: AppAddRowPill(
-            mobile: true,
+                  mobile: true,
                   colors: colors,
                   label: 'Add',
                   onTap: controller.addItemRow,
@@ -341,7 +356,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
 
               // ── Section 3: GST & Totals ───────────
               AppNumberedSectionCard(
-            mobile: true,
+                mobile: true,
                 colors: colors,
                 number: 3,
                 title: 'GST & Totals',
@@ -488,6 +503,7 @@ class _MobileItemCard extends StatelessWidget {
   });
 
   void _applyProduct(ProductModel p) {
+    row.productId = int.tryParse(p.id);
     row.product = p.name;
     row.hsn = p.hsnCode ?? '';
     row.unit = p.unit;
@@ -544,7 +560,7 @@ class _MobileItemCard extends StatelessWidget {
             children: [
               Expanded(
                 child: AppSmallInput(
-            mobile: true,
+                  mobile: true,
                   hint: 'HSN/SAC',
                   value: row.hsn,
                   colors: colors,
@@ -558,7 +574,7 @@ class _MobileItemCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: AppSmallNumber(
-            mobile: true,
+                  mobile: true,
                   hint: 'Quantity',
                   value: row.qty,
                   colors: colors,
@@ -571,7 +587,7 @@ class _MobileItemCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: AppSmallInput(
-            mobile: true,
+                  mobile: true,
                   hint: 'UoM',
                   value: row.unit,
                   colors: colors,
@@ -589,7 +605,7 @@ class _MobileItemCard extends StatelessWidget {
             children: [
               Expanded(
                 child: AppSmallNumber(
-            mobile: true,
+                  mobile: true,
                   hint: 'Rate',
                   value: row.rate,
                   colors: colors,

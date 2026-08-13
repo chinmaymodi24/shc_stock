@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
-import '../controllers/sales_controller.dart';
-import '../controllers/add_sale_controller.dart';
-import '../models/sales_model.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../dashboard/widgets/web_sidebar.dart';
-import '../../dashboard/widgets/web_top_bar.dart';
-import '../../products/controllers/products_controller.dart';
-import '../../products/models/product_model.dart';
-import '../../clients/models/client_model.dart';
-import '../../clients/widgets/client_autocomplete_field.dart';
-import '../../../shared/widgets/form_fields.dart';
-import '../../../shared/widgets/section_card.dart';
-import '../../../core/utils/app_toast.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
+import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
+import 'package:shc_stock/app/modules/sales/controllers/add_sale_controller.dart';
+import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
+import 'package:shc_stock/app/modules/products/models/product_model.dart';
+import 'package:shc_stock/app/modules/clients/models/client_model.dart';
+import 'package:shc_stock/app/modules/clients/widgets/client_autocomplete_field.dart';
+import 'package:shc_stock/app/shared/widgets/form_fields.dart';
+import 'package:shc_stock/app/shared/widgets/section_card.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Add Sell — tax-invoice style entry form
@@ -23,7 +24,7 @@ import '../../../core/utils/app_toast.dart';
 class WebNewSalesLayout extends GetView<AddSaleController> {
   const WebNewSalesLayout({super.key});
 
-  void _saveSale() {
+  Future<void> _saveSale() async {
     final c = Get.find<SalesController>();
     final newId = 'so_${DateTime.now().millisecondsSinceEpoch}';
     final newSoNum =
@@ -31,7 +32,7 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
     final clientName = controller.client.value.isEmpty
         ? 'New Client'
         : controller.client.value;
-    c.addOrder(
+    final ok = await c.addOrder(
       SalesOrder(
         id: newId,
         soNumber: newSoNum,
@@ -45,8 +46,32 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
         amount: controller.grandTotal,
         status: SalesStatus.confirmed,
         paymentStatus: PaymentStatus.pending,
+        modifiedBy: currentActorName,
+        modifiedAt: DateTime.now(),
+        clientAddress: controller.addressCtrl.text.trim(),
+        buyerGstin: controller.buyerGstCtrl.text.trim(),
+        pan: controller.panCtrl.text.trim(),
+        invoiceNo: controller.invoiceNoCtrl.text.trim().isEmpty
+            ? newSoNum
+            : controller.invoiceNoCtrl.text.trim(),
+        invoiceDate: controller.invoiceDate.value,
+        despatchedThrough: controller.despatchThrough.value,
+        destination: controller.placeOfSupplyCtrl.text.trim(),
+        items: controller.items
+            .map(
+              (r) => SaleDetailItem(
+                productId: r.productId,
+                product: r.product,
+                hsn: r.hsn,
+                qty: r.qty,
+                unit: r.unit,
+                rate: r.rate,
+              ),
+            )
+            .toList(),
       ),
     );
+    if (!ok) return; // controller already showed the error toast
     Get.back();
     showAppToast(
       '✅ Sale Saved',
@@ -639,6 +664,7 @@ class _ItemDetailsRow extends StatelessWidget {
   });
 
   void _applyProduct(ProductModel p) {
+    row.productId = int.tryParse(p.id);
     row.product = p.name;
     row.hsn = p.hsnCode ?? '';
     row.unit = p.unit;

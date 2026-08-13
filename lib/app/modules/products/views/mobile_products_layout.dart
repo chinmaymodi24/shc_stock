@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../routes/app_routes.dart';
-import '../../dashboard/widgets/app_drawer.dart';
-import '../controllers/products_controller.dart';
-import '../models/product_model.dart';
-import 'add_product_dialog.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
+import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
+import 'package:shc_stock/app/modules/products/models/product_model.dart';
+import 'package:shc_stock/app/modules/products/views/add_product_dialog.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 
 class MobileProductsLayout extends StatelessWidget {
   const MobileProductsLayout({super.key});
@@ -151,7 +152,7 @@ class MobileProductsLayout extends StatelessWidget {
     return Obx(() {
       RxList<String> cats = [
         'All',
-        ...ProductsController.allCategories.map((cat) => cat.name),
+        ...c.realCategories.map((cat) => cat.name),
       ].obs;
       final colors = context.appColors;
       return SizedBox(
@@ -199,6 +200,9 @@ class MobileProductsLayout extends StatelessWidget {
   // ── Product List ─────────────────────────────────────────────
   Widget _buildProductList(ProductsController c) {
     return Obx(() {
+      if (c.isLoading.value) {
+        return const AppLoadingIndicator(label: 'Loading products...');
+      }
       final products = c.filteredProducts;
       if (products.isEmpty) {
         return Center(
@@ -357,7 +361,7 @@ class _ProductCard extends StatelessWidget {
               _MobileActionBtn(
                 icon: Icons.edit_outlined,
                 color: AppColors.primaryPurple,
-                onTap: () {},
+                onTap: () => Get.dialog(AddProductDialog(product: product)),
               ),
               const SizedBox(width: 8),
               _MobileActionBtn(

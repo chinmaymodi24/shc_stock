@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
 
 // ── Shared with mobile_dashboard_layout.dart / stat_card.dart — keep stable ──
 class StatCardData {
@@ -28,7 +29,6 @@ class DashboardStatData {
   final String? change;
   final bool isPositive;
   final IconData icon;
-  final Color bgColor;
   final Color iconColor;
 
   const DashboardStatData({
@@ -37,7 +37,6 @@ class DashboardStatData {
     this.change,
     this.isPositive = true,
     required this.icon,
-    required this.bgColor,
     required this.iconColor,
   });
 }
@@ -57,11 +56,24 @@ class CategorySlice {
   final double percent;
   final Color color;
 
+  /// Stock value behind the slice, in rupees. Null when the source didn't
+  /// send one — the hover tooltip then falls back to the percentage alone.
+  final double? value;
+
   const CategorySlice({
     required this.label,
     required this.percent,
     required this.color,
+    this.value,
   });
+
+  /// What the hover tooltip reads out: the rupee value plus its share.
+  String get tooltipValue {
+    // Whole numbers, matching the legend and the breakdown rows — only a
+    // sliver under 1% gets a decimal, so it doesn't read as "0%".
+    final share = '${percent.toStringAsFixed(percent < 1 ? 1 : 0)}%';
+    return value == null ? share : '${formatRupees(value!)} · $share';
+  }
 }
 
 class TransactionRow {
@@ -80,12 +92,21 @@ class TransactionRow {
   });
 }
 
+/// How a not-yet-done delivery is emphasized in the timeline — the next one
+/// due stands out from everything further out.
+enum DeliveryEmphasis { next, upcoming }
+
 class DeliveryItem {
   final String item;
   final String poRef;
   final String warehouse;
   final String eta;
   final Color accentColor;
+  final DeliveryEmphasis emphasis;
+
+  /// Whether this delivery has been ticked off as arrived — shown checked
+  /// off with a strike-through label. Toggleable by tapping its marker.
+  final bool done;
 
   const DeliveryItem({
     required this.item,
@@ -93,7 +114,19 @@ class DeliveryItem {
     required this.warehouse,
     required this.eta,
     required this.accentColor,
+    this.emphasis = DeliveryEmphasis.upcoming,
+    this.done = false,
   });
+
+  DeliveryItem copyWith({bool? done}) => DeliveryItem(
+    item: item,
+    poRef: poRef,
+    warehouse: warehouse,
+    eta: eta,
+    accentColor: accentColor,
+    emphasis: emphasis,
+    done: done ?? this.done,
+  );
 }
 
 class LowStockAlertItem {
@@ -108,9 +141,20 @@ class LowStockAlertItem {
   });
 }
 
+/// A dashboard note / to-do, backed by GET /api/dashboard/notes.
 class NoteItem {
+  final int id;
   final String text;
-  bool done;
+  final bool done;
 
-  NoteItem({required this.text, this.done = false});
+  const NoteItem({required this.id, required this.text, this.done = false});
+
+  factory NoteItem.fromJson(Map<String, dynamic> json) => NoteItem(
+    id: (json['id'] as num).toInt(),
+    text: json['text'] as String? ?? '',
+    done: json['done'] as bool? ?? false,
+  );
+
+  NoteItem copyWith({String? text, bool? done}) =>
+      NoteItem(id: id, text: text ?? this.text, done: done ?? this.done);
 }

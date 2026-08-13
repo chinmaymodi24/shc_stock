@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/add_employee_wizard_controller.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../routes/app_routes.dart';
-import '../../dashboard/widgets/web_sidebar.dart';
-import '../../dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/modules/users/controllers/add_employee_wizard_controller.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'wizard/step1_employee_details.dart';
 import 'wizard/step2_assign_role.dart';
 import 'wizard/step3_permissions.dart';
@@ -237,7 +237,9 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                               height: 2,
                               color: isLast
                                   ? Colors.transparent
-                                  : (done ? AppColors.primaryOrange : c.divider),
+                                  : (done
+                                        ? AppColors.primaryOrange
+                                        : c.divider),
                             ),
                           ),
                         ],
@@ -597,7 +599,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
         (
           'Role',
           Icons.manage_accounts_outlined,
-          '${controller.customTab.value ? 'Custom Role' : (controller.selRole?.name ?? 'Not selected')}\n${controller.selRole != null ? '${controller.selRole!.count} users with this role' : ''}',
+          '${controller.customTab.value ? 'Custom Role' : (controller.selRole?.name ?? 'Not selected')}\n${controller.selRole != null ? '${roleOptUserCount(controller.selRole!.id)} users with this role' : ''}',
         ),
         (
           'Permissions',
@@ -672,4 +674,3 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
     ],
   ][controller.step.value];
 }
-

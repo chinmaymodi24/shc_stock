@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
-import '../controllers/stock_controller.dart';
-import '../models/stock_item_model.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../dashboard/widgets/web_sidebar.dart';
-import '../../dashboard/widgets/web_top_bar.dart';
-import '../../dashboard/widgets/modified_by_cell.dart';
-import '../../../shared/widgets/table_footer.dart';
-import '../../../shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/modules/stock/controllers/stock_controller.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/modules/stock/models/stock_item_model.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
+import 'package:shc_stock/app/shared/widgets/table_footer.dart';
+import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
+import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main Widget — simple Inventory table (no stat cards, no side panel)
+// Main Widget — Inventory table with summary cards (no side panel).
+// Every card value and trend comes from GET /api/stats/inventory.
 // ─────────────────────────────────────────────────────────────────────────────
 class WebStockLayout extends GetView<StockController> {
   const WebStockLayout({super.key});
@@ -171,6 +175,65 @@ class WebStockLayout extends GetView<StockController> {
                           ),
                           const SizedBox(height: 20),
 
+                          // ── Summary cards — all from GET /api/stats/inventory ─────
+                          IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: AppStatCard(
+                                    label: 'Total Items',
+                                    value:
+                                        '${c.stats.value.intOf('totalItems')}',
+                                    icon: Icons.inventory_2_outlined,
+                                    iconColor: AppColors.primaryOrange,
+                                    trend: c.stats.value.trendLabel(
+                                      'totalItems',
+                                    ),
+                                    trendUp: c.stats.value.trendUp(
+                                      'totalItems',
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: AppStatCard(
+                                    label: 'Low Stock',
+                                    value: '${c.stats.value.intOf('lowStock')}',
+                                    icon: Icons.warning_amber_rounded,
+                                    iconColor: const Color(0xFFF59E0B),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: AppStatCard(
+                                    label: 'Out of Stock',
+                                    value:
+                                        '${c.stats.value.intOf('outOfStock')}',
+                                    icon: Icons.block_rounded,
+                                    iconColor: const Color(0xFFEF4444),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: AppStatCard(
+                                    label: 'Stock Value',
+                                    value: formatRupees(
+                                      c.stats.value.doubleOf('totalValue'),
+                                    ),
+                                    smallValue: true,
+                                    icon: Icons.currency_rupee_rounded,
+                                    iconColor: const Color(0xFF22C55E),
+                                    // Stock movement volume this month vs last.
+                                    trend: c.stats.value.trendLabel('movement'),
+                                    trendUp: c.stats.value.trendUp('movement'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
                           // ── Toolbar: search + filters ─────────────────────────────
                           FilterBar(
                             search: FilterSearchField(
@@ -252,7 +315,12 @@ class WebStockLayout extends GetView<StockController> {
                                 _ColHeader(colors: colors),
                                 Divider(height: 1, color: colors.divider),
 
-                                if (pageItems.isEmpty)
+                                if (c.isLoading.value)
+                                  const AppLoadingIndicator(
+                                    label: 'Loading inventory...',
+                                    padding: 40,
+                                  )
+                                else if (pageItems.isEmpty)
                                   Padding(
                                     padding: const EdgeInsets.all(48),
                                     child: Center(
@@ -509,10 +577,12 @@ class _StockRowState extends State<_StockRow> {
                   child: Builder(
                     builder: (_) {
                       final mod = resolveModifiedBy(
-                        seedId: item.id,
                         storedName: item.modifiedBy,
                         storedDate: item.modifiedAt,
                       );
+                      if (mod == null) {
+                        return ModifiedByEmpty(textHint: c.textHint);
+                      }
                       return ModifiedByCell(
                         name: mod.name,
                         date: mod.date,

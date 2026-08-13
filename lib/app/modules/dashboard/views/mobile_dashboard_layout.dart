@@ -7,8 +7,11 @@ import 'package:shc_stock/app/modules/dashboard/widgets/sales_chart.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/category_breakdown.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/notes_dialog.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
-import '../widgets/app_drawer.dart';
+import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
 
 class MobileDashboardLayout extends GetView<DashboardController> {
   const MobileDashboardLayout({super.key});
@@ -29,171 +32,186 @@ class MobileDashboardLayout extends GetView<DashboardController> {
       backgroundColor: colors.background,
       drawer: const AppDrawer(activeRoute: AppRoutes.dashboard),
       appBar: _buildAppBar(context),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Greeting ────────────────────────────────────────────
-            Text(
-              'Good morning, ${c.greetingName}!',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: colors.textPrimary,
-                fontFamily: 'Poppins',
+      // Obx: the layout reads the controller's lists straight out of build(),
+      // so without a reactive wrapper it rendered whatever had arrived by the
+      // first frame — and stayed empty when the fetch landed after it.
+      body: Obx(() {
+        // The greeting stays put and the content loads under it, like every
+        // other page — the loader used to replace the whole screen.
+        final loading = c.dashboardStats.length < 5;
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Greeting ────────────────────────────────────────────
+              Text(
+                'Good morning, ${c.greetingName}!',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                  fontFamily: 'Poppins',
+                ),
               ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              "Here's what's happening today",
-              style: TextStyle(
-                fontSize: 13,
-                color: colors.textSecondary,
-                fontFamily: 'Poppins',
+              const SizedBox(height: 3),
+              Text(
+                "Here's what's happening today",
+                style: TextStyle(
+                  fontSize: 13,
+                  color: colors.textSecondary,
+                  fontFamily: 'Poppins',
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // ── 2x2 stat tiles ──────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: _MobileStatTile(
-                    data: c.dashboardStats[0],
-                    label: _statLabels[0],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _MobileStatTile(
-                    data: c.dashboardStats[1],
-                    label: _statLabels[1],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _MobileStatTile(
-                    data: c.dashboardStats[2],
-                    label: _statLabels[2],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _MobileStatTile(
-                    data: c.dashboardStats[3],
-                    label: _statLabels[3],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // ── Top selling product banner ──────────────────────────
-            _TopSellingBanner(data: c.dashboardStats[4]),
-            const SizedBox(height: 16),
-
-            // ── Incoming deliveries ──────────────────────────────────
-            _MobileCard(
-              title: 'Incoming deliveries',
-              child: Column(
-                children: c.incomingDeliveries
-                    .take(2)
-                    .map(
-                      (d) => Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child: _DeliveryRow(data: d),
+              if (loading)
+                const AppLoadingIndicator(
+                  label: 'Loading dashboard...',
+                  padding: 72,
+                )
+              else ...[
+                // ── 2x2 stat tiles ──────────────────────────────────────
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MobileStatTile(
+                        data: c.dashboardStats[0],
+                        label: _statLabels[0],
                       ),
-                    )
-                    .toList(),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // ── Charts & Trends (collapsible) ────────────────────────
-            Obx(
-              () => _ChartsAccordion(
-                expanded: c.chartsExpanded.value,
-                onToggle: () =>
-                    c.chartsExpanded.value = !c.chartsExpanded.value,
-                c: c,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // ── Category breakdown ───────────────────────────────────
-            _MobileCard(
-              title: 'Category breakdown',
-              child: CategoryBreakdown(
-                categories: c.categorySlices.take(2).toList(),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // ── Low stock alerts ─────────────────────────────────────
-            _MobileCard(
-              title: 'Low stock alerts',
-              child: Column(
-                children: c.lowStockAlerts
-                    .map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _LowStockRow(item: item),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // ── Quick links grid ─────────────────────────────────────
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 2.6,
-              children: [
-                _QuickLinkCard(
-                  icon: Icons.edit_note_rounded,
-                  label: 'Notes',
-                  iconColor: colors.purple,
-                  onTap: () => Get.dialog(
-                    NotesDialog(
-                      notes: c.notes,
-                      onToggle: c.toggleNote,
-                      onAdd: c.addNote,
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _MobileStatTile(
+                        data: c.dashboardStats[1],
+                        label: _statLabels[1],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MobileStatTile(
+                        data: c.dashboardStats[2],
+                        label: _statLabels[2],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _MobileStatTile(
+                        data: c.dashboardStats[3],
+                        label: _statLabels[3],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // ── Top selling product banner ──────────────────────────
+                _TopSellingBanner(data: c.dashboardStats[4]),
+                const SizedBox(height: 16),
+
+                // ── Incoming deliveries ──────────────────────────────────
+                _MobileCard(
+                  title: 'Incoming deliveries',
+                  child: Column(
+                    children: c.incomingDeliveries
+                        .take(2)
+                        .map(
+                          (d) => Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: _DeliveryRow(data: d),
+                          ),
+                        )
+                        .toList(),
                   ),
                 ),
-                _QuickLinkCard(
-                  icon: Icons.receipt_long_outlined,
-                  label: 'Transactions',
-                  iconColor: colors.purple,
-                  onTap: () {},
+                const SizedBox(height: 16),
+
+                // ── Charts & Trends (collapsible) ────────────────────────
+                Obx(
+                  () => _ChartsAccordion(
+                    expanded: c.chartsExpanded.value,
+                    onToggle: () =>
+                        c.chartsExpanded.value = !c.chartsExpanded.value,
+                    c: c,
+                  ),
                 ),
-                _QuickLinkCard(
-                  icon: Icons.warning_amber_rounded,
-                  label: 'Low Stock',
-                  iconColor: const Color(0xFFF59E0B),
-                  onTap: () => Get.toNamed(AppRoutes.stock),
+                const SizedBox(height: 16),
+
+                // ── Category breakdown ───────────────────────────────────
+                _MobileCard(
+                  title: 'Category breakdown',
+                  child: CategoryBreakdown(
+                    categories: c.categorySlices.take(2).toList(),
+                  ),
                 ),
-                _QuickLinkCard(
-                  icon: Icons.folder_outlined,
-                  label: 'Categories',
-                  iconColor: AppColors.primaryOrange,
-                  onTap: () => Get.toNamed(AppRoutes.categories),
+                const SizedBox(height: 16),
+
+                // ── Low stock alerts ─────────────────────────────────────
+                _MobileCard(
+                  title: 'Low stock alerts',
+                  child: Column(
+                    children: c.lowStockAlerts
+                        .map(
+                          (item) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _LowStockRow(item: item),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // ── Quick links grid ─────────────────────────────────────
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 2.6,
+                  children: [
+                    _QuickLinkCard(
+                      icon: Icons.edit_note_rounded,
+                      label: 'Notes',
+                      iconColor: colors.purple,
+                      onTap: () => Get.dialog(
+                        NotesDialog(
+                          notes: c.notes,
+                          onToggle: c.toggleNote,
+                          onAdd: c.addNote,
+                        ),
+                      ),
+                    ),
+                    _QuickLinkCard(
+                      icon: Icons.receipt_long_outlined,
+                      label: 'Transactions',
+                      iconColor: colors.purple,
+                      onTap: () {},
+                    ),
+                    _QuickLinkCard(
+                      icon: Icons.warning_amber_rounded,
+                      label: 'Low Stock',
+                      iconColor: const Color(0xFFF59E0B),
+                      onTap: () => Get.toNamed(AppRoutes.stock),
+                    ),
+                    _QuickLinkCard(
+                      icon: Icons.folder_outlined,
+                      label: 'Categories',
+                      iconColor: AppColors.primaryOrange,
+                      onTap: () => Get.toNamed(AppRoutes.categories),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      }),
     );
   }
 
@@ -227,6 +245,8 @@ class MobileDashboardLayout extends GetView<DashboardController> {
 // ─────────────────────────────────────────────────────────────────────────────
 // 2x2 pastel stat tile
 // ─────────────────────────────────────────────────────────────────────────────
+/// Same summary card the web pages use — icon boxed on the left, flat tint,
+/// no border. The value drops a size because two tiles share a phone row.
 class _MobileStatTile extends StatelessWidget {
   final DashboardStatData data;
   final String label;
@@ -234,42 +254,12 @@ class _MobileStatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: data.bgColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(data.icon, color: data.iconColor, size: 18),
-          const SizedBox(height: 10),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w500,
-              color: data.iconColor.withValues(alpha: 0.85),
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            data.value,
-            style: TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF1A1A2E),
-              fontFamily: 'Poppins',
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
+    return AppStatCard(
+      label: label,
+      value: data.value,
+      icon: data.icon,
+      iconColor: data.iconColor,
+      smallValue: true,
     );
   }
 }
@@ -288,9 +278,10 @@ class _TopSellingBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: data.bgColor,
+        // Tint derived from the icon color, like every summary card — the
+        // fixed pastel it used to carry stayed light under the dark theme.
+        color: data.iconColor.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.divider),
       ),
       child: Row(
         children: [
@@ -304,29 +295,39 @@ class _TopSellingBanner extends StatelessWidget {
             child: Icon(data.icon, color: data.iconColor, size: 20),
           ),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Top Selling Product',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: data.iconColor,
-                  fontFamily: 'Poppins',
+          // Expanded + ellipsis: the product name comes from the API, and a
+          // real one ("Ceramic Fiber Blanket") overflowed the banner on a
+          // phone. The value color also has to follow the theme — it was
+          // pinned to near-black, which vanished on the dark tint.
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Top Selling Product',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: data.iconColor,
+                    fontFamily: 'Poppins',
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                data.value,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1A1A2E),
-                  fontFamily: 'Poppins',
+                const SizedBox(height: 2),
+                Text(
+                  data.value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
+                    fontFamily: 'Poppins',
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -578,6 +579,7 @@ class _ChartsAccordion extends StatelessWidget {
                     data: c.purchasesData,
                     barColor: AppColors.primaryPurple,
                     height: 110,
+                    valueFormatter: formatRupees,
                   ),
                   const SizedBox(height: 20),
                   Text('Sales (6 months)', style: labelStyle),
@@ -586,6 +588,7 @@ class _ChartsAccordion extends StatelessWidget {
                     data: c.salesData,
                     barColor: AppColors.primaryOrange,
                     height: 110,
+                    valueFormatter: formatRupees,
                   ),
                   const SizedBox(height: 20),
                   Text('New clients (6 months)', style: labelStyle),

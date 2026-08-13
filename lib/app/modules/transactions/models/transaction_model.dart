@@ -15,6 +15,8 @@ class TransactionModel {
   final String modifiedBy;
   final DateTime modifiedAt;
 
+  final String notes;
+
   const TransactionModel({
     required this.id,
     required this.item,
@@ -25,7 +27,50 @@ class TransactionModel {
     required this.status,
     required this.modifiedBy,
     required this.modifiedAt,
+    this.notes = '',
   });
+
+  /// Maps a row from GET /api/transactions. Unknown type/status labels fall
+  /// back rather than throwing, so a value added server-side can't blank the
+  /// whole list.
+  factory TransactionModel.fromJson(Map<String, dynamic> json) {
+    const types = {
+      'Inbound': TransactionType.inbound,
+      'Outbound': TransactionType.outbound,
+    };
+    const statuses = {
+      'Received': TransactionStatus.received,
+      'Shipped': TransactionStatus.shipped,
+      'Pending': TransactionStatus.pending,
+      'Delivered': TransactionStatus.delivered,
+    };
+    DateTime date(String key) =>
+        DateTime.tryParse(json[key] as String? ?? '') ?? DateTime.now();
+
+    return TransactionModel(
+      id: json['id'].toString(),
+      item: json['item'] as String? ?? '',
+      type: types[json['type']] ?? TransactionType.inbound,
+      party: json['party'] as String? ?? '',
+      poNumber: json['poNumber'] as String? ?? '',
+      date: date('date'),
+      status: statuses[json['status']] ?? TransactionStatus.pending,
+      notes: json['notes'] as String? ?? '',
+      modifiedBy: json['modifiedBy'] as String? ?? 'Admin',
+      modifiedAt: date('modifiedAt'),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'item': item,
+    'type': typeLabel,
+    'party': party,
+    'poNumber': poNumber,
+    'date': date.toIso8601String(),
+    'status': statusLabel,
+    'notes': notes,
+    'modifiedBy': modifiedBy,
+  };
 
   String get typeLabel {
     switch (type) {

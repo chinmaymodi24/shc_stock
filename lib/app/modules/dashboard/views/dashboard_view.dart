@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/dashboard_controller.dart';
+import 'package:shc_stock/app/modules/dashboard/controllers/dashboard_controller.dart';
 import 'mobile_dashboard_layout.dart';
 import 'web_dashboard_layout.dart';
 
@@ -9,7 +9,12 @@ class DashboardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Get.put(DashboardController());
+    // permanent + guarded: this runs inside build(), so an unguarded Get.put
+    // would rebuild the controller — and refetch the whole dashboard — on
+    // every layout pass.
+    if (!Get.isRegistered<DashboardController>()) {
+      Get.put(DashboardController(), permanent: true);
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= 700) {
