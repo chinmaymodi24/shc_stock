@@ -13,6 +13,7 @@ import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Widget — Transactions: colored summary cards + searchable/filterable table
@@ -574,8 +575,13 @@ class _TransactionRowState extends State<_TransactionRow> {
                         icon: Icons.delete_outline_rounded,
                         color: const Color(0xFFEF4444),
                         tooltip: 'Delete',
-                        onTap: () => Get.find<TransactionsController>()
-                            .deleteTransaction(txn.id),
+                        onTap: () => confirmDelete(
+                          context,
+                          itemName: txn.item,
+                          itemLabel: 'Transaction',
+                          onConfirm: () => Get.find<TransactionsController>()
+                              .deleteTransaction(txn.id),
+                        ),
                       ),
                     ],
                   ),

@@ -14,6 +14,7 @@ import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/shared/widgets/status_update_dialog_shell.dart';
+import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // TABLE COLUMN CONSTANTS — used by BOTH _TableHeader and _SalesRow
@@ -877,8 +878,12 @@ class _SalesRowState extends State<_SalesRow> {
                             order: widget.order,
                             onDelete: () {
                               Get.back();
-                              Get.find<SalesController>().deleteOrder(
-                                widget.order.id,
+                              confirmDelete(
+                                context,
+                                itemName: widget.order.soNumber,
+                                itemLabel: 'Sales Order',
+                                onConfirm: () => Get.find<SalesController>()
+                                    .deleteOrder(widget.order.id),
                               );
                             },
                           ),

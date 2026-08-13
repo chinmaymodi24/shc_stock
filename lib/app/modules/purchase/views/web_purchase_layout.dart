@@ -14,6 +14,7 @@ import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/shared/widgets/status_update_dialog_shell.dart';
+import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 
 // ── Table column constants (header + row MUST match) ──────────────────────
 const double _kIdxW = 32.0; // # badge
@@ -280,8 +281,13 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                             colors: colors,
                                             isLast:
                                                 e.key == pageItems.length - 1,
-                                            onDelete: () =>
-                                                c.deleteOrder(e.value.id),
+                                            onDelete: () => confirmDelete(
+                                              context,
+                                              itemName: e.value.poNumber,
+                                              itemLabel: 'Purchase Order',
+                                              onConfirm: () =>
+                                                  c.deleteOrder(e.value.id),
+                                            ),
                                           );
                                         }),
 

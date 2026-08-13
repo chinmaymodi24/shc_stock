@@ -12,6 +12,7 @@ import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
+import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 
 // ── Table column flex constants ────────────────────────────────────────────
 const double _kIdxW = 36.0;
@@ -889,8 +890,13 @@ class _UserRowState extends State<_UserRow> {
                         icon: Icons.delete_outline_rounded,
                         color: const Color(0xFFEF4444),
                         tooltip: 'Delete',
-                        onTap: () =>
-                            Get.find<UsersController>().deleteUser(u.id),
+                        onTap: () => confirmDelete(
+                          context,
+                          itemName: u.name,
+                          itemLabel: 'Employee',
+                          onConfirm: () =>
+                              Get.find<UsersController>().deleteUser(u.id),
+                        ),
                       ),
                     ],
                   ),

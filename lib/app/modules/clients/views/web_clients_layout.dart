@@ -12,6 +12,7 @@ import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 import 'package:shc_stock/app/modules/clients/views/client_details_dialog.dart';
+import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 
 // ── Table column constants (header + row MUST match) ──────────────────────
 const double _kIdxW = 36.0; // # badge
@@ -782,7 +783,13 @@ class _ClientRowState extends State<_ClientRow> {
                             client: cl,
                             onDelete: () {
                               Get.back();
-                              Get.find<ClientsController>().deleteClient(cl.id);
+                              confirmDelete(
+                                context,
+                                itemName: cl.name,
+                                itemLabel: 'Client',
+                                onConfirm: () => Get.find<ClientsController>()
+                                    .deleteClient(cl.id),
+                              );
                             },
                           ),
                         ),
@@ -799,8 +806,13 @@ class _ClientRowState extends State<_ClientRow> {
                         icon: Icons.delete_outline_rounded,
                         color: const Color(0xFFEF4444),
                         tooltip: 'Delete',
-                        onTap: () =>
-                            Get.find<ClientsController>().deleteClient(cl.id),
+                        onTap: () => confirmDelete(
+                          context,
+                          itemName: cl.name,
+                          itemLabel: 'Client',
+                          onConfirm: () =>
+                              Get.find<ClientsController>().deleteClient(cl.id),
+                        ),
                       ),
                     ],
                   ),
@@ -972,7 +984,12 @@ class _NewThisMonthCard extends StatelessWidget {
                       client: full,
                       onDelete: () {
                         Get.back();
-                        c.deleteClient(full.id);
+                        confirmDelete(
+                          context,
+                          itemName: full.name,
+                          itemLabel: 'Client',
+                          onConfirm: () => c.deleteClient(full.id),
+                        );
                       },
                     ),
                   );
