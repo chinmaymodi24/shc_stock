@@ -95,7 +95,8 @@ class CategoriesController extends GetxController {
         'name': name.trim(),
         'description': desc.trim(),
       });
-      categories.add(CategoryModel.fromJson(json as Map<String, dynamic>));
+      // Last added first — matches the sortOrder the API assigns.
+      categories.insert(0, CategoryModel.fromJson(json as Map<String, dynamic>));
     } catch (e) {
       _showError('Failed to add category.');
     }
@@ -112,9 +113,14 @@ class CategoriesController extends GetxController {
         'name': name.trim(),
         'description': desc.trim(),
       });
+      // Last modified first: the edited category moves back to the top.
       final idx = categories.indexWhere((c) => c.id == catId);
       if (idx != -1) {
-        categories[idx] = CategoryModel.fromJson(json as Map<String, dynamic>);
+        categories.removeAt(idx);
+        categories.insert(
+          0,
+          CategoryModel.fromJson(json as Map<String, dynamic>),
+        );
       }
     } catch (e) {
       _showError('Failed to update category.');
@@ -166,8 +172,9 @@ class CategoriesController extends GetxController {
         'description': desc.trim(),
       });
       final old = categories[idx];
+      // Last added first, same as the parent list.
       final newSubs = List<SubCategoryItem>.from(old.subCategories)
-        ..add(SubCategoryItem.fromJson(json as Map<String, dynamic>));
+        ..insert(0, SubCategoryItem.fromJson(json as Map<String, dynamic>));
       categories[idx] = old.copyWith(subCategories: newSubs);
     } catch (e) {
       _showError('Failed to add sub-category.');
@@ -191,8 +198,10 @@ class CategoriesController extends GetxController {
         'name': name.trim(),
         'description': desc.trim(),
       });
-      final newSubs = List<SubCategoryItem>.from(old.subCategories);
-      newSubs[subIdx] = SubCategoryItem.fromJson(json as Map<String, dynamic>);
+      // Last modified first: the edited sub-category moves to the top.
+      final newSubs = List<SubCategoryItem>.from(old.subCategories)
+        ..removeAt(subIdx)
+        ..insert(0, SubCategoryItem.fromJson(json as Map<String, dynamic>));
       categories[idx] = old.copyWith(subCategories: newSubs);
     } catch (e) {
       _showError('Failed to update sub-category.');

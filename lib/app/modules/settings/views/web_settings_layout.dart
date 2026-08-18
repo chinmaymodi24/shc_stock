@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/shared/widgets/async_button.dart';
 import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/core/theme/theme_controller.dart';
 import 'package:shc_stock/app/core/theme/theme_switch_helper.dart';
@@ -616,45 +617,28 @@ class WebSettingsLayout extends GetView<SettingsController> {
     );
   }
 
-  Widget _orangeButton({required String label, required VoidCallback onTap}) {
-    return ElevatedButton(
+  Widget _orangeButton({
+    required String label,
+    required Future<void> Function() onTap,
+  }) {
+    return AppAsyncButton(
+      label: label,
       onPressed: onTap,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primaryOrange,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-          fontFamily: 'Poppins',
-        ),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+      radius: 8,
     );
   }
 
-  Widget _purpleButton({required String label, required VoidCallback onTap}) {
-    return ElevatedButton(
+  Widget _purpleButton({
+    required String label,
+    required Future<void> Function() onTap,
+  }) {
+    return AppAsyncButton(
+      label: label,
       onPressed: onTap,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primaryPurple,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-          fontFamily: 'Poppins',
-        ),
-      ),
+      background: AppColors.primaryPurple,
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+      radius: 8,
     );
   }
 

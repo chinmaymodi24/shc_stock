@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/shared/widgets/async_button.dart';
 
 /// Shared chrome for "update status"-style dialogs (title, subtitle,
 /// scrollable body, Cancel/Update footer with a loading spinner).
@@ -32,18 +33,8 @@ class StatusUpdateDialogShell extends StatefulWidget {
 }
 
 class _StatusUpdateDialogShellState extends State<StatusUpdateDialogShell> {
-  final _saving = false.obs;
-
-  @override
-  void dispose() {
-    _saving.close();
-    super.dispose();
-  }
-
   Future<void> _save() async {
-    _saving.value = true;
     await widget.onSave();
-    _saving.value = false;
     Get.back();
   }
 
@@ -123,37 +114,17 @@ class _StatusUpdateDialogShellState extends State<StatusUpdateDialogShell> {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Obx(
-                        () => InkWell(
-                          onTap: _saving.value ? null : _save,
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryOrange,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: _saving.value
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Update',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                      fontFamily: 'Poppins',
-                                    ),
-                                  ),
-                          ),
-                        ),
+                      // The shared async button: it owns the busy state and
+                      // centres its spinner. The hand-rolled version put a
+                      // fixed-size SizedBox straight inside a full-width
+                      // Container, which stretched the spinner into an
+                      // ellipse across the whole button.
+                      child: AppAsyncButton(
+                        label: 'Update',
+                        onPressed: _save,
+                        expand: true,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        radius: 10,
                       ),
                     ),
                   ],

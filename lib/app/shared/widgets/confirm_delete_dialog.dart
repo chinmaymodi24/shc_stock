@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/shared/widgets/async_button.dart';
 
 /// Shared "Are you sure?" dialog for every destructive delete in the app.
 ///
@@ -20,7 +21,7 @@ import 'package:shc_stock/app/core/theme/app_colors.dart';
 Future<void> confirmDelete(
   BuildContext context, {
   required String itemName,
-  required VoidCallback onConfirm,
+  required Future<void> Function() onConfirm,
   String itemLabel = 'item',
   String? message,
 }) {
@@ -38,7 +39,9 @@ class _ConfirmDeleteDialog extends StatelessWidget {
   final String itemName;
   final String itemLabel;
   final String? message;
-  final VoidCallback onConfirm;
+
+  /// Awaited, so the button can show a spinner until the API answers.
+  final Future<void> Function() onConfirm;
 
   const _ConfirmDeleteDialog({
     required this.itemName,
@@ -184,36 +187,21 @@ class _ConfirmDeleteDialog extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          ElevatedButton.icon(
-                            onPressed: () {
+                          AppAsyncButton(
+                            label: 'Yes, Delete',
+                            icon: Icons.delete_rounded,
+                            // Stays on screen with a spinner until the delete
+                            // actually comes back, then closes — it used to
+                            // close first and fire the call into the void.
+                            onPressed: () async {
+                              await onConfirm();
                               Get.back();
-                              onConfirm();
                             },
-                            icon: const Icon(
-                              Icons.delete_rounded,
-                              color: Colors.white,
-                              size: 16,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
                             ),
-                            label: const Text(
-                              'Yes, Delete',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Poppins',
-                                color: Colors.white,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryOrange,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
+                            radius: 10,
                           ),
                         ],
                       ),

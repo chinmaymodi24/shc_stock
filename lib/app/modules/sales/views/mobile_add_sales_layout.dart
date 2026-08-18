@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/shared/widgets/async_button.dart';
 import 'package:shc_stock/app/modules/sales/controllers/mobile_add_sale_controller.dart';
 import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -22,12 +24,23 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
 
   Future<void> _saveSale() async {
     final c = Get.find<SalesController>();
+    // A sale with no client silently saved as the literal string "New
+    // Client" before — indistinguishable from a real client of that name,
+    // and unmatchable to anyone in the Item Details / client history views.
+    // Block the save instead so every order carries a real client.
+    if (controller.client.value.trim().isEmpty) {
+      showAppToast(
+        'Error',
+        'Please select or enter a client before saving.',
+        backgroundColor: const Color(0xFFEF4444),
+        colorText: Colors.white,
+      );
+      return;
+    }
     final newId = 'so_${DateTime.now().millisecondsSinceEpoch}';
     final newSoNum =
         'SO-2024-${(10000 + c.orders.length + 1).toString().padLeft(5, '0')}';
-    final clientName = controller.client.value.isEmpty
-        ? 'New Client'
-        : controller.client.value;
+    final clientName = controller.client.value.trim();
     final ok = await c.addOrder(
       SalesOrder(
         id: newId,
@@ -59,7 +72,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
       ),
     );
     if (!ok) return; // controller already showed the error toast
-    Get.back();
+    Get.offNamed(AppRoutes.sales);
     showAppToast(
       '✅ Sale Saved',
       '$newSoNum has been successfully created.',
@@ -86,7 +99,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                   AppBackButton(
                     colors: colors,
                     mobile: true,
-                    onTap: () => Get.back(),
+                    onTap: () => Get.offNamed(AppRoutes.sales),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -433,7 +446,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () => Get.offNamed(AppRoutes.sales),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: colors.border),
                     padding: const EdgeInsets.symmetric(vertical: 13),
@@ -453,25 +466,11 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: ElevatedButton(
+                child: AppAsyncButton(
+                  label: 'Save Sale',
                   onPressed: _saveSale,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryOrange,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                  ),
-                  child: const Text(
-                    'Save Sale',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
+                  expand: true,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
                 ),
               ),
             ],
@@ -508,6 +507,13 @@ class _MobileItemCard extends StatelessWidget {
     row.hsn = p.hsnCode ?? '';
     row.unit = p.unit;
     row.rate = p.sellingPrice;
+    // A fresh row starts at qty 0, which pinned the line — and the invoice
+    // total — to ₹0 until a quantity was typed; the picked product should
+    // price itself straight away.
+    if (row.qty == 0) row.qty = 1;
+    // Re-seeds the HSN / UoM / Rate boxes below, which otherwise keep the
+    // text they were first built with.
+    row.version++;
     onChanged();
   }
 
@@ -560,6 +566,7 @@ class _MobileItemCard extends StatelessWidget {
             children: [
               Expanded(
                 child: AppSmallInput(
+                  key: ValueKey('${row.id}_hsn_${row.version}'),
                   mobile: true,
                   hint: 'HSN/SAC',
                   value: row.hsn,
@@ -573,7 +580,7 @@ class _MobileItemCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: AppSmallNumber(
+                child: AppSmallStepper(
                   mobile: true,
                   hint: 'Quantity',
                   value: row.qty,
@@ -587,6 +594,7 @@ class _MobileItemCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: AppSmallInput(
+                  key: ValueKey('${row.id}_uom_${row.version}'),
                   mobile: true,
                   hint: 'UoM',
                   value: row.unit,
@@ -605,6 +613,7 @@ class _MobileItemCard extends StatelessWidget {
             children: [
               Expanded(
                 child: AppSmallNumber(
+                  key: ValueKey('${row.id}_rate_${row.version}'),
                   mobile: true,
                   hint: 'Rate',
                   value: row.rate,

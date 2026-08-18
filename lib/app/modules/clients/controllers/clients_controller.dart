@@ -104,8 +104,12 @@ class ClientsController extends GetxController {
     try {
       final json = await _api.put('/clients/$id', body);
       final updated = ClientModel.fromJson(json as Map<String, dynamic>);
+      // Last modified first: move the edited row back to the top.
       final idx = clients.indexWhere((c) => c.id == id);
-      if (idx != -1) clients[idx] = updated;
+      if (idx != -1) {
+        clients.removeAt(idx);
+        clients.insert(0, updated);
+      }
       await fetchStats();
       return updated;
     } catch (e) {

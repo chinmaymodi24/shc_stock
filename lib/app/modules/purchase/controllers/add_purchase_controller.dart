@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
+import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
 
 class PurchaseItemRow {
   // Stable identity for list-item Keys, and a version bump whenever fields
@@ -32,6 +33,17 @@ class PurchaseItemRow {
   double netPrice = 0;
 
   double get totalQty => noPkg * avgContPerPkg;
+
+  /// Total quantity is normally packs x per-pack, but it is also editable
+  /// directly (and steppable) — entering a total keeps the per-pack figure
+  /// and back-solves the pack count, so the three fields never contradict
+  /// each other.
+  set totalQty(double v) {
+    final per = avgContPerPkg <= 0 ? 1.0 : avgContPerPkg;
+    avgContPerPkg = per;
+    noPkg = (v < 0 ? 0 : v) / per;
+  }
+
   double get amount => totalQty * netPrice;
 }
 
@@ -55,6 +67,61 @@ class AddPurchaseController extends GetxController {
   final dueDate = Rx<DateTime?>(null);
 
   final items = <PurchaseItemRow>[PurchaseItemRow()].obs;
+
+  /// The order being edited, when the page was opened from the list's Edit
+  /// action. Null for a new purchase. Its id, PO number and status are
+  /// carried through the save so an edit updates the record in place instead
+  /// of creating a second one.
+  PurchaseOrder? editing;
+  bool get isEditing => editing != null;
+
+  @override
+  void onInit() {
+    super.onInit();
+    final arg = Get.arguments;
+    if (arg is PurchaseOrder) loadFrom(arg);
+  }
+
+  /// Fills the form from an existing order.
+  void loadFrom(PurchaseOrder o) {
+    editing = o;
+    client.value = o.supplier;
+    addressCtrl.text = o.supplierAddress;
+    buyerGstCtrl.text = o.buyerGst;
+    panCtrl.text = o.pan;
+    invoiceNoCtrl.text = o.invoiceNo;
+    invoiceDate.value = o.invoiceDate ?? o.date;
+    poNoCtrl.text = o.poNumber;
+    poDate.value = o.date;
+    if (o.despatchThrough.isNotEmpty) despatchThrough.value = o.despatchThrough;
+    lrNoCtrl.text = o.lrNo;
+    lrDate.value = o.lrDate;
+    vehicleNoCtrl.text = o.vehicleNo;
+    freightCtrl.text = o.freight == 0 ? '' : o.freight.toString();
+    placeOfSupplyCtrl.text = o.placeOfSupply;
+    dueDate.value = o.dueDate;
+
+    items.assignAll(
+      o.items.isEmpty
+          ? [PurchaseItemRow()]
+          : o.items.map((i) {
+              final row = PurchaseItemRow()
+                ..productId = i.productId
+                ..product = i.product
+                ..hsn = i.hsn
+                ..grade = i.grade
+                ..density = i.density
+                // The API stores a single total quantity; the form splits it
+                // into packs x per-pack, so the whole amount goes in the pack
+                // count and the multiplier stays at 1.
+                ..noPkg = i.qty
+                ..avgContPerPkg = 1
+                ..uom = i.unit.isEmpty ? 'BOX' : i.unit
+                ..netPrice = i.rate;
+              return row;
+            }).toList(),
+    );
+  }
 
   double get subTotal => items.fold(0.0, (s, r) => s + r.amount);
   double get sgst => subTotal * 0.09;

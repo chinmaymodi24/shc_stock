@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 
 // ── Enums ────────────────────────────────────────────────────────────────────
 
@@ -25,7 +26,7 @@ extension SalesStatusX on SalesStatus {
       case SalesStatus.delivered:
         return const Color(0xFF22C55E);
       case SalesStatus.shipped:
-        return const Color(0xFF4A3AFF);
+        return appColors.accent;
       case SalesStatus.confirmed:
         return const Color(0xFF3B82F6);
       case SalesStatus.cancelled:
@@ -61,7 +62,7 @@ extension PaymentStatusX on PaymentStatus {
       case PaymentStatus.refunded:
         return const Color(0xFF8B5CF6);
       case PaymentStatus.pending:
-        return const Color(0xFF4A3AFF);
+        return appColors.accent;
     }
   }
 }
@@ -117,6 +118,19 @@ class SalesOrder {
     this.items = const [],
   });
 
+  /// Units on the order — every line's quantity added up. The list's "Items"
+  /// column reads this, so a single 5-unit line shows 5 there and 5 in the
+  /// form; [itemCount] is the number of lines behind that number.
+  double get totalQty => items.fold(0.0, (s, i) => s + i.qty);
+
+  /// [totalQty] without a trailing `.0`, falling back to the line count for
+  /// older records that were saved without their lines.
+  String get totalQtyLabel {
+    if (items.isEmpty) return '$itemCount';
+    final q = totalQty;
+    return q == q.roundToDouble() ? q.toStringAsFixed(0) : q.toStringAsFixed(2);
+  }
+
   double get taxableValue => items.fold(0.0, (s, i) => s + i.amount);
   double get cgst => taxableValue * 0.09;
   double get sgst => taxableValue * 0.09;
@@ -139,7 +153,7 @@ class SalesOrder {
       'VE': Color(0xFF6D28D9),
       'SI': Color(0xFF0369A1),
     };
-    return colors[badge] ?? const Color(0xFF4A3AFF);
+    return colors[badge] ?? appColors.accent;
   }
 
   /// Builds a [SalesOrder] from the backend `/sales-orders` JSON shape.

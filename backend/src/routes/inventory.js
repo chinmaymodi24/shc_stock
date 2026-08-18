@@ -40,8 +40,11 @@ const productInclude = { category: true, subCategory: true };
 // GET /api/inventory
 router.get('/', async (req, res, next) => {
   try {
+    // Newest activity first: whatever was last added or modified (a manual
+    // adjustment, a purchase/sale movement, a reorder-setting edit) tops the
+    // list. Rows that never carried a modifiedAt fall back to id order.
     const products = await prisma.product.findMany({
-      orderBy: { name: 'asc' },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
       include: productInclude,
     });
     res.json(products.map(toInventoryRow));

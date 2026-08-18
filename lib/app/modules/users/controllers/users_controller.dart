@@ -108,8 +108,12 @@ class UsersController extends GetxController {
     try {
       final json = await _api.put('/users/$id', body);
       final updated = UserModel.fromJson(json as Map<String, dynamic>);
+      // Last modified first: move the edited row back to the top.
       final idx = users.indexWhere((u) => u.id == id);
-      if (idx != -1) users[idx] = updated;
+      if (idx != -1) {
+        users.removeAt(idx);
+        users.insert(0, updated);
+      }
       await fetchStats();
       return updated;
     } catch (e) {
@@ -125,8 +129,12 @@ class UsersController extends GetxController {
         'isActive': isActive,
       });
       final updated = UserModel.fromJson(json as Map<String, dynamic>);
+      // Last modified first: move the edited row back to the top.
       final idx = users.indexWhere((u) => u.id == id);
-      if (idx != -1) users[idx] = updated;
+      if (idx != -1) {
+        users.removeAt(idx);
+        users.insert(0, updated);
+      }
       await fetchStats();
     } catch (e) {
       _showError(e is ApiException ? e.message : 'Failed to update status.');

@@ -494,3 +494,191 @@ InputDecoration _smallDecoration({
   enabledBorder: _outline(colors.border, 6),
   focusedBorder: _outline(AppColors.primaryOrange, 6, width: 1.2),
 );
+
+/// Compact quantity stepper: − / editable number / +, sized to sit in the
+/// item-details table beside [AppSmallNumber] cells.
+///
+/// The field is stateful because the value also changes from outside it (the
+/// ± buttons, and packs x per-pack recalculating the total), which a
+/// `TextFormField.initialValue` would never pick up.
+class AppSmallStepper extends StatefulWidget {
+  final double value;
+  final AppThemeColors colors;
+  final ValueChanged<double> onChanged;
+
+  /// How much one ± tap moves the value, and the floor it can reach.
+  final double step;
+  final double min;
+
+  /// Mobile has no column headers, so the field carries its own label as a
+  /// hint and stays blank at zero — the same convention [AppSmallNumber]
+  /// uses there.
+  final String hint;
+  final bool mobile;
+
+  const AppSmallStepper({
+    super.key,
+    required this.value,
+    required this.colors,
+    required this.onChanged,
+    this.step = 1,
+    this.min = 0,
+    this.hint = '',
+    this.mobile = false,
+  });
+
+  @override
+  State<AppSmallStepper> createState() => _AppSmallStepperState();
+}
+
+class _AppSmallStepperState extends State<AppSmallStepper> {
+  final TextEditingController _ctrl = TextEditingController();
+
+  /// The last value this field itself pushed up. Anything different arriving
+  /// from the parent came from elsewhere (± tap, pack-count change) and must
+  /// be written into the box — without clobbering what is being typed.
+  ///
+  /// Seeded in initState, not with a `late` initializer: `late` runs on first
+  /// read, which is inside didUpdateWidget — by then `widget` is already the
+  /// NEW one, so it would seed itself to the incoming value and the box would
+  /// never update.
+  double _pushed = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pushed = widget.value;
+    _ctrl.text = _text(widget.value);
+  }
+
+  static String _fmt(double v) => v == v.roundToDouble()
+      ? v.toStringAsFixed(0)
+      : v.toStringAsFixed(2);
+
+  String _text(double v) => widget.mobile && v == 0 ? '' : _fmt(v);
+
+  @override
+  void didUpdateWidget(AppSmallStepper old) {
+    super.didUpdateWidget(old);
+    if (widget.value != _pushed) {
+      _pushed = widget.value;
+      final text = _text(widget.value);
+      if (_ctrl.text != text) {
+        _ctrl.value = TextEditingValue(
+          text: text,
+          selection: TextSelection.collapsed(offset: text.length),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  /// Typing: remember what was pushed so the incoming value is recognised as
+  /// this field's own and the box is left alone mid-edit.
+  void _onTyped(String raw) {
+    final v = double.tryParse(raw) ?? 0;
+    _pushed = v;
+    widget.onChanged(v);
+  }
+
+  /// Tapping ±: deliberately does NOT mark the value as self-pushed, so the
+  /// round trip through the parent re-seeds the box with the new number.
+  void _bump(double delta) {
+    final next = widget.value + delta;
+    widget.onChanged(next < widget.min ? widget.min : next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = widget.colors;
+    return Container(
+      height: widget.mobile ? 36 : 32,
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: colors.border),
+      ),
+      child: Row(
+        children: [
+          _StepperButton(
+            icon: Icons.remove_rounded,
+            colors: colors,
+            enabled: widget.value > widget.min,
+            onTap: () => _bump(-widget.step),
+          ),
+          Expanded(
+            child: TextField(
+              controller: _ctrl,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+              ],
+              onChanged: _onTyped,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: widget.mobile ? 11.5 : 12,
+                color: colors.textPrimary,
+                fontFamily: 'Poppins',
+              ),
+              decoration: InputDecoration(
+                hintText: widget.hint.isEmpty ? null : widget.hint,
+                hintStyle: TextStyle(
+                  fontSize: widget.mobile ? 11.5 : 12,
+                  color: colors.textHint,
+                  fontFamily: 'Poppins',
+                ),
+                isDense: true,
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+          _StepperButton(
+            icon: Icons.add_rounded,
+            colors: colors,
+            enabled: true,
+            onTap: () => _bump(widget.step),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepperButton extends StatelessWidget {
+  final IconData icon;
+  final AppThemeColors colors;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  const _StepperButton({
+    required this.icon,
+    required this.colors,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(6),
+      child: SizedBox(
+        width: 26,
+        height: 32,
+        child: Icon(
+          icon,
+          size: 14,
+          color: enabled ? AppColors.primaryOrange : colors.textHint,
+        ),
+      ),
+    );
+  }
+}

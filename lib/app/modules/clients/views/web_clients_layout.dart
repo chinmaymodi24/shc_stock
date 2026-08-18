@@ -13,6 +13,7 @@ import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 import 'package:shc_stock/app/modules/clients/views/client_details_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
+import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 
 // ── Table column constants (header + row MUST match) ──────────────────────
 const double _kIdxW = 36.0; // # badge
@@ -23,7 +24,7 @@ const int _kAddrFlex = 22; // Address
 const int _kGstFlex = 14; // GSTIN/UIN
 const int _kRegFlex = 12; // Registration Type badge
 const int _kContactFlex = 18; // Contact person + phone
-const int _kActFlex = 16; // Actions — View + Edit + Delete
+const int _kActFlex = 20; // Actions — View + Edit + Duplicate + Delete
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Widget
@@ -196,7 +197,7 @@ class WebClientsLayout extends GetView<ClientsController> {
                                           value: '${c.registeredClients}',
                                           icon: Icons
                                               .check_circle_outline_rounded,
-                                          iconColor: const Color(0xFF4A3AFF),
+                                          iconColor: context.appColors.accent,
                                           trend: c.stats.value.trendLabel(
                                             'gstRegistered',
                                           ),
@@ -686,47 +687,29 @@ class _ClientRowState extends State<_ClientRow> {
                   ),
                 ),
 
-                // Contact
+                // Contact — the name sits above the phone, either of which may
+                // be missing: 201 clients came in with only a number.
                 Expanded(
                   flex: _kContactFlex,
-                  child: cl.contactPerson.isEmpty
-                      ? Row(
-                          children: [
-                            Container(
-                              width: 20,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                color: c.textHint.withValues(alpha: 0.15),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.remove_rounded,
-                                size: 12,
-                                color: c.textHint,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '—',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                color: c.textHint,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                          ],
-                        )
-                      : Row(
-                          children: [
-                            Container(
-                              width: 20,
-                              height: 20,
-                              decoration: const BoxDecoration(
-                                color: AppColors.primaryPurple,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: cl.contactPerson.isEmpty
+                              ? c.textHint.withValues(alpha: 0.15)
+                              : AppColors.primaryPurple,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: cl.contactPerson.isEmpty
+                              ? Icon(
+                                  Icons.remove_rounded,
+                                  size: 12,
+                                  color: c.textHint,
+                                )
+                              : Text(
                                   cl.contactInitials,
                                   style: const TextStyle(
                                     fontSize: 9,
@@ -735,37 +718,40 @@ class _ClientRowState extends State<_ClientRow> {
                                     fontFamily: 'Poppins',
                                   ),
                                 ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              cl.contactPerson.isEmpty ? '—' : cl.contactPerson,
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: cl.contactPerson.isEmpty
+                                    ? c.textHint
+                                    : c.textPrimary,
+                                fontFamily: 'Poppins',
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    cl.contactPerson,
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      color: c.textPrimary,
-                                      fontFamily: 'Poppins',
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  if (cl.contactPhone.isNotEmpty)
-                                    Text(
-                                      cl.contactPhone,
-                                      style: TextStyle(
-                                        fontSize: 9.5,
-                                        color: c.textHint,
-                                        fontFamily: 'Poppins',
-                                      ),
-                                    ),
-                                ],
+                            if (cl.contactPhone.isNotEmpty)
+                              Text(
+                                cl.contactPhone,
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  color: c.textHint,
+                                  fontFamily: 'Poppins',
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
                           ],
                         ),
+                      ),
+                    ],
+                  ),
                 ),
 
                 // Actions
@@ -774,9 +760,10 @@ class _ClientRowState extends State<_ClientRow> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _ActBtn(
+                      RowActionButton(
                         icon: Icons.remove_red_eye_outlined,
-                        color: const Color(0xFF4A3AFF),
+                        color: context.appColors.success,
+                        bg: context.appColors.success.withValues(alpha: 0.10),
                         tooltip: 'View',
                         onTap: () => Get.dialog(
                           ClientDetailsDialog(
@@ -795,16 +782,30 @@ class _ClientRowState extends State<_ClientRow> {
                         ),
                       ),
                       const SizedBox(width: 5),
-                      _ActBtn(
+                      RowActionButton(
                         icon: Icons.edit_outlined,
-                        color: const Color(0xFFF59E0B),
+                        color: AppColors.primaryOrange,
+                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
                         tooltip: 'Edit',
                         onTap: () {},
                       ),
                       const SizedBox(width: 5),
-                      _ActBtn(
+                      RowActionButton(
+                        icon: Icons.copy_outlined,
+                        color: const Color(0xFF3B82F6),
+                        bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                        tooltip: 'Duplicate',
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 5),
+                      RowActionButton(
                         icon: Icons.delete_outline_rounded,
-                        color: const Color(0xFFEF4444),
+                        iconSize: 18,
+                        color: context.appColors.error,
+                        // Neutral, not red-tinted — matches the design, which
+                        // leaves Delete's background plain and lets only the
+                        // icon carry the warning color.
+                        bg: context.appColors.tagBg,
                         tooltip: 'Delete',
                         onTap: () => confirmDelete(
                           context,
@@ -820,40 +821,6 @@ class _ClientRowState extends State<_ClientRow> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ActBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String tooltip;
-  final VoidCallback onTap;
-  const _ActBtn({
-    required this.icon,
-    required this.color,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(7),
-        child: Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: colors.iconBgPurple,
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Icon(icon, color: color, size: 15),
         ),
       ),
     );
@@ -1267,7 +1234,7 @@ class _QuickActionsCard extends StatelessWidget {
           _QAction(
             icon: Icons.receipt_long_outlined,
             label: 'Client Ledger Report',
-            iconColor: const Color(0xFF4A3AFF),
+            iconColor: context.appColors.accent,
             colors: colors,
           ),
           Divider(height: 1, color: colors.divider),

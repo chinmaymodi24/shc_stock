@@ -110,8 +110,12 @@ class TransactionsController extends GetxController {
     try {
       final json = await _api.put('/transactions/$id', body);
       final updated = TransactionModel.fromJson(json as Map<String, dynamic>);
+      // Last modified first: move the edited row back to the top.
       final idx = transactions.indexWhere((t) => t.id == id);
-      if (idx != -1) transactions[idx] = updated;
+      if (idx != -1) {
+        transactions.removeAt(idx);
+        transactions.insert(0, updated);
+      }
       await fetchStats();
       return updated;
     } catch (e) {
@@ -134,8 +138,12 @@ class TransactionsController extends GetxController {
         'status': labels[status],
       });
       final updated = TransactionModel.fromJson(json as Map<String, dynamic>);
+      // Last modified first: move the edited row back to the top.
       final idx = transactions.indexWhere((t) => t.id == id);
-      if (idx != -1) transactions[idx] = updated;
+      if (idx != -1) {
+        transactions.removeAt(idx);
+        transactions.insert(0, updated);
+      }
       await fetchStats();
     } catch (e) {
       _showError(e is ApiException ? e.message : 'Failed to update status.');

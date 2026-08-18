@@ -27,12 +27,14 @@ router.post('/', async (req, res, next) => {
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'name is required' });
     }
-    const maxOrder = await prisma.category.aggregate({ _max: { sortOrder: true } });
+    // Last added first: take the slot above the current top. The list is still
+    // ordered by sortOrder, so drag-to-reorder keeps working.
+    const minOrder = await prisma.category.aggregate({ _min: { sortOrder: true } });
     const category = await prisma.category.create({
       data: {
         name: name.trim(),
         description: description.trim(),
-        sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
+        sortOrder: (minOrder._min.sortOrder ?? 0) - 1,
       },
       include: categoryInclude,
     });
@@ -50,7 +52,13 @@ router.put('/:id', async (req, res, next) => {
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'name is required' });
     }
-    const data = { name: name.trim(), description: description.trim() };
+    // Last modified first: an edited category moves back to the top.
+    const minOrder = await prisma.category.aggregate({ _min: { sortOrder: true } });
+    const data = {
+      name: name.trim(),
+      description: description.trim(),
+      sortOrder: (minOrder._min.sortOrder ?? 0) - 1,
+    };
     const category = await prisma.category.update({
       where: { id },
       data,
@@ -105,16 +113,17 @@ router.post('/:id/sub-categories', async (req, res, next) => {
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'name is required' });
     }
-    const maxOrder = await prisma.subCategory.aggregate({
+    // Last added first, same rule as categories.
+    const minOrder = await prisma.subCategory.aggregate({
       where: { categoryId },
-      _max: { sortOrder: true },
+      _min: { sortOrder: true },
     });
     const subCategory = await prisma.subCategory.create({
       data: {
         categoryId,
         name: name.trim(),
         description: description.trim(),
-        sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
+        sortOrder: (minOrder._min.sortOrder ?? 0) - 1,
       },
     });
     res.status(201).json(subCategory);

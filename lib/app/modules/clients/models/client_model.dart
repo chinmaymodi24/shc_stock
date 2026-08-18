@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Client Model — backed by the company's universal client list, served by
@@ -264,17 +265,17 @@ class ClientModel {
   }
 }
 
-const List<Color> _badgeColors = [
-  Color(0xFF4A3AFF),
-  Color(0xFFEF4444),
-  Color(0xFF22C55E),
-  Color(0xFFFF6B35),
-  Color(0xFF0EA5E9),
-  Color(0xFF14B8A6),
-  Color(0xFF8B5CF6),
-  Color(0xFFF59E0B),
-  Color(0xFFEC4899),
-  Color(0xFF6366F1),
+List<Color> get _badgeColors => [
+  appColors.accent,
+  const Color(0xFFEF4444),
+  const Color(0xFF22C55E),
+  const Color(0xFFFF6B35),
+  const Color(0xFF0EA5E9),
+  const Color(0xFF14B8A6),
+  const Color(0xFF8B5CF6),
+  const Color(0xFFF59E0B),
+  const Color(0xFFEC4899),
+  const Color(0xFF6366F1),
 ];
 
 /// A row of the "Top States" panel — served by GET /api/stats/clients.

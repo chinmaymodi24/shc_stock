@@ -39,6 +39,8 @@ class _OfflineClientsController extends ClientsController {
         address: 'Ramnagar, Sabarmati, Ahmedabad - 380005',
         regState: 'Gujarat',
         gstin: '24AQTPM1621J1ZP',
+        contactPerson: 'Shri Shreyashbhai',
+        contactPhone: '9428421959',
       ),
       ClientModel(
         id: '2',
@@ -47,6 +49,8 @@ class _OfflineClientsController extends ClientsController {
         address: 'Chikhali, Dist. Pune - 411062',
         regState: 'Maharashtra',
         gstin: '27ATXPM3307L1Z2',
+        // Phone but no name — 173 imported clients look like this.
+        contactPhone: '9923908368',
       ),
     ]);
   }
@@ -97,5 +101,38 @@ void main() {
     expect(find.text('Aavkar Enterprise'), findsWidgets);
     expect(find.text('CLT-0002'), findsOneWidget);
     expect(find.text('Gujarat'), findsWidgets);
+  });
+
+  testWidgets('the Contact column shows the split-out person and phone', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    Get.put(ThemeController(), permanent: true);
+    Get.put(ThemeRippleController(), permanent: true);
+    Get.put<ClientsController>(_OfflineClientsController());
+
+    await tester.pumpWidget(
+      GetMaterialApp(
+        theme: ThemeData(extensions: const [AppThemeColors.light]),
+        home: const WebClientsLayout(),
+      ),
+    );
+    await tester.pump();
+
+    // Name, initials and number all come out of their own columns now — the
+    // import had them glued onto the end of the address.
+    expect(find.text('Shri Shreyashbhai'), findsOneWidget);
+    expect(find.text('SS'), findsWidgets);
+    expect(find.text('9428421959'), findsOneWidget);
+
+    // A client with only a number still shows it, under a dash.
+    expect(find.text('9923908368'), findsOneWidget);
+
+    // …and the addresses no longer carry either of them.
+    expect(find.textContaining('Shri Shreyashbhai -'), findsNothing);
+    expect(find.textContaining('mo. 99239'), findsNothing);
   });
 }

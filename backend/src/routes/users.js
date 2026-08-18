@@ -61,8 +61,9 @@ async function nextUserCode() {
 // GET /api/users
 router.get('/', async (req, res, next) => {
   try {
+    // Last added / modified first (updatedAt covers both).
     const users = await prisma.user.findMany({
-      orderBy: { code: 'asc' },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
       select: publicFields,
     });
     res.json(users);

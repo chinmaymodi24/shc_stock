@@ -3,6 +3,12 @@ import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
 
 class MobileSaleItemRow {
+  // Stable identity for Keys, plus a version bumped on product autofill so
+  // the small text cells re-seed instead of showing their first value.
+  static int _seq = 0;
+  final int id = _seq++;
+  int version = 0;
+
   /// Backend product id, set when the row is filled from the product
   /// autocomplete. Sent to the API so the server moves this product's stock.
   int? productId;

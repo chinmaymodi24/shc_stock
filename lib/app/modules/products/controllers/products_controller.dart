@@ -389,8 +389,13 @@ class ProductsController extends GetxController {
         'taxPercent': taxPercent,
       });
       final updated = ProductModel.fromJson(json as Map<String, dynamic>);
+      // Last modified first: move the edited row back to the top, matching the
+      // order a refetch from the API would return.
       final idx = products.indexWhere((p) => p.id == id);
-      if (idx != -1) products[idx] = updated;
+      if (idx != -1) {
+        products.removeAt(idx);
+        products.insert(0, updated);
+      }
       _applyFilters();
       return true;
     } catch (e) {

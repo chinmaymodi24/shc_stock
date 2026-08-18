@@ -26,6 +26,13 @@ class SalesBinding extends Bindings {
       Get.put(ProductsController(), permanent: true);
     }
     // Fresh per visit — not fenix, so it's disposed when the Add Sell page closes.
+    // Any leftover instance is dropped first: the same form is used for
+    // "New Sale" and for editing an existing order (opened with the order as
+    // the route argument), so a survivor from a previous visit would carry
+    // the last order's values — and its `editing` flag — into the next one.
+    if (Get.isRegistered<AddSaleController>()) {
+      Get.delete<AddSaleController>(force: true);
+    }
     Get.lazyPut<AddSaleController>(() => AddSaleController());
     Get.lazyPut<MobileAddSaleController>(() => MobileAddSaleController());
   }

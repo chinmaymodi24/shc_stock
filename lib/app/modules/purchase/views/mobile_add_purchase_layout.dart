@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/shared/widgets/async_button.dart';
 import 'package:shc_stock/app/modules/purchase/controllers/mobile_add_purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -59,7 +61,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
       ),
     );
     if (!ok) return; // controller already showed the error toast
-    Get.back();
+    Get.offNamed(AppRoutes.purchase);
     showAppToast(
       '✅ Purchase Saved',
       '$newPoNum has been successfully created.',
@@ -86,7 +88,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                   AppBackButton(
                     colors: colors,
                     mobile: true,
-                    onTap: () => Get.back(),
+                    onTap: () => Get.offNamed(AppRoutes.purchase),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -446,7 +448,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () => Get.offNamed(AppRoutes.purchase),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: colors.border),
                     padding: const EdgeInsets.symmetric(vertical: 13),
@@ -466,25 +468,11 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: ElevatedButton(
+                child: AppAsyncButton(
+                  label: 'Save Purchase',
                   onPressed: _savePurchase,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryOrange,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                  ),
-                  child: const Text(
-                    'Save Purchase',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
+                  expand: true,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
                 ),
               ),
             ],
@@ -660,26 +648,17 @@ class _MobileItemCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Container(
-                  height: 36,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: colors.rowEven,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: colors.border),
-                  ),
-                  child: Text(
-                    row.totalQty == 0
-                        ? 'Total Qty'
-                        : row.totalQty.toStringAsFixed(0),
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: row.totalQty == 0
-                          ? colors.textHint
-                          : colors.textSecondary,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
+                // Editable with ± steppers, same as the web form — this used
+                // to be a read-only readout of packs x per-pack.
+                child: AppSmallStepper(
+                  mobile: true,
+                  hint: 'Total Qty',
+                  value: row.totalQty,
+                  colors: colors,
+                  onChanged: (v) {
+                    row.totalQty = v;
+                    onChanged();
+                  },
                 ),
               ),
             ],

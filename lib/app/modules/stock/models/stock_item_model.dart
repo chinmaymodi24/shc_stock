@@ -16,6 +16,7 @@ class StockItemModel {
   final int availableStock;
   final int minimumStock;
   final double costPrice;
+  final double sellingPrice;
   final double stockValue;
   final String stockLocation;
   final bool isActive;
@@ -35,6 +36,7 @@ class StockItemModel {
     required this.availableStock,
     this.minimumStock = 0,
     this.costPrice = 0,
+    this.sellingPrice = 0,
     required this.stockValue,
     this.stockLocation = 'Main Warehouse',
     this.isActive = true,
@@ -65,6 +67,7 @@ class StockItemModel {
       availableStock: (json['availableStock'] as num?)?.toInt() ?? 0,
       minimumStock: (json['minimumStock'] as num?)?.toInt() ?? 0,
       costPrice: (json['costPrice'] as num?)?.toDouble() ?? 0,
+      sellingPrice: (json['sellingPrice'] as num?)?.toDouble() ?? 0,
       stockValue: (json['stockValue'] as num?)?.toDouble() ?? 0,
       stockLocation: json['stockLocation'] as String? ?? 'Main Warehouse',
       isActive: json['isActive'] as bool? ?? true,

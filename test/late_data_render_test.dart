@@ -432,6 +432,38 @@ Future<ThemeController> _pumpApp(
   return themeController;
 }
 
+/// Anything drawn as a circle (avatars, status dots, spinners) must actually
+/// be square on screen. A fixed-size box handed to a parent that forces tight
+/// constraints — a Container with no alignment inside an Expanded — gets
+/// stretched, which is how the status dialog's spinner turned into a wide
+/// ellipse.
+void _expectRoundThingsAreRound(WidgetTester tester, String page) {
+  final circles = find.byWidgetPredicate((w) {
+    if (w is! Container) return false;
+    final d = w.decoration;
+    return d is BoxDecoration && d.shape == BoxShape.circle;
+  });
+  for (final element in circles.evaluate()) {
+    final size = element.size!;
+    if (size.isEmpty) continue;
+    expect(
+      size.width,
+      closeTo(size.height, 0.5),
+      reason: '$page: a BoxShape.circle rendered ${size.width}x${size.height}',
+    );
+  }
+
+  for (final element in find.byType(CircularProgressIndicator).evaluate()) {
+    final size = element.size!;
+    if (size.isEmpty) continue;
+    expect(
+      size.width,
+      closeTo(size.height, 0.5),
+      reason: '$page: a spinner rendered ${size.width}x${size.height}',
+    );
+  }
+}
+
 /// The whole scenario for one page: values must be absent before the fetch
 /// answers, present once it does — with no interaction — and still present
 /// after switching to dark mode.
@@ -462,6 +494,7 @@ Future<void> _expectsLateData(
       reason: '"$v" never rendered — the page is missing its Obx',
     );
   }
+  _expectRoundThingsAreRound(tester, page.runtimeType.toString());
 
   await theme.setTheme(ThemeMode.dark);
   await tester.pumpAndSettle();
@@ -480,6 +513,10 @@ void main() {
   tearDown(Get.reset);
 
   testWidgets('Products', (tester) async {
+    // Categories first: ProductsController.onInit puts a REAL
+    // CategoriesController when none is registered, which would hit the
+    // network and leave an error toast's timer pending.
+    Get.put<CategoriesController>(_LateCategories());
     Get.put<ProductsController>(_LateProducts());
     await _expectsLateData(
       tester,
@@ -489,8 +526,8 @@ void main() {
   });
 
   testWidgets('Categories', (tester) async {
-    Get.put<ProductsController>(_LateProducts());
     Get.put<CategoriesController>(_LateCategories());
+    Get.put<ProductsController>(_LateProducts());
     await _expectsLateData(
       tester,
       const WebCategoriesLayout(),
@@ -532,6 +569,21 @@ void main() {
       const WebSalesLayout(),
       values: ['₹24,85,600', '47'],
     );
+
+    // The table matches the design's columns, Modified By included.
+    for (final column in const [
+      'SO Number',
+      'Client',
+      'Date',
+      'Items',
+      'Amount',
+      'Status',
+      'Payment',
+      'Modified By',
+      'Actions',
+    ]) {
+      expect(find.text(column), findsWidgets, reason: '$column column missing');
+    }
   });
 
   testWidgets('Clients', (tester) async {

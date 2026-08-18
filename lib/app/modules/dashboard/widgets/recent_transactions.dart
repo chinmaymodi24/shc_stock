@@ -141,8 +141,8 @@ class _StatusChip extends StatelessWidget {
         bg = colors.success.withValues(alpha: 0.12);
         fg = colors.success;
       case 'Shipped':
-        bg = AppColors.accentPurple.withValues(alpha: 0.12);
-        fg = AppColors.accentPurple;
+        bg = context.appColors.accent.withValues(alpha: 0.12);
+        fg = context.appColors.accent;
       case 'Pending':
         bg = colors.warning.withValues(alpha: 0.14);
         fg = colors.warning;

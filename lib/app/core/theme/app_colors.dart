@@ -55,6 +55,7 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
 
   // Semantic Action Colors
   final Color purple;
+  final Color accent; // indigo accent — icons, badges, chart bars
   final Color success;
   final Color warning;
   final Color error;
@@ -76,6 +77,7 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     required this.drawerBg,
     required this.comingSoonBadge,
     required this.purple,
+    required this.accent,
     required this.success,
     required this.warning,
     required this.error,
@@ -99,6 +101,7 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     drawerBg: Color(0xFFFFFFFF),
     comingSoonBadge: Color(0xFFF5F4FF),
     purple: Color(0xFF2B1888),
+    accent: Color(0xFF4A3AFF),
     success: Color(0xFF22C55E),
     warning: Color(0xFFF59E0B),
     error: Color(0xFFEF4444),
@@ -122,6 +125,7 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     drawerBg: Color(0xFF1E1E2E),
     comingSoonBadge: Color(0xFF252538),
     purple: Color(0xFFB1A5FF),
+    accent: Color(0xFFB1A5FF),
     success: Color(0xFF34D399),
     warning: Color(0xFFFBBF24),
     error: Color(0xFFF87171),
@@ -145,6 +149,7 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
     Color? drawerBg,
     Color? comingSoonBadge,
     Color? purple,
+    Color? accent,
     Color? success,
     Color? warning,
     Color? error,
@@ -166,6 +171,7 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
       drawerBg: drawerBg ?? this.drawerBg,
       comingSoonBadge: comingSoonBadge ?? this.comingSoonBadge,
       purple: purple ?? this.purple,
+      accent: accent ?? this.accent,
       success: success ?? this.success,
       warning: warning ?? this.warning,
       error: error ?? this.error,
@@ -192,6 +198,7 @@ class AppThemeColors extends ThemeExtension<AppThemeColors> {
       drawerBg: Color.lerp(drawerBg, other.drawerBg, t)!,
       comingSoonBadge: Color.lerp(comingSoonBadge, other.comingSoonBadge, t)!,
       purple: Color.lerp(purple, other.purple, t)!,
+      accent: Color.lerp(accent, other.accent, t)!,
       success: Color.lerp(success, other.success, t)!,
       warning: Color.lerp(warning, other.warning, t)!,
       error: Color.lerp(error, other.error, t)!,

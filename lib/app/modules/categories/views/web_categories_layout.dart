@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/categories/controllers/categories_controller.dart';
+import 'package:shc_stock/app/shared/widgets/async_button.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
@@ -9,6 +10,7 @@ import 'package:shc_stock/app/modules/categories/models/category_model.dart';
 import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 
 ProductsController _productsController() {
   if (Get.isRegistered<ProductsController>()) {
@@ -165,7 +167,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                                     value:
                                         '${c.stats.value.intOf('totalSubCategories')}',
                                     icon: Icons.account_tree_outlined,
-                                    iconColor: const Color(0xFF4A3AFF),
+                                    iconColor: context.appColors.accent,
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -369,8 +371,8 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
     Get.dialog(
       _SimpleFormDialog(
         title: 'Add Category',
-        onSave: (name) {
-          c.addCategory(name);
+        onSave: (name) async {
+          await c.addCategory(name);
           Get.back();
         },
       ),
@@ -382,10 +384,10 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
       _SimpleFormDialog(
         title: 'Edit Category',
         initialName: cat.name,
-        onSave: (name) {
+        onSave: (name) async {
           // The simplified dialog only edits the name — pass the existing
           // description through untouched so the API PUT doesn't blank it.
-          c.updateCategory(cat.id, name, desc: cat.description);
+          await c.updateCategory(cat.id, name, desc: cat.description);
           Get.back();
         },
       ),
@@ -404,8 +406,8 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
       _SimpleFormDialog(
         title: 'Edit Subcategory',
         initialName: cat.subProducts[subIdx],
-        onSave: (name) {
-          c.updateSubCategory(cat.id, subIdx, name, desc: currentDesc);
+        onSave: (name) async {
+          await c.updateSubCategory(cat.id, subIdx, name, desc: currentDesc);
           Get.back();
         },
       ),
@@ -416,8 +418,8 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
     Get.dialog(
       _SimpleFormDialog(
         title: 'Add Subcategory',
-        onSave: (name) {
-          c.addSubCategory(catId, name);
+        onSave: (name) async {
+          await c.addSubCategory(catId, name);
           Get.back();
         },
       ),
@@ -436,9 +438,9 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
           'Are you sure you want to permanently delete "${cat.name}"? '
           'This will also delete all ${cat.subProducts.length} sub-categories. '
           'This action cannot be undone.',
-      onConfirm: () {
+      onConfirm: () async {
         if (cat.id == c.selectedCatId.value) c.selectedCatId.value = null;
-        c.deleteCategory(cat.id);
+        await c.deleteCategory(cat.id);
       },
     );
   }
@@ -1020,19 +1022,24 @@ class _SubCategoryTableRowState extends State<_SubCategoryTableRow> {
                 ),
               ),
               SizedBox(
-                width: 76,
+                width: 70,
                 child: Row(
                   children: [
-                    _ActionBtn(
+                    RowActionButton(
                       icon: Icons.edit_outlined,
-                      color: const Color(0xFF4A3AFF),
+                      color: AppColors.primaryOrange,
+                      bg: AppColors.primaryOrange.withValues(alpha: 0.10),
                       tooltip: 'Edit',
                       onTap: widget.onEdit,
                     ),
                     const SizedBox(width: 6),
-                    _ActionBtn(
+                    RowActionButton(
                       icon: Icons.delete_outline_rounded,
-                      color: const Color(0xFFEF4444),
+                      iconSize: 18,
+                      color: c.error,
+                      // Neutral, not red-tinted — only the icon carries the
+                      // warning color.
+                      bg: c.tagBg,
                       tooltip: 'Delete',
                       onTap: widget.onDelete,
                     ),
@@ -1096,42 +1103,6 @@ class _HeaderActionBtn extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Action Button
-// ─────────────────────────────────────────────────────────────────────────────
-class _ActionBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String tooltip;
-  final VoidCallback onTap;
-  const _ActionBtn({
-    required this.icon,
-    required this.color,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(7),
-        child: Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Icon(icon, color: color, size: 14),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Simple Name-only Form Dialog — used for Add/Edit Category and
 // Add/Edit Sub-Category, matching the approved design (single "Name" field,
 // Cancel/Save row).
@@ -1139,7 +1110,9 @@ class _ActionBtn extends StatelessWidget {
 class _SimpleFormDialog extends StatefulWidget {
   final String title;
   final String initialName;
-  final ValueChanged<String> onSave;
+
+  /// Awaited, so the Save button can show its own spinner.
+  final Future<void> Function(String) onSave;
 
   const _SimpleFormDialog({
     required this.title,
@@ -1166,9 +1139,9 @@ class _SimpleFormDialogState extends State<_SimpleFormDialog> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     final name = _nameCtrl.text.trim();
-    if (name.isNotEmpty) widget.onSave(name);
+    if (name.isNotEmpty) await widget.onSave(name);
   }
 
   @override
@@ -1275,26 +1248,12 @@ class _SimpleFormDialogState extends State<_SimpleFormDialog> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: InkWell(
-                      onTap: _save,
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryOrange,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          'Save',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                      ),
+                    child: AppAsyncButton(
+                      label: 'Save',
+                      onPressed: _save,
+                      expand: true,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      radius: 10,
                     ),
                   ),
                 ],

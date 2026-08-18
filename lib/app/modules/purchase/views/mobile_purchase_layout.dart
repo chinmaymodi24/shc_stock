@@ -75,7 +75,7 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
                       label: 'Total Orders',
                       value: '${c.stats.value.intOf('totalOrders')}',
                       icon: Icons.receipt_long_outlined,
-                      color: const Color(0xFF4A3AFF),
+                      color: context.appColors.accent,
                     ),
                     const SizedBox(width: 10),
                     _MobileStatCard(
@@ -269,8 +269,8 @@ class _MobilePurchaseCard extends StatelessWidget {
         statusFg = const Color(0xFFF59E0B);
         break;
       case PurchaseStatus.pending:
-        statusBg = const Color(0xFF4A3AFF).withValues(alpha: 0.1);
-        statusFg = const Color(0xFF4A3AFF);
+        statusBg = context.appColors.accent.withValues(alpha: 0.1);
+        statusFg = context.appColors.accent;
         break;
       case PurchaseStatus.cancelled:
         statusBg = const Color(0xFFEF4444).withValues(alpha: 0.1);
@@ -319,10 +319,10 @@ class _MobilePurchaseCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         o.poNumber,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF4A3AFF),
+                          color: context.appColors.accent,
                           fontFamily: 'Poppins',
                         ),
                       ),
@@ -383,7 +383,7 @@ class _MobilePurchaseCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${o.itemCount} items',
+                      '${o.totalQtyLabel} items',
                       style: TextStyle(
                         fontSize: 11.5,
                         color: colors.textSecondary,

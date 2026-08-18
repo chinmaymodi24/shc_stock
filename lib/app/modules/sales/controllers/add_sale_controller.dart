@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
+import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
 
 class SaleItemRow {
+  // Stable identity for list-item Keys, and a version bump whenever fields
+  // are set programmatically (product autofill) so the small text-field
+  // cells re-seed their displayed text instead of keeping stale
+  // TextFormField state — `initialValue` is read once and never syncs to
+  // later prop changes on its own.
+  static int _seq = 0;
+  final int id = _seq++;
+  int version = 0;
+
   /// Backend product id, set when the row is filled from the product
   /// autocomplete. Sent to the API so the server moves this product's stock.
   int? productId;
@@ -35,6 +45,53 @@ class AddSaleController extends GetxController {
   final dueDate = Rx<DateTime?>(null);
 
   final items = <SaleItemRow>[SaleItemRow()].obs;
+
+  /// The order being edited, when the page was opened from the list's Edit
+  /// action. Null for a new sale. Its id, SO number and statuses are carried
+  /// through the save so an edit updates the record in place instead of
+  /// creating a second one.
+  SalesOrder? editing;
+  bool get isEditing => editing != null;
+
+  @override
+  void onInit() {
+    super.onInit();
+    final arg = Get.arguments;
+    if (arg is SalesOrder) loadFrom(arg);
+  }
+
+  /// Fills the form from an existing order.
+  void loadFrom(SalesOrder o) {
+    editing = o;
+    client.value = o.client;
+    addressCtrl.text = o.clientAddress;
+    buyerGstCtrl.text = o.buyerGstin;
+    panCtrl.text = o.pan;
+    invoiceNoCtrl.text = o.invoiceNo;
+    invoiceDate.value = o.invoiceDate ?? o.date;
+    poNoCtrl.text = o.soNumber;
+    poDate.value = o.date;
+    if (o.despatchedThrough.isNotEmpty) {
+      despatchThrough.value = o.despatchedThrough;
+    }
+    placeOfSupplyCtrl.text = o.destination;
+
+    items.assignAll(
+      o.items.isEmpty
+          ? [SaleItemRow()]
+          : o.items
+                .map(
+                  (i) => SaleItemRow()
+                    ..productId = i.productId
+                    ..product = i.product
+                    ..hsn = i.hsn
+                    ..qty = i.qty
+                    ..unit = i.unit
+                    ..rate = i.rate,
+                )
+                .toList(),
+    );
+  }
 
   double get taxableValue => items.fold(0.0, (s, r) => s + r.amount);
   double get cgst => taxableValue * 0.09;

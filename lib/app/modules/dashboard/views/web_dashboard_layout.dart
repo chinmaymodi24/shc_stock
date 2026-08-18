@@ -228,7 +228,7 @@ class WebDashboardLayout extends StatelessWidget {
         height: 150,
         child: SalesLineChart(
           data: c.newClientsData,
-          lineColor: AppColors.accentPurple,
+          lineColor: context.appColors.accent,
           valueFormatter: _clientCount,
         ),
       ),

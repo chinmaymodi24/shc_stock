@@ -13,6 +13,7 @@ import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
+import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 
 // ── Table column flex constants ────────────────────────────────────────────
 const double _kIdxW = 36.0;
@@ -25,7 +26,7 @@ const int _kRoleFlex = 14;
 const int _kLoginFlex = 14;
 const int _kStatFlex = 9;
 const int _kModFlex = 16;
-const int _kActFlex = 18; // View + Edit + Delete (Delete added later)
+const int _kActFlex = 22; // View + Edit + Duplicate + Delete
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Widget
@@ -192,7 +193,7 @@ class WebUsersLayout extends GetView<UsersController> {
                                     label: 'Admins',
                                     value: '${c.adminCount}',
                                     icon: Icons.admin_panel_settings_outlined,
-                                    iconColor: const Color(0xFF4A3AFF),
+                                    iconColor: context.appColors.accent,
                                     trend: c.stats.value.trendLabel(
                                       'adminCount',
                                     ),
@@ -668,10 +669,10 @@ class _UserRowState extends State<_UserRow> {
                   flex: _kCodeFlex,
                   child: Text(
                     u.code,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF4A3AFF),
+                      color: context.appColors.accent,
                       fontFamily: 'Poppins',
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -872,23 +873,37 @@ class _UserRowState extends State<_UserRow> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _ActBtn(
+                      RowActionButton(
                         icon: Icons.remove_red_eye_outlined,
-                        color: const Color(0xFF4A3AFF),
+                        color: context.appColors.success,
+                        bg: context.appColors.success.withValues(alpha: 0.10),
                         tooltip: 'View',
                         onTap: () {},
                       ),
                       const SizedBox(width: 4),
-                      _ActBtn(
+                      RowActionButton(
                         icon: Icons.edit_outlined,
                         color: AppColors.primaryOrange,
+                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
                         tooltip: 'Edit',
                         onTap: () {},
                       ),
                       const SizedBox(width: 4),
-                      _ActBtn(
+                      RowActionButton(
+                        icon: Icons.copy_outlined,
+                        color: const Color(0xFF3B82F6),
+                        bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                        tooltip: 'Duplicate',
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 4),
+                      RowActionButton(
                         icon: Icons.delete_outline_rounded,
-                        color: const Color(0xFFEF4444),
+                        iconSize: 18,
+                        color: context.appColors.error,
+                        // Neutral, not red-tinted — only the icon carries
+                        // the warning color.
+                        bg: context.appColors.tagBg,
                         tooltip: 'Delete',
                         onTap: () => confirmDelete(
                           context,
@@ -910,41 +925,6 @@ class _UserRowState extends State<_UserRow> {
   }
 }
 
-class _ActBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String tooltip;
-  final VoidCallback onTap;
-  const _ActBtn({
-    required this.icon,
-    required this.color,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(7),
-        child: Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: colors.iconBgPurple,
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Icon(icon, color: color, size: 15),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 // Right Panel — Employee Summary Card
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1227,7 +1207,7 @@ class _QuickActionsCard extends StatelessWidget {
           _QAction(
             icon: Icons.upload_outlined,
             label: 'Export Employee List',
-            iconColor: const Color(0xFF4A3AFF),
+            iconColor: context.appColors.accent,
             colors: colors,
             onTap: () {},
           ),

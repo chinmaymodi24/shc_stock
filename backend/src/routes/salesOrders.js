@@ -55,8 +55,10 @@ function validate(body, { requireSoNumber }) {
 // GET /api/sales-orders
 router.get('/', async (req, res, next) => {
   try {
+    // Last added / modified first — not the order date, so a freshly entered
+    // or edited order tops the list even if it is back-dated.
     const orders = await prisma.salesOrder.findMany({
-      orderBy: { date: 'desc' },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
       include: orderInclude,
     });
     res.json(orders);

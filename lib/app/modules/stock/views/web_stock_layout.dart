@@ -12,6 +12,19 @@ import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
+import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
+import 'package:shc_stock/app/core/utils/stock_sync.dart';
+import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
+import 'package:shc_stock/app/modules/products/views/add_product_dialog.dart';
+import 'package:shc_stock/app/modules/stock/views/stock_item_details_panel.dart';
+
+ProductsController _productsController() {
+  if (Get.isRegistered<ProductsController>()) {
+    return Get.find<ProductsController>();
+  }
+  return Get.put(ProductsController(), permanent: true);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Widget — Inventory table with summary cards (no side panel).
@@ -68,6 +81,15 @@ class WebStockLayout extends GetView<StockController> {
                     }).toList();
 
                     switch (sortOption) {
+                      // Default = last added / modified first. Sorted here too
+                      // (not just by the API) so a row edited in place jumps to
+                      // the top without a refetch.
+                      case 'Default':
+                        filtered.sort(
+                          (a, b) => b.effectiveModifiedAt.compareTo(
+                            a.effectiveModifiedAt,
+                          ),
+                        );
                       case 'Item Name (A-Z)':
                         filtered.sort((a, b) => a.name.compareTo(b.name));
                       case 'Item Name (Z-A)':
@@ -430,7 +452,7 @@ class _ColHeader extends StatelessWidget {
           Expanded(flex: 3, child: Text('Status', style: _s)),
           Expanded(flex: 4, child: Text('Modified By', style: _s)),
           SizedBox(
-            width: 96,
+            width: 136,
             child: Center(child: Text('Actions', style: _s)),
           ),
         ],
@@ -535,10 +557,10 @@ class _StockRowState extends State<_StockRow> {
                   flex: 2,
                   child: Text(
                     '${item.stockInHand}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF4A3AFF),
+                      color: context.appColors.accent,
                       fontFamily: 'Poppins',
                     ),
                   ),
@@ -593,27 +615,71 @@ class _StockRowState extends State<_StockRow> {
                   ),
                 ),
 
-                // Actions
+                // Actions — View, Edit, Duplicate, Delete, matching the
+                // design's Inventory.dc.html exactly.
                 SizedBox(
-                  width: 96,
+                  width: 136,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _ActBtn(
+                      RowActionButton(
+                        icon: Icons.remove_red_eye_outlined,
+                        color: c.success,
+                        bg: c.success.withValues(alpha: 0.10),
+                        tooltip: 'View',
+                        onTap: () => Get.dialog(
+                          StockItemDetailsPanel(
+                            item: item,
+                            onEdit: () {
+                              final product = _productsController().products
+                                  .firstWhereOrNull(
+                                    (p) => p.id == item.productId.toString(),
+                                  );
+                              Get.back();
+                              if (product != null) {
+                                Get.dialog(AddProductDialog(product: product));
+                              }
+                            },
+                            onDelete: () {
+                              Get.back();
+                              confirmDelete(
+                                context,
+                                itemName: item.name,
+                                itemLabel: 'Product',
+                                onConfirm: () async {
+                                  await _productsController().deleteProduct(
+                                    item.productId.toString(),
+                                  );
+                                  await refreshStockViews();
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      RowActionButton(
                         icon: Icons.edit_outlined,
-                        color: const Color(0xFF4A3AFF),
+                        color: AppColors.primaryOrange,
+                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
                         tooltip: 'Edit',
                       ),
-                      const SizedBox(width: 4),
-                      _ActBtn(
+                      const SizedBox(width: 6),
+                      RowActionButton(
                         icon: Icons.copy_outlined,
-                        color: c.textSecondary,
+                        color: const Color(0xFF3B82F6),
+                        bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
                         tooltip: 'Duplicate',
                       ),
-                      const SizedBox(width: 4),
-                      _ActBtn(
+                      const SizedBox(width: 6),
+                      RowActionButton(
                         icon: Icons.delete_outline_rounded,
+                        iconSize: 18,
                         color: const Color(0xFFEF4444),
+                        // Neutral, not red-tinted — the design leaves
+                        // Delete's background plain and lets only the icon
+                        // carry the warning color.
+                        bg: c.tagBg,
                         tooltip: 'Delete',
                       ),
                     ],
@@ -622,32 +688,6 @@ class _StockRowState extends State<_StockRow> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ActBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String tooltip;
-  const _ActBtn({
-    required this.icon,
-    required this.color,
-    required this.tooltip,
-  });
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: () {},
-        borderRadius: BorderRadius.circular(7),
-        child: SizedBox(
-          width: 26,
-          height: 26,
-          child: Icon(icon, color: color, size: 15),
         ),
       ),
     );

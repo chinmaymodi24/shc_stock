@@ -141,6 +141,30 @@ class PurchaseController extends GetxController {
     }
   }
 
+  /// Replaces an existing order — the whole record, not just its status.
+  /// The server reverses the old stock movements and applies the new lines in
+  /// one transaction, so the inventory caches are pulled back in line here
+  /// exactly as they are after a create.
+  Future<bool> updateOrder(PurchaseOrder order) async {
+    try {
+      final json = await _api.put(
+        '/purchase-orders/${order.id}',
+        order.toCreateJson(),
+      );
+      final saved = PurchaseOrder.fromJson(json as Map<String, dynamic>);
+      // Last modified first: the edited order goes back to the top.
+      final idx = orders.indexWhere((o) => o.id == order.id);
+      if (idx != -1) orders.removeAt(idx);
+      orders.insert(0, saved);
+      await refreshStockViews();
+      await fetchStats();
+      return true;
+    } catch (e) {
+      _showError('Failed to update purchase order.');
+      return false;
+    }
+  }
+
   Future<void> deleteOrder(String id) async {
     try {
       await _api.delete('/purchase-orders/$id');
@@ -159,7 +183,8 @@ class PurchaseController extends GetxController {
       final json = await _api.patch('/purchase-orders/$id/status', {
         'status': status.label,
       });
-      orders[idx] = PurchaseOrder.fromJson(json as Map<String, dynamic>);
+      orders.removeAt(idx);
+      orders.insert(0, PurchaseOrder.fromJson(json as Map<String, dynamic>));
     } catch (e) {
       _showError('Failed to update status.');
     }

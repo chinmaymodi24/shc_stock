@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 
 class WebProductsLayout extends StatelessWidget {
   WebProductsLayout({super.key});
@@ -326,7 +327,7 @@ class WebProductsLayout extends StatelessWidget {
           ),
           Expanded(flex: 3, child: Text('Modified By', style: style)),
           SizedBox(
-            width: 76,
+            width: 140,
             child: Center(child: Text('Actions', style: style)),
           ),
         ],
@@ -635,19 +636,39 @@ class _ProductRow extends StatelessWidget {
               ),
             ),
             SizedBox(
-              width: 76,
+              width: 140,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _ActionBtn(
+                  RowActionButton(
+                    icon: Icons.remove_red_eye_outlined,
+                    color: colors.success,
+                    bg: colors.success.withValues(alpha: 0.10),
+                    // No product-details view exists yet.
+                    onTap: () {},
+                  ),
+                  const SizedBox(width: 6),
+                  RowActionButton(
                     icon: Icons.edit_outlined,
-                    color: colors.purple,
+                    color: AppColors.primaryOrange,
+                    bg: AppColors.primaryOrange.withValues(alpha: 0.10),
                     onTap: () => Get.dialog(AddProductDialog(product: product)),
                   ),
                   const SizedBox(width: 6),
-                  _ActionBtn(
+                  RowActionButton(
+                    icon: Icons.copy_outlined,
+                    color: const Color(0xFF3B82F6),
+                    bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                    onTap: () {},
+                  ),
+                  const SizedBox(width: 6),
+                  RowActionButton(
                     icon: Icons.delete_outline_rounded,
+                    iconSize: 18,
                     color: colors.error,
+                    // Neutral, not red-tinted — only the icon carries the
+                    // warning color.
+                    bg: colors.tagBg,
                     onTap: () => Get.dialog(
                       _DeleteConfirmDialog(
                         productName: product.name,
@@ -669,33 +690,6 @@ class _ProductRow extends StatelessWidget {
 }
 
 // ── Helper Widgets ────────────────────────────────────────────────────────────
-class _ActionBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-  const _ActionBtn({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(7),
-      child: Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(7),
-        ),
-        child: Icon(icon, color: color, size: 16),
-      ),
-    );
-  }
-}
 
 class _PageButton extends StatelessWidget {
   final IconData icon;

@@ -32,6 +32,16 @@ class MobilePurchaseItemRow {
   double netPrice = 0;
 
   double get totalQty => noPkg * avgContPerPkg;
+
+  /// Same as the web form: the total is editable and steppable, keeping the
+  /// per-pack figure and back-solving the pack count so the three boxes
+  /// never contradict each other.
+  set totalQty(double v) {
+    final per = avgContPerPkg <= 0 ? 1.0 : avgContPerPkg;
+    avgContPerPkg = per;
+    noPkg = (v < 0 ? 0 : v) / per;
+  }
+
   double get amount => totalQty * netPrice;
 }
 

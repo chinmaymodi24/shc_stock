@@ -5,6 +5,7 @@ import 'package:shc_stock/app/core/theme/theme_controller.dart';
 import 'package:shc_stock/app/core/theme/theme_switch_helper.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/shared/widgets/logo_plate.dart';
 
 /// Shared drawer used by all mobile layouts.
 /// Pass the current [activeRoute] so the correct item is highlighted.
@@ -90,10 +91,13 @@ class AppDrawer extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Image.asset(
-                    'assets/logo.png',
-                    width: 100,
-                    fit: BoxFit.fitWidth,
+                  const LogoPlate(
+                    isDark: true,
+                    width: 116,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const CircleAvatar(

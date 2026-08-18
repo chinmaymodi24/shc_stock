@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/users/controllers/add_employee_wizard_controller.dart';
+import 'package:shc_stock/app/shared/widgets/async_button.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
@@ -487,33 +488,21 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
             ),
           ),
           const SizedBox(width: 10),
-          ElevatedButton.icon(
+          // The last step posts the new employee, so the button spins until
+          // the API answers; the earlier steps just advance and return
+          // immediately.
+          AppAsyncButton(
+            label: isLast ? 'Create Employee' : 'Continue',
+            icon: isLast
+                ? Icons.person_add_outlined
+                : Icons.arrow_forward_rounded,
             onPressed: controller.next,
-            icon: Icon(
-              isLast ? Icons.person_add_outlined : Icons.arrow_forward_rounded,
-              color: Colors.white,
-              size: 16,
+            fontSize: 13.5,
+            padding: EdgeInsets.symmetric(
+              horizontal: tablet ? 22 : 14,
+              vertical: 14,
             ),
-            label: Text(
-              isLast ? 'Create Employee' : 'Continue',
-              style: const TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-                fontFamily: 'Poppins',
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryOrange,
-              elevation: 0,
-              padding: EdgeInsets.symmetric(
-                horizontal: tablet ? 22 : 14,
-                vertical: 14,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
+            radius: 8,
           ),
         ],
       ),

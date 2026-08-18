@@ -14,6 +14,7 @@ import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
+import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Widget — Transactions: colored summary cards + searchable/filterable table
@@ -379,7 +380,7 @@ class _ColHeader extends StatelessWidget {
           Expanded(flex: 3, child: Text('Status', style: _s)),
           Expanded(flex: 4, child: Text('Modified By', style: _s)),
           Expanded(
-            flex: 3,
+            flex: 5,
             child: Center(child: Text('Actions', style: _s)),
           ),
         ],
@@ -559,21 +560,43 @@ class _TransactionRowState extends State<_TransactionRow> {
 
                 // Actions
                 Expanded(
-                  flex: 3,
+                  flex: 5,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _TxnActBtn(
+                      RowActionButton(
+                        icon: Icons.remove_red_eye_outlined,
+                        color: context.appColors.success,
+                        bg: context.appColors.success.withValues(alpha: 0.10),
+                        tooltip: 'View',
+                        // No transaction-details view exists yet.
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 6),
+                      RowActionButton(
                         icon: Icons.edit_outlined,
                         color: AppColors.primaryOrange,
+                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
                         tooltip: 'Edit',
                         onTap: () =>
                             Get.dialog(TransactionFormDialog(existing: txn)),
                       ),
                       const SizedBox(width: 6),
-                      _TxnActBtn(
+                      RowActionButton(
+                        icon: Icons.copy_outlined,
+                        color: const Color(0xFF3B82F6),
+                        bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                        tooltip: 'Duplicate',
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 6),
+                      RowActionButton(
                         icon: Icons.delete_outline_rounded,
-                        color: const Color(0xFFEF4444),
+                        iconSize: 18,
+                        color: context.appColors.error,
+                        // Neutral, not red-tinted — only the icon carries
+                        // the warning color.
+                        bg: context.appColors.tagBg,
                         tooltip: 'Delete',
                         onTap: () => confirmDelete(
                           context,
@@ -595,37 +618,3 @@ class _TransactionRowState extends State<_TransactionRow> {
   }
 }
 
-/// Small square icon button used by the Transactions row actions.
-class _TxnActBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String tooltip;
-  final VoidCallback onTap;
-  const _TxnActBtn({
-    required this.icon,
-    required this.color,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(7),
-        child: Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: colors.iconBgPurple,
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Icon(icon, color: color, size: 15),
-        ),
-      ),
-    );
-  }
-}

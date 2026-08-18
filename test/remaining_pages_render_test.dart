@@ -17,6 +17,8 @@ import 'package:shc_stock/app/modules/products/views/web_products_layout.dart';
 import 'package:shc_stock/app/modules/purchase/controllers/add_purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
+import 'package:shc_stock/app/modules/purchase/controllers/mobile_add_purchase_controller.dart';
+import 'package:shc_stock/app/modules/purchase/views/mobile_add_purchase_layout.dart';
 import 'package:shc_stock/app/modules/purchase/views/web_new_purchase_layout.dart';
 import 'package:shc_stock/app/modules/purchase/views/web_purchase_layout.dart';
 import 'package:shc_stock/app/modules/sales/controllers/add_sale_controller.dart';
@@ -175,8 +177,12 @@ class _StubClients extends ClientsController {
   Future<void> fetchStats() async {}
 }
 
-Future<void> _pump(WidgetTester tester, Widget page) async {
-  tester.view.physicalSize = const Size(1440, 900);
+Future<void> _pump(
+  WidgetTester tester,
+  Widget page, {
+  Size size = const Size(1440, 900),
+}) async {
+  tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
 
@@ -200,6 +206,7 @@ void main() {
   testWidgets('Products page renders rows and API summary cards', (
     tester,
   ) async {
+    Get.put<CategoriesController>(_StubCategories());
     Get.put<ProductsController>(_StubProducts());
     await _pump(tester, WebProductsLayout());
 
@@ -210,8 +217,8 @@ void main() {
   });
 
   testWidgets('Categories page renders the tree and API cards', (tester) async {
-    Get.put<ProductsController>(_StubProducts());
     Get.put<CategoriesController>(_StubCategories());
+    Get.put<ProductsController>(_StubProducts());
     await _pump(tester, const WebCategoriesLayout());
 
     expect(find.text('Ceramic Fiber Products'), findsWidgets);
@@ -240,6 +247,7 @@ void main() {
   testWidgets('Add Purchase form renders with a usable default row', (
     tester,
   ) async {
+    Get.put<CategoriesController>(_StubCategories());
     Get.put<ProductsController>(_StubProducts());
     Get.put<ClientsController>(_StubClients());
     Get.put<PurchaseController>(_StubPurchase());
@@ -259,7 +267,30 @@ void main() {
     expect(c.subTotal, 250);
   });
 
+  testWidgets('Mobile Add Purchase form renders at phone width', (
+    tester,
+  ) async {
+    Get.put<CategoriesController>(_StubCategories());
+    Get.put<ProductsController>(_StubProducts());
+    Get.put<ClientsController>(_StubClients());
+    Get.put<PurchaseController>(_StubPurchase());
+    Get.put(MobileAddPurchaseController());
+    // A real phone viewport: the item row packs No. Pkg, Cont/Pkg and the
+    // Total Qty stepper across one line, so this is where it would overflow.
+    await _pump(
+      tester,
+      const MobileAddPurchaseLayout(),
+      size: const Size(390, 1600),
+    );
+
+    expect(find.text('Item Details'), findsWidgets);
+    expect(find.text('Total Qty'), findsWidgets);
+    expect(find.byIcon(Icons.add_rounded), findsWidgets);
+    expect(find.byIcon(Icons.remove_rounded), findsWidgets);
+  });
+
   testWidgets('Add Sales form renders', (tester) async {
+    Get.put<CategoriesController>(_StubCategories());
     Get.put<ProductsController>(_StubProducts());
     Get.put<ClientsController>(_StubClients());
     Get.put<SalesController>(_StubSales());

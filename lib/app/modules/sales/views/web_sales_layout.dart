@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
 import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
 import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
 import 'package:shc_stock/app/modules/sales/views/sale_details_dialog.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -15,6 +16,7 @@ import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/shared/widgets/status_update_dialog_shell.dart';
 import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
+import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // TABLE COLUMN CONSTANTS — used by BOTH _TableHeader and _SalesRow
@@ -22,14 +24,25 @@ import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 // ═════════════════════════════════════════════════════════════════════════════
 const double _kIdxWidth = 28.0; // # badge — fixed
 const double _kColGap = 10.0; // gap between # badge and first flex col
-const int _kSoFlex = 18; // SO Number
-const int _kClientFlex = 26; // Client badge + name
+// Flex ratios follow the design's grid:
+// 1fr SO · 1.15fr Client · 0.7 Date · 0.55 Items · 0.8 Amount · 0.85 Status
+// · 0.85 Payment · 1fr Modified By · 0.6 Actions
+const int _kSoFlex = 20; // SO Number
+const int _kClientFlex = 23; // Client badge + name
 const int _kDateFlex = 14; // Date
-const int _kItemsFlex = 8; // Items (center)
+const int _kItemsFlex = 11; // Items (center)
 const int _kAmtFlex = 16; // Amount
-const int _kStatusFlex = 13; // Status badge (center)
-const int _kPayFlex = 14; // Payment Status badge (center)
-const int _kActFlex = 11; // Actions (center)
+const int _kStatusFlex = 17; // Status badge (center)
+const int _kPayFlex = 17; // Payment badge (center)
+const int _kModFlex = 20; // Modified By
+const int _kActFlex = 20; // Actions (center) — View + Edit + Duplicate + Delete
+
+// ── KPI palette, straight from the design's tokens ──────────────────────────
+// The card tints itself from these: background at 10%, icon chip at 18%.
+const Color kKpiBlue = Color(0xFF2D1B8C);
+const Color kKpiPurple = Color(0xFF6B5CBF);
+const Color kKpiAmber = Color(0xFFA05A00);
+const Color kKpiGreen = Color(0xFF1E8449);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sales List Page
@@ -57,6 +70,7 @@ class WebSalesLayout extends GetView<SalesController> {
                     final searchQuery = c.searchQuery.value;
                     final statusFilters = c.statusFilters;
                     final paymentFilters = c.paymentFilters;
+                    final clientFilters = c.clientFilters;
                     final sortOption = c.sortOption.value;
                     final rowsPerPage = c.rowsPerPage.value;
                     final currentPage = c.currentPage.value;
@@ -73,6 +87,10 @@ class WebSalesLayout extends GetView<SalesController> {
                       }
                       if (paymentFilters.isNotEmpty &&
                           !paymentFilters.contains(o.paymentStatus.label)) {
+                        return false;
+                      }
+                      if (clientFilters.isNotEmpty &&
+                          !clientFilters.contains(o.client)) {
                         return false;
                       }
                       return true;
@@ -115,7 +133,7 @@ class WebSalesLayout extends GetView<SalesController> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Sales',
+                                      'Sale',
                                       style: TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.w700,
@@ -124,8 +142,12 @@ class WebSalesLayout extends GetView<SalesController> {
                                       ),
                                     ),
                                     const SizedBox(height: 2),
+                                    // Live count and value, per the design —
+                                    // it replaced a static marketing line.
                                     Text(
-                                      'Manage all your sales orders and track your business performance.',
+                                      '${filtered.length} '
+                                      '${filtered.length == 1 ? 'sale' : 'sales'}'
+                                      ' · ${formatRupees(filtered.fold<double>(0, (t, o) => t + o.amount))} total',
                                       style: TextStyle(
                                         fontSize: 13,
                                         color: colors.textSecondary,
@@ -136,7 +158,7 @@ class WebSalesLayout extends GetView<SalesController> {
                                 ),
                               ),
                               _PrimaryBtn(
-                                label: 'New Sales Order',
+                                label: 'Add Sale',
                                 icon: Icons.add_rounded,
                                 onTap: () => Get.toNamed(AppRoutes.addSale),
                               ),
@@ -156,7 +178,7 @@ class WebSalesLayout extends GetView<SalesController> {
                                       c.stats.value.doubleOf('salesMTD'),
                                     ),
                                     icon: Icons.shopping_cart_outlined,
-                                    iconColor: AppColors.primaryOrange,
+                                    iconColor: kKpiBlue,
                                     trend: c.stats.value.trendLabel('salesMTD'),
                                     trendUp: c.stats.value.trendUp('salesMTD'),
                                     showCaption: false,
@@ -166,11 +188,11 @@ class WebSalesLayout extends GetView<SalesController> {
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: AppStatCard(
-                                    label: 'Total Sales Orders',
+                                    label: 'Orders',
                                     value:
                                         '${c.stats.value.intOf('totalOrders')}',
                                     icon: Icons.receipt_long_outlined,
-                                    iconColor: const Color(0xFF4A3AFF),
+                                    iconColor: context.appColors.accent,
                                     trend: c.stats.value.trendLabel(
                                       'totalOrders',
                                     ),
@@ -187,8 +209,8 @@ class WebSalesLayout extends GetView<SalesController> {
                                     value: formatRupees(
                                       c.stats.value.doubleOf('amountDue'),
                                     ),
-                                    icon: Icons.currency_rupee_rounded,
-                                    iconColor: const Color(0xFFF59E0B),
+                                    icon: Icons.warning_amber_rounded,
+                                    iconColor: kKpiAmber,
                                     trend: c.stats.value.trendLabel(
                                       'amountDue',
                                     ),
@@ -205,7 +227,7 @@ class WebSalesLayout extends GetView<SalesController> {
                                       c.stats.value.doubleOf('receivedMTD'),
                                     ),
                                     icon: Icons.check_circle_outline_rounded,
-                                    iconColor: const Color(0xFF22C55E),
+                                    iconColor: kKpiGreen,
                                     trend: c.stats.value.trendLabel(
                                       'receivedMTD',
                                     ),
@@ -227,28 +249,45 @@ class WebSalesLayout extends GetView<SalesController> {
                             children: [
                               // ── LEFT: Table card ────────────────────────
                               Expanded(
-                                child: _TableCard(
-                                  colors: colors,
-                                  onSearch: (v) {
-                                    c.searchQuery.value = v;
-                                    c.currentPage.value = 1;
-                                  },
-                                  pageItems: pageItems,
-                                  startIdx: startIdx,
-                                  isLast: (i) => i == pageItems.length - 1,
-                                  total: filtered.length,
-                                  startDisplay: filtered.isEmpty
-                                      ? 0
-                                      : startIdx + 1,
-                                  endDisplay: endIdx,
-                                  currentPage: currentPage,
-                                  totalPages: totalPages,
-                                  rowsPerPage: rowsPerPage,
-                                  onPageChanged: (p) => c.currentPage.value = p,
-                                  onRowsChanged: (r) {
-                                    c.rowsPerPage.value = r;
-                                    c.currentPage.value = 1;
-                                  },
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    _Toolbar(
+                                      colors: colors,
+                                      onSearch: (v) {
+                                        c.searchQuery.value = v;
+                                        c.currentPage.value = 1;
+                                      },
+                                      controller: c,
+                                      clients:
+                                          all
+                                              .map((o) => o.client)
+                                              .toSet()
+                                              .toList()
+                                            ..sort(),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _TableCard(
+                                      colors: colors,
+                                      pageItems: pageItems,
+                                      startIdx: startIdx,
+                                      isLast: (i) => i == pageItems.length - 1,
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _PagerRow(
+                                      colors: colors,
+                                      currentPage: currentPage,
+                                      totalPages: totalPages,
+                                      rowsPerPage: rowsPerPage,
+                                      onPageChanged: (p) =>
+                                          c.currentPage.value = p,
+                                      onRowsChanged: (r) {
+                                        c.rowsPerPage.value = r;
+                                        c.currentPage.value = 1;
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -267,8 +306,6 @@ class WebSalesLayout extends GetView<SalesController> {
                                       colors: colors,
                                       controller: c,
                                     ),
-                                    const SizedBox(height: 14),
-                                    _QuickActionsCard(colors: colors),
                                   ],
                                 ),
                               ),
@@ -291,32 +328,15 @@ class WebSalesLayout extends GetView<SalesController> {
 // ─────────────────────────────────────────────────────────────────────────────
 class _TableCard extends StatelessWidget {
   final AppThemeColors colors;
-  final ValueChanged<String> onSearch;
   final List<SalesOrder> pageItems;
-  final int startIdx,
-      total,
-      startDisplay,
-      endDisplay,
-      currentPage,
-      totalPages,
-      rowsPerPage;
+  final int startIdx;
   final bool Function(int) isLast;
-  final ValueChanged<int> onPageChanged, onRowsChanged;
 
   const _TableCard({
     required this.colors,
-    required this.onSearch,
     required this.pageItems,
     required this.startIdx,
     required this.isLast,
-    required this.total,
-    required this.startDisplay,
-    required this.endDisplay,
-    required this.currentPage,
-    required this.totalPages,
-    required this.rowsPerPage,
-    required this.onPageChanged,
-    required this.onRowsChanged,
   });
 
   @override
@@ -336,15 +356,8 @@ class _TableCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Toolbar
-          _Toolbar(
-            colors: colors,
-            onSearch: onSearch,
-            controller: Get.find<SalesController>(),
-          ),
-          Divider(height: 1, color: colors.divider),
-
-          // Header
+          // Header — the design puts the toolbar above the card and the
+          // pager below it, so the card itself is just header + rows.
           _TableHeader(colors: colors),
           Divider(height: 1, color: colors.divider),
 
@@ -371,20 +384,6 @@ class _TableCard extends StatelessWidget {
                   .toList(),
             );
           }),
-
-          // Footer
-          Divider(height: 1, color: colors.divider),
-          AppTableFooter(
-            colors: colors,
-            summaryText:
-                'Showing $startDisplay to $endDisplay of $total sales orders',
-            currentPage: currentPage,
-            totalPages: totalPages,
-            rowsPerPage: rowsPerPage,
-            onPageChanged: onPageChanged,
-            onRowsChanged: onRowsChanged,
-            legacyPageNumbers: true,
-          ),
         ],
       ),
     );
@@ -398,168 +397,87 @@ class _Toolbar extends StatelessWidget {
   final AppThemeColors colors;
   final ValueChanged<String> onSearch;
   final SalesController controller;
+
+  /// Every client that appears in the list, for the filter menu.
+  final List<String> clients;
+
   const _Toolbar({
     required this.colors,
     required this.onSearch,
     required this.controller,
+    required this.clients,
   });
 
   @override
   Widget build(BuildContext context) {
     final c = controller;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: FilterBar(
-        search: FilterSearchField(
-          hint: 'Search sales orders...',
-          width: 240,
-          onChanged: onSearch,
-        ),
-        pills: [
-          MultiSelectFilterPill(
-            label: 'Status',
-            items: SalesController.statusOptions,
-            selected: c.statusFilters,
-            onToggle: (v) {
-              if (c.statusFilters.contains(v)) {
-                c.statusFilters.remove(v);
-              } else {
-                c.statusFilters.add(v);
-              }
-              c.currentPage.value = 1;
-            },
-          ),
-          MultiSelectFilterPill(
-            label: 'Payment',
-            items: SalesController.paymentOptions,
-            selected: c.paymentFilters,
-            onToggle: (v) {
-              if (c.paymentFilters.contains(v)) {
-                c.paymentFilters.remove(v);
-              } else {
-                c.paymentFilters.add(v);
-              }
-              c.currentPage.value = 1;
-            },
-          ),
-          Obx(
-            () => SingleSelectFilterPill.sort(
-              value: c.sortOption.value,
-              items: SalesController.sortOptions
-                  .where((o) => o != 'Default')
-                  .toList(),
-              onChanged: (v) => c.sortOption.value = v,
-            ),
-          ),
-        ],
-        clearAll: Obx(() {
-          final hasActiveFilters =
-              c.searchQuery.value.isNotEmpty ||
-              c.statusFilters.isNotEmpty ||
-              c.paymentFilters.isNotEmpty ||
-              c.sortOption.value != 'Default';
-          if (!hasActiveFilters) return const SizedBox.shrink();
-          return ClearAllButton(onTap: c.resetFilters);
-        }),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Date range
-            Container(
-              height: kFilterPillHeight,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: colors.surface,
-                borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: colors.border),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.date_range_rounded,
-                    size: 15,
-                    color: colors.textPrimary,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '01 May 2024 - 31 May 2024',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: colors.textPrimary,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 16,
-                    color: colors.textPrimary,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            // Export
-            InkWell(
-              onTap: () {},
-              borderRadius: BorderRadius.circular(100),
-              child: Container(
-                height: kFilterPillHeight,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: colors.surface,
-                  borderRadius: BorderRadius.circular(100),
-                  border: Border.all(color: colors.border),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.upload_outlined,
-                      size: 15,
-                      color: colors.textPrimary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Export',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: colors.textPrimary,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: colors.inputFill,
-                border: Border.all(color: colors.border),
-                borderRadius: BorderRadius.circular(7),
-              ),
-              child: Icon(
-                Icons.table_chart_outlined,
-                size: 17,
-                color: colors.textSecondary,
-              ),
-            ),
-          ],
-        ),
+    // The design's toolbar is one line: a search box and a Client filter,
+    // with a Reset pill appearing only once something is filtered. FilterBar
+    // owns the row's height and lets the pill strip scroll, which a bare Row
+    // does not — that overflowed by the width of the whole client list.
+    return FilterBar(
+      search: FilterSearchField(
+        hint: 'Search by item or SO...',
+        width: 240,
+        onChanged: onSearch,
       ),
+      pills: [
+        MultiSelectFilterPill(
+          label: 'Client',
+          items: clients,
+          selected: c.clientFilters,
+          onToggle: (v) {
+            if (c.clientFilters.contains(v)) {
+              c.clientFilters.remove(v);
+            } else {
+              c.clientFilters.add(v);
+            }
+            c.currentPage.value = 1;
+          },
+        ),
+      ],
+      clearAll: Obx(() {
+        final active =
+            c.searchQuery.value.isNotEmpty || c.clientFilters.isNotEmpty;
+        if (!active) return const SizedBox.shrink();
+        return ClearAllButton(onTap: c.resetFilters);
+      }),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Table Header — uses the same constants as _SalesRow
-// ─────────────────────────────────────────────────────────────────────────────
+/// Rows-per-page on the left, page navigation on the right — the design puts
+/// this under the table card rather than inside it.
+class _PagerRow extends StatelessWidget {
+  final AppThemeColors colors;
+  final int currentPage, totalPages, rowsPerPage;
+  final ValueChanged<int> onPageChanged, onRowsChanged;
+
+  const _PagerRow({
+    required this.colors,
+    required this.currentPage,
+    required this.totalPages,
+    required this.rowsPerPage,
+    required this.onPageChanged,
+    required this.onRowsChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // summaryText omitted: the design's footer is just "Rows per page" and
+    // the pager, with no "Showing 1 to 10 of …" line.
+    return AppTableFooter(
+      colors: colors,
+      currentPage: currentPage,
+      totalPages: totalPages,
+      rowsPerPage: rowsPerPage,
+      onPageChanged: onPageChanged,
+      onRowsChanged: onRowsChanged,
+      legacyPageNumbers: true,
+    );
+  }
+}
+
 class _TableHeader extends StatelessWidget {
   final AppThemeColors colors;
   const _TableHeader({required this.colors});
@@ -614,12 +532,15 @@ class _TableHeader extends StatelessWidget {
             flex: _kStatusFlex,
             child: Center(child: Text('Status', style: _s)),
           ),
-          // Payment Status (center)
+          // Payment (center)
           Expanded(
             flex: _kPayFlex,
-            child: Center(
-              child: Text('Payment Status', style: _s.copyWith(fontSize: 11.5)),
-            ),
+            child: Center(child: Text('Payment', style: _s)),
+          ),
+          // Modified By
+          Expanded(
+            flex: _kModFlex,
+            child: Text('Modified By', style: _s),
           ),
           // Actions (center)
           Expanded(
@@ -750,10 +671,11 @@ class _SalesRowState extends State<_SalesRow> {
                   flex: _kSoFlex,
                   child: Text(
                     o.soNumber,
-                    style: const TextStyle(
+                    // The design paints the order number in the brand orange.
+                    style: TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF4A3AFF),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryOrange,
                       fontFamily: 'Poppins',
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -818,13 +740,19 @@ class _SalesRowState extends State<_SalesRow> {
                 Expanded(
                   flex: _kItemsFlex,
                   child: Center(
-                    child: Text(
-                      '${o.itemCount}',
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                        color: c.textPrimary,
-                        fontFamily: 'Poppins',
+                    // Units, not lines — see the purchase list for why.
+                    child: Tooltip(
+                      message: o.itemCount == 1
+                          ? '1 line item'
+                          : '${o.itemCount} line items',
+                      child: Text(
+                        o.totalQtyLabel,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                          color: c.textPrimary,
+                          fontFamily: 'Poppins',
+                        ),
                       ),
                     ),
                   ),
@@ -844,11 +772,24 @@ class _SalesRowState extends State<_SalesRow> {
                   ),
                 ),
 
-                // Status badge
+                // Status badge — tap to change just the status, now that the
+                // row's third action is Delete.
                 Expanded(
                   flex: _kStatusFlex,
                   child: Center(
-                    child: _Badge(label: o.status.label, color: o.status.color),
+                    child: Tooltip(
+                      message: 'Update status',
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => Get.dialog(
+                          _UpdateSalesStatusDialog(order: widget.order),
+                        ),
+                        child: _Badge(
+                          label: o.status.label,
+                          color: o.status.color,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
 
@@ -863,16 +804,38 @@ class _SalesRowState extends State<_SalesRow> {
                   ),
                 ),
 
+                // Modified By — same cell the Purchase table uses.
+                Expanded(
+                  flex: _kModFlex,
+                  child: Builder(
+                    builder: (context) {
+                      final mod = resolveModifiedBy(
+                        storedName: o.modifiedBy,
+                        storedDate: o.modifiedAt,
+                      );
+                      return mod == null
+                          ? ModifiedByEmpty(textHint: c.textHint)
+                          : ModifiedByCell(
+                              name: mod.name,
+                              date: mod.date,
+                              textPrimary: c.textPrimary,
+                              textHint: c.textHint,
+                            );
+                    },
+                  ),
+                ),
+
                 // Actions
                 Expanded(
                   flex: _kActFlex,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _ActionBtn(
+                      RowActionButton(
                         icon: Icons.remove_red_eye_outlined,
-                        color: const Color(0xFF4A3AFF),
-                        bg: const Color(0xFF4A3AFF),
+                        color: context.appColors.success,
+                        bg: context.appColors.success.withValues(alpha: 0.10),
+                        tooltip: 'View',
                         onTap: () => Get.dialog(
                           SaleDetailsDialog(
                             order: widget.order,
@@ -890,12 +853,41 @@ class _SalesRowState extends State<_SalesRow> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      _ActionBtn(
-                        icon: Icons.more_vert_rounded,
-                        color: c.textSecondary,
-                        bg: c.iconBgPurple,
-                        onTap: () => Get.dialog(
-                          _UpdateSalesStatusDialog(order: widget.order),
+                      RowActionButton(
+                        icon: Icons.edit_outlined,
+                        color: AppColors.primaryOrange,
+                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
+                        tooltip: 'Edit',
+                        // Opens the same form Add Sale uses, pre-filled from
+                        // this order; saving updates it in place.
+                        onTap: () => Get.toNamed(
+                          AppRoutes.addSale,
+                          arguments: widget.order,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      RowActionButton(
+                        icon: Icons.copy_outlined,
+                        color: const Color(0xFF3B82F6),
+                        bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                        tooltip: 'Duplicate',
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 6),
+                      RowActionButton(
+                        icon: Icons.delete_outline_rounded,
+                        iconSize: 18,
+                        color: context.appColors.error,
+                        // Neutral, not red-tinted — only the icon carries
+                        // the warning color.
+                        bg: context.appColors.tagBg,
+                        tooltip: 'Delete',
+                        onTap: () => confirmDelete(
+                          context,
+                          itemName: widget.order.soNumber,
+                          itemLabel: 'Sales Order',
+                          onConfirm: () =>
+                              Get.find<SalesController>().deleteOrder(o.id),
                         ),
                       ),
                     ],
@@ -930,40 +922,6 @@ class _Badge extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: color,
           fontFamily: 'Poppins',
-        ),
-      ),
-    );
-  }
-}
-
-class _ActionBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color, bg;
-  final VoidCallback onTap;
-  const _ActionBtn({
-    required this.icon,
-    required this.color,
-    required this.bg,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: icon == Icons.more_vert_rounded ? 'More' : 'View',
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(7),
-        child: Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: bg.withValues(
-              alpha: icon == Icons.more_vert_rounded ? 1.0 : 0.10,
-            ),
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Icon(icon, color: color, size: 15),
         ),
       ),
     );
@@ -1269,67 +1227,6 @@ class _TopClientsCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // RIGHT PANEL — Quick Actions
 // ─────────────────────────────────────────────────────────────────────────────
-class _QuickActionsCard extends StatelessWidget {
-  final AppThemeColors colors;
-  const _QuickActionsCard({required this.colors});
-
-  static const _actions = [
-    (Icons.add_circle_outline_rounded, 'New Sales Order'),
-    (Icons.receipt_outlined, 'Sales Invoice'),
-    (Icons.local_shipping_outlined, 'Delivery Challan'),
-    (Icons.undo_rounded, 'Sales Return'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return _PanelCard(
-      colors: colors,
-      title: 'Quick Actions',
-      child: Column(
-        children: _actions.asMap().entries.map((e) {
-          final isLast = e.key == _actions.length - 1;
-          final item = e.value;
-          return Column(
-            children: [
-              InkWell(
-                onTap: () {},
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Row(
-                    children: [
-                      Icon(item.$1, size: 18, color: colors.textSecondary),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          item.$2,
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w500,
-                            color: colors.textPrimary,
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 18,
-                        color: colors.textHint,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              if (!isLast) Divider(height: 1, color: colors.divider),
-            ],
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-// Shared panel card shell
 class _PanelCard extends StatelessWidget {
   final AppThemeColors colors;
   final String title;

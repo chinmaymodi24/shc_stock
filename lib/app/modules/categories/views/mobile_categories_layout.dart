@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/shared/widgets/async_button.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
 import 'package:shc_stock/app/modules/categories/controllers/categories_controller.dart';
@@ -76,7 +77,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
                   Expanded(
                     child: AppStatCard(
                       icon: Icons.account_tree_outlined,
-                      iconColor: const Color(0xFF4A3AFF),
+                      iconColor: context.appColors.accent,
                       label: 'Subcategories',
                       value: '${c.totalSubCategories}',
                     ),
@@ -243,8 +244,8 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
         title: 'Add New Category',
         hint: 'e.g. Ceramic Fiber Products',
         controller: ctrl,
-        onSave: () {
-          c.addCategory(ctrl.text);
+        onSave: () async {
+          await c.addCategory(ctrl.text);
           Get.back();
         },
       ),
@@ -258,8 +259,8 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
         title: 'Edit Category',
         hint: cat.name,
         controller: ctrl,
-        onSave: () {
-          c.updateCategory(cat.id, ctrl.text);
+        onSave: () async {
+          await c.updateCategory(cat.id, ctrl.text);
           Get.back();
         },
       ),
@@ -273,8 +274,8 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
         title: 'Add Sub-Category',
         hint: 'e.g. Ceramic Fiber Rope',
         controller: ctrl,
-        onSave: () {
-          c.addSubCategory(catId, ctrl.text);
+        onSave: () async {
+          await c.addSubCategory(catId, ctrl.text);
           Get.back();
         },
       ),
@@ -292,8 +293,8 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
         title: 'Edit Sub-Category',
         hint: cat.subProducts[subIdx],
         controller: ctrl,
-        onSave: () {
-          c.updateSubCategory(cat.id, subIdx, ctrl.text);
+        onSave: () async {
+          await c.updateSubCategory(cat.id, subIdx, ctrl.text);
           Get.back();
         },
       ),
@@ -310,9 +311,9 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
       title: 'Delete Category?',
       message:
           'Are you sure you want to delete "${cat.name}"? This will also delete all ${cat.subProducts.length} sub-categories.',
-      onConfirm: () {
+      onConfirm: () async {
         if (cat.id == c.selectedCatId.value) c.selectedCatId.value = null;
-        c.deleteCategory(cat.id);
+        await c.deleteCategory(cat.id);
       },
     );
   }
@@ -760,7 +761,9 @@ class _MobileFormDialog extends StatelessWidget {
   final String title;
   final String hint;
   final TextEditingController controller;
-  final VoidCallback onSave;
+
+  /// Awaited, so the Save button can show its own spinner.
+  final Future<void> Function() onSave;
 
   const _MobileFormDialog({
     required this.title,
@@ -864,27 +867,14 @@ class _MobileFormDialog extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                ElevatedButton(
+                AppAsyncButton(
+                  label: 'Save',
                   onPressed: onSave,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryOrange,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
                   ),
-                  child: const Text(
-                    'Save',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  radius: 8,
                 ),
               ],
             ),

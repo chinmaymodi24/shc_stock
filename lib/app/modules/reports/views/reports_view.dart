@@ -89,7 +89,7 @@ class ReportsView extends GetView<ReportsController> {
                                     child: _SectionCard(
                                       title: 'Stock',
                                       icon: Icons.inventory_2_outlined,
-                                      accent: const Color(0xFF4A3AFF),
+                                      accent: context.appColors.accent,
                                       lines: controller.stockLines,
                                       display: _display,
                                     ),

@@ -88,7 +88,10 @@ async function nextClientCode() {
 // GET /api/clients
 router.get('/', async (req, res, next) => {
   try {
-    const clients = await prisma.client.findMany({ orderBy: { name: 'asc' } });
+    // Last added / modified first (updatedAt covers both).
+    const clients = await prisma.client.findMany({
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+    });
     res.json(clients);
   } catch (err) {
     next(err);

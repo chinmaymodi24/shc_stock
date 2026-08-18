@@ -122,7 +122,7 @@ class LoginForm extends GetView<LoginController> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(width: 60, height: 2, color: AppColors.dividerPurple),
+        Container(width: 60, height: 2, color: context.appColors.accent),
         Container(
           width: 8,
           height: 8,
@@ -132,7 +132,7 @@ class LoginForm extends GetView<LoginController> {
             shape: BoxShape.circle,
           ),
         ),
-        Container(width: 60, height: 2, color: AppColors.dividerPurple),
+        Container(width: 60, height: 2, color: context.appColors.accent),
       ],
     );
   }
@@ -150,7 +150,7 @@ class LoginForm extends GetView<LoginController> {
         hintStyle: AppTextStyles.inputHintCtx(context),
         prefixIcon: const Icon(
           Icons.mail_outline_rounded,
-          color: AppColors.inputIcon,
+          color: context.appColors.accent,
           size: 20,
         ),
         filled: true,
@@ -166,7 +166,7 @@ class LoginForm extends GetView<LoginController> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.accentPurple, width: 1.5),
+          borderSide: const BorderSide(color: context.appColors.accent, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -195,7 +195,7 @@ class LoginForm extends GetView<LoginController> {
           hintStyle: AppTextStyles.inputHintCtx(context),
           prefixIcon: const Icon(
             Icons.lock_outline_rounded,
-            color: AppColors.inputIcon,
+            color: context.appColors.accent,
             size: 20,
           ),
           suffixIcon: InkWell(
@@ -221,7 +221,7 @@ class LoginForm extends GetView<LoginController> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.accentPurple, width: 1.5),
+            borderSide: const BorderSide(color: context.appColors.accent, width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -528,8 +528,8 @@ class LoginForm extends GetView<LoginController> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: AppColors.accentPurple,
+          borderSide: BorderSide(
+            color: context.appColors.accent,
             width: 1.5,
           ),
         ),
@@ -584,8 +584,8 @@ class LoginForm extends GetView<LoginController> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(
-              color: AppColors.accentPurple,
+            borderSide: BorderSide(
+              color: context.appColors.accent,
               width: 1.5,
             ),
           ),

@@ -272,13 +272,15 @@ class AddEmployeeWizardController extends GetxController {
     return roleId.value != null;
   }
 
-  void next() {
+  /// Async so the wizard's finish button can stay busy until the create call
+  /// answers — the earlier steps return immediately.
+  Future<void> next() async {
     if (step.value == 0 && !v1()) return;
     if (step.value == 1 && !v2()) return;
     if (step.value < 3) {
       step.value++;
     } else {
-      submit();
+      await submit();
     }
   }
 

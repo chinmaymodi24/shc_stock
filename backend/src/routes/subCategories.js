@@ -11,9 +11,21 @@ router.put('/:id', async (req, res, next) => {
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'name is required' });
     }
+    // Last modified first: an edited sub-category moves to the top of its
+    // category. Ordering is still by sortOrder, so drag-to-reorder still works.
+    const existing = await prisma.subCategory.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: 'Sub-category not found' });
+    const minOrder = await prisma.subCategory.aggregate({
+      where: { categoryId: existing.categoryId },
+      _min: { sortOrder: true },
+    });
     const subCategory = await prisma.subCategory.update({
       where: { id },
-      data: { name: name.trim(), description: description.trim() },
+      data: {
+        name: name.trim(),
+        description: description.trim(),
+        sortOrder: (minOrder._min.sortOrder ?? 0) - 1,
+      },
     });
     res.json(subCategory);
   } catch (err) {

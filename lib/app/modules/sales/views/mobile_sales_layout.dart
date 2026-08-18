@@ -98,7 +98,7 @@ class MobileSalesLayout extends GetView<SalesController> {
                       label: 'Orders',
                       value: '${c.stats.value.intOf('totalOrders')}',
                       icon: Icons.receipt_long_outlined,
-                      color: const Color(0xFF4A3AFF),
+                      color: context.appColors.accent,
                     ),
                     const SizedBox(width: 10),
                     _MiniStat(
@@ -366,10 +366,10 @@ class _MobileOrderCard extends StatelessWidget {
             children: [
               Text(
                 o.soNumber,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF4A3AFF),
+                  color: context.appColors.accent,
                   fontFamily: 'Poppins',
                 ),
               ),
@@ -448,7 +448,7 @@ class _MobileOrderCard extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                '${o.itemCount} items',
+                '${o.totalQtyLabel} items',
                 style: TextStyle(
                   fontSize: 12,
                   color: colors.textSecondary,
@@ -470,12 +470,12 @@ class _MobileOrderCard extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4A3AFF).withValues(alpha: 0.1),
+                  color: context.appColors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.remove_red_eye_outlined,
-                  color: Color(0xFF4A3AFF),
+                  color: context.appColors.accent,
                   size: 16,
                 ),
               ),

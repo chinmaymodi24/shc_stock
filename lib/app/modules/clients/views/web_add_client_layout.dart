@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
@@ -93,7 +94,10 @@ class WebAddClientLayout extends GetView<AddClientController> {
       ),
       child: Row(
         children: [
-          AppBackButton(colors: colors, onTap: () => Get.back()),
+          AppBackButton(
+            colors: colors,
+            onTap: () => Get.offNamed(AppRoutes.clients),
+          ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -121,7 +125,7 @@ class WebAddClientLayout extends GetView<AddClientController> {
             ),
           ),
           InkWell(
-            onTap: () => Get.back(),
+            onTap: () => Get.offNamed(AppRoutes.clients),
             borderRadius: BorderRadius.circular(8),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
@@ -211,7 +215,7 @@ class WebAddClientLayout extends GetView<AddClientController> {
     // addClient() already surfaced the API error toast on failure — keep the
     // form open so the entered data isn't lost.
     if (saved == null) return;
-    Get.back();
+    Get.offNamed(AppRoutes.clients);
     showAppToast(
       '✅ Client Saved',
       '${saved.name} (${saved.code}) has been added.',

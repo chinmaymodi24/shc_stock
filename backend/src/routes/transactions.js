@@ -40,8 +40,9 @@ function validate(body) {
 // GET /api/transactions
 router.get('/', async (req, res, next) => {
   try {
+    // Last added / modified first (updatedAt covers both).
     const transactions = await prisma.transaction.findMany({
-      orderBy: [{ date: 'desc' }, { id: 'desc' }],
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
     });
     res.json(transactions);
   } catch (err) {

@@ -597,7 +597,7 @@ class _ChartsAccordion extends StatelessWidget {
                     height: 90,
                     child: SalesLineChart(
                       data: c.newClientsData,
-                      lineColor: AppColors.accentPurple,
+                      lineColor: context.appColors.accent,
                     ),
                   ),
                 ],

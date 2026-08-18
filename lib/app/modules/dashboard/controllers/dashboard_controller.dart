@@ -56,12 +56,12 @@ class DashboardController extends GetxController {
   final RxList<LowStockAlertItem> lowStockAlerts = <LowStockAlertItem>[].obs;
   final RxList<NoteItem> notes = <NoteItem>[].obs;
 
-  static const _sliceColors = [
+  static List<Color> get _sliceColors => [
     AppColors.primaryPurple,
     AppColors.primaryOrange,
-    AppColors.accentPurple,
-    Color(0xFF0EA5E9),
-    Color(0xFF22C55E),
+    appColors.accent,
+    const Color(0xFF0EA5E9),
+    const Color(0xFF22C55E),
   ];
 
   @override
@@ -166,7 +166,7 @@ class DashboardController extends GetxController {
         // accentPurple, not primaryPurple — the tile's tint and label are
         // drawn from this color, and #2B1888 is too dark to read against the
         // dark theme's background.
-        iconColor: AppColors.accentPurple,
+        iconColor: appColors.accent,
       ),
     ]);
   }

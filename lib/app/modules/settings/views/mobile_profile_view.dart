@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/shared/widgets/async_button.dart';
 import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
 import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
@@ -113,25 +114,12 @@ class MobileProfileView extends StatelessWidget {
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: AppAsyncButton(
+                label: 'Save Changes',
                 onPressed: c.saveSettings,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryOrange,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text(
-                  'Save Changes',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
+                expand: true,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                radius: 10,
               ),
             ),
           ],

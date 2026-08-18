@@ -26,7 +26,15 @@ class PurchaseBinding extends Bindings {
     if (!Get.isRegistered<ClientsController>()) {
       Get.put(ClientsController(), permanent: true);
     }
-    // Fresh per visit — not fenix, so it's disposed when the Add Purchase page closes.
+    // Fresh per visit — not fenix, so it's disposed when the Add Purchase page
+    // closes. Any leftover instance is dropped first: the same form is used
+    // for "New Purchase" and for editing an existing order (opened with the
+    // order as the route argument), so a survivor from a previous visit would
+    // carry the last order's values — and its `editing` flag — into the next
+    // one.
+    if (Get.isRegistered<AddPurchaseController>()) {
+      Get.delete<AddPurchaseController>(force: true);
+    }
     Get.lazyPut<AddPurchaseController>(() => AddPurchaseController());
     Get.lazyPut<MobileAddPurchaseController>(
       () => MobileAddPurchaseController(),

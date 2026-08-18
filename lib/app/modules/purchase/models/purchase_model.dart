@@ -59,6 +59,19 @@ class PurchaseOrder {
   double get cgst => subTotal * 0.09;
 
   /// Builds a [PurchaseOrder] from the backend `/purchase-orders` JSON shape.
+  /// Units on the order — every line's quantity added up. The list's "Items"
+  /// column reads this, so a single 5-unit line shows 5 there and 5 in the
+  /// form; [itemCount] is the number of lines behind that number.
+  double get totalQty => items.fold(0.0, (s, i) => s + i.qty);
+
+  /// [totalQty] without a trailing `.0`, falling back to the line count for
+  /// older records that were saved without their lines.
+  String get totalQtyLabel {
+    if (items.isEmpty) return '$itemCount';
+    final q = totalQty;
+    return q == q.roundToDouble() ? q.toStringAsFixed(0) : q.toStringAsFixed(2);
+  }
+
   factory PurchaseOrder.fromJson(Map<String, dynamic> json) {
     DateTime? parseDate(dynamic v) =>
         v == null ? null : DateTime.parse(v as String);

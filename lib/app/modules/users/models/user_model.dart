@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Roles
@@ -34,7 +35,7 @@ extension UserRoleX on UserRole {
       case UserRole.admin:
         return const Color(0xFFF47B20); // orange
       case UserRole.manager:
-        return const Color(0xFF4A3AFF); // purple
+        return appColors.accent; // purple
       case UserRole.salesman:
         return const Color(0xFF22C55E); // green
       case UserRole.stockManager:
@@ -136,17 +137,17 @@ class UserModel {
 
 // ── Display helpers ─────────────────────────────────────────────────────────
 
-const List<Color> _badgeColors = [
-  Color(0xFFF47B20),
-  Color(0xFF4A3AFF),
-  Color(0xFF22C55E),
-  Color(0xFF0EA5E9),
-  Color(0xFFF59E0B),
-  Color(0xFFEF4444),
-  Color(0xFF8B5CF6),
-  Color(0xFF14B8A6),
-  Color(0xFFEC4899),
-  Color(0xFF6366F1),
+List<Color> get _badgeColors => [
+  const Color(0xFFF47B20),
+  appColors.accent,
+  const Color(0xFF22C55E),
+  const Color(0xFF0EA5E9),
+  const Color(0xFFF59E0B),
+  const Color(0xFFEF4444),
+  const Color(0xFF8B5CF6),
+  const Color(0xFF14B8A6),
+  const Color(0xFFEC4899),
+  const Color(0xFF6366F1),
 ];
 
 Color _badgeColorOf(String name) =>

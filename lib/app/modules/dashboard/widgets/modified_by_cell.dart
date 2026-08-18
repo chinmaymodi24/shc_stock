@@ -61,7 +61,7 @@ class ModifiedByCell extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 13,
-          backgroundColor: AppColors.accentPurple,
+          backgroundColor: context.appColors.accent,
           child: Text(
             initials,
             style: const TextStyle(

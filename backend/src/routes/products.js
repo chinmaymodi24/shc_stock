@@ -62,8 +62,9 @@ function toWriteData(body) {
 // GET /api/products
 router.get('/', async (req, res, next) => {
   try {
+    // Last added / modified first (updatedAt covers both).
     const products = await prisma.product.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
       include: productInclude,
     });
     res.json(products);

@@ -15,6 +15,7 @@ import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/shared/widgets/status_update_dialog_shell.dart';
 import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
+import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 
 // ── Table column constants (header + row MUST match) ──────────────────────
 const double _kIdxW = 32.0; // # badge
@@ -26,7 +27,7 @@ const int _kItemFlex = 8; // Items
 const int _kAmtFlex = 14; // Amount
 const int _kStsFlex = 12; // Status
 const int _kModFlex = 18; // Modified By
-const int _kActFlex = 16; // Actions — View + Edit + Delete
+const int _kActFlex = 20; // Actions — View + Edit + Duplicate + Delete
 
 // ─────────────────────────────────────────────────────────────────────────────
 class WebPurchaseLayout extends GetView<PurchaseController> {
@@ -166,7 +167,7 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                     value:
                                         '${c.stats.value.intOf('totalOrders')}',
                                     icon: Icons.receipt_long_outlined,
-                                    iconColor: const Color(0xFF4A3AFF),
+                                    iconColor: context.appColors.accent,
                                     trend: c.stats.value.trendLabel(
                                       'totalOrders',
                                     ),
@@ -594,10 +595,10 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                   flex: _kPoFlex,
                   child: Text(
                     o.poNumber,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF4A3AFF),
+                      color: context.appColors.accent,
                       fontFamily: 'Poppins',
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -613,14 +614,14 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                         width: 30,
                         height: 30,
                         decoration: BoxDecoration(
-                          color: const Color(
-                            0xFF4A3AFF,
-                          ).withValues(alpha: 0.09),
+                          color: context.appColors.accent.withValues(
+                            alpha: 0.09,
+                          ),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.business_outlined,
-                          color: Color(0xFF4A3AFF),
+                          color: context.appColors.accent,
                           size: 15,
                         ),
                       ),
@@ -658,13 +659,21 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                 Expanded(
                   flex: _kItemFlex,
                   child: Center(
-                    child: Text(
-                      '${o.itemCount}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: colors.textPrimary,
-                        fontFamily: 'Poppins',
+                    // Units, not lines — a single 5-unit line used to read "1"
+                    // here while the form showed 5. The line count is still a
+                    // hover away.
+                    child: Tooltip(
+                      message: o.itemCount == 1
+                          ? '1 line item'
+                          : '${o.itemCount} line items',
+                      child: Text(
+                        o.totalQtyLabel,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                          fontFamily: 'Poppins',
+                        ),
                       ),
                     ),
                   ),
@@ -684,10 +693,22 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                   ),
                 ),
 
-                // Status badge
+                // Status badge — tap to change just the status, without
+                // opening the whole record for editing.
                 Expanded(
                   flex: _kStsFlex,
-                  child: Center(child: _StatusBadge(status: o.status)),
+                  child: Center(
+                    child: Tooltip(
+                      message: 'Update status',
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => Get.dialog(
+                          _UpdateStatusDialog(order: widget.order),
+                        ),
+                        child: _StatusBadge(status: o.status),
+                      ),
+                    ),
+                  ),
                 ),
 
                 // Modified By
@@ -709,9 +730,10 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _ActBtn(
+                      RowActionButton(
                         icon: Icons.remove_red_eye_outlined,
-                        color: const Color(0xFF4A3AFF),
+                        color: context.appColors.success,
+                        bg: context.appColors.success.withValues(alpha: 0.10),
                         tooltip: 'View',
                         onTap: () => Get.dialog(
                           PurchaseDetailsDialog(
@@ -724,18 +746,34 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                         ),
                       ),
                       const SizedBox(width: 5),
-                      _ActBtn(
+                      RowActionButton(
                         icon: Icons.edit_outlined,
-                        color: const Color(0xFFF59E0B),
-                        tooltip: 'Update Status',
-                        onTap: () => Get.dialog(
-                          _UpdateStatusDialog(order: widget.order),
+                        color: AppColors.primaryOrange,
+                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
+                        tooltip: 'Edit',
+                        // Opens the same form Add Purchase uses, pre-filled
+                        // from this order; saving updates it in place.
+                        onTap: () => Get.toNamed(
+                          AppRoutes.addPurchase,
+                          arguments: widget.order,
                         ),
                       ),
                       const SizedBox(width: 5),
-                      _ActBtn(
+                      RowActionButton(
+                        icon: Icons.copy_outlined,
+                        color: const Color(0xFF3B82F6),
+                        bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                        tooltip: 'Duplicate',
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 5),
+                      RowActionButton(
                         icon: Icons.delete_outline_rounded,
-                        color: const Color(0xFFEF4444),
+                        iconSize: 18,
+                        color: context.appColors.error,
+                        // Neutral, not red-tinted — only the icon carries
+                        // the warning color.
+                        bg: context.appColors.tagBg,
                         tooltip: 'Delete',
                         onTap: widget.onDelete,
                       ),
@@ -788,39 +826,6 @@ class _PurchaseRowState extends State<_PurchaseRow> {
   }
 }
 
-class _ActBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String tooltip;
-  final VoidCallback onTap;
-  const _ActBtn({
-    required this.icon,
-    required this.color,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(7),
-        child: Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Icon(icon, color: color, size: 14),
-        ),
-      ),
-    );
-  }
-}
-
 // Status Badge
 class _StatusBadge extends StatelessWidget {
   final PurchaseStatus status;
@@ -839,8 +844,8 @@ class _StatusBadge extends StatelessWidget {
         fg = const Color(0xFFF59E0B);
         break;
       case PurchaseStatus.pending:
-        bg = const Color(0xFF4A3AFF).withValues(alpha: 0.1);
-        fg = const Color(0xFF4A3AFF);
+        bg = context.appColors.accent.withValues(alpha: 0.1);
+        fg = context.appColors.accent;
         break;
       case PurchaseStatus.cancelled:
         bg = const Color(0xFFEF4444).withValues(alpha: 0.1);
@@ -1398,16 +1403,16 @@ class _TopSuppliersCard extends StatelessWidget {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF4A3AFF).withValues(alpha: 0.09),
+                        color: context.appColors.accent.withValues(alpha: 0.09),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Center(
                         child: Text(
                           _initials(supplier),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF4A3AFF),
+                            color: context.appColors.accent,
                             fontFamily: 'Poppins',
                           ),
                         ),

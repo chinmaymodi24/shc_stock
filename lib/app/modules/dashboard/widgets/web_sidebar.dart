@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/shared/widgets/logo_plate.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 class WebSidebar extends StatelessWidget {
@@ -98,12 +99,12 @@ class WebSidebar extends StatelessWidget {
             onTap: () => Get.offNamed(AppRoutes.dashboard),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Image.asset(
-                'assets/logo.png',
-                height: 90,
-                fit: BoxFit.contain,
-                alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+              child: Center(
+                child: LogoPlate(
+                  isDark: context.isDarkMode,
+                  height: 66,
+                ),
               ),
             ),
           ),

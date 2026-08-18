@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/session/session_controller.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/shared/widgets/async_button.dart';
 import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/controllers/add_purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
@@ -26,59 +28,67 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
 
   Future<void> _savePurchase() async {
     final c = Get.find<PurchaseController>();
-    final newId = 'po_${DateTime.now().millisecondsSinceEpoch}';
+    // Editing keeps the record's own id, PO number and status — only the
+    // details being edited change.
+    final editing = controller.editing;
+    final newId = editing?.id ?? 'po_${DateTime.now().millisecondsSinceEpoch}';
     final newPoNum =
+        editing?.poNumber ??
         'PO-2024-${(10000 + c.orders.length + 1).toString().padLeft(5, '0')}';
     final supplierName = controller.client.value.isEmpty
         ? 'Unknown Supplier'
         : controller.client.value;
-    final ok = await c.addOrder(
-      PurchaseOrder(
-        id: newId,
-        poNumber: newPoNum,
-        supplier: supplierName,
-        supplierIcon: supplierName.substring(0, 2).toUpperCase(),
-        date: controller.invoiceDate.value ?? DateTime.now(),
-        itemCount: controller.items.length,
-        amount: controller.grandTotal,
-        status: PurchaseStatus.pending,
-        modifiedBy: currentActorName,
-        modifiedAt: DateTime.now(),
-        supplierAddress: controller.addressCtrl.text.trim(),
-        buyerGst: controller.buyerGstCtrl.text.trim(),
-        pan: controller.panCtrl.text.trim(),
-        invoiceNo: controller.invoiceNoCtrl.text.trim().isEmpty
-            ? newPoNum
-            : controller.invoiceNoCtrl.text.trim(),
-        invoiceDate: controller.invoiceDate.value,
-        despatchThrough: controller.despatchThrough.value,
-        lrNo: controller.lrNoCtrl.text.trim(),
-        lrDate: controller.lrDate.value,
-        vehicleNo: controller.vehicleNoCtrl.text.trim(),
-        freight: double.tryParse(controller.freightCtrl.text.trim()) ?? 0,
-        placeOfSupply: controller.placeOfSupplyCtrl.text.trim(),
-        dueDate: controller.dueDate.value,
-        items: controller.items
-            .map(
-              (r) => PurchaseDetailItem(
-                productId: r.productId,
-                product: r.product,
-                hsn: r.hsn,
-                grade: r.grade,
-                density: r.density,
-                qty: r.totalQty,
-                unit: r.uom,
-                rate: r.netPrice,
-              ),
-            )
-            .toList(),
-      ),
+    final order = PurchaseOrder(
+      id: newId,
+      poNumber: newPoNum,
+      supplier: supplierName,
+      supplierIcon: supplierName.substring(0, 2).toUpperCase(),
+      date: controller.invoiceDate.value ?? DateTime.now(),
+      itemCount: controller.items.length,
+      amount: controller.grandTotal,
+      status: editing?.status ?? PurchaseStatus.pending,
+      modifiedBy: currentActorName,
+      modifiedAt: DateTime.now(),
+      supplierAddress: controller.addressCtrl.text.trim(),
+      buyerGst: controller.buyerGstCtrl.text.trim(),
+      pan: controller.panCtrl.text.trim(),
+      invoiceNo: controller.invoiceNoCtrl.text.trim().isEmpty
+          ? newPoNum
+          : controller.invoiceNoCtrl.text.trim(),
+      invoiceDate: controller.invoiceDate.value,
+      despatchThrough: controller.despatchThrough.value,
+      lrNo: controller.lrNoCtrl.text.trim(),
+      lrDate: controller.lrDate.value,
+      vehicleNo: controller.vehicleNoCtrl.text.trim(),
+      freight: double.tryParse(controller.freightCtrl.text.trim()) ?? 0,
+      placeOfSupply: controller.placeOfSupplyCtrl.text.trim(),
+      dueDate: controller.dueDate.value,
+      items: controller.items
+          .map(
+            (r) => PurchaseDetailItem(
+              productId: r.productId,
+              product: r.product,
+              hsn: r.hsn,
+              grade: r.grade,
+              density: r.density,
+              qty: r.totalQty,
+              unit: r.uom,
+              rate: r.netPrice,
+            ),
+          )
+          .toList(),
     );
+
+    final ok = editing == null
+        ? await c.addOrder(order)
+        : await c.updateOrder(order);
     if (!ok) return; // controller already showed the error toast
-    Get.back();
+    Get.offNamed(AppRoutes.purchase);
     showAppToast(
-      '✅ Purchase Saved',
-      '$newPoNum has been successfully created.',
+      editing == null ? '✅ Purchase Saved' : '✅ Purchase Updated',
+      editing == null
+          ? '$newPoNum has been successfully created.'
+          : '$newPoNum has been successfully updated.',
       backgroundColor: const Color(0xFF22C55E),
       colorText: Colors.white,
     );
@@ -108,14 +118,16 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
                           children: [
                             AppBackButton(
                               colors: colors,
-                              onTap: () => Get.back(),
+                              onTap: () => Get.offNamed(AppRoutes.purchase),
                             ),
                             const SizedBox(width: 14),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Add Purchase',
+                                  controller.isEditing
+                                      ? 'Edit Purchase'
+                                      : 'Add Purchase',
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.w700,
@@ -125,7 +137,9 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  "Enter details as they appear on the supplier's tax invoice",
+                                  controller.isEditing
+                                      ? 'Editing ${controller.editing!.poNumber} — change any detail and save'
+                                      : "Enter details as they appear on the supplier's tax invoice",
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     color: colors.textSecondary,
@@ -510,7 +524,7 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             OutlinedButton(
-                              onPressed: () => Get.back(),
+                              onPressed: () => Get.offNamed(AppRoutes.purchase),
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(color: colors.border),
                                 padding: const EdgeInsets.symmetric(
@@ -531,28 +545,11 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            ElevatedButton(
+                            AppAsyncButton(
+                              label: controller.isEditing
+                                  ? 'Update Purchase'
+                                  : 'Save Purchase',
                               onPressed: _savePurchase,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryOrange,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 22,
-                                  vertical: 13,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(9),
-                                ),
-                              ),
-                              child: const Text(
-                                'Save Purchase',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
                             ),
                           ],
                         ),
@@ -572,13 +569,13 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
 // ─────────────────────────────────────────────────────────────────────────────
 // Item Details Table
 // ─────────────────────────────────────────────────────────────────────────────
-const int _cItem = 34;
+const int _cItem = 31;
 const int _cHsn = 10;
 const int _cGrade = 8;
 const int _cDensity = 9;
 const int _cNoPkg = 8;
 const int _cAvgCont = 10;
-const int _cTotalQty = 8;
+const int _cTotalQty = 13;
 const int _cUom = 9;
 const int _cNetPrice = 11;
 const int _cAmount = 14;
@@ -813,22 +810,16 @@ class _ItemDetailsRow extends StatelessWidget {
           const SizedBox(width: 6),
           Expanded(
             flex: _cTotalQty,
-            child: Container(
-              height: 32,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: colors.rowEven,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: colors.border),
-              ),
-              child: Text(
-                row.totalQty == 0 ? '0' : row.totalQty.toStringAsFixed(0),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colors.textSecondary,
-                  fontFamily: 'Poppins',
-                ),
-              ),
+            // Editable, with ± steppers — the total used to be a read-only
+            // readout of packs x per-pack, so a plain quantity could only be
+            // entered through those two boxes.
+            child: AppSmallStepper(
+              value: row.totalQty,
+              colors: colors,
+              onChanged: (v) {
+                row.totalQty = v;
+                onChanged();
+              },
             ),
           ),
           const SizedBox(width: 6),

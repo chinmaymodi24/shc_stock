@@ -266,7 +266,7 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
                 icon: Icons.apps_rounded,
                 label: 'Total Modules',
                 value: '${controller.perms.length}',
-                color: const Color(0xFF4A3AFF),
+                color: context.appColors.accent,
               ),
             ]),
           ),

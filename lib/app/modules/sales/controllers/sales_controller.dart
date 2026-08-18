@@ -29,6 +29,10 @@ class SalesController extends GetxController {
   final RxString searchQuery = ''.obs;
   final RxSet<String> statusFilters = <String>{}.obs;
   final RxSet<String> paymentFilters = <String>{}.obs;
+
+  /// Client names ticked in the toolbar's "Client" filter — the design's
+  /// sales list filters by client rather than by status/payment.
+  final RxSet<String> clientFilters = <String>{}.obs;
   final RxString sortOption = 'Default'.obs;
   final RxInt rowsPerPage = 10.obs;
   final RxInt currentPage = 1.obs;
@@ -53,6 +57,7 @@ class SalesController extends GetxController {
     searchQuery.value = '';
     statusFilters.clear();
     paymentFilters.clear();
+    clientFilters.clear();
     sortOption.value = 'Default';
     currentPage.value = 1;
   }
@@ -164,6 +169,30 @@ class SalesController extends GetxController {
     return 'Not enough stock —\n${lines.join('\n')}';
   }
 
+  /// Replaces an existing order — the whole record, not just its status.
+  /// The server puts the old lines' stock back and takes the new lines out in
+  /// one transaction, so an edit can fail on insufficient stock exactly like
+  /// a create can, and gets the same per-item message.
+  Future<bool> updateOrder(SalesOrder order) async {
+    try {
+      final json = await _api.put(
+        '/sales-orders/${order.id}',
+        order.toCreateJson(),
+      );
+      final saved = SalesOrder.fromJson(json as Map<String, dynamic>);
+      // Last modified first: the edited order goes back to the top.
+      final idx = orders.indexWhere((o) => o.id == order.id);
+      if (idx != -1) orders.removeAt(idx);
+      orders.insert(0, saved);
+      await refreshStockViews();
+      await fetchStats();
+      return true;
+    } catch (e) {
+      _showError(_stockAwareMessage(e, 'Failed to update sales order.'));
+      return false;
+    }
+  }
+
   Future<void> deleteOrder(String id) async {
     try {
       await _api.delete('/sales-orders/$id');
@@ -189,7 +218,8 @@ class SalesController extends GetxController {
         if (status != null) 'status': status.label,
         if (paymentStatus != null) 'paymentStatus': paymentStatus.label,
       });
-      orders[idx] = SalesOrder.fromJson(json as Map<String, dynamic>);
+      orders.removeAt(idx);
+      orders.insert(0, SalesOrder.fromJson(json as Map<String, dynamic>));
     } catch (e) {
       _showError('Failed to update status.');
     }
