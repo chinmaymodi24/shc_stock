@@ -101,48 +101,53 @@ class AppTableFooter extends StatelessWidget {
               ),
             ),
           ),
-          if (summaryText != null)
-            const SizedBox(width: 16)
-          else
-            const Spacer(),
-          // The pager is a fixed-width cluster; on a narrow table it used to
-          // push a few pixels past the card edge, so let it scroll instead.
-          Flexible(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              reverse: true,
-              child: Row(
-                children: [
-                  _PageBtn(
-                    icon: Icons.first_page_rounded,
-                    enabled: currentPage > 1,
-                    colors: colors,
-                    onTap: () => onPageChanged(1),
-                  ),
-                  const SizedBox(width: 4),
-                  _PageBtn(
-                    icon: Icons.chevron_left_rounded,
-                    enabled: currentPage > 1,
-                    colors: colors,
-                    onTap: () => onPageChanged(currentPage - 1),
-                  ),
-                  const SizedBox(width: 6),
-                  ..._pageNumbers(),
-                  const SizedBox(width: 6),
-                  _PageBtn(
-                    icon: Icons.chevron_right_rounded,
-                    enabled: currentPage < totalPages,
-                    colors: colors,
-                    onTap: () => onPageChanged(currentPage + 1),
-                  ),
-                  const SizedBox(width: 4),
-                  _PageBtn(
-                    icon: Icons.last_page_rounded,
-                    enabled: currentPage < totalPages,
-                    colors: colors,
-                    onTap: () => onPageChanged(totalPages),
-                  ),
-                ],
+          if (summaryText != null) const SizedBox(width: 16),
+          // Expanded (not Flexible) so this claims all remaining row width by
+          // itself — with no sibling Spacer competing for the same flex
+          // space, the pager is guaranteed to sit flush against the card's
+          // right edge instead of drifting toward the middle. Align then
+          // pins the fixed-width button cluster to that edge; the
+          // SingleChildScrollView only kicks in if a narrow table ever makes
+          // the cluster wider than the space left for it.
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                reverse: true,
+                child: Row(
+                  children: [
+                    _PageBtn(
+                      icon: Icons.first_page_rounded,
+                      enabled: currentPage > 1,
+                      colors: colors,
+                      onTap: () => onPageChanged(1),
+                    ),
+                    const SizedBox(width: 4),
+                    _PageBtn(
+                      icon: Icons.chevron_left_rounded,
+                      enabled: currentPage > 1,
+                      colors: colors,
+                      onTap: () => onPageChanged(currentPage - 1),
+                    ),
+                    const SizedBox(width: 6),
+                    ..._pageNumbers(),
+                    const SizedBox(width: 6),
+                    _PageBtn(
+                      icon: Icons.chevron_right_rounded,
+                      enabled: currentPage < totalPages,
+                      colors: colors,
+                      onTap: () => onPageChanged(currentPage + 1),
+                    ),
+                    const SizedBox(width: 4),
+                    _PageBtn(
+                      icon: Icons.last_page_rounded,
+                      enabled: currentPage < totalPages,
+                      colors: colors,
+                      onTap: () => onPageChanged(totalPages),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

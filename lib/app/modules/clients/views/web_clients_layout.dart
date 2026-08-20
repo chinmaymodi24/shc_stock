@@ -795,7 +795,11 @@ class _ClientRowState extends State<_ClientRow> {
                         color: const Color(0xFF3B82F6),
                         bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
                         tooltip: 'Duplicate',
-                        onTap: () {},
+                        // Opens Add Client pre-filled from this client, but
+                        // as a new draft — saving creates a new client and
+                        // never touches the one duplicated from.
+                        onTap: () =>
+                            Get.toNamed(AppRoutes.addClient, arguments: cl),
                       ),
                       const SizedBox(width: 5),
                       RowActionButton(

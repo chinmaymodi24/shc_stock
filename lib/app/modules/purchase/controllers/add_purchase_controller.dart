@@ -47,6 +47,14 @@ class PurchaseItemRow {
   double get amount => totalQty * netPrice;
 }
 
+/// Marks a "Duplicate" navigation: the form loads from [order] but never
+/// tracks it as `editing`, so Save always POSTs a brand-new record and the
+/// original order is left untouched.
+class DuplicatePurchaseOrder {
+  final PurchaseOrder order;
+  const DuplicatePurchaseOrder(this.order);
+}
+
 class AddPurchaseController extends GetxController {
   final client = ''.obs;
   final addressCtrl = TextEditingController();
@@ -79,12 +87,18 @@ class AddPurchaseController extends GetxController {
   void onInit() {
     super.onInit();
     final arg = Get.arguments;
-    if (arg is PurchaseOrder) loadFrom(arg);
+    if (arg is DuplicatePurchaseOrder) {
+      loadFrom(arg.order, asDuplicate: true);
+    } else if (arg is PurchaseOrder) {
+      loadFrom(arg);
+    }
   }
 
-  /// Fills the form from an existing order.
-  void loadFrom(PurchaseOrder o) {
-    editing = o;
+  /// Fills the form from an existing order. When [asDuplicate] is true,
+  /// `editing` is left null so Save (see WebNewPurchaseLayout._savePurchase)
+  /// creates a fresh record instead of updating the one it was copied from.
+  void loadFrom(PurchaseOrder o, {bool asDuplicate = false}) {
+    if (!asDuplicate) editing = o;
     client.value = o.supplier;
     addressCtrl.text = o.supplierAddress;
     buyerGstCtrl.text = o.buyerGst;

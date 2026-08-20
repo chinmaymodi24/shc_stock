@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
 import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
+import 'package:shc_stock/app/modules/sales/controllers/add_sale_controller.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
 import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
 import 'package:shc_stock/app/modules/sales/views/sale_details_dialog.dart';
@@ -871,7 +872,13 @@ class _SalesRowState extends State<_SalesRow> {
                         color: const Color(0xFF3B82F6),
                         bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
                         tooltip: 'Duplicate',
-                        onTap: () {},
+                        // Opens Add Sale pre-filled from this order, but as a
+                        // new draft — saving creates a new record and never
+                        // touches the one duplicated from.
+                        onTap: () => Get.toNamed(
+                          AppRoutes.addSale,
+                          arguments: DuplicateSalesOrder(widget.order),
+                        ),
                       ),
                       const SizedBox(width: 6),
                       RowActionButton(

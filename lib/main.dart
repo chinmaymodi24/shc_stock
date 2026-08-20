@@ -31,8 +31,20 @@ class SecureHeatCareApp extends StatelessWidget {
         themeMode: themeController.themeMode,
         initialRoute: AppPages.initial,
         getPages: AppPages.routes,
-        builder: (context, child) =>
-            ThemeRippleHost(child: child ?? const SizedBox.shrink()),
+        builder: (context, child) => Overlay(
+          // SelectionArea needs an Overlay ancestor (for selection handles /
+          // the copy toolbar). `builder` sits above GetMaterialApp's own
+          // Navigator, so we give it a dedicated one here.
+          initialEntries: [
+            OverlayEntry(
+              builder: (context) => SelectionArea(
+                child: ThemeRippleHost(
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

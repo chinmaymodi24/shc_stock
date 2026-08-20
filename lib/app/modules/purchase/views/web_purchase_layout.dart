@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
 import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
+import 'package:shc_stock/app/modules/purchase/controllers/add_purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
 import 'package:shc_stock/app/modules/purchase/views/purchase_details_dialog.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -764,7 +765,13 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                         color: const Color(0xFF3B82F6),
                         bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
                         tooltip: 'Duplicate',
-                        onTap: () {},
+                        // Opens Add Purchase pre-filled from this order, but
+                        // as a new draft — saving creates a new record and
+                        // never touches the one duplicated from.
+                        onTap: () => Get.toNamed(
+                          AppRoutes.addPurchase,
+                          arguments: DuplicatePurchaseOrder(widget.order),
+                        ),
                       ),
                       const SizedBox(width: 5),
                       RowActionButton(

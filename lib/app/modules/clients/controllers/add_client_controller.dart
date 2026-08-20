@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/modules/clients/models/client_model.dart';
 
 /// How the Billing Address section behaves — mirrors the two "Same as…"
 /// checkboxes: checking either sets this to the matching value; unchecking
@@ -92,6 +93,61 @@ class AddClientController extends GetxController {
   void onInit() {
     super.onInit();
     clientCodeCtrl.text = 'CLT-${1000 + Random().nextInt(9000)}';
+    final arg = Get.arguments;
+    if (arg is ClientModel) loadFrom(arg);
+  }
+
+  /// Fills the form from an existing client — used by the clients list's
+  /// "Duplicate" action. There is no edit/update path here: Client Code is
+  /// left as the freshly-generated one above (so it stays unique) and Save
+  /// always POSTs a new client, leaving the one duplicated from untouched.
+  void loadFrom(ClientModel c) {
+    clientType.value = c.clientType;
+    nameCtrl.text = c.name;
+    emailCtrl.text = c.email;
+    phoneCtrl.text = c.phone;
+    altPhCtrl.text = c.altPhone;
+    gstinCtrl.text = c.gstin;
+    panCtrl.text = c.pan;
+    clientSince.value = c.clientSince;
+
+    regAddr1Ctrl.text = c.regAddr1;
+    regAddr2Ctrl.text = c.regAddr2;
+    regCityCtrl.text = c.regCity;
+    regStateCtrl.text = c.regState;
+    regPinCtrl.text = c.regPin;
+    regCountryCtrl.text = c.regCountry;
+
+    shippingSameAsRegistered.value = c.shipSameAsRegistered;
+    shippingSameAsBilling.value = c.shipSameAsBilling;
+    shipAddr1Ctrl.text = c.shipAddr1;
+    shipAddr2Ctrl.text = c.shipAddr2;
+    shipCityCtrl.text = c.shipCity;
+    shipStateCtrl.text = c.shipState;
+    shipPinCtrl.text = c.shipPin;
+    shipCountryCtrl.text = c.shipCountry;
+
+    billingAddressMode.value = BillingAddressMode.values.firstWhere(
+      (m) => m.name == c.billingMode,
+      orElse: () => BillingAddressMode.shipping,
+    );
+    billAddr1Ctrl.text = c.billAddr1;
+    billAddr2Ctrl.text = c.billAddr2;
+    billCityCtrl.text = c.billCity;
+    billStateCtrl.text = c.billState;
+    billPinCtrl.text = c.billPin;
+    billCountryCtrl.text = c.billCountry;
+
+    paymentTerms.value = c.paymentTerms;
+    priceList.value = c.priceList;
+    opBalCtrl.text = c.openingBalance == 0 ? '' : c.openingBalance.toString();
+    crLimCtrl.text = c.creditLimit == 0 ? '' : c.creditLimit.toString();
+    crDaysCtrl.text = c.creditDays.toString();
+
+    cpNameCtrl.text = c.contactPerson;
+    cpDesigCtrl.text = c.contactDesignation;
+    cpPhCtrl.text = c.contactPhone;
+    cpEmailCtrl.text = c.contactEmail;
   }
 
   /// True while a save is in flight — disables the Save button.
