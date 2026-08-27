@@ -1028,13 +1028,11 @@ class _NewThisMonthCard extends StatelessWidget {
 class _SumRow extends StatelessWidget {
   final String label, value;
   final AppThemeColors colors;
-  final Color? valueColor;
   final bool isLast;
   const _SumRow({
     required this.label,
     required this.value,
     required this.colors,
-    this.valueColor,
     this.isLast = false,
   });
 
@@ -1066,7 +1064,7 @@ class _SumRow extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: valueColor ?? colors.textPrimary,
+              color: colors.textPrimary,
               fontFamily: 'Poppins',
             ),
           ),

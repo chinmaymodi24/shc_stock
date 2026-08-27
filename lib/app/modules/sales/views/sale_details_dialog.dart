@@ -35,7 +35,11 @@ class SaleDetailsDialog extends StatelessWidget {
       child: Align(
         alignment: Alignment.centerRight,
         child: Container(
-          width: 407,
+          // Full-width on phones — a fixed 407px side panel would overflow
+          // (and mostly clip off-screen) on anything narrower than that.
+          width: MediaQuery.of(context).size.width < 480
+              ? MediaQuery.of(context).size.width
+              : 407,
           height: double.infinity,
           decoration: BoxDecoration(
             color: colors.surface,
@@ -103,7 +107,11 @@ class SaleDetailsDialog extends StatelessWidget {
                           order.clientAddress,
                           style: TextStyle(
                             fontSize: 12.5,
-                            color: AppColors.primaryPurple,
+                            // Was AppColors.primaryPurple — a fixed dark
+                            // indigo that's nearly invisible against the
+                            // dark theme's surface. Muted secondary text
+                            // reads correctly in both themes.
+                            color: colors.textSecondary,
                             fontFamily: 'Poppins',
                             height: 1.4,
                           ),

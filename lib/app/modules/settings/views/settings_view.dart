@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'mobile_settings_view.dart';
+import 'mobile_profile_hub_view.dart';
 import 'web_settings_layout.dart';
 
 class SettingsView extends StatelessWidget {
@@ -9,7 +9,7 @@ class SettingsView extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= 700) return const WebSettingsLayout();
-        return const MobileSettingsView();
+        return const MobileProfileHubView();
       },
     );
   }

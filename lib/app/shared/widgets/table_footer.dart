@@ -63,7 +63,11 @@ class AppTableFooter extends StatelessWidget {
                 ),
               ),
             ),
-            const Spacer(),
+            // Fixed gap, not a Spacer — a Spacer here would compete with the
+            // Expanded below for the row's leftover width, splitting it in
+            // half and stranding the pager in the middle instead of flush
+            // against the card's right edge.
+            const SizedBox(width: 24),
           ],
           Text(
             'Rows per page:',

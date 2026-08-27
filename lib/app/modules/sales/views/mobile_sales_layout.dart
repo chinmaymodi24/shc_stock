@@ -7,6 +7,11 @@ import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
+import 'package:shc_stock/app/modules/sales/views/sale_details_dialog.dart';
+import 'package:shc_stock/app/modules/sales/views/update_sales_status_dialog.dart';
+import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_filter_sheet.dart';
 
 class MobileSalesLayout extends GetView<SalesController> {
   const MobileSalesLayout({super.key});
@@ -35,6 +40,15 @@ class MobileSalesLayout extends GetView<SalesController> {
         ),
         centerTitle: false,
         actions: [
+          Obx(
+            () => MobileFilterButton(
+              filters: _buildFilters(
+                c,
+                c.orders.map((o) => o.client).toSet().toList()..sort(),
+              ),
+              onClear: c.resetFilters,
+            ),
+          ),
           Stack(
             children: [
               IconButton(
@@ -65,7 +79,7 @@ class MobileSalesLayout extends GetView<SalesController> {
       body: Obx(() {
         final all = c.orders;
         final tabIndex = c.mobileTabIndex.value;
-        final filtered = tabIndex == 0
+        final byTab = tabIndex == 0
             ? all.toList()
             : tabIndex == 1
             ? all
@@ -76,6 +90,22 @@ class MobileSalesLayout extends GetView<SalesController> {
                   )
                   .toList()
             : all.where((o) => o.status == SalesStatus.delivered).toList();
+
+        // Same filter logic as WebSalesLayout — search + Client — layered
+        // on top of the mobile-only status tab above.
+        final q = c.searchQuery.value.toLowerCase();
+        final clientFilters = c.clientFilters;
+        final filtered = byTab.where((o) {
+          if (q.isNotEmpty &&
+              !o.client.toLowerCase().contains(q) &&
+              !o.soNumber.toLowerCase().contains(q)) {
+            return false;
+          }
+          if (clientFilters.isNotEmpty && !clientFilters.contains(o.client)) {
+            return false;
+          }
+          return true;
+        }).toList();
 
         return Column(
           children: [
@@ -118,6 +148,22 @@ class MobileSalesLayout extends GetView<SalesController> {
                     ),
                   ],
                 ),
+              ),
+            ),
+
+            // ── Search bar — same FilterSearchField the web filter row
+            // uses, instead of the ad-hoc TextField every other page used
+            // to hand-roll.
+            Container(
+              color: colors.surface,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: FilterSearchField(
+                hint: 'Search by item or SO...',
+                width: double.infinity,
+                onChanged: (v) {
+                  c.searchQuery.value = v;
+                  c.currentPage.value = 1;
+                },
               ),
             ),
 
@@ -186,20 +232,33 @@ class MobileSalesLayout extends GetView<SalesController> {
           ],
         );
       }),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => Get.toNamed(AppRoutes.addSale),
         backgroundColor: AppColors.primaryOrange,
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text(
-          'New Order',
-          style: TextStyle(
-            color: Colors.white,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
     );
+  }
+
+  // Same data/controller binding as WebSalesLayout's FilterBar — Client —
+  // shown as a flat chip group instead of a dropdown pill (see
+  // mobile_filter_sheet.dart for why).
+  List<Widget> _buildFilters(SalesController c, List<String> clients) {
+    return [
+      MobileFilterChipGroup(
+        label: 'Client',
+        items: clients,
+        selected: c.clientFilters,
+        onToggle: (v) {
+          if (c.clientFilters.contains(v)) {
+            c.clientFilters.remove(v);
+          } else {
+            c.clientFilters.add(v);
+          }
+          c.currentPage.value = 1;
+        },
+      ),
+    ];
   }
 }
 
@@ -466,31 +525,53 @@ class _MobileOrderCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 14),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: context.appColors.accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => Get.dialog(
+                  SaleDetailsDialog(
+                    order: o,
+                    onDelete: () {
+                      Get.back();
+                      confirmDelete(
+                        context,
+                        itemName: o.soNumber,
+                        itemLabel: 'Sales Order',
+                        onConfirm: () =>
+                            Get.find<SalesController>().deleteOrder(o.id),
+                      );
+                    },
+                  ),
                 ),
-                child: Icon(
-                  Icons.remove_red_eye_outlined,
-                  color: context.appColors.accent,
-                  size: 16,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: context.appColors.accent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.remove_red_eye_outlined,
+                    color: context.appColors.accent,
+                    size: 16,
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: colors.iconBgPurple,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.more_vert_rounded,
-                  color: colors.textSecondary,
-                  size: 16,
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => Get.dialog(UpdateSalesStatusDialog(order: o)),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: colors.iconBgPurple,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.more_vert_rounded,
+                    color: colors.textSecondary,
+                    size: 16,
+                  ),
                 ),
               ),
             ],

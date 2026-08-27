@@ -76,6 +76,10 @@ class WebSidebar extends StatelessWidget {
     AppRoutes.purchase,
     AppRoutes.sales,
     AppRoutes.clients,
+    // Reports was left out of this set from an earlier build; the module is
+    // fully wired to /api/stats/reports (see ReportsController) so it
+    // belongs here same as every other finished module.
+    AppRoutes.reports,
     AppRoutes.users,
     AppRoutes.settings,
   };
@@ -101,10 +105,7 @@ class WebSidebar extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
               child: Center(
-                child: LogoPlate(
-                  isDark: context.isDarkMode,
-                  height: 66,
-                ),
+                child: LogoPlate(isDark: context.isDarkMode, height: 66),
               ),
             ),
           ),

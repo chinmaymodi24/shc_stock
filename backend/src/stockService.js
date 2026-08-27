@@ -35,7 +35,7 @@ function toStockLines(items = []) {
 /// Applies stock lines in `direction` (+1 adds, -1 removes) and logs a movement
 /// row for each. Throws InsufficientStockError when a removal would go
 /// negative, so the surrounding transaction rolls back.
-async function applyStock(tx, { lines, direction, type, refType, refId, reference, note = '', createdBy = 'Admin' }) {
+async function applyStock(tx, { lines, direction, type, refType, refId, reference, note = '', createdBy = 'Admin', rate = null }) {
   if (!lines.length) return [];
 
   const products = await tx.product.findMany({
@@ -77,6 +77,7 @@ async function applyStock(tx, { lines, direction, type, refType, refId, referenc
           productId: line.productId,
           type,
           qty: line.qty,
+          rate,
           refType,
           refId: refId ?? null,
           reference,

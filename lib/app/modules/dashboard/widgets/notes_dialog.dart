@@ -10,12 +10,14 @@ class NotesDialog extends StatelessWidget {
   final RxList<NoteItem> notes;
   final void Function(int index) onToggle;
   final void Function(String text) onAdd;
+  final void Function(int index)? onDelete;
 
   const NotesDialog({
     super.key,
     required this.notes,
     required this.onToggle,
     required this.onAdd,
+    this.onDelete,
   });
 
   @override
@@ -123,6 +125,7 @@ class NotesDialog extends StatelessWidget {
                         notes: notes,
                         onToggle: onToggle,
                         onAdd: onAdd,
+                        onDelete: onDelete,
                       ),
                     ),
                   ),

@@ -18,6 +18,7 @@ import 'package:shc_stock/app/core/utils/stock_sync.dart';
 import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
 import 'package:shc_stock/app/modules/products/views/add_product_dialog.dart';
 import 'package:shc_stock/app/modules/stock/views/stock_item_details_panel.dart';
+import 'package:shc_stock/app/modules/stock/views/stock_adjustment_dialog.dart';
 
 ProductsController _productsController() {
   if (Get.isRegistered<ProductsController>()) {
@@ -166,14 +167,19 @@ class WebStockLayout extends GetView<StockController> {
                                 ],
                               ),
                               ElevatedButton.icon(
-                                onPressed: () {},
+                                // Inventory quantities only ever move through
+                                // purchases/sales (automatic) or here
+                                // (manual, with a reason) — there's no
+                                // freeform "add item" on this page.
+                                onPressed: () =>
+                                    Get.dialog(const StockAdjustmentDialog()),
                                 icon: const Icon(
-                                  Icons.add_rounded,
+                                  Icons.tune_rounded,
                                   color: Colors.white,
                                   size: 18,
                                 ),
                                 label: const Text(
-                                  'Add Item',
+                                  'Adjust Stock',
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,

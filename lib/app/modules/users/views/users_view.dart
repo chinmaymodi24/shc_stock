@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'web_users_layout.dart';
+import 'mobile_users_layout.dart';
 
 class UsersView extends StatelessWidget {
   const UsersView({super.key});
@@ -8,7 +9,8 @@ class UsersView extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return const WebUsersLayout();
+        if (constraints.maxWidth >= 700) return const WebUsersLayout();
+        return const MobileUsersLayout();
       },
     );
   }

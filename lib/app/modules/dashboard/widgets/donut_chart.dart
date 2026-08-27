@@ -51,25 +51,35 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
               _hovered.value = _sliceAt(event.localPosition);
             },
             onExit: (_) => _hovered.value = -1,
-            child: SizedBox(
-              width: widget.size,
-              height: widget.size,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _DonutPainter(
-                        slices: widget.slices,
-                        hoveredIndex: hovered,
-                        ringInset: _ringInset,
-                        strokeWidth: _strokeWidth,
+            // Touch devices never fire onHover — tap toggles the slice under
+            // the finger so the chart works identically on mobile.
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (d) {
+                _cursor.value = d.localPosition;
+                final slice = _sliceAt(d.localPosition);
+                _hovered.value = _hovered.value == slice ? -1 : slice;
+              },
+              child: SizedBox(
+                width: widget.size,
+                height: widget.size,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _DonutPainter(
+                          slices: widget.slices,
+                          hoveredIndex: hovered,
+                          ringInset: _ringInset,
+                          strokeWidth: _strokeWidth,
+                        ),
                       ),
                     ),
-                  ),
-                  if (hovered >= 0 && hovered < widget.slices.length)
-                    _buildTooltip(hovered),
-                ],
+                    if (hovered >= 0 && hovered < widget.slices.length)
+                      _buildTooltip(hovered),
+                  ],
+                ),
               ),
             ),
           );
@@ -109,12 +119,17 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
                         onExit: (_) {
                           if (_hovered.value == i) _hovered.value = -1;
                         },
-                        child: SizedBox(
-                          height: _legendRowHeight,
-                          child: _LegendItem(
-                            slice: widget.slices[i],
-                            highlighted: hovered == i,
-                            dimmed: hovered >= 0 && hovered != i,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () =>
+                              _hovered.value = _hovered.value == i ? -1 : i,
+                          child: SizedBox(
+                            height: _legendRowHeight,
+                            child: _LegendItem(
+                              slice: widget.slices[i],
+                              highlighted: hovered == i,
+                              dimmed: hovered >= 0 && hovered != i,
+                            ),
                           ),
                         ),
                       ),
@@ -137,7 +152,8 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
     final mid = widget.size / 2 - _ringInset;
     final delta = local - center;
     final distance = delta.distance;
-    if (distance < mid - _strokeWidth / 2 || distance > mid + _strokeWidth / 2) {
+    if (distance < mid - _strokeWidth / 2 ||
+        distance > mid + _strokeWidth / 2) {
       return -1;
     }
 

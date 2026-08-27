@@ -28,7 +28,14 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
     super.initState();
 
     if (kIsWeb) {
-      Future.microtask(() => Get.offAllNamed(AppRoutes.login));
+      // Post-frame, not microtask: a microtask swaps the route tree inside the
+      // very first frame, so when the browser hands focus to the Flutter view
+      // the focus traversal walks a RenderStack that has never been laid out
+      // ("RenderBox was not laid out" assert). Waiting for the first frame to
+      // finish gives every render object a size before the route changes.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Get.offAllNamed(AppRoutes.login);
+      });
       return;
     }
 
@@ -84,63 +91,66 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
         children: [
           // ── Dot grid – top-left ────────────────────────────────
           Positioned(
-            top: top + 18,
-            left: 18,
+            top: top + 24,
+            left: 24,
             child: FadeTransition(opacity: _fadeAnim, child: const _DotGrid()),
           ),
 
           // ── Dot grid – bottom-right (subtle) ──────────────────
           Positioned(
-            bottom: bottom + 90,
-            right: 18,
+            bottom: bottom + 120,
+            right: 24,
             child: FadeTransition(
               opacity: _fadeAnim,
-              child: Opacity(opacity: 0.38, child: const _DotGrid()),
+              child: Opacity(opacity: 0.40, child: const _DotGrid()),
             ),
           ),
 
-          // ── Main column ─────────────────────────────────────────
-          Column(
-            children: [
-              SizedBox(height: top + 12),
-              const Spacer(flex: 2),
-
-              // Animated orbital ring + logo
-              FadeTransition(
-                opacity: _fadeAnim,
-                child: ScaleTransition(
-                  scale: _scaleAnim,
-                  child: const _OrbitalRing(),
+          // ── Ring + tagline, centred together as one block ──────
+          // The web splash centres `.orbit-wrap` and hangs the tagline
+          // 24 px under it; keeping them in one centred column is what
+          // reproduces those proportions on a phone.
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FadeTransition(
+                  opacity: _fadeAnim,
+                  child: ScaleTransition(
+                    scale: _scaleAnim,
+                    child: const _OrbitalRing(),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 24),
+                FadeTransition(
+                  opacity: _textFadeAnim,
+                  child: const _TaglineBlock(),
+                ),
+              ],
+            ),
+          ),
 
-              const Spacer(flex: 2),
+          // ── City skyline, pinned to the bottom edge ────────────
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: SizedBox(
+              width: size.width,
+              height: size.height * 0.11,
+              child: CustomPaint(painter: _CityPainter()),
+            ),
+          ),
 
-              // Tagline
-              FadeTransition(
-                opacity: _textFadeAnim,
-                child: const _TaglineBlock(),
-              ),
-
-              const Spacer(flex: 2),
-
-              // City skyline
-              SizedBox(
-                width: size.width,
-                height: size.height * 0.11,
-                child: CustomPaint(painter: _CityPainter()),
-              ),
-
-              const SizedBox(height: 20),
-
-              // The app's three-dot indicator, same as every page uses.
-              FadeTransition(
-                opacity: _textFadeAnim,
-                child: const AppLoadingIndicator(padding: 0),
-              ),
-
-              SizedBox(height: bottom + 28),
-            ],
+          // ── The app's three-dot indicator, same as every page uses ──
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: bottom + 36,
+            child: FadeTransition(
+              opacity: _textFadeAnim,
+              child: const AppLoadingIndicator(padding: 0),
+            ),
           ),
         ],
       ),
@@ -278,45 +288,42 @@ class _OrbitalRingState extends State<_OrbitalRing>
               // ── Full Secure Heat Care logo (static – does not rotate) ────
               Image.asset('assets/logo.png', width: 210, fit: BoxFit.contain),
 
-              // ── Orbiting feature icons ───────────────────────────────────
+              // ── Feature icons ────────────────────────────────────────────
+              // They sit still at their anchor points — only the dashed ring
+              // sweeps past behind them, exactly like the web splash.
               for (int i = 0; i < _kFeatures.length; i++) ...[
                 Transform.translate(
-                  // Icon position rotates with the orbit
                   offset: Offset(
-                    _orbitR * math.cos(_kFeatures[i].angle + orbitAngle),
-                    _orbitR * math.sin(_kFeatures[i].angle + orbitAngle),
+                    _orbitR * math.cos(_kFeatures[i].angle),
+                    _orbitR * math.sin(_kFeatures[i].angle),
                   ),
-                  child: Transform.rotate(
-                    // Counter-rotate so the icon stays upright
-                    angle: -orbitAngle,
-                    child: Transform.scale(
-                      // Staggered elastic pop-in
-                      scale: _iconScale(i),
-                      child: Container(
-                        width: _btnSz,
-                        height: _btnSz,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white,
-                          border: Border.all(
-                            color: AppColors.primaryOrange,
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryOrange.withValues(
-                                alpha: 0.15,
-                              ),
-                              blurRadius: 10,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          _kFeatures[i].icon,
-                          size: _iconSz,
+                  child: Transform.scale(
+                    // Staggered elastic pop-in
+                    scale: _iconScale(i),
+                    child: Container(
+                      width: _btnSz,
+                      height: _btnSz,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        border: Border.all(
                           color: AppColors.primaryOrange,
+                          width: 1.5,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryOrange.withValues(
+                              alpha: 0.15,
+                            ),
+                            blurRadius: 10,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        _kFeatures[i].icon,
+                        size: _iconSz,
+                        color: AppColors.primaryOrange,
                       ),
                     ),
                   ),

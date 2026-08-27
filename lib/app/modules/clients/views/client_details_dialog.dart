@@ -186,7 +186,11 @@ class ClientDetailsDialog extends StatelessWidget {
       child: Align(
         alignment: Alignment.centerRight,
         child: Container(
-          width: 400,
+          // Full-width on phones — a fixed 400px side panel would overflow
+          // (and mostly clip off-screen) on anything narrower than that.
+          width: MediaQuery.of(context).size.width < 480
+              ? MediaQuery.of(context).size.width
+              : 400,
           height: double.infinity,
           decoration: BoxDecoration(
             color: colors.surface,
@@ -458,7 +462,9 @@ class ClientDetailsDialog extends StatelessWidget {
                       const SizedBox(height: 12),
                       _quickLink(
                         Icons.history_rounded,
-                        AppColors.primaryPurple,
+                        // Was AppColors.primaryPurple — a bare icon that
+                        // color on the dark surface was nearly invisible.
+                        colors.purple,
                         'All Transactions History',
                         colors,
                         onTap: () => Get.toNamed(AppRoutes.transactions),

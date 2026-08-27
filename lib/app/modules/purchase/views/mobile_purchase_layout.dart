@@ -5,8 +5,14 @@ import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.d
 import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
+import 'package:shc_stock/app/modules/purchase/views/purchase_details_dialog.dart';
+import 'package:shc_stock/app/modules/purchase/views/update_purchase_status_dialog.dart';
+import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_filter_sheet.dart';
 
 class MobilePurchaseLayout extends GetView<PurchaseController> {
   const MobilePurchaseLayout({super.key});
@@ -18,6 +24,7 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
 
     return Scaffold(
       backgroundColor: colors.background,
+      drawer: const AppDrawer(activeRoute: AppRoutes.purchase),
       appBar: AppBar(
         backgroundColor: colors.surface,
         elevation: 0,
@@ -37,6 +44,10 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
           ),
         ),
         actions: [
+          MobileFilterButton(
+            filters: _buildFilters(c),
+            onClear: c.resetFilters,
+          ),
           IconButton(
             icon: Icon(Icons.add_rounded, color: AppColors.primaryOrange),
             onPressed: () => Get.toNamed(AppRoutes.addPurchase),
@@ -50,7 +61,9 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
       body: Obx(() {
         final all = c.orders;
         final query = c.searchQuery.value;
-        final filtered = query.isEmpty
+        final supplierFilter = c.supplierFilter.value;
+        // Same filter logic as WebPurchaseLayout — search, then supplier.
+        var filtered = query.isEmpty
             ? all.toList()
             : all
                   .where(
@@ -61,6 +74,11 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
                         o.poNumber.toLowerCase().contains(query.toLowerCase()),
                   )
                   .toList();
+        if (supplierFilter != 'Supplier: All') {
+          filtered = filtered
+              .where((o) => o.supplier == supplierFilter)
+              .toList();
+        }
 
         return CustomScrollView(
           slivers: [
@@ -105,48 +123,17 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
               ),
             ),
 
-            // Search bar
+            // Search bar — same FilterSearchField the web filter row uses,
+            // and the same searchCtrl so a Clear-all tap in the filter
+            // sheet also clears the visible text.
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                child: TextField(
+                child: FilterSearchField(
+                  controller: c.searchCtrl,
+                  hint: 'Search by Item or PO...',
+                  width: double.infinity,
                   onChanged: (v) => c.searchQuery.value = v,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Search purchases...',
-                    hintStyle: TextStyle(
-                      fontSize: 14,
-                      color: colors.textHint,
-                      fontFamily: 'Poppins',
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: colors.textHint,
-                    ),
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    filled: true,
-                    fillColor: colors.inputFill,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: colors.border),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: colors.border),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(
-                        color: AppColors.primaryOrange,
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
                 ),
               ),
             ),
@@ -209,6 +196,25 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
         );
       }),
     );
+  }
+
+  // Same data/controller binding as WebPurchaseLayout's FilterBar —
+  // Supplier — shown as a flat chip group instead of a dropdown pill (see
+  // mobile_filter_sheet.dart for why).
+  List<Widget> _buildFilters(PurchaseController c) {
+    return [
+      Obx(
+        () => MobileFilterChoiceGroup(
+          label: 'Supplier',
+          value: c.supplierFilter.value,
+          items: c.supplierNames,
+          onChanged: (v) {
+            c.supplierFilter.value = v;
+            c.currentPage.value = 1;
+          },
+        ),
+      ),
+    ];
   }
 }
 
@@ -280,133 +286,195 @@ class _MobilePurchaseCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: colors.divider),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Index badge
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: AppColors.primaryOrange.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(7),
-            ),
-            child: Center(
-              child: Text(
-                '${index + 1}',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primaryOrange,
-                  fontFamily: 'Poppins',
-                ),
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => Get.dialog(
+              PurchaseDetailsDialog(
+                order: o,
+                onDelete: () {
+                  Get.back();
+                  confirmDelete(
+                    context,
+                    itemName: o.poNumber,
+                    itemLabel: 'Purchase Order',
+                    onConfirm: () =>
+                        Get.find<PurchaseController>().deleteOrder(o.id),
+                  );
+                },
               ),
             ),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: _cardBody(context, dateStr, statusBg, statusFg),
+            ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Divider(height: 1, color: colors.divider),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        o.poNumber,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: context.appColors.accent,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusBg,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        o.status.label,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: statusFg,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                    ),
-                  ],
+                _MobileActionBtn(
+                  icon: Icons.edit_outlined,
+                  color: colors.accent,
+                  tooltip: 'Update Status',
+                  onTap: () => Get.dialog(UpdatePurchaseStatusDialog(order: o)),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  o.supplier,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                const SizedBox(width: 6),
+                _MobileActionBtn(
+                  icon: Icons.delete_outline_rounded,
+                  color: const Color(0xFFEF4444),
+                  tooltip: 'Delete',
+                  onTap: () => confirmDelete(
+                    context,
+                    itemName: o.poNumber,
+                    itemLabel: 'Purchase Order',
+                    onConfirm: () =>
+                        Get.find<PurchaseController>().deleteOrder(o.id),
                   ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today_outlined,
-                      size: 12,
-                      color: colors.textHint,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      dateStr,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: colors.textSecondary,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Icon(
-                      Icons.inventory_2_outlined,
-                      size: 12,
-                      color: colors.textHint,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${o.totalQtyLabel} items',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: colors.textSecondary,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '₹ ${_fmt(o.amount)}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _cardBody(
+    BuildContext context,
+    String dateStr,
+    Color statusBg,
+    Color statusFg,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Index badge
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: AppColors.primaryOrange.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Center(
+            child: Text(
+              '${index + 1}',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryOrange,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      order.poNumber,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: context.appColors.accent,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusBg,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      order.status.label,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: statusFg,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                order.supplier,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 12,
+                    color: colors.textHint,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    dateStr,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: colors.textSecondary,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Icon(
+                    Icons.inventory_2_outlined,
+                    size: 12,
+                    color: colors.textHint,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${order.totalQtyLabel} items',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: colors.textSecondary,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '₹ ${_fmt(order.amount)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: colors.textPrimary,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -439,5 +507,38 @@ class _MobilePurchaseCard extends StatelessWidget {
       return '${str.substring(0, str.length - 3)},${str.substring(str.length - 3)}';
     }
     return s.toString();
+  }
+}
+
+class _MobileActionBtn extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+  final VoidCallback onTap;
+  const _MobileActionBtn({
+    required this.icon,
+    required this.color,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(9),
+        child: Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Icon(icon, color: color, size: 17),
+        ),
+      ),
+    );
   }
 }

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
 import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
 import 'package:shc_stock/app/modules/products/models/product_model.dart';
 import 'package:shc_stock/app/modules/products/views/add_product_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
+import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_filter_sheet.dart';
 
 class MobileProductsLayout extends StatelessWidget {
   const MobileProductsLayout({super.key});
@@ -21,23 +26,15 @@ class MobileProductsLayout extends StatelessWidget {
       appBar: _buildAppBar(context, c),
       body: Column(
         children: [
+          _buildStatCards(context, c),
           _buildSearchBar(context, c),
-          _buildFilterChips(context, c),
           Expanded(child: _buildProductList(c)),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => Get.dialog(const AddProductDialog()),
         backgroundColor: AppColors.primaryOrange,
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text(
-          'Add Product',
-          style: TextStyle(
-            color: Colors.white,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
     );
   }
@@ -64,6 +61,10 @@ class MobileProductsLayout extends StatelessWidget {
         ),
       ),
       actions: [
+        MobileFilterButton(
+          filters: _buildFilters(context, c),
+          onClear: c.resetFilters,
+        ),
         Stack(
           children: [
             IconButton(
@@ -96,50 +97,49 @@ class MobileProductsLayout extends StatelessWidget {
     );
   }
 
-  // ── Search Bar ───────────────────────────────────────────────
-  Widget _buildSearchBar(BuildContext context, ProductsController c) {
-    final colors = context.appColors;
+  // ── Stat Cards ───────────────────────────────────────────────
+  // Same 4 cards as WebProductsLayout's _buildStatCards, stacked into a
+  // horizontally scrolling strip. IntrinsicHeight — not a fixed-height
+  // SizedBox — so a 2-line label ("Out of Stock") sizes the strip instead
+  // of overflowing a guessed fixed height (see the same fix on
+  // Stock/Transactions/Clients/Users).
+  Widget _buildStatCards(BuildContext context, ProductsController c) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: TextField(
-        onChanged: (v) => c.searchQuery.value = v,
-        style: TextStyle(
-          fontSize: 14,
-          fontFamily: 'Poppins',
-          color: colors.textPrimary,
-        ),
-        decoration: InputDecoration(
-          hintText: 'Search products...',
-          hintStyle: TextStyle(
-            fontSize: 14,
-            color: colors.textHint,
-            fontFamily: 'Poppins',
-          ),
-          prefixIcon: Icon(
-            Icons.search_rounded,
-            color: colors.textHint,
-            size: 20,
-          ),
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 14,
-          ),
-          filled: true,
-          fillColor: colors.inputFill,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colors.border),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colors.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(
-              color: AppColors.primaryOrange,
-              width: 1.5,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Obx(
+        () => SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                _MobileStatCard(
+                  label: 'Total Products',
+                  value: '${c.stats.value.intOf('totalProducts')}',
+                  icon: Icons.inventory_2_outlined,
+                  color: const Color(0xFF3B6FC9),
+                ),
+                const SizedBox(width: 10),
+                _MobileStatCard(
+                  label: 'Low Stock',
+                  value: '${c.stats.value.intOf('lowStock')}',
+                  icon: Icons.warning_amber_rounded,
+                  color: const Color(0xFFC9822F),
+                ),
+                const SizedBox(width: 10),
+                _MobileStatCard(
+                  label: 'Out of Stock',
+                  value: '${c.stats.value.intOf('outOfStock')}',
+                  icon: Icons.block_rounded,
+                  color: const Color(0xFFD1494C),
+                ),
+                const SizedBox(width: 10),
+                _MobileStatCard(
+                  label: 'Total Value',
+                  value: formatRupees(c.stats.value.doubleOf('totalValue')),
+                  icon: Icons.currency_rupee_rounded,
+                  color: const Color(0xFF2E9E5B),
+                ),
+              ],
             ),
           ),
         ),
@@ -147,54 +147,66 @@ class MobileProductsLayout extends StatelessWidget {
     );
   }
 
-  // ── Category Filter Chips ────────────────────────────────────
-  Widget _buildFilterChips(BuildContext context, ProductsController c) {
-    return Obx(() {
-      RxList<String> cats = [
-        'All',
-        ...c.realCategories.map((cat) => cat.name),
-      ].obs;
-      final colors = context.appColors;
-      return SizedBox(
-        height: 44,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: cats.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 8),
-          itemBuilder: (_, i) {
-            final isSelected =
-                c.selectedCategory.value == (i == 0 ? 'All' : cats[i]);
-            return InkWell(
-              onTap: () => c.selectedCategory.value = i == 0 ? 'All' : cats[i],
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryOrange : colors.surface,
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: isSelected ? AppColors.primaryOrange : colors.border,
-                  ),
-                ),
-                child: Text(
-                  cats[i],
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontFamily: 'Poppins',
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? Colors.white : colors.textSecondary,
-                  ),
-                ),
-              ),
-            );
+  // ── Search Bar ───────────────────────────────────────────────
+  // Same FilterSearchField the web filter row uses — one search box look
+  // across the whole app instead of every mobile page hand-rolling its own
+  // TextField decoration.
+  Widget _buildSearchBar(BuildContext context, ProductsController c) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: FilterSearchField(
+        hint: 'Search products...',
+        onChanged: (v) => c.searchQuery.value = v,
+        width: double.infinity,
+      ),
+    );
+  }
+
+  // ── Filters ───────────────────────────────────────────────────
+  // Same data/controller bindings as WebProductsLayout's _buildFiltersRow —
+  // Category, Subcategory, Sort — shown as flat chip groups instead of
+  // dropdown pills (see mobile_filter_sheet.dart for why).
+  List<Widget> _buildFilters(BuildContext context, ProductsController c) {
+    return [
+      Obx(
+        () => MobileFilterChipGroup(
+          label: 'Category',
+          selected: c.selectedCategories,
+          items: c.categoryNames.where((n) => n != 'All Categories').toList(),
+          onToggle: (v) {
+            if (c.selectedCategories.contains(v)) {
+              c.selectedCategories.remove(v);
+            } else {
+              c.selectedCategories.add(v);
+            }
           },
         ),
-      );
-    });
+      ),
+      Obx(
+        () => MobileFilterChipGroup(
+          label: 'Subcategory',
+          selected: c.selectedSubCategories,
+          items: c.subCategoryNames,
+          onToggle: (v) {
+            if (c.selectedSubCategories.contains(v)) {
+              c.selectedSubCategories.remove(v);
+            } else {
+              c.selectedSubCategories.add(v);
+            }
+          },
+        ),
+      ),
+      Obx(
+        () => MobileFilterChoiceGroup(
+          label: 'Sort by',
+          value: c.sortOption.value,
+          items: ProductsController.sortOptions
+              .where((o) => o != 'Default')
+              .toList(),
+          onChanged: (v) => c.sortOption.value = v,
+        ),
+      ),
+    ];
   }
 
   // ── Product List ─────────────────────────────────────────────
@@ -360,21 +372,22 @@ class _ProductCard extends StatelessWidget {
             children: [
               _MobileActionBtn(
                 icon: Icons.edit_outlined,
-                color: AppColors.primaryPurple,
+                // Was AppColors.primaryPurple — the icon's own background is
+                // just a 10%-alpha tint of this same color, so on the dark
+                // theme's already-dark surface both the icon and its tint
+                // stayed dark and hard to see.
+                color: colors.purple,
                 onTap: () => Get.dialog(AddProductDialog(product: product)),
               ),
               const SizedBox(width: 8),
               _MobileActionBtn(
                 icon: Icons.delete_outline_rounded,
                 color: const Color(0xFFEF4444),
-                onTap: () => Get.dialog(
-                  _MobileDeleteConfirmDialog(
-                    productName: product.name,
-                    onConfirm: () {
-                      controller.deleteProduct(product.id);
-                      Get.back();
-                    },
-                  ),
+                onTap: () => confirmDelete(
+                  context,
+                  itemName: product.name,
+                  itemLabel: 'Product',
+                  onConfirm: () => controller.deleteProduct(product.id),
                 ),
               ),
             ],
@@ -460,175 +473,28 @@ class _MobileActionBtn extends StatelessWidget {
   }
 }
 
-// ── Mobile Delete Confirm Dialog ───────────────────────────────────────────────
-class _MobileDeleteConfirmDialog extends StatelessWidget {
-  final String productName;
-  final VoidCallback onConfirm;
-  const _MobileDeleteConfirmDialog({
-    required this.productName,
-    required this.onConfirm,
+class _MobileStatCard extends StatelessWidget {
+  final String label, value;
+  final IconData icon;
+  final Color color;
+  const _MobileStatCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-      child: Container(
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.20),
-              blurRadius: 32,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ── Header ──
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF2F2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.delete_outline_rounded,
-                      color: Color(0xFFEF4444),
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Delete Product?',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: Get.back,
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: colors.comingSoonBadge,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 17,
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 14),
-              child: Divider(height: 1, color: colors.divider),
-            ),
-            // ── Body ──
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        color: Color(0xFF6B6B8A),
-                        fontFamily: 'Poppins',
-                        height: 1.5,
-                      ),
-                      children: [
-                        const TextSpan(
-                          text: 'Are you sure you want to permanently delete ',
-                        ),
-                        TextSpan(
-                          text: '"$productName"',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1A1240),
-                          ),
-                        ),
-                        const TextSpan(text: '? This cannot be undone.'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: Get.back,
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: colors.border),
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontFamily: 'Poppins',
-                              color: colors.textSecondary,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: onConfirm,
-                          icon: const Icon(
-                            Icons.delete_rounded,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                          label: const Text(
-                            'Delete',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Poppins',
-                              color: Colors.white,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFEF4444),
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return SizedBox(
+      width: 150,
+      child: AppStatCard(
+        label: label,
+        value: value,
+        icon: icon,
+        iconColor: color,
+        smallValue: true,
+        showCaption: false,
       ),
     );
   }

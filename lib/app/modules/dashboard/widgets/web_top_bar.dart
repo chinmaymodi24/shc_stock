@@ -959,8 +959,9 @@ class _SignOutDialog extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () {
+                          onPressed: () async {
                             Get.back();
+                            await Get.find<SessionController>().signOut();
                             Get.offAllNamed(AppRoutes.login);
                           },
                           icon: const Icon(

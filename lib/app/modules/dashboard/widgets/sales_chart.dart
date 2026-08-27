@@ -47,28 +47,37 @@ class _SalesLineChartState extends State<SalesLineChart> {
             onHover: (event) =>
                 _hovered.value = _nearest(event.localPosition, points),
             onExit: (_) => _hovered.value = -1,
-            child: Obx(() {
-              final hovered = _hovered.value;
-              return Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _SalesChartPainter(
-                        data: widget.data,
-                        lineColor: widget.lineColor,
-                        gridColor: colors.divider,
-                        labelColor: colors.textSecondary,
-                        dotBorderColor: colors.surface,
-                        hoveredIndex: hovered,
+            // Touch devices never fire onHover — tap/drag scrubs the same
+            // tooltip so the chart works identically on mobile.
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (d) =>
+                  _hovered.value = _nearest(d.localPosition, points),
+              onPanUpdate: (d) =>
+                  _hovered.value = _nearest(d.localPosition, points),
+              child: Obx(() {
+                final hovered = _hovered.value;
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _SalesChartPainter(
+                          data: widget.data,
+                          lineColor: widget.lineColor,
+                          gridColor: colors.divider,
+                          labelColor: colors.textSecondary,
+                          dotBorderColor: colors.surface,
+                          hoveredIndex: hovered,
+                        ),
                       ),
                     ),
-                  ),
-                  if (hovered >= 0 && hovered < points.length)
-                    _buildTooltip(hovered, points[hovered], size),
-                ],
-              );
-            }),
+                    if (hovered >= 0 && hovered < points.length)
+                      _buildTooltip(hovered, points[hovered], size),
+                  ],
+                );
+              }),
+            ),
           );
         },
       ),
@@ -126,7 +135,8 @@ class ChartGeometry {
 
   static List<Offset> linePoints(Size size, List<ChartPoint> data) {
     if (data.isEmpty) return const [];
-    final maxVal = data.map((d) => d.value).reduce((a, b) => a > b ? a : b) * 1.15;
+    final maxVal =
+        data.map((d) => d.value).reduce((a, b) => a > b ? a : b) * 1.15;
     final chartW = size.width - leftPad;
     final chartH = size.height - bottomPad - topPad;
 
@@ -173,14 +183,32 @@ class _SalesChartPainter extends CustomPainter {
 
     final points = ChartGeometry.linePoints(size, data);
 
-    // Draw filled area under the line
-    final fillPath = Path();
-    fillPath.moveTo(points.first.dx, topPad + chartH);
-    for (final pt in points) {
-      fillPath.lineTo(pt.dx, pt.dy);
+    // Same cubic-bezier curve the stroked line below uses — the fill's top
+    // edge has to follow it exactly, or the shaded area visibly cuts across
+    // the curve instead of hugging it.
+    final linePath = Path()..moveTo(points.first.dx, points.first.dy);
+    for (int i = 0; i < points.length - 1; i++) {
+      final cp1 = Offset((points[i].dx + points[i + 1].dx) / 2, points[i].dy);
+      final cp2 = Offset(
+        (points[i].dx + points[i + 1].dx) / 2,
+        points[i + 1].dy,
+      );
+      linePath.cubicTo(
+        cp1.dx,
+        cp1.dy,
+        cp2.dx,
+        cp2.dy,
+        points[i + 1].dx,
+        points[i + 1].dy,
+      );
     }
-    fillPath.lineTo(points.last.dx, topPad + chartH);
-    fillPath.close();
+
+    // Draw filled area under the line — trace the curve, then close down to
+    // the axis and back.
+    final fillPath = Path.from(linePath)
+      ..lineTo(points.last.dx, topPad + chartH)
+      ..lineTo(points.first.dx, topPad + chartH)
+      ..close();
 
     final fillPaint = Paint()
       ..shader = LinearGradient(
@@ -200,24 +228,6 @@ class _SalesChartPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round
       ..strokeCap = StrokeCap.round;
-
-    final linePath = Path();
-    linePath.moveTo(points.first.dx, points.first.dy);
-    for (int i = 0; i < points.length - 1; i++) {
-      final cp1 = Offset((points[i].dx + points[i + 1].dx) / 2, points[i].dy);
-      final cp2 = Offset(
-        (points[i].dx + points[i + 1].dx) / 2,
-        points[i + 1].dy,
-      );
-      linePath.cubicTo(
-        cp1.dx,
-        cp1.dy,
-        cp2.dx,
-        cp2.dy,
-        points[i + 1].dx,
-        points[i + 1].dy,
-      );
-    }
     canvas.drawPath(linePath, linePaint);
 
     // Hover guide: a dashed vertical rule down to the axis at the read point.

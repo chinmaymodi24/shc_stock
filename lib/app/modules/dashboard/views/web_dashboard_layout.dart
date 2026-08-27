@@ -290,7 +290,12 @@ class WebDashboardLayout extends StatelessWidget {
       title: 'Notes & to-dos',
       trailing: TextButton(
         onPressed: () => Get.dialog(
-          NotesDialog(notes: c.notes, onToggle: c.toggleNote, onAdd: c.addNote),
+          NotesDialog(
+            notes: c.notes,
+            onToggle: c.toggleNote,
+            onAdd: c.addNote,
+            onDelete: c.deleteNote,
+          ),
         ),
         child: const Text(
           'View All',
@@ -306,6 +311,7 @@ class WebDashboardLayout extends StatelessWidget {
         notes: c.notes,
         onToggle: c.toggleNote,
         onAdd: c.addNote,
+        onDelete: c.deleteNote,
       ),
     );
   }

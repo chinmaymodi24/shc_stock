@@ -146,7 +146,11 @@ class WebLoginLayout extends StatelessWidget {
                   text: 'efficiency.',
                   style: AppTextStyles.heroHeading.copyWith(
                     fontSize: headingFontSize,
-                    color: AppColors.primaryPurple,
+                    // Was AppColors.primaryPurple, fixed dark — unlike the
+                    // sibling spans above/below it, it never switched to
+                    // white in dark mode, so it vanished against the dark
+                    // hero panel. Theme-aware purple fixes that.
+                    color: context.appColors.purple,
                   ),
                 ),
                 TextSpan(text: '\nDesigned for ',

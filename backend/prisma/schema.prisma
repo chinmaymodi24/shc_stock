@@ -269,6 +269,12 @@ model StockMovement {
   /// Always positive; `type` carries the direction.
   qty Float
 
+  /// Optional per-unit price — only ever set on a manual adjustment where the
+  /// user chose to record one (e.g. an opening-balance entry). Purchase/sale
+  /// movements leave this null; their price lives on the order's line items
+  /// instead, which the Item Details ledger reads directly.
+  rate Float?
+
   /// purchase | sale | manual
   refType String @default("manual")
 

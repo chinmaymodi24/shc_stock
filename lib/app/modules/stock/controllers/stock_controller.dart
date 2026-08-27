@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
 import 'package:shc_stock/app/core/api/stats_snapshot.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
 import 'package:shc_stock/app/modules/stock/models/stock_item_model.dart';
 
@@ -88,6 +89,7 @@ class StockController extends GetxController {
     required String type, // 'IN' | 'OUT'
     required double qty,
     String note = '',
+    double? rate,
   }) async {
     try {
       final json = await _api.post('/inventory/adjust', {
@@ -95,6 +97,8 @@ class StockController extends GetxController {
         'type': type,
         'qty': qty,
         'note': note,
+        'createdBy': currentActorName,
+        if (rate != null) 'rate': rate,
       });
       _replaceItem(
         StockItemModel.fromJson(
@@ -120,6 +124,7 @@ class StockController extends GetxController {
         if (minimumStock != null) 'minimumStock': minimumStock,
         if (stockLocation != null) 'stockLocation': stockLocation,
         if (isActive != null) 'isActive': isActive,
+        'modifiedBy': currentActorName,
       });
       _replaceItem(StockItemModel.fromJson(json as Map<String, dynamic>));
       return true;

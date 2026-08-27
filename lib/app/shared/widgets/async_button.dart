@@ -90,6 +90,12 @@ class _AppAsyncButtonState extends State<AppAsyncButton> {
           disabledBackgroundColor: widget.background.withValues(alpha: 0.75),
           elevation: 0,
           padding: widget.padding,
+          // Material's default 48dp tap-target padding makes this button
+          // taller than sibling Containers (e.g. the "Cancel" pill next to
+          // it) even with identical vertical padding — shrink-wrap it so the
+          // two match exactly.
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(widget.radius),
           ),

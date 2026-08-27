@@ -16,6 +16,7 @@ import 'package:shc_stock/app/modules/transactions/views/transactions_view.dart'
 import 'package:shc_stock/app/modules/users/views/users_view.dart';
 import 'package:shc_stock/app/modules/users/views/add_employee_view.dart';
 import 'package:shc_stock/app/modules/settings/views/settings_view.dart';
+import 'package:shc_stock/app/modules/settings/views/mobile_settings_view.dart';
 import 'package:shc_stock/app/modules/settings/views/mobile_profile_view.dart';
 import 'app_routes.dart';
 import 'package:shc_stock/app/modules/reports/views/reports_view.dart';
@@ -138,6 +139,12 @@ class AppPages {
     GetPage(
       name: AppRoutes.settings,
       page: () => const SettingsView(),
+      binding: SettingsBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.settingsDetail,
+      page: () => const MobileSettingsView(),
       binding: SettingsBinding(),
       transition: Transition.fadeIn,
     ),

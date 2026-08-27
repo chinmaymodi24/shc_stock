@@ -17,5 +17,6 @@ abstract class AppRoutes {
   static const users = '/users';
   static const addEmployee = '/users/add';
   static const settings = '/settings';
+  static const settingsDetail = '/settings/detail';
   static const profile = '/profile';
 }

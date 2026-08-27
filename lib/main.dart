@@ -31,19 +31,28 @@ class SecureHeatCareApp extends StatelessWidget {
         themeMode: themeController.themeMode,
         initialRoute: AppPages.initial,
         getPages: AppPages.routes,
-        builder: (context, child) => Overlay(
+        // WidgetOrderTraversalPolicy instead of the default reading-order
+        // one: reading order sorts focus nodes by their on-screen rect, and
+        // the browser hands focus to the Flutter view before the first layout
+        // completes, so that sort read the size of a not-yet-laid-out
+        // RenderBox and asserted ("RenderBox was not laid out"). Widget order
+        // never touches rects.
+        builder: (context, child) => FocusTraversalGroup(
+          policy: WidgetOrderTraversalPolicy(),
           // SelectionArea needs an Overlay ancestor (for selection handles /
           // the copy toolbar). `builder` sits above GetMaterialApp's own
           // Navigator, so we give it a dedicated one here.
-          initialEntries: [
-            OverlayEntry(
-              builder: (context) => SelectionArea(
-                child: ThemeRippleHost(
-                  child: child ?? const SizedBox.shrink(),
+          child: Overlay(
+            initialEntries: [
+              OverlayEntry(
+                builder: (context) => SelectionArea(
+                  child: ThemeRippleHost(
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

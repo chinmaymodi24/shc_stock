@@ -119,6 +119,11 @@ class StockMovement {
   /// IN | OUT
   final String type;
   final double qty;
+
+  /// Per-unit price, only ever set on a manual adjustment where one was
+  /// recorded (e.g. an opening-balance entry). Null for purchase/sale rows —
+  /// their price lives on the order's line items instead.
+  final double? rate;
   final String refType;
   final int? refId;
   final String reference;
@@ -133,6 +138,7 @@ class StockMovement {
     this.unit = '',
     required this.type,
     required this.qty,
+    this.rate,
     this.refType = 'manual',
     this.refId,
     this.reference = '',
@@ -140,6 +146,9 @@ class StockMovement {
     this.createdBy = 'Admin',
     this.createdAt,
   });
+
+  /// `qty * rate` when a price was recorded, else null.
+  double? get amount => rate == null ? null : qty * rate!;
 
   bool get isIn => type == 'IN';
 
@@ -156,6 +165,7 @@ class StockMovement {
       unit: product?['unit'] as String? ?? '',
       type: json['type'] as String? ?? 'IN',
       qty: (json['qty'] as num?)?.toDouble() ?? 0,
+      rate: (json['rate'] as num?)?.toDouble(),
       refType: json['refType'] as String? ?? 'manual',
       refId: (json['refId'] as num?)?.toInt(),
       reference: json['reference'] as String? ?? '',

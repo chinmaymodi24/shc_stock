@@ -6,6 +6,7 @@ import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
 import 'wizard/step1_employee_details.dart';
 import 'wizard/step2_assign_role.dart';
 import 'wizard/step3_permissions.dart';
@@ -38,106 +39,148 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
 
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: Row(
-        children: [
-          const WebSidebar(),
-          Expanded(
-            child: Column(
-              children: [
-                const WebTopBar(),
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (ctx, cons) {
-                      final wide = cons.maxWidth >= 1000;
-                      final tablet = cons.maxWidth >= 600;
-                      return Column(
+    return LayoutBuilder(
+      builder: (context, screen) {
+        final isMobile = screen.maxWidth < 700;
+        if (isMobile) {
+          return Scaffold(
+            backgroundColor: colors.background,
+            drawer: const AppDrawer(activeRoute: AppRoutes.users),
+            appBar: AppBar(
+              backgroundColor: colors.topBarBg,
+              elevation: 0,
+              leading: Builder(
+                builder: (ctx) => IconButton(
+                  icon: Icon(
+                    Icons.menu_rounded,
+                    color: colors.textPrimary,
+                    size: 24,
+                  ),
+                  onPressed: () => Scaffold.of(ctx).openDrawer(),
+                ),
+              ),
+              title: Text(
+                'Create Employee',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(1),
+                child: Divider(height: 1, color: colors.divider),
+              ),
+            ),
+            body: _buildBody(context, colors),
+          );
+        }
+        return Scaffold(
+          backgroundColor: colors.background,
+          body: Row(
+            children: [
+              const WebSidebar(),
+              Expanded(
+                child: Column(
+                  children: [
+                    const WebTopBar(),
+                    Expanded(child: _buildBody(context, colors)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Shared body: stepper + step content + bottom bar — already adapts via
+  // its own wide (>=1000)/tablet (>=600) breakpoints, so the same content
+  // works for both the desktop-sidebar chrome and the mobile drawer chrome.
+  Widget _buildBody(BuildContext context, AppThemeColors colors) {
+    return LayoutBuilder(
+      builder: (ctx, cons) {
+        final wide = cons.maxWidth >= 1000;
+        final tablet = cons.maxWidth >= 600;
+        return Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(
+                  wide
+                      ? 24.0
+                      : tablet
+                      ? 16.0
+                      : 12.0,
+                ),
+                child: Obx(
+                  () => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ── Header: title ─────────────────────
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: SingleChildScrollView(
-                              padding: EdgeInsets.all(
-                                wide
-                                    ? 24.0
-                                    : tablet
-                                    ? 16.0
-                                    : 12.0,
-                              ),
-                              child: Obx(
-                                () => Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // ── Header: title ─────────────────────
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Create Employee Account',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w700,
-                                            color: colors.textPrimary,
-                                            fontFamily: 'Poppins',
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'Add a new employee and assign role with permissions',
-                                          style: TextStyle(
-                                            fontSize: 12.5,
-                                            color: colors.textSecondary,
-                                            fontFamily: 'Poppins',
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: wide ? 20.0 : 16.0),
-                                    _buildStepper(wide, tablet, colors),
-                                    SizedBox(height: wide ? 24.0 : 16.0),
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: _buildStepContent(
-                                            context,
-                                            wide,
-                                            tablet,
-                                            colors,
-                                          ),
-                                        ),
-                                        if (wide) ...[
-                                          const SizedBox(width: 16),
-                                          SizedBox(
-                                            width: 272,
-                                            child: _buildRightPanel(colors),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                    // Tablet: right panel below
-                                    if (tablet && !wide) ...[
-                                      const SizedBox(height: 16),
-                                      _buildRightPanel(colors),
-                                    ],
-                                    const SizedBox(height: 16),
-                                  ],
-                                ),
-                              ),
+                          Text(
+                            'Create Employee Account',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: colors.textPrimary,
+                              fontFamily: 'Poppins',
                             ),
                           ),
-                          Obx(() => _buildBottomBar(wide, tablet, colors)),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Add a new employee and assign role with permissions',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: colors.textSecondary,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
                         ],
-                      );
-                    },
+                      ),
+                      SizedBox(height: wide ? 20.0 : 16.0),
+                      _buildStepper(wide, tablet, colors),
+                      SizedBox(height: wide ? 24.0 : 16.0),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _buildStepContent(
+                              context,
+                              wide,
+                              tablet,
+                              colors,
+                            ),
+                          ),
+                          if (wide) ...[
+                            const SizedBox(width: 16),
+                            SizedBox(
+                              width: 272,
+                              child: _buildRightPanel(colors),
+                            ),
+                          ],
+                        ],
+                      ),
+                      // Tablet: right panel below
+                      if (tablet && !wide) ...[
+                        const SizedBox(height: 16),
+                        _buildRightPanel(colors),
+                      ],
+                      const SizedBox(height: 16),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
-      ),
+            Obx(() => _buildBottomBar(wide, tablet, colors)),
+          ],
+        );
+      },
     );
   }
 
@@ -452,32 +495,58 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
       ),
       child: Row(
         children: [
-          OutlinedButton.icon(
-            onPressed: controller.back,
-            icon: Icon(
-              Icons.arrow_back_rounded,
-              size: 16,
-              color: c.textSecondary,
-            ),
-            label: Text(
-              'Back',
-              style: TextStyle(
-                fontSize: 13.5,
-                fontFamily: 'Poppins',
+          // Below tablet width, an icon-only button keeps the row (Back +
+          // Cancel + Create/Continue) from overflowing on phone screens.
+          if (tablet)
+            OutlinedButton.icon(
+              onPressed: controller.back,
+              icon: Icon(
+                Icons.arrow_back_rounded,
+                size: 16,
+                color: c.textSecondary,
+              ),
+              label: Text(
+                'Back',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontFamily: 'Poppins',
+                  color: c.textSecondary,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: c.border),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            )
+          else
+            OutlinedButton(
+              onPressed: controller.back,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: c.border),
+                padding: const EdgeInsets.all(10),
+                minimumSize: const Size(38, 38),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Icon(
+                Icons.arrow_back_rounded,
+                size: 16,
                 color: c.textSecondary,
               ),
             ),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: c.border),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
           const Spacer(),
           TextButton(
             onPressed: () => Get.offNamed(AppRoutes.users),
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: tablet ? 12 : 6),
+            ),
             child: Text(
               'Cancel',
               style: TextStyle(
@@ -487,7 +556,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           // The last step posts the new employee, so the button spins until
           // the API answers; the earlier steps just advance and return
           // immediately.

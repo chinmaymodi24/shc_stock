@@ -8,7 +8,9 @@ plugins {
 android {
     namespace = "com.example.shc_stock"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Several plugins (file_picker, desktop_drop, flutter_secure_storage, …) ask
+    // for 27.x, which is backward compatible with the Flutter default.
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

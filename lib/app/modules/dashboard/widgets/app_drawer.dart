@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
-import 'package:shc_stock/app/core/theme/theme_controller.dart';
-import 'package:shc_stock/app/core/theme/theme_switch_helper.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
 import 'package:shc_stock/app/shared/widgets/logo_plate.dart';
@@ -13,6 +12,9 @@ class AppDrawer extends StatelessWidget {
   final String activeRoute;
   const AppDrawer({super.key, required this.activeRoute});
 
+  // Order and icons mirror WebSidebar exactly — every module now has a
+  // built, working mobile layout, so the mobile drawer matches the desktop
+  // nav item-for-item instead of lagging behind it.
   static const _items = [
     _DrawerItem(
       icon: Icons.dashboard_rounded,
@@ -35,6 +37,11 @@ class AppDrawer extends StatelessWidget {
       route: AppRoutes.stock,
     ),
     _DrawerItem(
+      icon: Icons.swap_horiz_rounded,
+      label: 'Transactions',
+      route: AppRoutes.transactions,
+    ),
+    _DrawerItem(
       icon: Icons.shopping_bag_outlined,
       label: 'Purchase',
       route: AppRoutes.purchase,
@@ -55,6 +62,11 @@ class AppDrawer extends StatelessWidget {
       route: AppRoutes.reports,
     ),
     _DrawerItem(
+      icon: Icons.manage_accounts_outlined,
+      label: 'Employee',
+      route: AppRoutes.users,
+    ),
+    _DrawerItem(
       icon: Icons.settings_outlined,
       label: 'Settings',
       route: AppRoutes.settings,
@@ -65,8 +77,14 @@ class AppDrawer extends StatelessWidget {
     AppRoutes.dashboard,
     AppRoutes.products,
     AppRoutes.categories,
+    AppRoutes.stock,
+    AppRoutes.transactions,
     AppRoutes.purchase,
     AppRoutes.sales,
+    AppRoutes.clients,
+    AppRoutes.reports,
+    AppRoutes.users,
+    AppRoutes.settings,
   };
 
   @override
@@ -94,39 +112,54 @@ class AppDrawer extends StatelessWidget {
                   const LogoPlate(
                     isDark: true,
                     width: 116,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                   const SizedBox(height: 16),
-                  const CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Color(0x33F47B20),
-                    child: Icon(
-                      Icons.person_rounded,
-                      color: AppColors.primaryOrange,
-                      size: 26,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Admin',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                  const Text(
-                    'admin@secureheatcare.com',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFFB0AECF),
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
+                  // Real session data — same SessionController the web top
+                  // bar reads, instead of a hardcoded "Admin" placeholder.
+                  Obx(() {
+                    final user = Get.find<SessionController>().user.value;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: const Color(0x33F47B20),
+                          child: Text(
+                            user?.initials ?? '?',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryOrange,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          user?.name.trim().isNotEmpty == true
+                              ? user!.name
+                              : 'Signed out',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                        Text(
+                          user?.role.trim().isNotEmpty == true
+                              ? user!.role
+                              : (user?.email ?? ''),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFFB0AECF),
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
                 ],
               ),
             ),
@@ -160,182 +193,7 @@ class AppDrawer extends StatelessWidget {
                 }).toList(),
               ),
             ),
-
-            // ── Theme Selector ────────────────────────────────
-            const _DrawerThemeSelector(),
-
-            // ── Footer ───────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      // Accent-derived tint so the badge follows the theme —
-                      // the old fixed cream stayed light in dark mode.
-                      color: AppColors.primaryOrange.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.logout_rounded,
-                      color: AppColors.primaryOrange,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Sign Out',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: colors.textPrimary,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Drawer Theme Selector ─────────────────────────────────────────────────────
-class _DrawerThemeSelector extends StatelessWidget {
-  const _DrawerThemeSelector();
-
-  @override
-  Widget build(BuildContext context) {
-    final tc = Get.find<ThemeController>();
-    final colors = context.appColors;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Divider(height: 1, color: colors.divider),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: Row(
-            children: [
-              // Icon badge
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryOrange.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.palette_outlined,
-                  color: AppColors.primaryOrange,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Label
-              Expanded(
-                child: Text(
-                  'Appearance',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ),
-              // Compact 3-icon toggle
-              Obx(
-                () => Container(
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: colors.iconBgPurple,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: colors.divider),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _DrawerThemeBtn(
-                        icon: Icons.wb_sunny_rounded,
-                        label: 'Light',
-                        isActive: tc.isLight,
-                        onTap: () =>
-                            switchThemeWithRipple(context, ThemeMode.light),
-                      ),
-                      _DrawerThemeBtn(
-                        icon: Icons.nightlight_round,
-                        label: 'Dark',
-                        isActive: tc.isDark,
-                        onTap: () =>
-                            switchThemeWithRipple(context, ThemeMode.dark),
-                      ),
-                      _DrawerThemeBtn(
-                        icon: Icons.devices_rounded,
-                        label: 'System',
-                        isActive: tc.isSystem,
-                        onTap: () =>
-                            switchThemeWithRipple(context, ThemeMode.system),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Divider(height: 1, color: colors.divider),
-      ],
-    );
-  }
-}
-
-class _DrawerThemeBtn extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _DrawerThemeBtn({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: label,
-      preferBelow: false,
-      textStyle: const TextStyle(
-        fontSize: 11,
-        fontFamily: 'Poppins',
-        color: Colors.white,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1240),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          width: 36,
-          height: 36,
-          margin: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: isActive ? AppColors.primaryOrange : Colors.transparent,
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Icon(
-            icon,
-            size: 16,
-            color: isActive ? Colors.white : context.appColors.textSecondary,
-          ),
         ),
       ),
     );

@@ -7,12 +7,14 @@ class NotesTodo extends StatefulWidget {
   final RxList<NoteItem> notes;
   final void Function(int index) onToggle;
   final void Function(String text) onAdd;
+  final void Function(int index)? onDelete;
 
   const NotesTodo({
     super.key,
     required this.notes,
     required this.onToggle,
     required this.onAdd,
+    this.onDelete,
   });
 
   @override
@@ -21,6 +23,7 @@ class NotesTodo extends StatefulWidget {
 
 class _NotesTodoState extends State<NotesTodo> {
   final _controller = TextEditingController();
+  final _hoveredIndex = RxInt(-1);
 
   void _submit() {
     final text = _controller.text.trim();
@@ -48,48 +51,76 @@ class _NotesTodoState extends State<NotesTodo> {
               final note = e.value;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: InkWell(
-                  onTap: () => widget.onToggle(index),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: Checkbox(
-                          value: note.done,
-                          onChanged: (_) => widget.onToggle(index),
-                          activeColor: AppColors.primaryOrange,
-                          checkColor: Colors.white,
-                          visualDensity: VisualDensity.compact,
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          side: BorderSide(
-                            color: colors.textSecondary,
-                            width: 1.4,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          note.text,
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            color: note.done
-                                ? colors.textSecondary
-                                : colors.textPrimary,
-                            decoration: note.done
-                                ? TextDecoration.lineThrough
-                                : null,
-                            fontFamily: 'Poppins',
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  onEnter: (_) => _hoveredIndex.value = index,
+                  onExit: (_) =>
+                      _hoveredIndex.value == index
+                          ? _hoveredIndex.value = -1
+                          : null,
+                  child: InkWell(
+                    mouseCursor: SystemMouseCursors.click,
+                    onTap: () => widget.onToggle(index),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: Checkbox(
+                            value: note.done,
+                            onChanged: (_) => widget.onToggle(index),
+                            activeColor: AppColors.primaryOrange,
+                            checkColor: Colors.white,
+                            visualDensity: VisualDensity.compact,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            side: BorderSide(
+                              color: colors.textSecondary,
+                              width: 1.4,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            note.text,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              color: note.done
+                                  ? colors.textSecondary
+                                  : colors.textPrimary,
+                              decoration: note.done
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
+                        if (widget.onDelete != null)
+                          Obx(
+                            () => _hoveredIndex.value == index
+                                ? InkWell(
+                                    mouseCursor: SystemMouseCursors.click,
+                                    borderRadius: BorderRadius.circular(4),
+                                    onTap: () => widget.onDelete!(index),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(2),
+                                      child: Icon(
+                                        Icons.close_rounded,
+                                        size: 16,
+                                        color: colors.textSecondary,
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox(width: 20),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               );

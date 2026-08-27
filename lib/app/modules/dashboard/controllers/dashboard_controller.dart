@@ -57,7 +57,11 @@ class DashboardController extends GetxController {
   final RxList<NoteItem> notes = <NoteItem>[].obs;
 
   static List<Color> get _sliceColors => [
-    AppColors.primaryPurple,
+    // Was AppColors.primaryPurple — CategoryBreakdown reuses this color as
+    // the row's TEXT color on hover, and the fixed dark shade was nearly
+    // invisible against the dark theme's surface. Theme-aware purple fixes
+    // that the same way `accent` below already does.
+    appColors.purple,
     AppColors.primaryOrange,
     appColors.accent,
     const Color(0xFF0EA5E9),

@@ -28,18 +28,21 @@ SalesController _salesController() {
 String _fmtQty(double q) =>
     q == q.roundToDouble() ? q.toStringAsFixed(0) : q.toStringAsFixed(2);
 
-/// One resolved row of the "Stock History" ledger — a `stock_movements` row
+/// One resolved row of the item's history ledger — a `stock_movements` row
 /// enriched with the purchase/sale order it came from (supplier/client name,
-/// PO/SO number, line amount), so a purchase and a sale render with the same
-/// rich entry instead of a bare qty/date line.
+/// PO/SO number, line amount). [refType] ('purchase' | 'sale' | 'manual')
+/// decides which section of the panel it renders in — purchases and sales
+/// and manual adjustments are shown separately, never merged into one list.
 class _HistoryEntry {
   final bool isIn;
+  final String refType;
   final String title;
   final String subtitle;
   final double? amount;
   final DateTime? date;
   const _HistoryEntry({
     required this.isIn,
+    required this.refType,
     required this.title,
     required this.subtitle,
     this.amount,
@@ -66,6 +69,7 @@ List<_HistoryEntry> _buildEntries(
       entries.add(
         _HistoryEntry(
           isIn: true,
+          refType: 'purchase',
           title: (po != null && po.supplier.isNotEmpty)
               ? po.supplier
               : 'Purchase',
@@ -86,6 +90,7 @@ List<_HistoryEntry> _buildEntries(
       entries.add(
         _HistoryEntry(
           isIn: false,
+          refType: 'sale',
           title: (so != null && so.client.isNotEmpty) ? so.client : 'Sale',
           subtitle:
               'Qty: ${_fmtQty(m.qty)} · ${m.reference.isEmpty ? '—' : m.reference}',
@@ -97,10 +102,14 @@ List<_HistoryEntry> _buildEntries(
       entries.add(
         _HistoryEntry(
           isIn: m.isIn,
-          title: 'Manual Adjustment',
+          refType: 'manual',
+          title: m.isIn ? 'Stock Added' : 'Stock Removed',
           subtitle: m.note.isEmpty
               ? 'Qty: ${_fmtQty(m.qty)}'
               : 'Qty: ${_fmtQty(m.qty)} · ${m.note}',
+          // Only set when the adjustment was booked with a price — most
+          // manual corrections have none, and stay '—' in the row.
+          amount: m.amount,
           date: m.createdAt,
         ),
       );
@@ -113,11 +122,13 @@ List<_HistoryEntry> _buildEntries(
 }
 
 /// Read-only "Item Details" side panel opened from the Inventory list's View
-/// icon. Top half is the product snapshot (dynamic, straight off the loaded
-/// [StockItemModel]); the bottom half is a unified ledger built from that
-/// product's `stock_movements` rows — every purchase that added stock and
-/// every sale that took it back out, in one dated list. This is what answers
-/// "I had this much stock, where did it all go".
+/// icon (and from the Stock Adjustment dialog's "Show Full History"). Top
+/// half is the product snapshot (dynamic, straight off the loaded
+/// [StockItemModel]); the bottom half is that product's full `stock_movements`
+/// ledger — "Purchased From", "Sold To", and "Stock Adjustment" history, kept
+/// as three separate lists (never merged) so a purchase, a sale, and a manual
+/// correction are never mistaken for one another. This is the whole point of
+/// the panel: every unit this item ever had, and where it came from or went.
 class StockItemDetailsPanel extends StatefulWidget {
   final StockItemModel item;
 
@@ -169,7 +180,11 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
       child: Align(
         alignment: Alignment.centerRight,
         child: Container(
-          width: 400,
+          // Full-width on phones — a fixed 400px side panel would overflow
+          // (and mostly clip off-screen) on anything narrower than that.
+          width: MediaQuery.of(context).size.width < 480
+              ? MediaQuery.of(context).size.width
+              : 400,
           height: double.infinity,
           decoration: BoxDecoration(
             color: colors.surface,
@@ -223,9 +238,20 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                     purchase.orders,
                     sales.orders,
                   );
-                  final latestPurchase = entries.firstWhereOrNull(
-                    (e) => e.isIn,
-                  );
+                  final purchaseEntries = entries
+                      .where((e) => e.refType == 'purchase')
+                      .toList();
+                  // Entries are already sorted newest-first, so the top of
+                  // this list is the most recent restock.
+                  final latestPurchase = purchaseEntries.isEmpty
+                      ? null
+                      : purchaseEntries.first;
+                  final salesEntries = entries
+                      .where((e) => e.refType == 'sale')
+                      .toList();
+                  final adjustmentEntries = entries
+                      .where((e) => e.refType == 'manual')
+                      .toList();
 
                   return SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
@@ -306,10 +332,9 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                         Divider(height: 1, color: colors.divider),
                         const SizedBox(height: 14),
 
-                        // ── Stock History — every purchase (stock in) and
-                        // sale (stock out) recorded against this product,
-                        // newest first. Answers "where did this stock go".
-                        _sectionLabel('Stock History', colors),
+                        // ── Purchased From (Purchase History) — every
+                        // purchase order that added this item's stock.
+                        _sectionLabel('Purchased From (Purchase History)', colors),
                         const SizedBox(height: 10),
                         if (loading)
                           const Padding(
@@ -324,11 +349,11 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                               ),
                             ),
                           )
-                        else if (entries.isEmpty)
+                        else if (purchaseEntries.isEmpty)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 6),
                             child: Text(
-                              'No purchases or sales recorded for this item yet.',
+                              'No purchases recorded for this item yet.',
                               style: TextStyle(
                                 fontSize: 12.5,
                                 color: colors.textHint,
@@ -337,7 +362,76 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                             ),
                           )
                         else
-                          ...entries.map((e) => _historyRow(e, colors)),
+                          ...purchaseEntries.map(
+                            (e) => _historyRow(e, colors, showIcon: false),
+                          ),
+
+                        const SizedBox(height: 8),
+                        Divider(height: 1, color: colors.divider),
+                        const SizedBox(height: 14),
+
+                        // ── Sold To (Sales History) — kept separate from
+                        // manual adjustments below; never merged into one
+                        // list, so the two are never mistaken for each other.
+                        _sectionLabel('Sold To (Sales History)', colors),
+                        const SizedBox(height: 10),
+                        if (loading)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24),
+                            child: Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ),
+                          )
+                        else if (salesEntries.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Text(
+                              'No sales recorded for this item yet.',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: colors.textHint,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                          )
+                        else
+                          ...salesEntries.map(
+                            (e) => _historyRow(e, colors, showIcon: false),
+                          ),
+
+                        const SizedBox(height: 8),
+                        Divider(height: 1, color: colors.divider),
+                        const SizedBox(height: 14),
+
+                        // ── Stock Adjustment History — manual IN/OUT
+                        // corrections only (Set Reorder Point Only never
+                        // books a movement, so it never appears here).
+                        _sectionLabel('Stock Adjustment History', colors),
+                        const SizedBox(height: 10),
+                        if (loading)
+                          const SizedBox.shrink()
+                        else if (adjustmentEntries.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Text(
+                              'No manual adjustments recorded.',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: colors.textHint,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                          )
+                        else
+                          ...adjustmentEntries.map(
+                            (e) => _historyRow(e, colors),
+                          ),
 
                         const SizedBox(height: 8),
                         Divider(height: 1, color: colors.divider),
@@ -351,9 +445,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                               storedDate: item.modifiedAt,
                             );
                             if (mod == null) {
-                              return ModifiedByEmpty(
-                                textHint: colors.textHint,
-                              );
+                              return ModifiedByEmpty(textHint: colors.textHint);
                             }
                             return ModifiedByCell(
                               name: mod.name,
@@ -476,7 +568,15 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
     );
   }
 
-  Widget _historyRow(_HistoryEntry e, AppThemeColors colors) {
+  /// [showIcon] is off for Sales History — every row there is a sale (always
+  /// stock-out), so the in/out icon would just repeat what the section
+  /// heading already says. Adjustment History mixes both directions, so it
+  /// keeps the icon.
+  Widget _historyRow(
+    _HistoryEntry e,
+    AppThemeColors colors, {
+    bool showIcon = true,
+  }) {
     final color = e.isIn ? colors.success : colors.warning;
     final dateFmt = DateFormat('MMM d, yyyy');
     return Padding(
@@ -484,20 +584,22 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(8),
+          if (showIcon) ...[
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                e.isIn ? Icons.call_received_rounded : Icons.call_made_rounded,
+                size: 15,
+                color: color,
+              ),
             ),
-            child: Icon(
-              e.isIn ? Icons.call_received_rounded : Icons.call_made_rounded,
-              size: 15,
-              color: color,
-            ),
-          ),
-          const SizedBox(width: 10),
+            const SizedBox(width: 10),
+          ],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

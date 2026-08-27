@@ -14,9 +14,10 @@ import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
-import 'package:shc_stock/app/shared/widgets/status_update_dialog_shell.dart';
+import 'package:shc_stock/app/modules/purchase/views/update_purchase_status_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
+import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 
 // ── Table column constants (header + row MUST match) ──────────────────────
 const double _kIdxW = 32.0; // # badge
@@ -295,12 +296,9 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
 
                                       // Footer
                                       Divider(height: 1, color: colors.divider),
-                                      _TableFooter(
-                                        total: filtered.length,
-                                        startDisplay: filtered.isEmpty
-                                            ? 0
-                                            : startIdx + 1,
-                                        endDisplay: endIdx,
+                                      AppTableFooter(
+                                        summaryText:
+                                            'Showing ${filtered.isEmpty ? 0 : startIdx + 1}–$endIdx of ${filtered.length}',
                                         currentPage: currentPage,
                                         totalPages: totalPages,
                                         rowsPerPage: rowsPerPage,
@@ -704,7 +702,7 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(20),
                         onTap: () => Get.dialog(
-                          _UpdateStatusDialog(order: widget.order),
+                          UpdatePurchaseStatusDialog(order: widget.order),
                         ),
                         child: _StatusBadge(status: o.status),
                       ),
@@ -902,256 +900,6 @@ class _EmptyState extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Update Status Dialog — the "Edit" action for a purchase order, wired to
-// PurchaseController.updateStatus (PATCH /purchase-orders/:id/status).
-// ─────────────────────────────────────────────────────────────────────────────
-class _UpdateStatusDialog extends StatefulWidget {
-  final PurchaseOrder order;
-  const _UpdateStatusDialog({required this.order});
-
-  @override
-  State<_UpdateStatusDialog> createState() => _UpdateStatusDialogState();
-}
-
-class _UpdateStatusDialogState extends State<_UpdateStatusDialog> {
-  late final Rx<PurchaseStatus> _selected = widget.order.status.obs;
-
-  @override
-  void dispose() {
-    _selected.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return StatusUpdateDialogShell(
-      title: 'Update Status',
-      subtitle: widget.order.poNumber,
-      onSave: () => Get.find<PurchaseController>().updateStatus(
-        widget.order.id,
-        _selected.value,
-      ),
-      body: StatusRadioGroup<PurchaseStatus>(
-        options: PurchaseStatus.values,
-        selected: _selected,
-        labelOf: (s) => s.label,
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Table Footer + Pagination
-// ─────────────────────────────────────────────────────────────────────────────
-class _TableFooter extends StatelessWidget {
-  final int total,
-      startDisplay,
-      endDisplay,
-      currentPage,
-      totalPages,
-      rowsPerPage;
-  final AppThemeColors colors;
-  final ValueChanged<int> onPageChanged, onRowsChanged;
-
-  const _TableFooter({
-    required this.total,
-    required this.startDisplay,
-    required this.endDisplay,
-    required this.currentPage,
-    required this.totalPages,
-    required this.rowsPerPage,
-    required this.colors,
-    required this.onPageChanged,
-    required this.onRowsChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Text(
-            'Rows per page:',
-            style: TextStyle(
-              fontSize: 12.5,
-              color: colors.textSecondary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: colors.border),
-              borderRadius: BorderRadius.circular(6),
-              color: colors.surface,
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: rowsPerPage,
-                isDense: true,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: colors.textPrimary,
-                  fontFamily: 'Poppins',
-                ),
-                dropdownColor: colors.surface,
-                items: [5, 10, 20, 50]
-                    .map((v) => DropdownMenuItem(value: v, child: Text('$v')))
-                    .toList(),
-                onChanged: (v) {
-                  if (v != null) onRowsChanged(v);
-                },
-              ),
-            ),
-          ),
-          const Spacer(),
-          Text(
-            'Showing $startDisplay–$endDisplay of $total',
-            style: TextStyle(
-              fontSize: 12.5,
-              color: colors.textSecondary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(width: 12),
-          _PageBtn(
-            icon: Icons.first_page_rounded,
-            enabled: currentPage > 1,
-            colors: colors,
-            onTap: () => onPageChanged(1),
-          ),
-          const SizedBox(width: 4),
-          _PageBtn(
-            icon: Icons.chevron_left_rounded,
-            enabled: currentPage > 1,
-            colors: colors,
-            onTap: () => onPageChanged(currentPage - 1),
-          ),
-          const SizedBox(width: 6),
-          ..._buildPageNums(),
-          const SizedBox(width: 6),
-          _PageBtn(
-            icon: Icons.chevron_right_rounded,
-            enabled: currentPage < totalPages,
-            colors: colors,
-            onTap: () => onPageChanged(currentPage + 1),
-          ),
-          const SizedBox(width: 4),
-          _PageBtn(
-            icon: Icons.last_page_rounded,
-            enabled: currentPage < totalPages,
-            colors: colors,
-            onTap: () => onPageChanged(totalPages),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildPageNums() {
-    final items = <Widget>[];
-    final pages = <int>[];
-    if (totalPages <= 5) {
-      for (int i = 1; i <= totalPages; i++) {
-        pages.add(i);
-      }
-    } else {
-      pages.addAll([1, 2, 3]);
-      if (currentPage > 4) pages.add(-1);
-      if (currentPage > 3 && currentPage < totalPages - 1) {
-        pages.add(currentPage);
-      }
-      pages.add(totalPages);
-    }
-
-    for (int i = 0; i < pages.length; i++) {
-      final p = pages[i];
-      if (i > 0) items.add(const SizedBox(width: 4));
-      if (p == -1) {
-        items.add(
-          Text(
-            '...',
-            style: TextStyle(
-              fontSize: 13,
-              color: colors.textSecondary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-        );
-      } else {
-        final isActive = p == currentPage;
-        items.add(
-          InkWell(
-            onTap: () => onPageChanged(p),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: isActive ? AppColors.primaryOrange : colors.surface,
-                borderRadius: BorderRadius.circular(7),
-                border: Border.all(
-                  color: isActive ? AppColors.primaryOrange : colors.border,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  '$p',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isActive ? Colors.white : colors.textPrimary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      }
-    }
-    return items;
-  }
-}
-
-class _PageBtn extends StatelessWidget {
-  final IconData icon;
-  final bool enabled;
-  final AppThemeColors colors;
-  final VoidCallback onTap;
-  const _PageBtn({
-    required this.icon,
-    required this.enabled,
-    required this.colors,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          border: Border.all(color: colors.border),
-          borderRadius: BorderRadius.circular(6),
-          color: colors.surface,
-        ),
-        child: Icon(
-          icon,
-          size: 17,
-          color: enabled ? colors.textPrimary : colors.textHint,
         ),
       ),
     );

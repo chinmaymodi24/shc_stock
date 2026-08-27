@@ -79,6 +79,17 @@ router.post('/adjust', async (req, res, next) => {
     const productId = Number(req.body.productId);
     const qty = Number(req.body.qty);
     const type = String(req.body.type || 'IN').toUpperCase();
+    // Optional — only set when the person doing the adjustment chose to
+    // record a per-unit price (e.g. an opening-balance entry). Left null
+    // otherwise, same as a purchase/sale movement's price living on the
+    // order instead.
+    let rate = null;
+    if (req.body.rate !== undefined && req.body.rate !== null && req.body.rate !== '') {
+      rate = Number(req.body.rate);
+      if (!Number.isFinite(rate) || rate < 0) {
+        return res.status(400).json({ error: 'rate must be 0 or more' });
+      }
+    }
 
     if (!Number.isInteger(productId) || productId <= 0) {
       return res.status(400).json({ error: 'productId is required' });
@@ -103,6 +114,7 @@ router.post('/adjust', async (req, res, next) => {
         reference: req.body.reference || 'Manual adjustment',
         note: req.body.note || '',
         createdBy: req.body.createdBy || 'Admin',
+        rate,
       });
       // ADJUST loses the direction, so keep it on the row for the ledger view.
       await tx.stockMovement.update({ where: { id: movement.id }, data: { type } });

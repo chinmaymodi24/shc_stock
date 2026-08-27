@@ -61,7 +61,9 @@ class _SimpleBarChartState extends State<SimpleBarChart> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     for (var i = 0; i < widget.data.length; i++)
-                      Expanded(child: _buildColumn(context, i, maxVal, hovered)),
+                      Expanded(
+                        child: _buildColumn(context, i, maxVal, hovered),
+                      ),
                   ],
                 ),
                 if (hovered >= 0)
@@ -86,57 +88,67 @@ class _SimpleBarChartState extends State<SimpleBarChart> {
       onExit: (_) {
         if (_hovered.value == i) _hovered.value = -1;
       },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            // Only the bar itself reacts — no full-height column wash behind
-            // it; the wash read as a stray light block above the bar.
-            Expanded(
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: FractionallySizedBox(
-                  heightFactor: ratio.clamp(0.04, 1.0),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 120),
-                    decoration: BoxDecoration(
-                      color: widget.barColor.withValues(
-                        alpha: dimmed ? 0.45 : 1,
+      // Touch devices never fire onEnter/onExit — a tap toggles the same
+      // tooltip so charts work identically on mobile.
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _hovered.value = _hovered.value == i ? -1 : i,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              // Only the bar itself reacts — no full-height column wash behind
+              // it; the wash read as a stray light block above the bar.
+              Expanded(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: FractionallySizedBox(
+                    heightFactor: ratio.clamp(0.04, 1.0),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 120),
+                      decoration: BoxDecoration(
+                        color: widget.barColor.withValues(
+                          alpha: dimmed ? 0.45 : 1,
+                        ),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(6),
+                        ),
+                        boxShadow: isHovered
+                            ? [
+                                BoxShadow(
+                                  color: widget.barColor.withValues(
+                                    alpha: 0.35,
+                                  ),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
                       ),
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(6),
-                      ),
-                      boxShadow: isHovered
-                          ? [
-                              BoxShadow(
-                                color: widget.barColor.withValues(alpha: 0.35),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ]
-                          : null,
                     ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 16,
-              child: Text(
-                point.label,
-                style: TextStyle(
-                  fontSize: 11.5,
-                  height: 1.3,
-                  fontWeight: isHovered ? FontWeight.w600 : FontWeight.w400,
-                  color: isHovered ? colors.textPrimary : colors.textSecondary,
-                  fontFamily: 'Poppins',
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 16,
+                child: Text(
+                  point.label,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    height: 1.3,
+                    fontWeight: isHovered ? FontWeight.w600 : FontWeight.w400,
+                    color: isHovered
+                        ? colors.textPrimary
+                        : colors.textSecondary,
+                    fontFamily: 'Poppins',
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -167,7 +179,9 @@ class _SimpleBarChartState extends State<SimpleBarChart> {
       bottom: bottom,
       child: ChartTooltip(
         label: point.label,
-        value: widget.valueFormatter?.call(point.value) ?? _plainCount(point.value),
+        value:
+            widget.valueFormatter?.call(point.value) ??
+            _plainCount(point.value),
         accent: widget.barColor,
       ),
     );

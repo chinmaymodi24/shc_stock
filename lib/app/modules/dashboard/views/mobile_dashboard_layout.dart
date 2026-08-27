@@ -5,13 +5,13 @@ import 'package:shc_stock/app/modules/dashboard/models/dashboard_models.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/bar_chart.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/sales_chart.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/category_breakdown.dart';
-import 'package:shc_stock/app/modules/dashboard/widgets/notes_dialog.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
 
 class MobileDashboardLayout extends GetView<DashboardController> {
   const MobileDashboardLayout({super.key});
@@ -166,7 +166,17 @@ class MobileDashboardLayout extends GetView<DashboardController> {
                 ),
                 const SizedBox(height: 16),
 
-                // ── Quick links grid ─────────────────────────────────────
+                // ── Quick actions grid ─────────────────────────────────
+                Text(
+                  'Quick actions',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+                const SizedBox(height: 12),
                 GridView.count(
                   crossAxisCount: 2,
                   shrinkWrap: true,
@@ -176,34 +186,28 @@ class MobileDashboardLayout extends GetView<DashboardController> {
                   childAspectRatio: 2.6,
                   children: [
                     _QuickLinkCard(
-                      icon: Icons.edit_note_rounded,
-                      label: 'Notes',
-                      iconColor: colors.purple,
-                      onTap: () => Get.dialog(
-                        NotesDialog(
-                          notes: c.notes,
-                          onToggle: c.toggleNote,
-                          onAdd: c.addNote,
-                        ),
-                      ),
+                      icon: Icons.shopping_cart_outlined,
+                      label: 'Add Purchase',
+                      iconColor: const Color(0xFF3B82F6),
+                      onTap: () => Get.toNamed(AppRoutes.addPurchase),
                     ),
                     _QuickLinkCard(
-                      icon: Icons.receipt_long_outlined,
-                      label: 'Transactions',
-                      iconColor: colors.purple,
-                      onTap: () {},
-                    ),
-                    _QuickLinkCard(
-                      icon: Icons.warning_amber_rounded,
-                      label: 'Low Stock',
-                      iconColor: const Color(0xFFF59E0B),
-                      onTap: () => Get.toNamed(AppRoutes.stock),
-                    ),
-                    _QuickLinkCard(
-                      icon: Icons.folder_outlined,
-                      label: 'Categories',
+                      icon: Icons.sell_outlined,
+                      label: 'New Sale',
                       iconColor: AppColors.primaryOrange,
-                      onTap: () => Get.toNamed(AppRoutes.categories),
+                      onTap: () => Get.toNamed(AppRoutes.addSale),
+                    ),
+                    _QuickLinkCard(
+                      icon: Icons.person_add_alt_outlined,
+                      label: 'Add Client',
+                      iconColor: colors.purple,
+                      onTap: () => Get.toNamed(AppRoutes.addClient),
+                    ),
+                    _QuickLinkCard(
+                      icon: Icons.bar_chart_rounded,
+                      label: 'Reports',
+                      iconColor: colors.success,
+                      onTap: () => Get.toNamed(AppRoutes.reports),
                     ),
                   ],
                 ),
@@ -231,7 +235,7 @@ class MobileDashboardLayout extends GetView<DashboardController> {
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: 16),
-          child: _AvatarMenuBtn(initials: 'CM'),
+          child: _AvatarMenuBtn(),
         ),
       ],
       bottom: PreferredSize(
@@ -677,52 +681,20 @@ class _QuickLinkCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Avatar menu — tapping "CM" opens My Profile / Settings / Sign Out
+// Avatar button — tapping it opens the Profile hub (account card + Profile /
+// Notifications / Security / Preferences + Sign Out) directly, no dropdown.
 // ─────────────────────────────────────────────────────────────────────────────
 class _AvatarMenuBtn extends StatelessWidget {
-  final String initials;
-  const _AvatarMenuBtn({required this.initials});
+  const _AvatarMenuBtn();
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return PopupMenuButton<String>(
-      offset: const Offset(0, 44),
-      color: colors.surface,
-      elevation: 6,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: colors.divider),
-      ),
-      itemBuilder: (context) => [
-        _item(
-          'profile',
-          Icons.person_outline_rounded,
-          'My Profile',
-          colors.textPrimary,
-        ),
-        _item(
-          'settings',
-          Icons.settings_outlined,
-          'Settings',
-          colors.textPrimary,
-        ),
-        const PopupMenuDivider(height: 1),
-        _item('signout', Icons.logout_rounded, 'Sign Out', colors.error),
-      ],
-      onSelected: (value) {
-        switch (value) {
-          case 'profile':
-            Get.toNamed(AppRoutes.profile);
-            break;
-          case 'settings':
-            Get.toNamed(AppRoutes.settings);
-            break;
-          case 'signout':
-            Get.dialog(const _SignOutConfirmDialog());
-            break;
-        }
-      },
+    final initials = Get.isRegistered<SessionController>()
+        ? Get.find<SessionController>().user.value?.initials ?? '—'
+        : '—';
+    return InkWell(
+      onTap: () => Get.toNamed(AppRoutes.settings),
+      borderRadius: BorderRadius.circular(17),
       child: Container(
         width: 34,
         height: 34,
@@ -740,159 +712,6 @@ class _AvatarMenuBtn extends StatelessWidget {
               fontFamily: 'Poppins',
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  PopupMenuItem<String> _item(
-    String value,
-    IconData icon,
-    String label,
-    Color fg,
-  ) {
-    return PopupMenuItem<String>(
-      value: value,
-      height: 42,
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: fg),
-          const SizedBox(width: 10),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w600,
-              color: fg,
-              fontFamily: 'Poppins',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Sign-out confirmation dialog
-// ─────────────────────────────────────────────────────────────────────────────
-class _SignOutConfirmDialog extends StatelessWidget {
-  const _SignOutConfirmDialog();
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(24),
-      child: Container(
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.20),
-              blurRadius: 36,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryOrange.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.logout_rounded,
-                    color: AppColors.primaryOrange,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Sign Out',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: colors.textPrimary,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Are you sure you want to sign out?',
-              style: TextStyle(
-                fontSize: 13.5,
-                color: colors.textSecondary,
-                fontFamily: 'Poppins',
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: Get.back,
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: colors.border),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Text(
-                      'Cancel',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'Poppins',
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Get.back();
-                      Get.offAllNamed(AppRoutes.login);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryOrange,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text(
-                      'Sign Out',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ),
       ),
     );

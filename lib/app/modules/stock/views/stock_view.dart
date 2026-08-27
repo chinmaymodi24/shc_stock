@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'web_stock_layout.dart';
+import 'mobile_stock_layout.dart';
 
 class StockView extends StatelessWidget {
   const StockView({super.key});
@@ -8,7 +9,7 @@ class StockView extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= 700) return const WebStockLayout();
-        return const WebStockLayout();
+        return const MobileStockLayout();
       },
     );
   }

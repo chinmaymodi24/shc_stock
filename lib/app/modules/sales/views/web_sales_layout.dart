@@ -15,7 +15,7 @@ import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
-import 'package:shc_stock/app/shared/widgets/status_update_dialog_shell.dart';
+import 'package:shc_stock/app/modules/sales/views/update_sales_status_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 
@@ -783,7 +783,7 @@ class _SalesRowState extends State<_SalesRow> {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(20),
                         onTap: () => Get.dialog(
-                          _UpdateSalesStatusDialog(order: widget.order),
+                          UpdateSalesStatusDialog(order: widget.order),
                         ),
                         child: _Badge(
                           label: o.status.label,
@@ -935,63 +935,6 @@ class _Badge extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Update Status Dialog — the row's "⋮" action, wired to
-// SalesController.updateStatus (PATCH /sales-orders/:id/status).
-// ─────────────────────────────────────────────────────────────────────────────
-class _UpdateSalesStatusDialog extends StatefulWidget {
-  final SalesOrder order;
-  const _UpdateSalesStatusDialog({required this.order});
-
-  @override
-  State<_UpdateSalesStatusDialog> createState() =>
-      _UpdateSalesStatusDialogState();
-}
-
-class _UpdateSalesStatusDialogState extends State<_UpdateSalesStatusDialog> {
-  late final Rx<SalesStatus> _status = widget.order.status.obs;
-  late final Rx<PaymentStatus> _payment = widget.order.paymentStatus.obs;
-
-  @override
-  void dispose() {
-    _status.close();
-    _payment.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return StatusUpdateDialogShell(
-      title: 'Update Status',
-      subtitle: widget.order.soNumber,
-      width: 360,
-      onSave: () => Get.find<SalesController>().updateStatus(
-        widget.order.id,
-        status: _status.value,
-        paymentStatus: _payment.value,
-      ),
-      body: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          StatusRadioGroup<SalesStatus>(
-            label: 'Order Status',
-            options: SalesStatus.values,
-            selected: _status,
-            labelOf: (s) => s.label,
-          ),
-          const SizedBox(height: 10),
-          StatusRadioGroup<PaymentStatus>(
-            label: 'Payment Status',
-            options: PaymentStatus.values,
-            selected: _payment,
-            labelOf: (p) => p.label,
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _EmptyState extends StatelessWidget {
   final AppThemeColors colors;

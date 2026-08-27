@@ -57,17 +57,21 @@ class AppTextStyles {
     letterSpacing: 0.3,
   );
 
+  // Theme-aware purple — was the fixed dark AppColors.primaryPurple, which
+  // is nearly invisible as text/icon color on the dark theme's surface.
+  // `appColors.purple` resolves to the same dark shade in light mode and a
+  // light lavender in dark mode, so it stays legible in both.
   static TextStyle get buttonOutlineText => GoogleFonts.poppins(
     fontSize: 15,
     fontWeight: FontWeight.w600,
-    color: AppColors.primaryPurple,
+    color: appColors.purple,
     letterSpacing: 0.3,
   );
 
   static TextStyle get forgotPassword => GoogleFonts.poppins(
     fontSize: 13,
     fontWeight: FontWeight.w600,
-    color: AppColors.primaryPurple,
+    color: appColors.purple,
   );
 
   static TextStyle get rememberMe => GoogleFonts.poppins(
