@@ -7,13 +7,13 @@ import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/modules/transactions/models/transaction_model.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/modules/transactions/views/transaction_form_dialog.dart';
+import 'package:shc_stock/app/modules/transactions/views/transaction_actions.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
-import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -162,42 +162,31 @@ class WebTransactionsLayout extends GetView<TransactionsController> {
                           const SizedBox(height: 20),
 
                           // ── Summary Stat Cards ───────────────────────────────────
-                          Row(
-                            children: [
-                              Expanded(
-                                child: AppStatCard(
-                                  label: 'Total Transactions (This Month)',
-                                  value: '${c.totalThisMonth}',
-                                  icon: Icons.swap_horiz_rounded,
-                                  iconColor: const Color(0xFF3B6FC9),
-                                ),
+                          AppStatCardRow(
+                            cards: [
+                              AppStatCard(
+                                label: 'Total Transactions (This Month)',
+                                value: '${c.totalThisMonth}',
+                                icon: Icons.swap_horiz_rounded,
+                                iconColor: const Color(0xFF3B6FC9),
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: AppStatCard(
-                                  label: 'Inbound',
-                                  value: '${c.inboundCount}',
-                                  icon: Icons.call_received_rounded,
-                                  iconColor: const Color(0xFF2E9E5B),
-                                ),
+                              AppStatCard(
+                                label: 'Inbound',
+                                value: '${c.inboundCount}',
+                                icon: Icons.call_received_rounded,
+                                iconColor: const Color(0xFF2E9E5B),
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: AppStatCard(
-                                  label: 'Outbound',
-                                  value: '${c.outboundCount}',
-                                  icon: Icons.call_made_rounded,
-                                  iconColor: const Color(0xFFC9822F),
-                                ),
+                              AppStatCard(
+                                label: 'Outbound',
+                                value: '${c.outboundCount}',
+                                icon: Icons.call_made_rounded,
+                                iconColor: const Color(0xFFC9822F),
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: AppStatCard(
-                                  label: 'Pending',
-                                  value: '${c.pendingCount}',
-                                  icon: Icons.schedule_rounded,
-                                  iconColor: const Color(0xFFD1494C),
-                                ),
+                              AppStatCard(
+                                label: 'Pending',
+                                value: '${c.pendingCount}',
+                                icon: Icons.schedule_rounded,
+                                iconColor: const Color(0xFFD1494C),
                               ),
                             ],
                           ),
@@ -569,8 +558,7 @@ class _TransactionRowState extends State<_TransactionRow> {
                         color: context.appColors.success,
                         bg: context.appColors.success.withValues(alpha: 0.10),
                         tooltip: 'View',
-                        // No transaction-details view exists yet.
-                        onTap: () {},
+                        onTap: () => TransactionActions.view(txn),
                       ),
                       const SizedBox(width: 6),
                       RowActionButton(
@@ -578,8 +566,7 @@ class _TransactionRowState extends State<_TransactionRow> {
                         color: AppColors.primaryOrange,
                         bg: AppColors.primaryOrange.withValues(alpha: 0.10),
                         tooltip: 'Edit',
-                        onTap: () =>
-                            Get.dialog(TransactionFormDialog(existing: txn)),
+                        onTap: () => TransactionActions.edit(txn),
                       ),
                       const SizedBox(width: 6),
                       RowActionButton(
@@ -587,7 +574,7 @@ class _TransactionRowState extends State<_TransactionRow> {
                         color: const Color(0xFF3B82F6),
                         bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
                         tooltip: 'Duplicate',
-                        onTap: () {},
+                        onTap: () => TransactionActions.duplicate(txn),
                       ),
                       const SizedBox(width: 6),
                       RowActionButton(
@@ -598,13 +585,7 @@ class _TransactionRowState extends State<_TransactionRow> {
                         // the warning color.
                         bg: context.appColors.tagBg,
                         tooltip: 'Delete',
-                        onTap: () => confirmDelete(
-                          context,
-                          itemName: txn.item,
-                          itemLabel: 'Transaction',
-                          onConfirm: () => Get.find<TransactionsController>()
-                              .deleteTransaction(txn.id),
-                        ),
+                        onTap: () => TransactionActions.delete(context, txn),
                       ),
                     ],
                   ),
@@ -617,4 +598,3 @@ class _TransactionRowState extends State<_TransactionRow> {
     );
   }
 }
-

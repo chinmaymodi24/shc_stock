@@ -4,7 +4,6 @@ import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
-import 'package:shc_stock/app/shared/widgets/logo_plate.dart';
 
 /// Shared drawer used by all mobile layouts.
 /// Pass the current [activeRoute] so the correct item is highlighted.
@@ -22,24 +21,14 @@ class AppDrawer extends StatelessWidget {
       route: AppRoutes.dashboard,
     ),
     _DrawerItem(
-      icon: Icons.inventory_2_outlined,
-      label: 'Products',
-      route: AppRoutes.products,
-    ),
-    _DrawerItem(
       icon: Icons.category_outlined,
       label: 'Categories',
       route: AppRoutes.categories,
     ),
     _DrawerItem(
-      icon: Icons.warehouse_outlined,
-      label: 'Inventory',
-      route: AppRoutes.stock,
-    ),
-    _DrawerItem(
-      icon: Icons.swap_horiz_rounded,
-      label: 'Transactions',
-      route: AppRoutes.transactions,
+      icon: Icons.inventory_2_outlined,
+      label: 'Products',
+      route: AppRoutes.products,
     ),
     _DrawerItem(
       icon: Icons.shopping_bag_outlined,
@@ -52,14 +41,19 @@ class AppDrawer extends StatelessWidget {
       route: AppRoutes.sales,
     ),
     _DrawerItem(
+      icon: Icons.warehouse_outlined,
+      label: 'Inventory',
+      route: AppRoutes.stock,
+    ),
+    _DrawerItem(
       icon: Icons.people_outline_rounded,
       label: 'Clients',
       route: AppRoutes.clients,
     ),
     _DrawerItem(
-      icon: Icons.bar_chart_rounded,
-      label: 'Reports',
-      route: AppRoutes.reports,
+      icon: Icons.swap_horiz_rounded,
+      label: 'Transactions',
+      route: AppRoutes.transactions,
     ),
     _DrawerItem(
       icon: Icons.manage_accounts_outlined,
@@ -67,8 +61,13 @@ class AppDrawer extends StatelessWidget {
       route: AppRoutes.users,
     ),
     _DrawerItem(
-      icon: Icons.settings_outlined,
-      label: 'Settings',
+      icon: Icons.bar_chart_rounded,
+      label: 'Reports',
+      route: AppRoutes.reports,
+    ),
+    _DrawerItem(
+      icon: Icons.person_outline_rounded,
+      label: 'Profile',
       route: AppRoutes.settings,
     ),
   ];
@@ -109,57 +108,60 @@ class AppDrawer extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const LogoPlate(
-                    isDark: true,
-                    width: 116,
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
-                  const SizedBox(height: 16),
-                  // Real session data — same SessionController the web top
-                  // bar reads, instead of a hardcoded "Admin" placeholder.
-                  Obx(() {
-                    final user = Get.find<SessionController>().user.value;
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundColor: const Color(0x33F47B20),
-                          child: Text(
-                            user?.initials ?? '?',
+                  // Tapping the avatar / name block opens the Profile hub —
+                  // same target as the mobile top bar's CM circle.
+                  InkWell(
+                    onTap: () {
+                      Navigator.of(context).pop(); // close drawer
+                      Get.toNamed(AppRoutes.settings);
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    // Real session data — same SessionController the web top
+                    // bar reads, instead of a hardcoded "Admin" placeholder.
+                    child: Obx(() {
+                      final user = Get.find<SessionController>().user.value;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: const Color(0x33F47B20),
+                            child: Text(
+                              user?.initials ?? '?',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryOrange,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            user?.name.trim().isNotEmpty == true
+                                ? user!.name
+                                : 'Signed out',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.primaryOrange,
+                              color: Colors.white,
                               fontFamily: 'Poppins',
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          user?.name.trim().isNotEmpty == true
-                              ? user!.name
-                              : 'Signed out',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            fontFamily: 'Poppins',
+                          Text(
+                            user?.role.trim().isNotEmpty == true
+                                ? user!.role
+                                : (user?.email ?? ''),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFFB0AECF),
+                              fontFamily: 'Poppins',
+                            ),
                           ),
-                        ),
-                        Text(
-                          user?.role.trim().isNotEmpty == true
-                              ? user!.role
-                              : (user?.email ?? ''),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFFB0AECF),
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                      ],
-                    );
-                  }),
+                        ],
+                      );
+                    }),
+                  ),
                 ],
               ),
             ),
@@ -272,15 +274,6 @@ class _DrawerTile extends StatelessWidget {
                         color: colors.textSecondary,
                         fontFamily: 'Poppins',
                       ),
-                    ),
-                  ),
-                if (isActive)
-                  Container(
-                    width: 4,
-                    height: 4,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primaryOrange,
-                      shape: BoxShape.circle,
                     ),
                   ),
               ],

@@ -45,11 +45,16 @@ class SecureHeatCareApp extends StatelessWidget {
           child: Overlay(
             initialEntries: [
               OverlayEntry(
-                builder: (context) => SelectionArea(
-                  child: ThemeRippleHost(
+                builder: (context) {
+                  final content = ThemeRippleHost(
                     child: child ?? const SizedBox.shrink(),
-                  ),
-                ),
+                  );
+                  // Mobile: text must not be selectable or copyable, so the
+                  // app-wide SelectionArea is web/desktop only.
+                  return GetPlatform.isMobile
+                      ? content
+                      : SelectionArea(child: content);
+                },
               ),
             ],
           ),

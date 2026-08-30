@@ -1,7 +1,16 @@
 const express = require('express');
 const prisma = require('../prismaClient');
+const { stockStatus } = require('../stockService');
+const { getAppSettings } = require('../appSettings');
 
 const router = express.Router();
+
+/// 'inStock' | 'lowStock' | 'outOfStock' | 'inactive' — same derivation the
+/// inventory list uses, so the products list's stock badge honours the global
+/// low-stock threshold instead of only the per-product minimum.
+function withStockStatus(product, lowStockThreshold) {
+  return { ...product, stockStatus: stockStatus(product, lowStockThreshold) };
+}
 
 const productInclude = {
   category: true,
@@ -63,11 +72,14 @@ function toWriteData(body) {
 router.get('/', async (req, res, next) => {
   try {
     // Last added / modified first (updatedAt covers both).
-    const products = await prisma.product.findMany({
-      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-      include: productInclude,
-    });
-    res.json(products);
+    const [{ lowStockThreshold }, products] = await Promise.all([
+      getAppSettings(),
+      prisma.product.findMany({
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        include: productInclude,
+      }),
+    ]);
+    res.json(products.map((p) => withStockStatus(p, lowStockThreshold)));
   } catch (err) {
     next(err);
   }
@@ -88,7 +100,8 @@ router.post('/', async (req, res, next) => {
       data: toWriteData(req.body),
       include: productInclude,
     });
-    res.status(201).json(product);
+    const { lowStockThreshold } = await getAppSettings();
+    res.status(201).json(withStockStatus(product, lowStockThreshold));
   } catch (err) {
     if (err.code === 'P2002') return res.status(409).json({ error: 'SKU already exists' });
     if (err.code === 'P2003') return res.status(404).json({ error: 'Category or sub-category not found' });
@@ -105,7 +118,8 @@ router.put('/:id', async (req, res, next) => {
       data: toWriteData(req.body),
       include: productInclude,
     });
-    res.json(product);
+    const { lowStockThreshold } = await getAppSettings();
+    res.json(withStockStatus(product, lowStockThreshold));
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'Product not found' });
     if (err.code === 'P2002') return res.status(409).json({ error: 'SKU already exists' });

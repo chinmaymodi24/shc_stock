@@ -38,6 +38,16 @@ router.put('/:id', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
+    // Block the delete while products still sit under this sub-category —
+    // otherwise their sub-category link would be silently nulled.
+    const productCount = await prisma.product.count({ where: { subCategoryId: id } });
+    if (productCount > 0) {
+      return res.status(409).json({
+        error:
+          `This sub-category has ${productCount} product${productCount === 1 ? '' : 's'} under it. ` +
+          'Reassign them to another sub-category first.',
+      });
+    }
     await prisma.subCategory.delete({ where: { id } });
     res.status(204).send();
   } catch (err) {

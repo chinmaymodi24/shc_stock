@@ -1,15 +1,15 @@
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Splash View
-//   • Web  : white scaffold while microtask fires (HTML splash handles display)
-//   • Mobile: white branded animation (≥ 2.5 s) → login
+// Splash View — the same branded orbital-ring animation on web and mobile
+// (≥ 2.5 s), then routes to the dashboard or login. The HTML splash in
+// web/index.html is styled to match so the hand-off is seamless.
 // ─────────────────────────────────────────────────────────────────────────────
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -26,18 +26,6 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-
-    if (kIsWeb) {
-      // Post-frame, not microtask: a microtask swaps the route tree inside the
-      // very first frame, so when the browser hands focus to the Flutter view
-      // the focus traversal walks a RenderStack that has never been laid out
-      // ("RenderBox was not laid out" assert). Waiting for the first frame to
-      // finish gives every render object a size before the route changes.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) Get.offAllNamed(AppRoutes.login);
-      });
-      return;
-    }
 
     _mainCtrl = AnimationController(
       vsync: this,
@@ -61,26 +49,27 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
 
     _mainCtrl.forward();
 
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) Get.offAllNamed(AppRoutes.login);
-    });
+    Future.delayed(const Duration(milliseconds: 2500), _goNext);
+  }
+
+  /// Once the persisted session has been read from disk, go straight to the
+  /// dashboard when someone is already signed in (the "Remember me" login),
+  /// otherwise show the login page.
+  Future<void> _goNext() async {
+    await Get.find<SessionController>().ready;
+    if (!mounted) return;
+    final signedIn = Get.find<SessionController>().isSignedIn;
+    Get.offAllNamed(signedIn ? AppRoutes.dashboard : AppRoutes.login);
   }
 
   @override
   void dispose() {
-    if (!kIsWeb) _mainCtrl.dispose();
+    _mainCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb) {
-      return const Scaffold(
-        backgroundColor: Colors.white,
-        body: SizedBox.expand(),
-      );
-    }
-
     final size = MediaQuery.of(context).size;
     final top = MediaQuery.of(context).padding.top;
     final bottom = MediaQuery.of(context).padding.bottom;
@@ -163,16 +152,27 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
 // ─────────────────────────────────────────────────────────────────────────────
 class _FeatureItem {
   final IconData icon;
-  final double angle; // radians (0 = 3-o'clock)
+  final double angle; // radians (0 = 3-o'clock, +ve = clockwise on screen)
   const _FeatureItem(this.icon, this.angle);
 }
 
+// The five icons sit at equal 72° steps around the whole ring, starting at
+// the top — a point-up pentagon — instead of the old hand-picked angles that
+// bunched every icon into the upper half and left the bottom bare.
+const _kFeatureIcons = [
+  Icons.inventory_2_outlined,
+  Icons.shopping_cart_outlined,
+  Icons.bar_chart_rounded,
+  Icons.shield_outlined,
+  Icons.people_outline,
+];
+
 final _kFeatures = [
-  _FeatureItem(Icons.inventory_2_outlined, -math.pi / 2), // Top
-  _FeatureItem(Icons.shopping_cart_outlined, math.pi), // Left
-  _FeatureItem(Icons.bar_chart_rounded, 0.0), // Right
-  _FeatureItem(Icons.shield_outlined, math.pi + math.pi / 4), // Bottom-L
-  _FeatureItem(Icons.people_outline, -math.pi / 4), // Bottom-R
+  for (var i = 0; i < _kFeatureIcons.length; i++)
+    _FeatureItem(
+      _kFeatureIcons[i],
+      -math.pi / 2 + (2 * math.pi * i / _kFeatureIcons.length),
+    ),
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

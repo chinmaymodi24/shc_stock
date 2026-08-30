@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/shared/widgets/async_button.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
 import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
@@ -50,7 +51,7 @@ class MobileProfileView extends StatelessWidget {
           },
         ),
         title: Text(
-          'Profile',
+          'Edit Profile',
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
@@ -64,67 +65,72 @@ class MobileProfileView extends StatelessWidget {
           child: Divider(height: 1, color: colors.divider),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primaryPurple,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      _user?.initials ?? '—',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        fontFamily: 'Poppins',
+      body: Obx(() {
+        if (c.isLoading.value) {
+          return const AppLoadingIndicator(label: 'Loading profile...');
+        }
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primaryPurple,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        _user?.initials ?? '—',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          fontFamily: 'Poppins',
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                _greyButton(
-                  icon: Icons.file_upload_outlined,
-                  label: 'Change Photo',
-                  colors: colors,
-                  onTap: () {},
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _field(label: 'Full Name', ctrl: c.nameCtrl, colors: colors),
-            const SizedBox(height: 16),
-            _field(label: 'Email', ctrl: c.emailCtrl, colors: colors),
-            const SizedBox(height: 16),
-            _field(
-              label: 'Role',
-              ctrl: null,
-              hint: _user?.role ?? '—',
-              enabled: false,
-              colors: colors,
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: AppAsyncButton(
-                label: 'Save Changes',
-                onPressed: c.saveSettings,
-                expand: true,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                radius: 10,
+                  const SizedBox(width: 16),
+                  _greyButton(
+                    icon: Icons.file_upload_outlined,
+                    label: 'Change Photo',
+                    colors: colors,
+                    onTap: () {},
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-      ),
+              const SizedBox(height: 24),
+              _field(label: 'Full Name', ctrl: c.nameCtrl, colors: colors),
+              const SizedBox(height: 16),
+              _field(label: 'Email', ctrl: c.emailCtrl, colors: colors),
+              const SizedBox(height: 16),
+              _field(
+                label: 'Role',
+                ctrl: null,
+                hint: _user?.role ?? '—',
+                enabled: false,
+                colors: colors,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: AppAsyncButton(
+                  label: 'Save Changes',
+                  onPressed: c.saveSettings,
+                  expand: true,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  radius: 10,
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 

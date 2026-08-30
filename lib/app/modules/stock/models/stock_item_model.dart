@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/modules/products/models/product_model.dart';
 
 enum StockStatus { inStock, lowStock, outOfStock, inactive }
 
@@ -44,6 +45,44 @@ class StockItemModel {
     this.modifiedBy = 'Admin',
     this.modifiedAt,
   });
+
+  /// Builds the inventory view of a product straight from the products list,
+  /// so the Products page can open the same [StockItemDetailsPanel] the
+  /// Inventory page uses instead of needing a second details screen.
+  factory StockItemModel.fromProduct(ProductModel p) {
+    const statuses = {
+      'inStock': StockStatus.inStock,
+      'lowStock': StockStatus.lowStock,
+      'outOfStock': StockStatus.outOfStock,
+      'inactive': StockStatus.inactive,
+    };
+    return StockItemModel(
+      id: p.id,
+      productId: int.tryParse(p.id) ?? 0,
+      code: p.sku,
+      sku: p.sku,
+      name: p.name,
+      category: p.categoryName,
+      unit: p.unit,
+      stockInHand: p.currentStock,
+      availableStock: p.currentStock,
+      minimumStock: p.minimumStock,
+      costPrice: p.costPrice,
+      sellingPrice: p.sellingPrice,
+      stockValue: p.currentStock * p.costPrice,
+      stockLocation: p.stockLocation,
+      isActive: p.isActive,
+      status:
+          statuses[p.serverStockStatus] ??
+          (p.currentStock == 0
+              ? StockStatus.outOfStock
+              : p.currentStock <= p.minimumStock
+              ? StockStatus.lowStock
+              : StockStatus.inStock),
+      modifiedBy: p.modifiedBy,
+      modifiedAt: p.effectiveModifiedAt,
+    );
+  }
 
   /// Maps a row from GET /api/inventory. `status` arrives already derived by
   /// the backend (stockService.stockStatus) so the app and the API can't

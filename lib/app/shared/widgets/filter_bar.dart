@@ -78,11 +78,15 @@ class FilterBar extends StatelessWidget {
 }
 
 // ── Search field ────────────────────────────────────────────────────────────
-class FilterSearchField extends StatelessWidget {
+class FilterSearchField extends StatefulWidget {
   final String hint;
   final ValueChanged<String> onChanged;
   final TextEditingController? controller;
   final double width;
+
+  /// Shows a trailing "✕" that clears the field — only while it has text.
+  /// On by default; pass false to hide it.
+  final bool showClear;
 
   const FilterSearchField({
     super.key,
@@ -90,7 +94,26 @@ class FilterSearchField extends StatelessWidget {
     required this.onChanged,
     this.controller,
     this.width = 300,
+    this.showClear = true,
   });
+
+  @override
+  State<FilterSearchField> createState() => _FilterSearchFieldState();
+}
+
+class _FilterSearchFieldState extends State<FilterSearchField> {
+  // Use the caller's controller when given; otherwise own one so the clear
+  // button still works on the (few) call sites that don't pass one. No
+  // setState here — the clear icon reacts through ValueListenableBuilder.
+  late final TextEditingController _controller =
+      widget.controller ?? TextEditingController();
+  bool get _ownsController => widget.controller == null;
+
+  @override
+  void dispose() {
+    if (_ownsController) _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,17 +123,17 @@ class FilterSearchField extends StatelessWidget {
         ? const Color(0xFFF1F2F4)
         : colors.inputFill;
     return SizedBox(
-      width: width,
+      width: widget.width,
       child: TextField(
-        controller: controller,
-        onChanged: onChanged,
+        controller: _controller,
+        onChanged: widget.onChanged,
         style: TextStyle(
           fontSize: 13,
           fontFamily: 'Poppins',
           color: colors.textPrimary,
         ),
         decoration: InputDecoration(
-          hintText: hint,
+          hintText: widget.hint,
           hintStyle: TextStyle(
             fontSize: 13,
             color: colors.textHint,
@@ -120,6 +143,30 @@ class FilterSearchField extends StatelessWidget {
             Icons.search_rounded,
             color: colors.textHint,
             size: 18,
+          ),
+          suffixIcon: widget.showClear
+              ? ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _controller,
+                  builder: (_, value, __) => value.text.isEmpty
+                      ? const SizedBox.shrink()
+                      : IconButton(
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          icon: Icon(
+                            Icons.close_rounded,
+                            size: 16,
+                            color: colors.textHint,
+                          ),
+                          onPressed: () {
+                            _controller.clear();
+                            widget.onChanged('');
+                          },
+                        ),
+                )
+              : null,
+          suffixIconConstraints: const BoxConstraints(
+            minWidth: 32,
+            minHeight: 32,
           ),
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(

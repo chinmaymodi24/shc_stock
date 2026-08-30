@@ -7,11 +7,14 @@ import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
 import 'package:shc_stock/app/modules/transactions/controllers/transactions_controller.dart';
 import 'package:shc_stock/app/modules/transactions/models/transaction_model.dart';
 import 'package:shc_stock/app/modules/transactions/views/transaction_form_dialog.dart';
+import 'package:shc_stock/app/modules/transactions/views/transaction_actions.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_row_actions.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
-import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_list_scaffold.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/shared/widgets/mobile_filter_sheet.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_appbar_avatar.dart';
 
 /// Mobile counterpart of WebTransactionsLayout — same data/actions (Add,
 /// Edit via TransactionFormDialog, Delete via confirmDelete), card list
@@ -28,12 +31,7 @@ class MobileTransactionsLayout extends StatelessWidget {
       backgroundColor: colors.background,
       drawer: const AppDrawer(activeRoute: AppRoutes.transactions),
       appBar: _buildAppBar(context, c),
-      body: Column(
-        children: [
-          _buildSearchBar(context, c),
-          Expanded(child: _buildList(context, c)),
-        ],
-      ),
+      body: _buildList(context, c),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Get.dialog(const TransactionFormDialog()),
         backgroundColor: AppColors.primaryOrange,
@@ -65,18 +63,26 @@ class MobileTransactionsLayout extends StatelessWidget {
           fontFamily: 'Poppins',
         ),
       ),
+      centerTitle: true,
       actions: [
-        MobileFilterButton(
-          filters: _buildFilters(c),
-          onClear: () {
-            c.search.value = '';
-            c.searchCtrl.clear();
-            c.typeFilters.clear();
-            c.statusFilters.clear();
-            c.sortOption.value = 'Default';
-            c.currentPage.value = 1;
-          },
+        Obx(
+          () => MobileFilterButton(
+            filters: _buildFilters(c),
+            onClear: () {
+              c.search.value = '';
+              c.searchCtrl.clear();
+              c.typeFilters.clear();
+              c.statusFilters.clear();
+              c.sortOption.value = 'Default';
+              c.currentPage.value = 1;
+            },
+            activeCount:
+                c.typeFilters.length +
+                c.statusFilters.length +
+                (c.sortOption.value == 'Default' ? 0 : 1),
+          ),
         ),
+        const MobileAppBarAvatar(),
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
@@ -87,19 +93,59 @@ class MobileTransactionsLayout extends StatelessWidget {
 
   // Same FilterSearchField the web filter row uses, and the same searchCtrl
   // so a Clear-all tap in the filter sheet also clears the visible text.
-  Widget _buildSearchBar(BuildContext context, TransactionsController c) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-      child: FilterSearchField(
-        controller: c.searchCtrl,
-        hint: 'Search by item or PO #...',
-        width: double.infinity,
-        onChanged: (v) {
-          c.search.value = v;
-          c.currentPage.value = 1;
+  Widget _searchField(TransactionsController c) => FilterSearchField(
+    controller: c.searchCtrl,
+    hint: 'Search by item or PO #...',
+    width: double.infinity,
+    onChanged: (v) {
+      c.search.value = v;
+      c.currentPage.value = 1;
+    },
+  );
+
+  List<MobileStatCardData> _statCards(TransactionsController c) {
+    return [
+      MobileStatCardData(
+        label: 'This Month',
+        value: '${c.totalThisMonth}',
+        icon: Icons.swap_horiz_rounded,
+        color: const Color(0xFF3B6FC9),
+        onTap: () {
+          c.typeFilters.clear();
+          c.statusFilters.clear();
         },
       ),
-    );
+      MobileStatCardData(
+        label: 'Inbound',
+        value: '${c.inboundCount}',
+        icon: Icons.call_received_rounded,
+        color: const Color(0xFF2E9E5B),
+        selected: c.typeFilters.contains('Inbound'),
+        onTap: () => c.typeFilters.contains('Inbound')
+            ? c.typeFilters.remove('Inbound')
+            : c.typeFilters.add('Inbound'),
+      ),
+      MobileStatCardData(
+        label: 'Outbound',
+        value: '${c.outboundCount}',
+        icon: Icons.call_made_rounded,
+        color: const Color(0xFFC9822F),
+        selected: c.typeFilters.contains('Outbound'),
+        onTap: () => c.typeFilters.contains('Outbound')
+            ? c.typeFilters.remove('Outbound')
+            : c.typeFilters.add('Outbound'),
+      ),
+      MobileStatCardData(
+        label: 'Pending',
+        value: '${c.pendingCount}',
+        icon: Icons.schedule_rounded,
+        color: const Color(0xFFD1494C),
+        selected: c.statusFilters.contains('Pending'),
+        onTap: () => c.statusFilters.contains('Pending')
+            ? c.statusFilters.remove('Pending')
+            : c.statusFilters.add('Pending'),
+      ),
+    ];
   }
 
   // Same data/controller bindings as WebTransactionsLayout's FilterBar —
@@ -147,11 +193,8 @@ class MobileTransactionsLayout extends StatelessWidget {
   }
 
   Widget _buildList(BuildContext context, TransactionsController c) {
-    final colors = context.appColors;
     return Obx(() {
-      if (c.isLoading.value && c.transactions.isEmpty) {
-        return const AppLoadingIndicator(label: 'Loading transactions...');
-      }
+      final loading = c.isLoading.value && c.transactions.isEmpty;
       // Same filter + sort logic as WebTransactionsLayout — search, type,
       // status, then the chosen sort order.
       final q = c.search.value.toLowerCase();
@@ -184,115 +227,30 @@ class MobileTransactionsLayout extends StatelessWidget {
           filtered.sort((a, b) => a.date.compareTo(b.date));
       }
 
-      return ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
-        children: [
-          // IntrinsicHeight, not a fixed SizedBox — a fixed height clipped
-          // AppStatCard whenever its 2-line label ("This Month") plus value
-          // ran taller than the guessed number, so the strip now sizes to
-          // whatever the tallest card actually needs.
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: IntrinsicHeight(
-              child: Row(
-                children: [
-                  _MobileStatCard(
-                    label: 'This Month',
-                    value: '${c.totalThisMonth}',
-                    icon: Icons.swap_horiz_rounded,
-                    color: const Color(0xFF3B6FC9),
-                  ),
-                  const SizedBox(width: 10),
-                  _MobileStatCard(
-                    label: 'Inbound',
-                    value: '${c.inboundCount}',
-                    icon: Icons.call_received_rounded,
-                    color: const Color(0xFF2E9E5B),
-                  ),
-                  const SizedBox(width: 10),
-                  _MobileStatCard(
-                    label: 'Outbound',
-                    value: '${c.outboundCount}',
-                    icon: Icons.call_made_rounded,
-                    color: const Color(0xFFC9822F),
-                  ),
-                  const SizedBox(width: 10),
-                  _MobileStatCard(
-                    label: 'Pending',
-                    value: '${c.pendingCount}',
-                    icon: Icons.schedule_rounded,
-                    color: const Color(0xFFD1494C),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'Showing ${filtered.length} transactions',
-            style: TextStyle(
-              fontSize: 12.5,
-              color: colors.textSecondary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (filtered.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 48),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.receipt_long_outlined,
-                      size: 44,
-                      color: colors.textHint,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'No transactions found',
-                      style: TextStyle(
-                        color: colors.textHint,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ],
+      return MobileListScaffold(
+        statCards: _statCards(c),
+        search: _searchField(c),
+        countLabel:
+            loading ? null : 'Showing ${filtered.length} transactions',
+        sliver: loading
+            ? const SliverFillRemaining(
+                hasScrollBody: false,
+                child: AppLoadingIndicator(label: 'Loading transactions...'),
+              )
+            : filtered.isEmpty
+            ? const MobileListEmpty(
+                icon: Icons.receipt_long_outlined,
+                label: 'No transactions found',
+              )
+            : SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
+                sliver: SliverList.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (_, i) => _MobileTxnCard(txn: filtered[i]),
                 ),
               ),
-            )
-          else
-            ...filtered.map((t) => _MobileTxnCard(txn: t)),
-        ],
       );
     });
-  }
-}
-
-class _MobileStatCard extends StatelessWidget {
-  final String label, value;
-  final IconData icon;
-  final Color color;
-  const _MobileStatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 140,
-      child: AppStatCard(
-        label: label,
-        value: value,
-        icon: icon,
-        iconColor: color,
-        smallValue: true,
-        showCaption: false,
-      ),
-    );
   }
 }
 
@@ -397,27 +355,22 @@ class _MobileTxnCard extends StatelessWidget {
             const SizedBox(height: 8),
             Divider(height: 1, color: colors.divider),
             const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                _ActBtn(
-                  icon: Icons.edit_outlined,
-                  color: AppColors.primaryOrange,
-                  tooltip: 'Edit',
-                  onTap: () => Get.dialog(TransactionFormDialog(existing: txn)),
+            // Same four actions the web table offers.
+            MobileActionRow(
+              actions: [
+                MobileActionButton.view(
+                  context: context,
+                  onTap: () => TransactionActions.view(txn),
                 ),
-                const SizedBox(width: 6),
-                _ActBtn(
-                  icon: Icons.delete_outline_rounded,
-                  color: const Color(0xFFEF4444),
-                  tooltip: 'Delete',
-                  onTap: () => confirmDelete(
-                    context,
-                    itemName: txn.item,
-                    itemLabel: 'Transaction',
-                    onConfirm: () => Get.find<TransactionsController>()
-                        .deleteTransaction(txn.id),
-                  ),
+                MobileActionButton.edit(
+                  context: context,
+                  onTap: () => TransactionActions.edit(txn),
+                ),
+                MobileActionButton.duplicate(
+                  onTap: () => TransactionActions.duplicate(txn),
+                ),
+                MobileActionButton.delete(
+                  onTap: () => TransactionActions.delete(context, txn),
                 ),
               ],
             ),
@@ -428,35 +381,3 @@ class _MobileTxnCard extends StatelessWidget {
   }
 }
 
-class _ActBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String tooltip;
-  final VoidCallback onTap;
-  const _ActBtn({
-    required this.icon,
-    required this.color,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: color, size: 15),
-        ),
-      ),
-    );
-  }
-}

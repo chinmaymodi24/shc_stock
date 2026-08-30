@@ -9,6 +9,13 @@ import 'package:shc_stock/app/modules/clients/models/client_model.dart';
 /// manual billing-address fields.
 enum BillingAddressMode { shipping, registered, custom }
 
+/// Wraps a client routed to Add Client so the form updates it in place. A
+/// bare [ClientModel] argument still means Duplicate — pre-fill, save as new.
+class EditClient {
+  final ClientModel client;
+  const EditClient(this.client);
+}
+
 class AddClientController extends GetxController {
   // ── Client Details ────────────────────────────────────────────────────
   final clientType = ''.obs;
@@ -94,8 +101,21 @@ class AddClientController extends GetxController {
     super.onInit();
     clientCodeCtrl.text = 'CLT-${1000 + Random().nextInt(9000)}';
     final arg = Get.arguments;
-    if (arg is ClientModel) loadFrom(arg);
+    if (arg is EditClient) {
+      editingId.value = arg.client.id;
+      loadFrom(arg.client);
+      // An edit keeps the client's own code; only a duplicate needs the
+      // freshly-generated one above.
+      clientCodeCtrl.text = arg.client.code;
+    } else if (arg is ClientModel) {
+      loadFrom(arg);
+    }
   }
+
+  /// Id of the client being edited, or null when this is a new/duplicated
+  /// client. Drives whether Save POSTs or PUTs.
+  final editingId = RxnString();
+  bool get isEdit => editingId.value != null;
 
   /// Fills the form from an existing client — used by the clients list's
   /// "Duplicate" action. There is no edit/update path here: Client Code is

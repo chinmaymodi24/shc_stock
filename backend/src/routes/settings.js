@@ -1,8 +1,38 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const prisma = require('../prismaClient');
+const { getAppSettings, updateAppSettings } = require('../appSettings');
 
 const router = express.Router();
+
+// ── Business-wide settings (not per-user) ──────────────────────────────────
+// GET /api/settings/app
+router.get('/app', async (req, res, next) => {
+  try {
+    const { lowStockThreshold } = await getAppSettings();
+    res.json({ lowStockThreshold });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/settings/app  { lowStockThreshold }
+router.put('/app', async (req, res, next) => {
+  try {
+    const data = {};
+    if (req.body.lowStockThreshold !== undefined) {
+      const n = Number(req.body.lowStockThreshold);
+      if (!Number.isInteger(n) || n < 0 || n > 100000) {
+        return res.status(400).json({ error: 'lowStockThreshold must be a whole number between 0 and 100000' });
+      }
+      data.lowStockThreshold = n;
+    }
+    const { lowStockThreshold } = await updateAppSettings(data);
+    res.json({ lowStockThreshold });
+  } catch (err) {
+    next(err);
+  }
+});
 
 /// Same rule as /api/users — the hash never leaves the API.
 const publicFields = {
@@ -20,6 +50,7 @@ const publicFields = {
   twoFactor: true,
   rowsPerPage: true,
   dateFormat: true,
+  autoNumberDocs: true,
 };
 
 const str = (v, fallback = '') =>
@@ -71,7 +102,7 @@ router.put('/', async (req, res, next) => {
 
     for (const key of [
       'notifyLowStock', 'notifyDelivery', 'notifyPayment',
-      'notifyWeekly', 'twoFactor',
+      'notifyWeekly', 'twoFactor', 'autoNumberDocs',
     ]) {
       if (req.body[key] !== undefined) data[key] = req.body[key] === true;
     }

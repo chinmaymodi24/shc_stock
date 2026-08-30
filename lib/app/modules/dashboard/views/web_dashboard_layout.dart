@@ -72,20 +72,10 @@ class WebDashboardLayout extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: c.dashboardStats.asMap().entries.map((e) {
-                              final isLast =
-                                  e.key == c.dashboardStats.length - 1;
-                              return Expanded(
-                                child: Padding(
-                                  padding: EdgeInsets.only(
-                                    right: isLast ? 0 : 16,
-                                  ),
-                                  child: _DashboardStatTile(data: e.value),
-                                ),
-                              );
-                            }).toList(),
+                          AppStatCardRow(
+                            cards: c.dashboardStats
+                                .map((d) => _DashboardStatTile(data: d))
+                                .toList(),
                           ),
                           const SizedBox(height: 20),
                           Row(
@@ -334,6 +324,7 @@ class _DashboardStatTile extends StatelessWidget {
       trend: data.change ?? '',
       trendUp: data.isPositive,
       showCaption: false,
+      smallValue: data.smallValue,
     );
   }
 }

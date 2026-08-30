@@ -15,9 +15,23 @@ import 'package:shc_stock/app/shared/widgets/form_fields.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 class TransactionFormDialog extends StatefulWidget {
   final TransactionModel? existing;
-  const TransactionFormDialog({super.key, this.existing});
 
-  bool get isEdit => existing != null;
+  /// With [duplicate] set, [existing] only pre-fills the form — saving POSTs a
+  /// new transaction and never touches the one duplicated from.
+  final bool duplicate;
+
+  /// Renders every field read-only with a Close button instead of Save —
+  /// what the list's "View" action opens.
+  final bool readOnly;
+
+  const TransactionFormDialog({
+    super.key,
+    this.existing,
+    this.duplicate = false,
+    this.readOnly = false,
+  });
+
+  bool get isEdit => existing != null && !duplicate && !readOnly;
 
   @override
   State<TransactionFormDialog> createState() => _TransactionFormDialogState();
@@ -124,7 +138,13 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                widget.isEdit ? 'Edit Transaction' : 'New Transaction',
+                widget.readOnly
+                    ? 'Transaction Details'
+                    : widget.isEdit
+                    ? 'Edit Transaction'
+                    : widget.duplicate
+                    ? 'Duplicate Transaction'
+                    : 'New Transaction',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
@@ -134,107 +154,119 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
               ),
               const SizedBox(height: 18),
 
-              AppField(
-                label: 'Item',
-                required: true,
-                colors: colors,
-                child: AppTextBox(
-                  controller: _item,
-                  hint: 'e.g. Copper Pipe 15mm',
-                  colors: colors,
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: AppField(
-                      label: 'Type',
-                      colors: colors,
-                      child: Obx(
-                        () => AppDropBox(
-                          hint: 'Select type',
-                          value: _type.value,
-                          items: _types,
-                          colors: colors,
-                          onChanged: (v) => _type.value = v ?? 'Inbound',
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: AppField(
-                      label: 'Status',
-                      colors: colors,
-                      child: Obx(
-                        () => AppDropBox(
-                          hint: 'Select status',
-                          value: _status.value,
-                          items: _statuses,
-                          colors: colors,
-                          onChanged: (v) => _status.value = v ?? 'Pending',
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: AppField(
-                      label: 'Party',
-                      colors: colors,
-                      child: AppTextBox(
-                        controller: _party,
-                        hint: 'Supplier or client',
-                        colors: colors,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: AppField(
-                      label: 'PO #',
-                      colors: colors,
-                      child: AppTextBox(
-                        controller: _po,
-                        hint: 'e.g. #4421',
-                        colors: colors,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-
-              AppField(
-                label: 'Date',
-                required: true,
-                colors: colors,
-                child: Obx(
-                  () => AppDateBox(
-                    date: _date.value,
+              // View mode reuses this form verbatim; AbsorbPointer
+              // makes every field non-interactive instead of
+              // maintaining a second read-only layout.
+              AbsorbPointer(
+                absorbing: widget.readOnly,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                  AppField(
+                    label: 'Item',
+                    required: true,
                     colors: colors,
-                    onTap: _pickDate,
+                    child: AppTextBox(
+                      controller: _item,
+                      hint: 'e.g. Copper Pipe 15mm',
+                      colors: colors,
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 14),
+                  const SizedBox(height: 14),
 
-              AppField(
-                label: 'Notes',
-                colors: colors,
-                child: AppTextBox(
-                  controller: _notes,
-                  hint: 'Optional',
-                  colors: colors,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: AppField(
+                          label: 'Type',
+                          colors: colors,
+                          child: Obx(
+                            () => AppDropBox(
+                              hint: 'Select type',
+                              value: _type.value,
+                              items: _types,
+                              colors: colors,
+                              onChanged: (v) => _type.value = v ?? 'Inbound',
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: AppField(
+                          label: 'Status',
+                          colors: colors,
+                          child: Obx(
+                            () => AppDropBox(
+                              hint: 'Select status',
+                              value: _status.value,
+                              items: _statuses,
+                              colors: colors,
+                              onChanged: (v) => _status.value = v ?? 'Pending',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: AppField(
+                          label: 'Party',
+                          colors: colors,
+                          child: AppTextBox(
+                            controller: _party,
+                            hint: 'Supplier or client',
+                            colors: colors,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: AppField(
+                          label: 'PO #',
+                          colors: colors,
+                          child: AppTextBox(
+                            controller: _po,
+                            hint: 'e.g. #4421',
+                            colors: colors,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  AppField(
+                    label: 'Date',
+                    required: true,
+                    colors: colors,
+                    child: Obx(
+                      () => AppDateBox(
+                        date: _date.value,
+                        colors: colors,
+                        onTap: _pickDate,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  AppField(
+                    label: 'Notes',
+                    colors: colors,
+                    child: AppTextBox(
+                      controller: _notes,
+                      hint: 'Optional',
+                      colors: colors,
+                    ),
+                  ),
+                  ],
                 ),
               ),
               const SizedBox(height: 22),
@@ -255,7 +287,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                       ),
                     ),
                     child: Text(
-                      'Cancel',
+                      // Read-only has nothing to cancel — it just closes.
+                      widget.readOnly ? 'Close' : 'Cancel',
                       style: TextStyle(
                         fontSize: 13.5,
                         fontFamily: 'Poppins',
@@ -263,52 +296,54 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Obx(
-                    () => ElevatedButton(
-                      onPressed: _saving.value ? null : _save,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryOrange,
-                        disabledBackgroundColor: AppColors.primaryOrange
-                            .withValues(alpha: 0.6),
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 13,
+                  if (!widget.readOnly) ...[
+                    const SizedBox(width: 10),
+                    Obx(
+                      () => ElevatedButton(
+                        onPressed: _saving.value ? null : _save,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryOrange,
+                          disabledBackgroundColor: AppColors.primaryOrange
+                              .withValues(alpha: 0.6),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 13,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(9),
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(9),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (_saving.value) ...[
-                            const SizedBox(
-                              width: 13,
-                              height: 13,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_saving.value) ...[
+                              const SizedBox(
+                                width: 13,
+                                height: 13,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            Text(
+                              _saving.value
+                                  ? 'Saving…'
+                                  : (widget.isEdit ? 'Save Changes' : 'Add'),
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
                                 color: Colors.white,
+                                fontFamily: 'Poppins',
                               ),
                             ),
-                            const SizedBox(width: 8),
                           ],
-                          Text(
-                            _saving.value
-                                ? 'Saving…'
-                                : (widget.isEdit ? 'Save Changes' : 'Add'),
-                            style: const TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ],

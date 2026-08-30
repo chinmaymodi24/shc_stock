@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/utils/doc_number.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
+import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
+import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
+import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
 
 class MobilePurchaseItemRow {
   // Stable identity for list-item Keys, and a version bump whenever fields
@@ -61,6 +65,25 @@ class MobileAddPurchaseController extends GetxController {
   final dueDate = Rx<DateTime?>(null);
 
   final items = <MobilePurchaseItemRow>[MobilePurchaseItemRow()].obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _prefillInvoiceNo();
+  }
+
+  /// Fills "Invoice No." with the next number in the PO-2024 series, unless
+  /// the user turned auto-numbering off in Settings › Preferences.
+  Future<void> _prefillInvoiceNo() async {
+    if (!await autoNumberDocsEnabled()) return;
+    final orders = Get.isRegistered<PurchaseController>()
+        ? Get.find<PurchaseController>().orders
+        : const <PurchaseOrder>[];
+    invoiceNoCtrl.text = nextDocNumber(
+      prefix: 'PO-2024',
+      existing: orders.map((o) => o.poNumber),
+    );
+  }
 
   double get subTotal => items.fold(0.0, (s, r) => s + r.amount);
   double get sgst => subTotal * 0.09;

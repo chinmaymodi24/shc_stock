@@ -22,20 +22,67 @@ import 'package:shc_stock/app/core/theme/app_colors.dart';
 class MobileFilterButton extends StatelessWidget {
   final List<Widget> filters;
   final VoidCallback? onClear;
-  const MobileFilterButton({super.key, required this.filters, this.onClear});
+
+  /// How many filters are currently applied. Above zero the icon turns brand
+  /// orange and carries a count badge — without it there was nothing on the
+  /// collapsed AppBar to say the list was filtered.
+  final int activeCount;
+
+  const MobileFilterButton({
+    super.key,
+    required this.filters,
+    this.onClear,
+    this.activeCount = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final active = activeCount > 0;
     return IconButton(
-      icon: Icon(
-        Icons.filter_alt_outlined,
-        color: colors.textPrimary,
-        size: 24,
-      ),
-      tooltip: 'Filters',
+      tooltip: active
+          ? '$activeCount filter${activeCount == 1 ? '' : 's'} applied'
+          : 'Filters',
       onPressed: () =>
           showMobileFilterSheet(context, filters: filters, onClear: onClear),
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(
+            active ? Icons.filter_alt_rounded : Icons.filter_alt_outlined,
+            color: active ? AppColors.primaryOrange : colors.textPrimary,
+            size: 24,
+          ),
+          if (active)
+            Positioned(
+              top: -5,
+              right: -6,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                constraints: const BoxConstraints(minWidth: 16),
+                height: 16,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryOrange,
+                  borderRadius: BorderRadius.circular(999),
+                  // Punches the badge out of the icon behind it.
+                  border: Border.all(color: colors.topBarBg, width: 1.5),
+                ),
+                child: Center(
+                  child: Text(
+                    '$activeCount',
+                    style: const TextStyle(
+                      fontSize: 9.5,
+                      height: 1,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -78,30 +125,6 @@ Future<void> showMobileFilterSheet(
                     ),
                   ),
                   const Spacer(),
-                  if (onClear != null)
-                    InkWell(
-                      onTap: () {
-                        onClear();
-                        Navigator.of(ctx).pop();
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        child: Text(
-                          'Clear all',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryOrange,
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                      ),
-                    ),
-                  const SizedBox(width: 4),
                   InkWell(
                     onTap: () => Navigator.of(ctx).pop(),
                     borderRadius: BorderRadius.circular(8),
@@ -129,6 +152,58 @@ Future<void> showMobileFilterSheet(
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 16),
+              Divider(height: 1, color: colors.divider),
+              const SizedBox(height: 14),
+              // Action bar — Clear all on the left, Apply on the right.
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: onClear,
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: colors.border),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: Text(
+                        'Clear all',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryOrange,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Apply',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -280,19 +355,22 @@ class _Chip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (active) ...[
-              const Icon(
-                Icons.check_rounded,
-                size: 14,
-                color: AppColors.primaryOrange,
-              ),
-              const SizedBox(width: 4),
-            ],
+            // The tick's space is reserved whether or not the chip is
+            // selected — otherwise selecting one widens it and reflows the
+            // whole Wrap, bumping the next chip onto another line.
+            Icon(
+              Icons.check_rounded,
+              size: 14,
+              color: active ? AppColors.primaryOrange : Colors.transparent,
+            ),
+            const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
                 fontSize: 12.5,
-                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                // Constant weight — a bolder selected label would also
+                // change the chip's width and reflow the row.
+                fontWeight: FontWeight.w600,
                 color: active ? AppColors.primaryOrange : colors.textPrimary,
                 fontFamily: 'Poppins',
               ),

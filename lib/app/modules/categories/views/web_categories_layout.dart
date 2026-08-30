@@ -147,41 +147,30 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                           const SizedBox(height: 20),
 
                           // ── Stat Cards ───────────────────────────────────────────
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Categories',
-                                    value:
-                                        '${c.stats.value.intOf('totalCategories')}',
-                                    icon: Icons.category_outlined,
-                                    iconColor: AppColors.primaryOrange,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Subcategories',
-                                    value:
-                                        '${c.stats.value.intOf('totalSubCategories')}',
-                                    icon: Icons.account_tree_outlined,
-                                    iconColor: context.appColors.accent,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Largest',
-                                    value: largest?.name ?? '—',
-                                    icon: Icons.star_border_rounded,
-                                    iconColor: colors.textSecondary,
-                                    smallValue: true,
-                                  ),
-                                ),
-                              ],
-                            ),
+                          AppStatCardRow(
+                            cards: [
+                              AppStatCard(
+                                label: 'Categories',
+                                value:
+                                    '${c.stats.value.intOf('totalCategories')}',
+                                icon: Icons.category_outlined,
+                                iconColor: AppColors.primaryOrange,
+                              ),
+                              AppStatCard(
+                                label: 'Subcategories',
+                                value:
+                                    '${c.stats.value.intOf('totalSubCategories')}',
+                                icon: Icons.account_tree_outlined,
+                                iconColor: context.appColors.accent,
+                              ),
+                              AppStatCard(
+                                label: 'Largest',
+                                value: largest?.name ?? '—',
+                                icon: Icons.star_border_rounded,
+                                iconColor: colors.textSecondary,
+                                smallValue: true,
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 20),
 

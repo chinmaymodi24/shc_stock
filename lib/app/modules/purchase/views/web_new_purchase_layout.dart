@@ -14,6 +14,7 @@ import 'package:shc_stock/app/modules/products/controllers/products_controller.d
 import 'package:shc_stock/app/modules/products/models/product_model.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
 import 'package:shc_stock/app/modules/clients/widgets/client_autocomplete_field.dart';
+import 'package:shc_stock/app/shared/models/order_payment.dart';
 import 'package:shc_stock/app/shared/widgets/form_fields.dart';
 import 'package:shc_stock/app/shared/widgets/section_card.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
@@ -63,6 +64,9 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
       freight: double.tryParse(controller.freightCtrl.text.trim()) ?? 0,
       placeOfSupply: controller.placeOfSupplyCtrl.text.trim(),
       dueDate: controller.dueDate.value,
+      expectedDelivery: controller.expectedDelivery.value,
+      paymentType: controller.paymentType.value,
+      paidAmount: controller.paidAmount,
       items: controller.items
           .map(
             (r) => PurchaseDetailItem(
@@ -416,11 +420,72 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
                                       ),
                                     ),
                                     const SizedBox(width: 16),
-                                    const Expanded(child: SizedBox()),
+                                    // Optional. Set it and the backend marks
+                                    // the order Received on that date, which
+                                    // is what adds the stock; leave it empty
+                                    // and the status stays put.
+                                    Expanded(
+                                      child: AppField(
+                                        label: 'Expected Delivery',
+                                        colors: colors,
+                                        child: AppDateBox(
+                                          date: controller.expectedDelivery.value,
+                                          colors: colors,
+                                          onTap: () => controller.pickDate(
+                                            context,
+                                            controller.expectedDelivery,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                     const SizedBox(width: 16),
-                                    const Expanded(child: SizedBox()),
+                                    Expanded(
+                                      child: AppField(
+                                        label: 'Order Paid',
+                                        colors: colors,
+                                        child: AppDropBox(
+                                          hint: 'Select...',
+                                          value: controller
+                                              .paymentType
+                                              .value
+                                              .label
+                                              .isEmpty
+                                              ? null
+                                              : controller
+                                                    .paymentType
+                                                    .value
+                                                    .label,
+                                          items: kOrderPaymentOptions
+                                              .map((t) => t.label)
+                                              .toList(),
+                                          colors: colors,
+                                          onChanged: (v) =>
+                                              controller.setPaymentType(
+                                                orderPaymentTypeFrom(v),
+                                              ),
+                                        ),
+                                      ),
+                                    ),
                                     const SizedBox(width: 16),
-                                    const Expanded(child: SizedBox()),
+                                    // Only meaningful once a payment type is
+                                    // chosen — prefilled from the grand total
+                                    // for Full/Half, and editable either way.
+                                    Expanded(
+                                      child:
+                                          controller.paymentType.value ==
+                                              OrderPaymentType.none
+                                          ? const SizedBox()
+                                          : AppField(
+                                              label: 'Amount Paid',
+                                              colors: colors,
+                                              child: AppTextBox(
+                                                controller:
+                                                    controller.paidAmountCtrl,
+                                                hint: 'e.g. 25000',
+                                                colors: colors,
+                                              ),
+                                            ),
+                                    ),
                                   ],
                                 ),
                               ],

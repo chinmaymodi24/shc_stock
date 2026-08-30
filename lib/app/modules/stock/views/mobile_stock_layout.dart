@@ -6,23 +6,15 @@ import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
 import 'package:shc_stock/app/modules/stock/controllers/stock_controller.dart';
 import 'package:shc_stock/app/modules/stock/models/stock_item_model.dart';
-import 'package:shc_stock/app/modules/stock/views/stock_item_details_panel.dart';
+import 'package:shc_stock/app/modules/stock/views/stock_actions.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_row_actions.dart';
 import 'package:shc_stock/app/modules/stock/views/stock_adjustment_dialog.dart';
-import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
-import 'package:shc_stock/app/modules/products/views/add_product_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
-import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_list_scaffold.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/shared/widgets/mobile_filter_sheet.dart';
-import 'package:shc_stock/app/core/utils/stock_sync.dart';
-
-ProductsController _productsController() {
-  if (Get.isRegistered<ProductsController>()) {
-    return Get.find<ProductsController>();
-  }
-  return Get.put(ProductsController(), permanent: true);
-}
+import 'package:shc_stock/app/shared/widgets/mobile_appbar_avatar.dart';
 
 /// Mobile counterpart of WebStockLayout — same data (GET /api/inventory)
 /// and the same View → StockItemDetailsPanel (with edit/delete) flow, plus
@@ -39,12 +31,7 @@ class MobileStockLayout extends StatelessWidget {
       backgroundColor: colors.background,
       drawer: const AppDrawer(activeRoute: AppRoutes.stock),
       appBar: _buildAppBar(context, c),
-      body: Column(
-        children: [
-          _buildSearchBar(context, c),
-          Expanded(child: _buildList(context, c)),
-        ],
-      ),
+      body: _buildList(context, c),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Get.dialog(const StockAdjustmentDialog()),
         backgroundColor: AppColors.primaryOrange,
@@ -81,18 +68,26 @@ class MobileStockLayout extends StatelessWidget {
           fontFamily: 'Poppins',
         ),
       ),
+      centerTitle: true,
       actions: [
-        MobileFilterButton(
-          filters: _buildFilters(c),
-          onClear: () {
-            c.search.value = '';
-            c.searchCtrl.clear();
-            c.catFilters.clear();
-            c.statFilters.clear();
-            c.sortOption.value = 'Default';
-            c.currentPage.value = 1;
-          },
+        Obx(
+          () => MobileFilterButton(
+            filters: _buildFilters(c),
+            onClear: () {
+              c.search.value = '';
+              c.searchCtrl.clear();
+              c.catFilters.clear();
+              c.statFilters.clear();
+              c.sortOption.value = 'Default';
+              c.currentPage.value = 1;
+            },
+            activeCount:
+                c.catFilters.length +
+                c.statFilters.length +
+                (c.sortOption.value == 'Default' ? 0 : 1),
+          ),
         ),
+        const MobileAppBarAvatar(),
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
@@ -101,22 +96,15 @@ class MobileStockLayout extends StatelessWidget {
     );
   }
 
-  // Same FilterSearchField the web filter row uses, and the same searchCtrl
-  // so a Clear-all tap in the filter sheet also clears the visible text.
-  Widget _buildSearchBar(BuildContext context, StockController c) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-      child: FilterSearchField(
-        controller: c.searchCtrl,
-        hint: 'Search by name or SKU...',
-        width: double.infinity,
-        onChanged: (v) {
-          c.search.value = v;
-          c.currentPage.value = 1;
-        },
-      ),
-    );
-  }
+  Widget _searchField(StockController c) => FilterSearchField(
+    controller: c.searchCtrl,
+    hint: 'Search by name or SKU...',
+    width: double.infinity,
+    onChanged: (v) {
+      c.search.value = v;
+      c.currentPage.value = 1;
+    },
+  );
 
   // Same data/controller bindings as WebStockLayout's FilterBar — Category,
   // Status, Sort — shown as flat chip groups instead of dropdown pills (see
@@ -166,12 +154,48 @@ class MobileStockLayout extends StatelessWidget {
     ];
   }
 
+  List<MobileStatCardData> _statCards(StockController c) {
+    return [
+      MobileStatCardData(
+        label: 'Total Items',
+        value: '${c.stats.value.intOf('totalItems')}',
+        icon: Icons.inventory_2_outlined,
+        color: AppColors.primaryOrange,
+        // Tap to drop the status filter — back to the full list.
+        onTap: c.statFilters.clear,
+      ),
+      MobileStatCardData(
+        label: 'Low Stock',
+        value: '${c.stats.value.intOf('lowStock')}',
+        icon: Icons.warning_amber_rounded,
+        color: const Color(0xFFF59E0B),
+        selected: c.statFilters.contains('Low Stock'),
+        onTap: () => c.statFilters.contains('Low Stock')
+            ? c.statFilters.remove('Low Stock')
+            : c.statFilters.add('Low Stock'),
+      ),
+      MobileStatCardData(
+        label: 'Out of Stock',
+        value: '${c.stats.value.intOf('outOfStock')}',
+        icon: Icons.block_rounded,
+        color: const Color(0xFFEF4444),
+        selected: c.statFilters.contains('Out of Stock'),
+        onTap: () => c.statFilters.contains('Out of Stock')
+            ? c.statFilters.remove('Out of Stock')
+            : c.statFilters.add('Out of Stock'),
+      ),
+      MobileStatCardData(
+        label: 'Stock Value',
+        value: formatRupees(c.stats.value.doubleOf('totalValue')),
+        icon: Icons.currency_rupee_rounded,
+        color: const Color(0xFF22C55E),
+      ),
+    ];
+  }
+
   Widget _buildList(BuildContext context, StockController c) {
-    final colors = context.appColors;
     return Obx(() {
-      if (c.isLoading.value && c.items.isEmpty) {
-        return const AppLoadingIndicator(label: 'Loading inventory...');
-      }
+      final loading = c.isLoading.value && c.items.isEmpty;
       // Same filter + sort logic as WebStockLayout — search, category,
       // status, then the chosen sort order.
       final q = c.search.value.toLowerCase();
@@ -211,115 +235,29 @@ class MobileStockLayout extends StatelessWidget {
           filtered.sort((a, b) => b.stockValue.compareTo(a.stockValue));
       }
 
-      return ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
-        children: [
-          // IntrinsicHeight, not a fixed SizedBox — a fixed height clipped
-          // AppStatCard whenever its 2-line label ("Out of Stock") plus value
-          // ran taller than the guessed number, so the strip now sizes to
-          // whatever the tallest card actually needs.
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: IntrinsicHeight(
-              child: Row(
-                children: [
-                  _MobileStatCard(
-                    label: 'Total Items',
-                    value: '${c.stats.value.intOf('totalItems')}',
-                    icon: Icons.inventory_2_outlined,
-                    color: AppColors.primaryOrange,
-                  ),
-                  const SizedBox(width: 10),
-                  _MobileStatCard(
-                    label: 'Low Stock',
-                    value: '${c.stats.value.intOf('lowStock')}',
-                    icon: Icons.warning_amber_rounded,
-                    color: const Color(0xFFF59E0B),
-                  ),
-                  const SizedBox(width: 10),
-                  _MobileStatCard(
-                    label: 'Out of Stock',
-                    value: '${c.stats.value.intOf('outOfStock')}',
-                    icon: Icons.block_rounded,
-                    color: const Color(0xFFEF4444),
-                  ),
-                  const SizedBox(width: 10),
-                  _MobileStatCard(
-                    label: 'Stock Value',
-                    value: formatRupees(c.stats.value.doubleOf('totalValue')),
-                    icon: Icons.currency_rupee_rounded,
-                    color: const Color(0xFF22C55E),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'Showing ${filtered.length} items',
-            style: TextStyle(
-              fontSize: 12.5,
-              color: colors.textSecondary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (filtered.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 48),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.inventory_2_outlined,
-                      size: 44,
-                      color: colors.textHint,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'No items found',
-                      style: TextStyle(
-                        color: colors.textHint,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ],
+      return MobileListScaffold(
+        statCards: _statCards(c),
+        search: _searchField(c),
+        countLabel: loading ? null : 'Showing ${filtered.length} items',
+        sliver: loading
+            ? const SliverFillRemaining(
+                hasScrollBody: false,
+                child: AppLoadingIndicator(label: 'Loading inventory...'),
+              )
+            : filtered.isEmpty
+            ? const MobileListEmpty(
+                icon: Icons.inventory_2_outlined,
+                label: 'No items found',
+              )
+            : SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
+                sliver: SliverList.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (_, i) => _MobileStockCard(item: filtered[i]),
                 ),
               ),
-            )
-          else
-            ...filtered.map((item) => _MobileStockCard(item: item)),
-        ],
       );
     });
-  }
-}
-
-class _MobileStatCard extends StatelessWidget {
-  final String label, value;
-  final IconData icon;
-  final Color color;
-  const _MobileStatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 150,
-      child: AppStatCard(
-        label: label,
-        value: value,
-        icon: icon,
-        iconColor: color,
-        smallValue: true,
-        showCaption: false,
-      ),
-    );
   }
 }
 
@@ -333,34 +271,7 @@ class _MobileStockCard extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () => Get.dialog(
-        StockItemDetailsPanel(
-          item: item,
-          onEdit: () {
-            final product = _productsController().products.firstWhereOrNull(
-              (p) => p.id == item.productId.toString(),
-            );
-            Get.back();
-            if (product != null) {
-              Get.dialog(AddProductDialog(product: product));
-            }
-          },
-          onDelete: () {
-            Get.back();
-            confirmDelete(
-              context,
-              itemName: item.name,
-              itemLabel: 'Product',
-              onConfirm: () async {
-                await _productsController().deleteProduct(
-                  item.productId.toString(),
-                );
-                await refreshStockViews();
-              },
-            );
-          },
-        ),
-      ),
+      onTap: () => StockActions.view(context, item),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
@@ -445,6 +356,29 @@ class _MobileStockCard extends StatelessWidget {
                     color: colors.textPrimary,
                     fontFamily: 'Poppins',
                   ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Divider(height: 1, color: colors.divider),
+            const SizedBox(height: 6),
+            // Same four actions the web table offers — an inventory row is a
+            // product, so Edit/Duplicate/Delete act on that product.
+            MobileActionRow(
+              actions: [
+                MobileActionButton.view(
+                  context: context,
+                  onTap: () => StockActions.view(context, item),
+                ),
+                MobileActionButton.edit(
+                  context: context,
+                  onTap: () => StockActions.edit(item),
+                ),
+                MobileActionButton.duplicate(
+                  onTap: () => StockActions.duplicate(item),
+                ),
+                MobileActionButton.delete(
+                  onTap: () => StockActions.delete(context, item),
                 ),
               ],
             ),

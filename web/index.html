@@ -193,35 +193,38 @@
       background: #ffffff;
       border: 1.5px solid var(--brand-orange);
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 10px rgba(244,123,32,0.14);
-      font-size: 17px;
+      /* Same soft orange halo the Flutter bubbles carry. */
+      box-shadow: 0 0 10px 1px rgba(244,123,32,0.15);
       color: var(--brand-orange);
       /* Center each icon on its anchor point */
       transform: translate(-50%, -50%) scale(0);
       opacity: 0;
       animation: iconPop 0.55s cubic-bezier(.22,1,.36,1) forwards;
     }
+    .orbit-icon svg { width: 18px; height: 18px; display: block; }
     @keyframes iconPop {
       to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
     }
     /*
-      Orbit radius = 128px, center = 160px (half of 320px)
-      Top      (-π/2):  x=160,       y=32
-      Left     (π):     x=32,        y=160
-      Right    (0):     x=288,       y=160
-      Btm-L    (225°):  x=69.5,      y=250.5
-      Btm-R    (-45°):  x=250.5,     y=250.5
+      Five icons at equal 72° steps around the whole ring, starting at the
+      top — a point-up pentagon, matching the Flutter SplashView exactly so
+      web and mobile read the same. Orbit radius = 128, center = 160.
+        i=0  -90°  (top)          x=160,   y=32
+        i=1  -18°  (upper-right)  x=281.7, y=120.4
+        i=2   54°  (lower-right)  x=235.3, y=263.6
+        i=3  126°  (lower-left)   x=84.7,  y=263.6
+        i=4  198°  (upper-left)   x=38.3,  y=120.4
     */
-    .icon-top      { top: 32px;    left: 160px;  animation-delay: 0.50s; }
-    .icon-left     { top: 160px;   left: 32px;   animation-delay: 0.66s; }
-    .icon-right    { top: 160px;   left: 288px;  animation-delay: 0.58s; }
-    .icon-btm-left { top: 250.5px; left: 69.5px; animation-delay: 0.74s; }
-    .icon-btm-right{ top: 250.5px; left: 250.5px;animation-delay: 0.82s; }
+    .icon-p0 { top: 32px;    left: 160px;   animation-delay: 0.50s; }
+    .icon-p1 { top: 120.4px; left: 281.7px; animation-delay: 0.58s; }
+    .icon-p2 { top: 263.6px; left: 235.3px; animation-delay: 0.66s; }
+    .icon-p3 { top: 263.6px; left: 84.7px;  animation-delay: 0.74s; }
+    .icon-p4 { top: 120.4px; left: 38.3px;  animation-delay: 0.82s; }
 
     /* ── Tagline ──────────────────────────────────────────────── */
     .splash-tagline {
       text-align: center;
-      font-size: 14px;
+      font-size: 13.5px;              /* matches the Flutter tagline */
       color: var(--tagline-clr);
       line-height: 1.75;
       letter-spacing: 0.3px;
@@ -261,18 +264,35 @@
     }
     .loader-text { font-size: 13px; color: var(--tagline-clr); }
 
-    /* ── Orange spinner at bottom-center ───────────────────────── */
-    .bottom-spinner {
+    /* ── Three bouncing dots at bottom-center ──────────────────────
+       Mirrors AppLoadingIndicator (lib/app/shared/widgets): three 11px
+       dots, light→deep orange, each hopping 10px on a 900 ms cycle and
+       lagging the one before it by 0.16 of that cycle.
+    ───────────────────────────────────────────────────────────────*/
+    .bottom-dots {
       position: absolute;
       bottom: 36px;
       left: 50%;
       transform: translateX(-50%);
-      width: 22px; height: 22px;
-      border: 2px solid rgba(244,123,32,0.20);
-      border-top-color: var(--brand-orange);
+      display: flex;
+      align-items: flex-end;
+      height: 26px;
+      animation: fadeIn 0.5s ease 0.55s both;
+    }
+    .bottom-dots span {
+      display: block;
+      width: 11px; height: 11px;
+      margin: 0 4px;
       border-radius: 50%;
-      animation: spin 0.9s linear infinite, fadeIn 0.5s ease 0.6s both;
-      opacity: 0;
+      animation: dotHop 0.9s ease-in-out infinite;
+    }
+    /* Negative delays so the wave is already in phase on the first frame. */
+    .bottom-dots span:nth-child(1) { background:#FFCC99; animation-delay:-0.900s; }
+    .bottom-dots span:nth-child(2) { background:#F47B20; animation-delay:-0.756s; }
+    .bottom-dots span:nth-child(3) { background:#E5650A; animation-delay:-0.612s; }
+    @keyframes dotHop {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-10px); }
     }
 
     @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
@@ -330,12 +350,12 @@
             stroke-dasharray="6 4"
             stroke-linecap="round"
           />
-          <!-- Anchor dots at icon positions (rotate with ring) -->
+          <!-- Anchor dots at the five evenly-spaced icon positions -->
           <circle cx="160"   cy="32"    r="3.5" fill="rgba(244,123,32,0.40)"/>
-          <circle cx="32"    cy="160"   r="3.5" fill="rgba(244,123,32,0.40)"/>
-          <circle cx="288"   cy="160"   r="3.5" fill="rgba(244,123,32,0.40)"/>
-          <circle cx="69.5"  cy="250.5" r="3.5" fill="rgba(244,123,32,0.40)"/>
-          <circle cx="250.5" cy="250.5" r="3.5" fill="rgba(244,123,32,0.40)"/>
+          <circle cx="281.7" cy="120.4" r="3.5" fill="rgba(244,123,32,0.40)"/>
+          <circle cx="235.3" cy="263.6" r="3.5" fill="rgba(244,123,32,0.40)"/>
+          <circle cx="84.7"  cy="263.6" r="3.5" fill="rgba(244,123,32,0.40)"/>
+          <circle cx="38.3"  cy="120.4" r="3.5" fill="rgba(244,123,32,0.40)"/>
         </g>
       </svg>
 
@@ -358,12 +378,43 @@
         <div class="fb-text">SECURE HEAT CARE</div>
       </div>
 
-      <!-- Feature icon bubbles -->
-      <div class="orbit-icon icon-top">📦</div>
-      <div class="orbit-icon icon-left">🛒</div>
-      <div class="orbit-icon icon-right">📊</div>
-      <div class="orbit-icon icon-btm-left">🛡️</div>
-      <div class="orbit-icon icon-btm-right">👥</div>
+      <!-- Feature icon bubbles — same icon at the same point as the Flutter
+           SplashView: inventory, cart, reports, security, clients. Drawn as
+           inline SVG rather than emoji so they render in the brand orange
+           and identically on every OS, matching the Material outline icons
+           the Flutter splash uses. -->
+      <div class="orbit-icon icon-p0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="4" rx="1"/>
+          <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/>
+          <path d="M10 12h4"/>
+        </svg>
+      </div>
+      <div class="orbit-icon icon-p1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="20" r="1.4"/>
+          <circle cx="18" cy="20" r="1.4"/>
+          <path d="M2.5 3.5h2.6l2.5 11.6a1.5 1.5 0 0 0 1.5 1.2h8.2a1.5 1.5 0 0 0 1.5-1.2L21 7.5H6"/>
+        </svg>
+      </div>
+      <div class="orbit-icon icon-p2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <path d="M7 17.5v-4.5"/><path d="M12 17.5v-11"/><path d="M17 17.5v-7.5"/>
+        </svg>
+      </div>
+      <div class="orbit-icon icon-p3">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3.2l7 3v5.4c0 4.3-3 8-7 9.2-4-1.2-7-4.9-7-9.2V6.2l7-3z"/>
+        </svg>
+      </div>
+      <div class="orbit-icon icon-p4">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="8.5" r="3"/>
+          <path d="M3.5 19c0-2.9 2.5-4.6 5.5-4.6s5.5 1.7 5.5 4.6"/>
+          <path d="M16.2 6.3a3 3 0 0 1 0 5.5"/>
+          <path d="M17.6 14.7c1.9.6 3.4 1.9 3.4 4.3"/>
+        </svg>
+      </div>
     </div><!-- /orbit-wrap -->
 
     <!-- Tagline (logo already shows brand name) -->
@@ -389,8 +440,10 @@
       </svg>
     </div>
 
-    <!-- Orange circular spinner at bottom-center -->
-    <div class="bottom-spinner"></div>
+    <!-- Three bouncing dots at bottom-center (same as AppLoadingIndicator) -->
+    <div class="bottom-dots" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </div>
 
   </div><!-- /shc-splash -->
 
@@ -401,11 +454,13 @@
     // ── Ensure white background before Flutter mounts ─────────────────────
     document.body.style.background = '#ffffff';
 
-    // ── Minimum 2-second splash display ───────────────────────────────────
-    // Record when the page loaded. When Flutter fires flutter-first-frame,
-    // we wait for the remaining time (if any) before fading out.
+    // ── Minimum splash display ────────────────────────────────────────────
+    // This HTML splash only has to cover the engine boot: Flutter's own
+    // SplashView renders the identical ring animation and runs for 2.5 s
+    // after first frame, so hiding this one early reads as one continuous
+    // screen (the same hand-off the native splash makes on mobile).
     var _splashStart = Date.now();
-    var _MIN_MS      = 2000;        // minimum display time in milliseconds
+    var _MIN_MS      = 1200;        // minimum display time in milliseconds
 
     function _hideSplash() {
       var splash = document.getElementById('shc-splash');

@@ -3,8 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // Pooled connection (Neon "-pooler" host) used by the running app.
+  url       = env("DATABASE_URL")
+  // Direct (non-pooled) connection used for `prisma migrate deploy`.
+  // Set it to the same Neon URL without "-pooler" in the host.
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -32,6 +36,9 @@ model User {
   twoFactor      Boolean @default(false)
   rowsPerPage    Int     @default(10)
   dateFormat     String  @default("MMM D, YYYY (Jul 18, 2026)")
+  /// When on, the Add Purchase / Add Sale forms prefill "Invoice No." with the
+  /// next number in the PO-2024-##### / SO-2024-##### series.
+  autoNumberDocs Boolean @default(true)
 
   notes DashboardNote[]
 
@@ -107,30 +114,38 @@ model Product {
 }
 
 model PurchaseOrder {
-  id              Int            @id @default(autoincrement())
-  poNumber        String         @unique
-  supplier        String
-  supplierIcon    String         @default("")
-  date            DateTime
-  amount          Float          @default(0)
-  status          String         @default("Pending") // Received | Partial | Pending | Cancelled
-  modifiedBy      String         @default("Admin")
-  modifiedAt      DateTime?
-  supplierAddress String         @default("")
-  buyerGst        String         @default("")
-  pan             String         @default("")
-  invoiceNo       String         @default("")
-  invoiceDate     DateTime?
-  despatchThrough String         @default("")
-  lrNo            String         @default("")
-  lrDate          DateTime?
-  vehicleNo       String         @default("")
-  freight         Float          @default(0)
-  placeOfSupply   String         @default("")
-  dueDate         DateTime?
-  items           PurchaseItem[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id               Int            @id @default(autoincrement())
+  poNumber         String         @unique
+  supplier         String
+  supplierIcon     String         @default("")
+  date             DateTime
+  amount           Float          @default(0)
+  status           String         @default("Pending") // Received | Partial | Pending | Cancelled
+  modifiedBy       String         @default("Admin")
+  modifiedAt       DateTime?
+  supplierAddress  String         @default("")
+  buyerGst         String         @default("")
+  pan              String         @default("")
+  invoiceNo        String         @default("")
+  invoiceDate      DateTime?
+  despatchThrough  String         @default("")
+  lrNo             String         @default("")
+  lrDate           DateTime?
+  vehicleNo        String         @default("")
+  freight          Float          @default(0)
+  placeOfSupply    String         @default("")
+  dueDate          DateTime?
+  /// Optional. When set, a background sweep flips the order to "Received" on
+  /// that date — which is also what books the stock IN. Left null, the status
+  /// (and therefore the stock) only moves when someone changes it by hand.
+  expectedDelivery DateTime?
+  /// "" | Full Payment | Half Payment | Other — how much of this order has
+  /// been paid to the supplier, with [paidAmount] holding the figure.
+  paymentType      String         @default("")
+  paidAmount       Float          @default(0)
+  items            PurchaseItem[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   @@map("purchase_orders")
 }
@@ -172,6 +187,14 @@ model SalesOrder {
   invoiceDate       DateTime?
   despatchedThrough String     @default("")
   destination       String     @default("")
+  /// Optional. When set, a background sweep flips the order to "Delivered" on
+  /// that date — which is also what books the stock OUT. Left null, the status
+  /// (and therefore the stock) only moves when someone changes it by hand.
+  expectedDelivery  DateTime?
+  /// "" | Full Payment | Half Payment | Other, with [paidAmount] holding the
+  /// figure the client has actually paid.
+  paymentType       String     @default("")
+  paidAmount        Float      @default(0)
   items             SaleItem[]
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
@@ -336,4 +359,19 @@ model DashboardNote {
 
   @@index([userId])
   @@map("dashboard_notes")
+}
+
+/// Business-wide configuration — a single row (id = 1). Not per-user: these
+/// are shared settings every operator sees the same.
+model AppSetting {
+  id Int @id @default(1)
+
+  /// Flag a product "Low Stock" when its currentStock falls to this level or
+  /// below — applied only to products that have no per-item minimumStock set
+  /// (minimumStock <= 0). 0 disables the global rule.
+  lowStockThreshold Int @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@map("app_settings")
 }

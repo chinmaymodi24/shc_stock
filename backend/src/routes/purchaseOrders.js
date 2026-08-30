@@ -3,8 +3,8 @@ const prisma = require('../prismaClient');
 const {
   InsufficientStockError,
   toStockLines,
-  applyStock,
   reverseStockFor,
+  syncStockForStatus,
 } = require('../stockService');
 
 const router = express.Router();
@@ -48,6 +48,9 @@ function orderFields(body) {
     freight: Number(body.freight) || 0,
     placeOfSupply: body.placeOfSupply || '',
     dueDate: body.dueDate ? new Date(body.dueDate) : null,
+    expectedDelivery: body.expectedDelivery ? new Date(body.expectedDelivery) : null,
+    paymentType: body.paymentType || '',
+    paidAmount: Number(body.paidAmount) || 0,
   };
 }
 
@@ -73,7 +76,9 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// POST /api/purchase-orders — receiving goods, so every linked item adds stock.
+// POST /api/purchase-orders — the stock IN is booked only if the order is
+// already marked "Received"; otherwise it waits for delivery (a manual status
+// change, or the expectedDelivery sweep).
 router.post('/', async (req, res, next) => {
   try {
     const invalid = validate(req.body, { requirePoNumber: true });
@@ -89,12 +94,11 @@ router.post('/', async (req, res, next) => {
         },
         include: orderInclude,
       });
-      await applyStock(tx, {
-        lines: toStockLines(items),
-        direction: +1,
-        type: 'IN',
+      await syncStockForStatus(tx, {
         refType: REF_TYPE,
         refId: created.id,
+        status: created.status,
+        lines: toStockLines(items),
         reference: created.poNumber,
         note: `Purchase ${created.poNumber}`,
         createdBy: created.modifiedBy,
@@ -108,8 +112,9 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// PUT /api/purchase-orders/:id — replaces the order and its items, reversing
-// the old stock movements and applying the new ones in the same transaction.
+// PUT /api/purchase-orders/:id — replaces the order and its items. Anything the
+// old version had booked is reversed, and the new lines are booked again only
+// if the order is (still) "Received".
 router.put('/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
@@ -136,15 +141,15 @@ router.put('/:id', async (req, res, next) => {
         data: { ...data, items: { create: items } },
         include: orderInclude,
       });
-      await applyStock(tx, {
-        lines: toStockLines(items),
-        direction: +1,
-        type: 'IN',
+      await syncStockForStatus(tx, {
         refType: REF_TYPE,
         refId: id,
+        status: updated.status,
+        lines: toStockLines(items),
         reference: updated.poNumber,
         note: `Purchase ${updated.poNumber} (edited)`,
         createdBy: updated.modifiedBy,
+        force: true,
       });
       return updated;
     });
@@ -157,15 +162,30 @@ router.put('/:id', async (req, res, next) => {
 });
 
 // PATCH /api/purchase-orders/:id/status  { status: 'Received' }
+//
+// This is the moment the goods arrive, so it is also the moment the stock is
+// booked — and moving the order back off "Received" takes it out again.
 router.patch('/:id/status', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const { status } = req.body;
     if (!status) return res.status(400).json({ error: 'status is required' });
-    const order = await prisma.purchaseOrder.update({
-      where: { id },
-      data: { status },
-      include: orderInclude,
+    const order = await prisma.$transaction(async (tx) => {
+      const updated = await tx.purchaseOrder.update({
+        where: { id },
+        data: { status, modifiedAt: new Date() },
+        include: orderInclude,
+      });
+      await syncStockForStatus(tx, {
+        refType: REF_TYPE,
+        refId: id,
+        status: updated.status,
+        lines: toStockLines(updated.items),
+        reference: updated.poNumber,
+        note: `Purchase ${updated.poNumber} (${status})`,
+        createdBy: updated.modifiedBy,
+      });
+      return updated;
     });
     res.json(order);
   } catch (err) {

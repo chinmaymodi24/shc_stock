@@ -13,6 +13,12 @@ class ProductModel {
   final int currentStock;
   final int minimumStock;
   final bool isActive;
+
+  /// `inStock` | `lowStock` | `outOfStock` | `inactive`, as derived by the
+  /// backend (which applies the business-wide low-stock threshold). Empty for
+  /// models not built from the `/products` response — [stockStatus] then
+  /// falls back to a local computation.
+  final String serverStockStatus;
   final String? brand;
   final String? hsnCode;
   final String? description;
@@ -42,6 +48,7 @@ class ProductModel {
     required this.currentStock,
     required this.minimumStock,
     this.isActive = true,
+    this.serverStockStatus = '',
     this.brand,
     this.hsnCode,
     this.description,
@@ -60,8 +67,18 @@ class ProductModel {
   DateTime get effectiveModifiedAt => modifiedAt ?? createdAt;
 
   String get stockStatus {
+    switch (serverStockStatus) {
+      case 'outOfStock':
+        return 'Out of Stock';
+      case 'lowStock':
+        return 'Low Stock';
+      case 'inStock':
+      case 'inactive':
+        return 'In Stock';
+    }
+    // Fallback for models not built from the API response.
     if (currentStock == 0) return 'Out of Stock';
-    if (currentStock <= minimumStock) return 'Low Stock';
+    if (minimumStock > 0 && currentStock <= minimumStock) return 'Low Stock';
     return 'In Stock';
   }
 
@@ -83,6 +100,7 @@ class ProductModel {
       currentStock: json['currentStock'] as int? ?? 0,
       minimumStock: json['minimumStock'] as int? ?? 0,
       isActive: json['isActive'] as bool? ?? true,
+      serverStockStatus: json['stockStatus'] as String? ?? '',
       brand: json['brand'] as String?,
       hsnCode: json['hsnCode'] as String?,
       description: json['description'] as String?,
@@ -136,6 +154,8 @@ class ProductModel {
       currentStock: currentStock ?? this.currentStock,
       minimumStock: minimumStock ?? this.minimumStock,
       isActive: isActive ?? this.isActive,
+      // Carried through unchanged; refreshed from the API on the next fetch.
+      serverStockStatus: serverStockStatus,
       brand: brand ?? this.brand,
       hsnCode: hsnCode ?? this.hsnCode,
       description: description ?? this.description,

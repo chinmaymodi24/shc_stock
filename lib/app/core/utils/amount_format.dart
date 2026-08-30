@@ -27,3 +27,28 @@ String formatRupees(double v) {
 
   return '${negative ? '-' : ''}₹$grouped';
 }
+
+/// Short rupee amount for tight spots — "₹24.86L", "₹19.4K", "₹1.20Cr".
+///
+/// Uses Indian scale words (thousand / lakh / crore) so it matches the
+/// grouping [formatRupees] applies everywhere else. Anything under ₹1,000
+/// falls through to the full form, where the short one would say nothing.
+String formatRupeesCompact(double v) {
+  final abs = v.abs();
+  final sign = v < 0 ? '-' : '';
+  if (abs >= 10000000) return '$sign₹${(abs / 10000000).toStringAsFixed(2)}Cr';
+  if (abs >= 100000) return '$sign₹${(abs / 100000).toStringAsFixed(2)}L';
+  if (abs >= 1000) return '$sign₹${(abs / 1000).toStringAsFixed(1)}K';
+  return formatRupees(v);
+}
+
+/// A plain, un-grouped amount for text fields the user edits — "1250",
+/// "1250.5". Whole numbers lose the trailing ".0" so a prefilled box doesn't
+/// read like a decimal figure the user has to clean up.
+String trimAmount(double v) {
+  if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+  return v
+      .toStringAsFixed(2)
+      .replaceFirst(RegExp(r'0+$'), '')
+      .replaceFirst(RegExp(r'\.$'), '');
+}

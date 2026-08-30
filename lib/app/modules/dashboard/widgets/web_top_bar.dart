@@ -722,6 +722,14 @@ class _ProfileAvatarMenuState extends State<ProfileAvatarMenu> {
                         onTap: () {
                           _overlayController.hide();
                           Get.toNamed(AppRoutes.settings);
+                          // SettingsBinding runs a frame later than this line,
+                          // so on a first visit Get.find() would throw
+                          // "SettingsController not found" — register it here
+                          // if it isn't already (same guard the mobile hub
+                          // uses).
+                          if (!Get.isRegistered<SettingsController>()) {
+                            Get.put(SettingsController());
+                          }
                           Get.find<SettingsController>().tab.value = 3;
                         },
                       ),

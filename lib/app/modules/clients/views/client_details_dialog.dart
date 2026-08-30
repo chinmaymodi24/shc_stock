@@ -609,14 +609,33 @@ class ClientDetailsDialog extends StatelessWidget {
     );
   }
 
+  /// Mirrors the history rows in StockItemDetailsPanel: a leading in/out
+  /// badge — stock-in green for a purchase, stock-out orange for a sale — so
+  /// every history list across the app reads the same way.
   Widget _historyRow(_ClientHistoryEntry e, AppThemeColors colors) {
-    final color = e.isPurchase ? colors.accent : colors.success;
+    final color = e.isPurchase ? colors.success : colors.warning;
     final dateFmt = DateFormat('MMM d, yyyy');
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              e.isPurchase
+                  ? Icons.call_received_rounded
+                  : Icons.call_made_rounded,
+              size: 15,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

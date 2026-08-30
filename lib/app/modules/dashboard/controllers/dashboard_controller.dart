@@ -162,11 +162,13 @@ class DashboardController extends GetxController {
         value: formatRupees(d('duesFromClients')),
         icon: Icons.description_outlined,
         iconColor: const Color(0xFF2FA85C),
+        smallValue: true,
       ),
       DashboardStatData(
         title: 'Top Selling Product',
         value: (s['topSellingProduct'] as String?) ?? '—',
         icon: Icons.emoji_events_rounded,
+        smallValue: true,
         // accentPurple, not primaryPurple — the tile's tint and label are
         // drawn from this color, and #2B1888 is too dark to read against the
         // dark theme's background.

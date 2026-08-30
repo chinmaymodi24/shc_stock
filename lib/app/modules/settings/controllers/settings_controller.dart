@@ -1,8 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
 import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
+
+/// SharedPreferences key mirroring the `autoNumberDocs` user setting, so the
+/// Add Purchase / Add Sale forms can read it synchronously without depending
+/// on SettingsController being registered.
+const kAutoNumberDocsPrefKey = 'pref_auto_number_docs';
+
+/// Whether the Add Purchase / Add Sale forms should prefill "Invoice No."
+/// with the next number in the series. Defaults to true (opt-out).
+Future<bool> autoNumberDocsEnabled() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(kAutoNumberDocsPrefKey) ?? true;
+  } catch (_) {
+    return true;
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Settings for the signed-in user, loaded from and saved to /api/settings.
@@ -41,6 +58,19 @@ class SettingsController extends GetxController {
   // Preferences
   final rowsPerPage = 10.obs;
   final dateFormat = 'MMM D, YYYY (Jul 18, 2026)'.obs;
+  final autoNumberDocs = true.obs;
+
+  /// Business-wide (not per-user): flag a product "Low Stock" once its stock
+  /// falls to this level or below, for products with no per-item minimum set.
+  /// 0 = off. Loaded from / saved to /api/settings/app.
+  final lowStockThreshold = 0.obs;
+
+  Future<void> _cacheAutoNumberDocs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(kAutoNumberDocsPrefKey, autoNumberDocs.value);
+    } catch (_) {}
+  }
 
   int? get _userId => Get.isRegistered<SessionController>()
       ? Get.find<SessionController>().user.value?.id
@@ -85,6 +115,12 @@ class SettingsController extends GetxController {
       rowsPerPage.value = (json['rowsPerPage'] as num?)?.toInt() ?? 10;
       dateFormat.value =
           json['dateFormat'] as String? ?? 'MMM D, YYYY (Jul 18, 2026)';
+      autoNumberDocs.value = json['autoNumberDocs'] as bool? ?? true;
+      await _cacheAutoNumberDocs();
+
+      final app =
+          await _api.get('/settings/app') as Map<String, dynamic>;
+      lowStockThreshold.value = (app['lowStockThreshold'] as num?)?.toInt() ?? 0;
     } catch (e) {
       _error('Failed to load settings. Is the backend running?');
     } finally {
@@ -110,7 +146,15 @@ class SettingsController extends GetxController {
         'twoFactor': twoFactor.value,
         'rowsPerPage': rowsPerPage.value,
         'dateFormat': dateFormat.value,
+        'autoNumberDocs': autoNumberDocs.value,
       });
+      await _cacheAutoNumberDocs();
+
+      // Business-wide low-stock threshold — its own endpoint, not per-user.
+      await _api.put('/settings/app', {
+        'lowStockThreshold': lowStockThreshold.value,
+      });
+
       // Name/email may have changed — keep the top bar in step.
       final map = json as Map<String, dynamic>;
       await Get.find<SessionController>().signIn({

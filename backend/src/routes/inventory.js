@@ -5,13 +5,14 @@ const {
   applyStock,
   stockStatus,
 } = require('../stockService');
+const { getAppSettings } = require('../appSettings');
 
 const router = express.Router();
 
 /// Inventory rows are products viewed through their stock. Purchases and sales
 /// move the numbers automatically (see stockService); this route covers the
 /// manual side — adjustments, and editing the reorder settings.
-function toInventoryRow(p) {
+function toInventoryRow(p, lowStockThreshold = 0) {
   return {
     id: p.id,
     productId: p.id,
@@ -29,7 +30,7 @@ function toInventoryRow(p) {
     stockValue: Number((p.currentStock * p.costPrice).toFixed(2)),
     stockLocation: p.stockLocation,
     isActive: p.isActive,
-    status: stockStatus(p),
+    status: stockStatus(p, lowStockThreshold),
     modifiedBy: p.modifiedBy,
     modifiedAt: p.modifiedAt,
   };
@@ -43,11 +44,14 @@ router.get('/', async (req, res, next) => {
     // Newest activity first: whatever was last added or modified (a manual
     // adjustment, a purchase/sale movement, a reorder-setting edit) tops the
     // list. Rows that never carried a modifiedAt fall back to id order.
-    const products = await prisma.product.findMany({
-      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-      include: productInclude,
-    });
-    res.json(products.map(toInventoryRow));
+    const [{ lowStockThreshold }, products] = await Promise.all([
+      getAppSettings(),
+      prisma.product.findMany({
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        include: productInclude,
+      }),
+    ]);
+    res.json(products.map((p) => toInventoryRow(p, lowStockThreshold)));
   } catch (err) {
     next(err);
   }
@@ -122,7 +126,8 @@ router.post('/adjust', async (req, res, next) => {
         where: { id: productId },
         include: productInclude,
       });
-      return { movementId: movement.id, item: toInventoryRow(fresh) };
+      const { lowStockThreshold } = await getAppSettings();
+      return { movementId: movement.id, item: toInventoryRow(fresh, lowStockThreshold) };
     });
     res.status(201).json(row);
   } catch (err) {
@@ -154,7 +159,8 @@ router.put('/:productId', async (req, res, next) => {
       data,
       include: productInclude,
     });
-    res.json(toInventoryRow(product));
+    const { lowStockThreshold } = await getAppSettings();
+    res.json(toInventoryRow(product, lowStockThreshold));
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'Product not found' });
     next(err);
@@ -186,7 +192,8 @@ router.delete('/movements/:id', async (req, res, next) => {
         where: { id: movement.productId },
         include: productInclude,
       });
-      return toInventoryRow(fresh);
+      const { lowStockThreshold } = await getAppSettings();
+      return toInventoryRow(fresh, lowStockThreshold);
     });
     res.json(item);
   } catch (err) {

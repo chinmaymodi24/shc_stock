@@ -13,19 +13,8 @@ import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
-import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
-import 'package:shc_stock/app/core/utils/stock_sync.dart';
-import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
-import 'package:shc_stock/app/modules/products/views/add_product_dialog.dart';
-import 'package:shc_stock/app/modules/stock/views/stock_item_details_panel.dart';
+import 'package:shc_stock/app/modules/stock/views/stock_actions.dart';
 import 'package:shc_stock/app/modules/stock/views/stock_adjustment_dialog.dart';
-
-ProductsController _productsController() {
-  if (Get.isRegistered<ProductsController>()) {
-    return Get.find<ProductsController>();
-  }
-  return Get.put(ProductsController(), permanent: true);
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Widget — Inventory table with summary cards (no side panel).
@@ -204,61 +193,43 @@ class WebStockLayout extends GetView<StockController> {
                           const SizedBox(height: 20),
 
                           // ── Summary cards — all from GET /api/stats/inventory ─────
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Total Items',
-                                    value:
-                                        '${c.stats.value.intOf('totalItems')}',
-                                    icon: Icons.inventory_2_outlined,
-                                    iconColor: AppColors.primaryOrange,
-                                    trend: c.stats.value.trendLabel(
-                                      'totalItems',
-                                    ),
-                                    trendUp: c.stats.value.trendUp(
-                                      'totalItems',
-                                    ),
-                                  ),
+                          AppStatCardRow(
+                            cards: [
+                              AppStatCard(
+                                label: 'Total Items',
+                                value: '${c.stats.value.intOf('totalItems')}',
+                                icon: Icons.inventory_2_outlined,
+                                iconColor: AppColors.primaryOrange,
+                                trend: c.stats.value.trendLabel('totalItems'),
+                                trendUp: c.stats.value.trendUp('totalItems'),
+                                showCaption: false,
+                              ),
+                              AppStatCard(
+                                label: 'Low Stock',
+                                value: '${c.stats.value.intOf('lowStock')}',
+                                icon: Icons.warning_amber_rounded,
+                                iconColor: const Color(0xFFF59E0B),
+                              ),
+                              AppStatCard(
+                                label: 'Out of Stock',
+                                value: '${c.stats.value.intOf('outOfStock')}',
+                                icon: Icons.block_rounded,
+                                iconColor: const Color(0xFFEF4444),
+                              ),
+                              AppStatCard(
+                                label: 'Stock Value',
+                                value: formatRupees(
+                                  c.stats.value.doubleOf('totalValue'),
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Low Stock',
-                                    value: '${c.stats.value.intOf('lowStock')}',
-                                    icon: Icons.warning_amber_rounded,
-                                    iconColor: const Color(0xFFF59E0B),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Out of Stock',
-                                    value:
-                                        '${c.stats.value.intOf('outOfStock')}',
-                                    icon: Icons.block_rounded,
-                                    iconColor: const Color(0xFFEF4444),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Stock Value',
-                                    value: formatRupees(
-                                      c.stats.value.doubleOf('totalValue'),
-                                    ),
-                                    smallValue: true,
-                                    icon: Icons.currency_rupee_rounded,
-                                    iconColor: const Color(0xFF22C55E),
-                                    // Stock movement volume this month vs last.
-                                    trend: c.stats.value.trendLabel('movement'),
-                                    trendUp: c.stats.value.trendUp('movement'),
-                                  ),
-                                ),
-                              ],
-                            ),
+                                smallValue: true,
+                                icon: Icons.currency_rupee_rounded,
+                                iconColor: const Color(0xFF22C55E),
+                                // Stock movement volume this month vs last.
+                                trend: c.stats.value.trendLabel('movement'),
+                                trendUp: c.stats.value.trendUp('movement'),
+                                showCaption: false,
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 20),
 
@@ -633,35 +604,7 @@ class _StockRowState extends State<_StockRow> {
                         color: c.success,
                         bg: c.success.withValues(alpha: 0.10),
                         tooltip: 'View',
-                        onTap: () => Get.dialog(
-                          StockItemDetailsPanel(
-                            item: item,
-                            onEdit: () {
-                              final product = _productsController().products
-                                  .firstWhereOrNull(
-                                    (p) => p.id == item.productId.toString(),
-                                  );
-                              Get.back();
-                              if (product != null) {
-                                Get.dialog(AddProductDialog(product: product));
-                              }
-                            },
-                            onDelete: () {
-                              Get.back();
-                              confirmDelete(
-                                context,
-                                itemName: item.name,
-                                itemLabel: 'Product',
-                                onConfirm: () async {
-                                  await _productsController().deleteProduct(
-                                    item.productId.toString(),
-                                  );
-                                  await refreshStockViews();
-                                },
-                              );
-                            },
-                          ),
-                        ),
+                        onTap: () => StockActions.view(context, item),
                       ),
                       const SizedBox(width: 6),
                       RowActionButton(
@@ -669,6 +612,7 @@ class _StockRowState extends State<_StockRow> {
                         color: AppColors.primaryOrange,
                         bg: AppColors.primaryOrange.withValues(alpha: 0.10),
                         tooltip: 'Edit',
+                        onTap: () => StockActions.edit(item),
                       ),
                       const SizedBox(width: 6),
                       RowActionButton(
@@ -676,6 +620,7 @@ class _StockRowState extends State<_StockRow> {
                         color: const Color(0xFF3B82F6),
                         bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
                         tooltip: 'Duplicate',
+                        onTap: () => StockActions.duplicate(item),
                       ),
                       const SizedBox(width: 6),
                       RowActionButton(
@@ -687,6 +632,7 @@ class _StockRowState extends State<_StockRow> {
                         // carry the warning color.
                         bg: c.tagBg,
                         tooltip: 'Delete',
+                        onTap: () => StockActions.delete(context, item),
                       ),
                     ],
                   ),

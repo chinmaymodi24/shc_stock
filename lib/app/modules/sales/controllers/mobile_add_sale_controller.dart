@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/utils/doc_number.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
+import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
+import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
+import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
 
 class MobileSaleItemRow {
   // Stable identity for Keys, plus a version bumped on product autofill so
@@ -37,6 +41,25 @@ class MobileAddSaleController extends GetxController {
   final termsOfDeliveryCtrl = TextEditingController();
 
   final items = <MobileSaleItemRow>[MobileSaleItemRow()].obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _prefillInvoiceNo();
+  }
+
+  /// Fills "Invoice No." with the next number in the SO-2024 series, unless
+  /// the user turned auto-numbering off in Settings › Preferences.
+  Future<void> _prefillInvoiceNo() async {
+    if (!await autoNumberDocsEnabled()) return;
+    final orders = Get.isRegistered<SalesController>()
+        ? Get.find<SalesController>().orders
+        : const <SalesOrder>[];
+    invoiceNoCtrl.text = nextDocNumber(
+      prefix: 'SO-2024',
+      existing: orders.map((o) => o.soNumber),
+    );
+  }
 
   double get taxableValue => items.fold(0.0, (s, r) => s + r.amount);
   double get cgst => taxableValue * 0.09;

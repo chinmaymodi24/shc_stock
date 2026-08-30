@@ -86,19 +86,30 @@ ok('PUT /clients -> 200 + renamed', s == 200 and upd['name'] == 'E2E Client v2',
 
 print()
 print('=' * 72)
-print('4. PURCHASE  ->  stock must GO UP')
+print('4. PURCHASE  ->  stock moves only once the order is RECEIVED')
 print('=' * 72)
 before = stock_of(pid)
 s, po = call('POST', '/purchase-orders', {
     'poNumber': 'E2E-PO-001', 'supplier': 'E2E Supplier',
-    'date': '2026-08-10T00:00:00.000Z', 'amount': 7500,
+    'date': '2026-08-10T00:00:00.000Z', 'amount': 7500, 'status': 'Pending',
+    'paymentType': 'Half Payment', 'paidAmount': 3750,
     'items': [{'productId': pid, 'product': 'E2E Widget v2', 'qty': 25, 'unit': 'Piece', 'rate': 300}],
 })
 ok('POST /purchase-orders -> 201', s == 201, (s, po))
 po_id = po['id']
-after = stock_of(pid)
-ok(f'purchase of 25 raised stock {before} -> {after}', after == before + 25, after)
+ok('pending purchase left stock alone', stock_of(pid) == before, stock_of(pid))
+ok('payment fields stored', po['paymentType'] == 'Half Payment' and po['paidAmount'] == 3750, po)
 ok('purchase item stored productId', po['items'][0]['productId'] == pid, po['items'][0])
+
+s, recv = call('PATCH', f'/purchase-orders/{po_id}/status', {'status': 'Received'})
+ok('PATCH status Received -> 200', s == 200, (s, recv))
+after = stock_of(pid)
+ok(f'receiving 25 raised stock {before} -> {after}', after == before + 25, after)
+
+# ...and moving it back off Received takes the stock out again.
+call('PATCH', f'/purchase-orders/{po_id}/status', {'status': 'Pending'})
+ok('un-receiving reversed the stock', stock_of(pid) == before, stock_of(pid))
+call('PATCH', f'/purchase-orders/{po_id}/status', {'status': 'Received'})
 
 _, movs = call('GET', f'/inventory/movements?productId={pid}')
 ok('IN movement logged', any(m['type'] == 'IN' and m['refType'] == 'purchase' for m in movs), movs)
@@ -106,7 +117,7 @@ ok('IN movement logged', any(m['type'] == 'IN' and m['refType'] == 'purchase' fo
 # Edit the PO: 25 -> 40 should net +15 more
 s, po2 = call('PUT', f'/purchase-orders/{po_id}', {
     'poNumber': 'E2E-PO-001', 'supplier': 'E2E Supplier',
-    'date': '2026-08-10T00:00:00.000Z', 'amount': 12000,
+    'date': '2026-08-10T00:00:00.000Z', 'amount': 12000, 'status': 'Received',
     'items': [{'productId': pid, 'product': 'E2E Widget v2', 'qty': 40, 'unit': 'Piece', 'rate': 300}],
 })
 ok('PUT /purchase-orders -> 200', s == 200, (s, po2))
@@ -115,23 +126,28 @@ ok(f'edit 25->40 re-applied stock: {before}+40 = {after_edit}', after_edit == be
 
 print()
 print('=' * 72)
-print('5. SALES  ->  stock must GO DOWN')
+print('5. SALES  ->  stock moves only once the order is DELIVERED')
 print('=' * 72)
 before_sale = stock_of(pid)
 s, so = call('POST', '/sales-orders', {
     'soNumber': 'E2E-SO-001', 'client': 'E2E Client v2',
-    'date': '2026-08-10T00:00:00.000Z', 'amount': 5500,
+    'date': '2026-08-10T00:00:00.000Z', 'amount': 5500, 'status': 'Confirmed',
     'items': [{'productId': pid, 'product': 'E2E Widget v2', 'qty': 10, 'unit': 'Piece', 'rate': 550}],
 })
 ok('POST /sales-orders -> 201', s == 201, (s, so))
 so_id = so['id']
-after_sale = stock_of(pid)
-ok(f'sale of 10 lowered stock {before_sale} -> {after_sale}', after_sale == before_sale - 10, after_sale)
+ok('confirmed sale left stock alone', stock_of(pid) == before_sale, stock_of(pid))
 
-# Overselling must be refused and must not change stock
+s, dlv = call('PATCH', f'/sales-orders/{so_id}/status', {'status': 'Delivered'})
+ok('PATCH status Delivered -> 200', s == 200, (s, dlv))
+after_sale = stock_of(pid)
+ok(f'delivering 10 lowered stock {before_sale} -> {after_sale}', after_sale == before_sale - 10, after_sale)
+
+# Overselling must be refused and must not change stock. Only a delivered order
+# books stock, so the order that oversells has to be created as Delivered.
 s, err = call('POST', '/sales-orders', {
     'soNumber': 'E2E-SO-OVER', 'client': 'E2E Client v2',
-    'date': '2026-08-10T00:00:00.000Z',
+    'date': '2026-08-10T00:00:00.000Z', 'status': 'Delivered',
     'items': [{'productId': pid, 'product': 'E2E Widget v2', 'qty': 999999, 'unit': 'Piece', 'rate': 1}],
 })
 ok('overselling -> 409', s == 409, (s, err))

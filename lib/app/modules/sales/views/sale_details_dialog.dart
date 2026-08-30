@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
+import 'package:shc_stock/app/shared/models/order_payment.dart';
 
 /// Read-only "Sale Details" side panel — opened from the list page's View
 /// icon. Falls back to "—" for any field a given order doesn't carry
@@ -143,6 +144,20 @@ class SaleDetailsDialog extends StatelessWidget {
                         order.destination,
                         colors,
                       ),
+                      const SizedBox(height: 16),
+                      _PairRow(
+                        'EXPECTED DELIVERY',
+                        _fmtDate(order.expectedDelivery),
+                        'ORDER PAID',
+                        order.paymentType.displayLabel,
+                        colors,
+                      ),
+                      if (order.paidAmount > 0) ...[
+                        const SizedBox(height: 16),
+                        _Label('AMOUNT PAID', colors),
+                        const SizedBox(height: 4),
+                        _Value(_fmtAmt(order.paidAmount), colors),
+                      ],
                       const SizedBox(height: 20),
 
                       // ── Items ──────────────────────────────────────

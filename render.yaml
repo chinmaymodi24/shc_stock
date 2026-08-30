@@ -1,0 +1,46 @@
+# Render Blueprint — deploys the API + the Flutter web app, both on the free tier.
+# Database lives on Neon (free): create it there and paste the URLs into the
+# shc-stock-api env vars below (DATABASE_URL + DIRECT_URL).
+#
+# After the first deploy:
+#  1. Copy the real API URL Render assigns (e.g. https://shc-stock-api.onrender.com)
+#  2. Put it in shc-stock-web -> API_URL  and in shc-stock-api -> CORS_ORIGINS
+#     (also add the shc-stock-web URL to CORS_ORIGINS), then redeploy.
+
+services:
+  - type: web
+    name: shc-stock-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: DATABASE_URL   # Neon pooled URL (host has "-pooler")
+        sync: false
+      - key: DIRECT_URL     # Neon direct URL (same, without "-pooler")
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://shc-stock.web.app,https://shc-stock.firebaseapp.com
+      - key: UPLOADS_DIR
+        value: uploads
+
+  - type: web
+    name: shc-stock-web
+    runtime: static
+    plan: free
+    rootDir: .
+    buildCommand: >
+      git clone https://github.com/flutter/flutter.git --depth 1 -b stable "$HOME/flutter" &&
+      export PATH="$HOME/flutter/bin:$PATH" &&
+      flutter --version &&
+      flutter pub get &&
+      flutter build web --release --dart-define=API_URL=https://shc-stock-api.onrender.com
+    staticPublishPath: build/web
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

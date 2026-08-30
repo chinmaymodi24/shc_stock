@@ -7,6 +7,9 @@ import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/modules/reports/controllers/reports_controller.dart';
+import 'package:shc_stock/app/modules/reports/views/profit_loss_tab.dart';
+import 'package:shc_stock/app/modules/reports/views/web_analytics_tab.dart';
+import 'package:shc_stock/app/modules/reports/widgets/reports_tab_bar.dart';
 
 /// Money lines are stored as raw numbers; everything else prints as-is.
 /// Shared between web and mobile layouts.
@@ -103,99 +106,111 @@ class WebReportsLayout extends GetView<ReportsController> {
             child: Column(
               children: [
                 const WebTopBar(),
-                Expanded(
-                  child: Obx(() {
-                    final loading = controller.isLoading.value;
-                    return SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _header(context, colors),
-                          const SizedBox(height: 20),
-                          // The report body loads under its own header rather
-                          // than the header disappearing with it.
-                          if (loading)
-                            const AppLoadingIndicator(
-                              label: 'Loading reports...',
-                              padding: 96,
-                            )
-                          else ...[
-                            IntrinsicHeight(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Expanded(
-                                    child: ReportSectionCard(
-                                      title: 'Sales',
-                                      icon: Icons.trending_up_rounded,
-                                      accent: const Color(0xFF22C55E),
-                                      lines: controller.salesLines,
-                                      display: displayReportValue,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: ReportSectionCard(
-                                      title: 'Purchases',
-                                      icon: Icons.shopping_cart_outlined,
-                                      accent: AppColors.primaryOrange,
-                                      lines: controller.purchaseLines,
-                                      display: displayReportValue,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: ReportSectionCard(
-                                      title: 'Stock',
-                                      icon: Icons.inventory_2_outlined,
-                                      accent: context.appColors.accent,
-                                      lines: controller.stockLines,
-                                      display: displayReportValue,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            reportNetMovementCard(colors, controller),
-                            const SizedBox(height: 16),
-                            IntrinsicHeight(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Expanded(
-                                    child: ReportRankCard(
-                                      title: 'Top Products',
-                                      subtitle: 'By units sold',
-                                      rows: controller.topProducts,
-                                      money: false,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: ReportRankCard(
-                                      title: 'Top Clients',
-                                      subtitle: 'By sales value',
-                                      rows: controller.topClients,
-                                      money: true,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    );
-                  }),
-                ),
+                const ReportsTabBar(),
+                Expanded(child: Obx(() => _tabBody(context, colors))),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// The three tabs share one page shell — sidebar, top bar and tab strip —
+  /// and swap only what sits underneath.
+  Widget _tabBody(BuildContext context, AppThemeColors colors) {
+    switch (controller.tab.value) {
+      case 1:
+        return const WebAnalyticsTab();
+      case 2:
+        return const ProfitLossTab();
+      default:
+        return Obx(() {
+          final loading = controller.isLoading.value;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _header(context, colors),
+                const SizedBox(height: 20),
+                // The report body loads under its own header rather
+                // than the header disappearing with it.
+                if (loading)
+                  const AppLoadingIndicator(
+                    label: 'Loading reports...',
+                    padding: 96,
+                  )
+                else ...[
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: ReportSectionCard(
+                            title: 'Sales',
+                            icon: Icons.trending_up_rounded,
+                            accent: const Color(0xFF22C55E),
+                            lines: controller.salesLines,
+                            display: displayReportValue,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ReportSectionCard(
+                            title: 'Purchases',
+                            icon: Icons.shopping_cart_outlined,
+                            accent: AppColors.primaryOrange,
+                            lines: controller.purchaseLines,
+                            display: displayReportValue,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ReportSectionCard(
+                            title: 'Stock',
+                            icon: Icons.inventory_2_outlined,
+                            accent: context.appColors.accent,
+                            lines: controller.stockLines,
+                            display: displayReportValue,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  reportNetMovementCard(colors, controller),
+                  const SizedBox(height: 16),
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: ReportRankCard(
+                            title: 'Top Products',
+                            subtitle: 'By units sold',
+                            rows: controller.topProducts,
+                            money: false,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ReportRankCard(
+                            title: 'Top Clients',
+                            subtitle: 'By sales value',
+                            rows: controller.topClients,
+                            money: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        });
+    }
   }
 
   Widget _header(BuildContext context, AppThemeColors colors) {

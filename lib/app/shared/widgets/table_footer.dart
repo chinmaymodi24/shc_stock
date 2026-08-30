@@ -52,7 +52,13 @@ class AppTableFooter extends StatelessWidget {
       child: Row(
         children: [
           if (summaryText != null) ...[
-            Flexible(
+            // Capped width, NOT Flexible: a flex:1 child here would share the
+            // row's leftover width 50/50 with the Expanded pager below, and
+            // since this text only needs ~120px the other half of its share
+            // becomes dead space — stranding the pager in the middle instead
+            // of flush against the card's right edge.
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 260),
               child: Text(
                 summaryText!,
                 overflow: TextOverflow.ellipsis,
@@ -63,10 +69,6 @@ class AppTableFooter extends StatelessWidget {
                 ),
               ),
             ),
-            // Fixed gap, not a Spacer — a Spacer here would compete with the
-            // Expanded below for the row's leftover width, splitting it in
-            // half and stranding the pager in the middle instead of flush
-            // against the card's right edge.
             const SizedBox(width: 24),
           ],
           Text(

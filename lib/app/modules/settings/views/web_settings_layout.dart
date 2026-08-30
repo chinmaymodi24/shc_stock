@@ -372,6 +372,55 @@ class WebSettingsLayout extends GetView<SettingsController> {
           onChanged: (v) => controller.dateFormat.value = v,
           colors: colors,
         ),
+        const SizedBox(height: 14),
+        Divider(height: 1, color: colors.divider),
+        Obx(
+          () => _toggleRow(
+            title: 'Auto-generate invoice numbers',
+            subtitle:
+                'Prefill "Invoice No." on Add Purchase / Add Sale with the next '
+                'number in the series',
+            value: controller.autoNumberDocs.value,
+            onChanged: (v) => controller.autoNumberDocs.value = v,
+            colors: colors,
+          ),
+        ),
+        Divider(height: 1, color: colors.divider),
+        const SizedBox(height: 22),
+        Text(
+          'Low Stock Alert Threshold',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: colors.textPrimary,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'Flag a product as Low Stock when its stock falls to this level or '
+          'below. Used only where a product has no minimum of its own. '
+          'Off = per-product minimums only.',
+          style: TextStyle(
+            fontSize: 12,
+            color: colors.textSecondary,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        const SizedBox(height: 8),
+        Obx(
+          () => _dropdown<int>(
+            value: const [0, 5, 10, 15, 20, 25, 50, 100]
+                    .contains(controller.lowStockThreshold.value)
+                ? controller.lowStockThreshold.value
+                : 0,
+            width: 120,
+            items: const [0, 5, 10, 15, 20, 25, 50, 100],
+            itemLabel: (v) => v == 0 ? 'Off' : '$v units',
+            onChanged: (v) => controller.lowStockThreshold.value = v,
+            colors: colors,
+          ),
+        ),
         const SizedBox(height: 24),
         Row(
           children: [
@@ -381,6 +430,8 @@ class WebSettingsLayout extends GetView<SettingsController> {
               onTap: () {
                 controller.rowsPerPage.value = 10;
                 controller.dateFormat.value = 'MMM D, YYYY (Jul 18, 2026)';
+                controller.autoNumberDocs.value = true;
+                controller.lowStockThreshold.value = 0;
               },
             ),
             const SizedBox(width: 12),

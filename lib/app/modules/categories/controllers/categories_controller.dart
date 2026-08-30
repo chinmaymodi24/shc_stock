@@ -23,7 +23,12 @@ class CategoriesController extends GetxController {
 
   // ── Observable category list ─────────────────────────────────
   final RxList<CategoryModel> categories = <CategoryModel>[].obs;
+  // Web sidebar selection — defaults to the first category so the detail
+  // panel always has something to show.
   final RxnString selectedCatId = RxnString();
+  // Mobile accordion — which card is expanded. Starts null so the page
+  // opens with everything collapsed.
+  final RxnString expandedCatId = RxnString();
   final RxBool isLoading = false.obs;
   final searchCtrl = TextEditingController();
   final RxString searchQuery = ''.obs;
@@ -36,10 +41,26 @@ class CategoriesController extends GetxController {
   }
 
   /// Categories narrowed by the search box — what the list actually renders.
+  /// Matches on the category name OR any of its sub-category names, so typing
+  /// a sub-category still surfaces its parent.
   List<CategoryModel> get visibleCategories {
     final q = searchQuery.value.trim().toLowerCase();
     if (q.isEmpty) return categories;
-    return categories.where((c) => c.name.toLowerCase().contains(q)).toList();
+    return categories
+        .where(
+          (c) =>
+              c.name.toLowerCase().contains(q) ||
+              c.subProducts.any((s) => s.toLowerCase().contains(q)),
+        )
+        .toList();
+  }
+
+  /// True when [cat] should auto-expand for the current search — i.e. the
+  /// query matched one of its sub-categories rather than its own name.
+  bool subMatchesSearch(CategoryModel cat) {
+    final q = searchQuery.value.trim().toLowerCase();
+    if (q.isEmpty) return false;
+    return cat.subProducts.any((s) => s.toLowerCase().contains(q));
   }
 
   /// Total number of top-level categories.
@@ -62,6 +83,19 @@ class CategoriesController extends GetxController {
       message,
       backgroundColor: const Color(0xFFEF4444),
       colorText: Colors.white,
+    );
+  }
+
+  /// Shown when the backend refuses a delete because the category or
+  /// sub-category is still in use. Held on screen for 30s so the user can
+  /// read which products are blocking it.
+  void _showBlocked(String message) {
+    showAppToast(
+      'Can’t delete',
+      message,
+      backgroundColor: const Color(0xFFEF4444),
+      colorText: Colors.white,
+      duration: const Duration(seconds: 30),
     );
   }
 
@@ -96,7 +130,10 @@ class CategoriesController extends GetxController {
         'description': desc.trim(),
       });
       // Last added first — matches the sortOrder the API assigns.
-      categories.insert(0, CategoryModel.fromJson(json as Map<String, dynamic>));
+      categories.insert(
+        0,
+        CategoryModel.fromJson(json as Map<String, dynamic>),
+      );
     } catch (e) {
       _showError('Failed to add category.');
     }
@@ -132,6 +169,12 @@ class CategoriesController extends GetxController {
     try {
       await _api.delete('/categories/$catId');
       categories.removeWhere((c) => c.id == catId);
+    } on ApiException catch (e) {
+      if (e.statusCode == 409) {
+        _showBlocked(e.message);
+      } else {
+        _showError('Failed to delete category.');
+      }
     } catch (e) {
       _showError('Failed to delete category.');
     }
@@ -220,6 +263,12 @@ class CategoriesController extends GetxController {
       final newSubs = List<SubCategoryItem>.from(old.subCategories)
         ..removeAt(subIdx);
       categories[idx] = old.copyWith(subCategories: newSubs);
+    } on ApiException catch (e) {
+      if (e.statusCode == 409) {
+        _showBlocked(e.message);
+      } else {
+        _showError('Failed to delete sub-category.');
+      }
     } catch (e) {
       _showError('Failed to delete sub-category.');
     }

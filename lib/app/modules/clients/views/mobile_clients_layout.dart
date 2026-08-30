@@ -5,13 +5,14 @@ import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
 import 'package:shc_stock/app/modules/clients/controllers/clients_controller.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
-import 'package:shc_stock/app/modules/clients/views/client_details_dialog.dart';
+import 'package:shc_stock/app/modules/clients/views/client_actions.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_row_actions.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
-import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
-import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_list_scaffold.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/shared/widgets/mobile_filter_sheet.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_appbar_avatar.dart';
 
 /// Mobile counterpart of WebClientsLayout — same data, same actions
 /// (view/edit/duplicate/delete via the same ClientDetailsDialog and
@@ -29,12 +30,7 @@ class MobileClientsLayout extends StatelessWidget {
       backgroundColor: colors.background,
       drawer: const AppDrawer(activeRoute: AppRoutes.clients),
       appBar: _buildAppBar(context, c),
-      body: Column(
-        children: [
-          _buildSearchBar(context, c),
-          Expanded(child: _buildList(context, c)),
-        ],
-      ),
+      body: _buildList(context, c),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Get.toNamed(AppRoutes.addClient),
         backgroundColor: AppColors.primaryOrange,
@@ -63,8 +59,16 @@ class MobileClientsLayout extends StatelessWidget {
           fontFamily: 'Poppins',
         ),
       ),
+      centerTitle: true,
       actions: [
-        MobileFilterButton(filters: _buildFilters(c), onClear: c.resetFilters),
+        Obx(
+          () => MobileFilterButton(
+            filters: _buildFilters(c),
+            onClear: c.resetFilters,
+            activeCount: c.stateFilters.length + c.cityFilters.length,
+          ),
+        ),
+        const MobileAppBarAvatar(),
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
@@ -73,22 +77,15 @@ class MobileClientsLayout extends StatelessWidget {
     );
   }
 
-  // Same FilterSearchField the web filter row uses, and the same searchCtrl
-  // so a Clear-all tap in the filter sheet also clears the visible text.
-  Widget _buildSearchBar(BuildContext context, ClientsController c) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-      child: FilterSearchField(
-        controller: c.searchCtrl,
-        hint: 'Search clients...',
-        width: double.infinity,
-        onChanged: (v) {
-          c.searchQuery.value = v;
-          c.currentPage.value = 1;
-        },
-      ),
-    );
-  }
+  Widget _searchField(ClientsController c) => FilterSearchField(
+    controller: c.searchCtrl,
+    hint: 'Search clients...',
+    width: double.infinity,
+    onChanged: (v) {
+      c.searchQuery.value = v;
+      c.currentPage.value = 1;
+    },
+  );
 
   // Same data/controller binding as WebClientsLayout's FilterBar — State —
   // shown as a flat chip group instead of a dropdown pill (see
@@ -114,12 +111,39 @@ class MobileClientsLayout extends StatelessWidget {
     ];
   }
 
+  List<MobileStatCardData> _statCards(BuildContext context, ClientsController c) {
+    return [
+      MobileStatCardData(
+        label: 'Total Clients',
+        value: '${c.totalClients}',
+        icon: Icons.groups_rounded,
+        color: AppColors.primaryOrange,
+      ),
+      MobileStatCardData(
+        label: 'GST Registered',
+        value: '${c.registeredClients}',
+        icon: Icons.check_circle_outline_rounded,
+        color: context.appColors.accent,
+      ),
+      MobileStatCardData(
+        label: 'Unregistered',
+        value: '${c.unregisteredClients}',
+        icon: Icons.block_rounded,
+        color: const Color(0xFFF59E0B),
+      ),
+      MobileStatCardData(
+        label: 'States Covered',
+        value: '${c.statesCovered}',
+        icon: Icons.map_outlined,
+        color: const Color(0xFF22C55E),
+      ),
+    ];
+  }
+
   Widget _buildList(BuildContext context, ClientsController c) {
-    final colors = context.appColors;
     return Obx(() {
-      if (c.isLoading.value && c.clients.isEmpty) {
-        return const AppLoadingIndicator(label: 'Loading clients...');
-      }
+      final loading = c.isLoading.value && c.clients.isEmpty;
+
       // Same filter logic as WebClientsLayout — search, state, city.
       final query = c.searchQuery.value.toLowerCase();
       final stateFilters = c.stateFilters;
@@ -142,114 +166,30 @@ class MobileClientsLayout extends StatelessWidget {
         return true;
       }).toList();
 
-      return ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
-        children: [
-          // Stat cards strip — IntrinsicHeight, not a fixed SizedBox, so a
-          // 2-line label ("GST Registered", "States Covered") sizes the
-          // strip instead of overflowing a guessed fixed height.
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: IntrinsicHeight(
-              child: Row(
-                children: [
-                  _MobileStatCard(
-                    label: 'Total Clients',
-                    value: '${c.totalClients}',
-                    icon: Icons.groups_rounded,
-                    color: AppColors.primaryOrange,
-                  ),
-                  const SizedBox(width: 10),
-                  _MobileStatCard(
-                    label: 'GST Registered',
-                    value: '${c.registeredClients}',
-                    icon: Icons.check_circle_outline_rounded,
-                    color: context.appColors.accent,
-                  ),
-                  const SizedBox(width: 10),
-                  _MobileStatCard(
-                    label: 'Unregistered',
-                    value: '${c.unregisteredClients}',
-                    icon: Icons.block_rounded,
-                    color: const Color(0xFFF59E0B),
-                  ),
-                  const SizedBox(width: 10),
-                  _MobileStatCard(
-                    label: 'States Covered',
-                    value: '${c.statesCovered}',
-                    icon: Icons.map_outlined,
-                    color: const Color(0xFF22C55E),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'Showing ${filtered.length} clients',
-            style: TextStyle(
-              fontSize: 12.5,
-              color: colors.textSecondary,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (filtered.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 48),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.person_search_rounded,
-                      size: 44,
-                      color: colors.textHint,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'No clients found',
-                      style: TextStyle(
-                        color: colors.textHint,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ],
+      return MobileListScaffold(
+        statCards: _statCards(context, c),
+        search: _searchField(c),
+        countLabel: loading ? null : 'Showing ${filtered.length} clients',
+        sliver: loading
+            ? const SliverFillRemaining(
+                hasScrollBody: false,
+                child: AppLoadingIndicator(label: 'Loading clients...'),
+              )
+            : filtered.isEmpty
+            ? const MobileListEmpty(
+                icon: Icons.person_search_rounded,
+                label: 'No clients found',
+              )
+            : SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
+                sliver: SliverList.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (_, i) =>
+                      _MobileClientCard(client: filtered[i]),
                 ),
               ),
-            )
-          else
-            ...filtered.map((cl) => _MobileClientCard(client: cl)),
-        ],
       );
     });
-  }
-}
-
-class _MobileStatCard extends StatelessWidget {
-  final String label, value;
-  final IconData icon;
-  final Color color;
-  const _MobileStatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 150,
-      child: AppStatCard(
-        label: label,
-        value: value,
-        icon: icon,
-        iconColor: color,
-        smallValue: true,
-        showCaption: false,
-      ),
-    );
   }
 }
 
@@ -371,51 +311,22 @@ class _MobileClientCard extends StatelessWidget {
           const SizedBox(height: 10),
           Divider(height: 1, color: colors.divider),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              RowActionButton(
-                icon: Icons.remove_red_eye_outlined,
-                color: context.appColors.success,
-                bg: context.appColors.success.withValues(alpha: 0.10),
-                tooltip: 'View',
-                onTap: () => Get.dialog(
-                  ClientDetailsDialog(
-                    client: cl,
-                    onDelete: () {
-                      Get.back();
-                      confirmDelete(
-                        context,
-                        itemName: cl.name,
-                        itemLabel: 'Client',
-                        onConfirm: () =>
-                            Get.find<ClientsController>().deleteClient(cl.id),
-                      );
-                    },
-                  ),
-                ),
+          // Same four actions the web table offers.
+          MobileActionRow(
+            actions: [
+              MobileActionButton.view(
+                context: context,
+                onTap: () => ClientActions.view(context, cl),
               ),
-              const SizedBox(width: 6),
-              RowActionButton(
-                icon: Icons.copy_outlined,
-                color: const Color(0xFF3B82F6),
-                bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
-                tooltip: 'Duplicate',
-                onTap: () => Get.toNamed(AppRoutes.addClient, arguments: cl),
+              MobileActionButton.edit(
+                context: context,
+                onTap: () => ClientActions.edit(cl),
               ),
-              const SizedBox(width: 6),
-              RowActionButton(
-                icon: Icons.delete_outline_rounded,
-                color: context.appColors.error,
-                bg: context.appColors.tagBg,
-                tooltip: 'Delete',
-                onTap: () => confirmDelete(
-                  context,
-                  itemName: cl.name,
-                  itemLabel: 'Client',
-                  onConfirm: () =>
-                      Get.find<ClientsController>().deleteClient(cl.id),
-                ),
+              MobileActionButton.duplicate(
+                onTap: () => ClientActions.duplicate(cl),
+              ),
+              MobileActionButton.delete(
+                onTap: () => ClientActions.delete(context, cl),
               ),
             ],
           ),

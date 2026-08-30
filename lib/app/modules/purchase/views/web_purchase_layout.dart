@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
 import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
-import 'package:shc_stock/app/modules/purchase/controllers/add_purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
-import 'package:shc_stock/app/modules/purchase/views/purchase_details_dialog.dart';
+import 'package:shc_stock/app/modules/purchase/views/purchase_actions.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
@@ -159,74 +158,51 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                           const SizedBox(height: 20),
 
                           // ── 4 Stat Cards ─────────────────────────────────
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Orders',
-                                    value:
-                                        '${c.stats.value.intOf('totalOrders')}',
-                                    icon: Icons.receipt_long_outlined,
-                                    iconColor: context.appColors.accent,
-                                    trend: c.stats.value.trendLabel(
-                                      'totalOrders',
-                                    ),
-                                    showCaption: false,
-                                  ),
+                          AppStatCardRow(
+                            cards: [
+                              AppStatCard(
+                                label: 'Orders',
+                                value: '${c.stats.value.intOf('totalOrders')}',
+                                icon: Icons.receipt_long_outlined,
+                                iconColor: context.appColors.accent,
+                                trend: c.stats.value.trendLabel('totalOrders'),
+                                showCaption: false,
+                              ),
+                              AppStatCard(
+                                label: 'Purchase (MTD)',
+                                value: formatRupees(
+                                  c.stats.value.doubleOf('purchaseMTD'),
                                 ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Purchase (MTD)',
-                                    value: formatRupees(
-                                      c.stats.value.doubleOf('purchaseMTD'),
-                                    ),
-                                    icon: Icons.shopping_cart_outlined,
-                                    iconColor: AppColors.primaryOrange,
-                                    trend: c.stats.value.trendLabel(
-                                      'purchaseMTD',
-                                    ),
-                                    showCaption: false,
-                                    smallValue: true,
-                                  ),
+                                icon: Icons.shopping_cart_outlined,
+                                iconColor: AppColors.primaryOrange,
+                                trend: c.stats.value.trendLabel('purchaseMTD'),
+                                showCaption: false,
+                                smallValue: true,
+                              ),
+                              AppStatCard(
+                                label: 'Amount Paid',
+                                value: formatRupees(
+                                  c.stats.value.doubleOf('amountPaid'),
                                 ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Amount Paid',
-                                    value: formatRupees(
-                                      c.stats.value.doubleOf('amountPaid'),
-                                    ),
-                                    icon: Icons.check_circle_outline_rounded,
-                                    iconColor: const Color(0xFF22C55E),
-                                    trend: c.stats.value.trendLabel(
-                                      'amountPaid',
-                                    ),
-                                    showCaption: false,
-                                    smallValue: true,
-                                  ),
+                                icon: Icons.check_circle_outline_rounded,
+                                iconColor: const Color(0xFF22C55E),
+                                trend: c.stats.value.trendLabel('amountPaid'),
+                                showCaption: false,
+                                smallValue: true,
+                              ),
+                              AppStatCard(
+                                label: 'Amount Due',
+                                value: formatRupees(
+                                  c.stats.value.doubleOf('amountDue'),
                                 ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Amount Due',
-                                    value: formatRupees(
-                                      c.stats.value.doubleOf('amountDue'),
-                                    ),
-                                    icon: Icons.currency_rupee_rounded,
-                                    iconColor: const Color(0xFFF59E0B),
-                                    trend: c.stats.value.trendLabel(
-                                      'amountDue',
-                                    ),
-                                    trendUp: false,
-                                    showCaption: false,
-                                    smallValue: true,
-                                  ),
-                                ),
-                              ],
-                            ),
+                                icon: Icons.currency_rupee_rounded,
+                                iconColor: const Color(0xFFF59E0B),
+                                trend: c.stats.value.trendLabel('amountDue'),
+                                trendUp: false,
+                                showCaption: false,
+                                smallValue: true,
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 20),
 
@@ -734,15 +710,8 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                         color: context.appColors.success,
                         bg: context.appColors.success.withValues(alpha: 0.10),
                         tooltip: 'View',
-                        onTap: () => Get.dialog(
-                          PurchaseDetailsDialog(
-                            order: widget.order,
-                            onDelete: () {
-                              Get.back();
-                              widget.onDelete();
-                            },
-                          ),
-                        ),
+                        onTap: () =>
+                            PurchaseActions.view(context, widget.order),
                       ),
                       const SizedBox(width: 5),
                       RowActionButton(
@@ -750,12 +719,7 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                         color: AppColors.primaryOrange,
                         bg: AppColors.primaryOrange.withValues(alpha: 0.10),
                         tooltip: 'Edit',
-                        // Opens the same form Add Purchase uses, pre-filled
-                        // from this order; saving updates it in place.
-                        onTap: () => Get.toNamed(
-                          AppRoutes.addPurchase,
-                          arguments: widget.order,
-                        ),
+                        onTap: () => PurchaseActions.edit(widget.order),
                       ),
                       const SizedBox(width: 5),
                       RowActionButton(
@@ -763,13 +727,7 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                         color: const Color(0xFF3B82F6),
                         bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
                         tooltip: 'Duplicate',
-                        // Opens Add Purchase pre-filled from this order, but
-                        // as a new draft — saving creates a new record and
-                        // never touches the one duplicated from.
-                        onTap: () => Get.toNamed(
-                          AppRoutes.addPurchase,
-                          arguments: DuplicatePurchaseOrder(widget.order),
-                        ),
+                        onTap: () => PurchaseActions.duplicate(widget.order),
                       ),
                       const SizedBox(width: 5),
                       RowActionButton(

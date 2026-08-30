@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/shared/widgets/app_date_range_dialog.dart';
 
 /// A single line of a report section.
 class ReportLine {
@@ -31,6 +32,10 @@ class ReportRank {
 // ─────────────────────────────────────────────────────────────────────────────
 class ReportsController extends GetxController {
   final _api = ApiClient.instance;
+
+  /// Which of the three tabs is showing: 0 Reports, 1 Analytics, 2 Profit &
+  /// Loss. Lives here so the web and mobile layouts share one selection.
+  final RxInt tab = 0.obs;
 
   final RxBool isLoading = false.obs;
   final Rx<DateTime?> from = Rx<DateTime?>(null);
@@ -127,11 +132,9 @@ class ReportsController extends GetxController {
   }
 
   Future<void> pickRange(BuildContext context) async {
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2035),
-      initialDateRange: from.value != null && to.value != null
+    final picked = await showAppDateRangePicker(
+      context,
+      initialRange: from.value != null && to.value != null
           ? DateTimeRange(start: from.value!, end: to.value!)
           : null,
     );

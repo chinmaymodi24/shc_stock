@@ -23,7 +23,13 @@ CategoriesController _categoriesController() {
 class AddProductDialog extends StatefulWidget {
   /// Pass an existing product to edit it; omit to add a new one.
   final ProductModel? product;
-  const AddProductDialog({super.key, this.product});
+
+  /// With [duplicate] set, [product] only pre-fills the form — saving POSTs a
+  /// new product and never touches the one duplicated from. The SKU is left
+  /// blank because it has to stay unique.
+  final bool duplicate;
+
+  const AddProductDialog({super.key, this.product, this.duplicate = false});
 
   @override
   State<AddProductDialog> createState() => _AddProductDialogState();
@@ -43,14 +49,17 @@ class _AddProductDialogState extends State<AddProductDialog> {
   final _unit = ''.obs;
   final _saving = false.obs;
 
-  bool get _isEdit => widget.product != null;
+  bool get _isEdit => widget.product != null && !widget.duplicate;
 
   @override
   void initState() {
     super.initState();
     final p = widget.product;
     _nameCtrl = TextEditingController(text: p?.name ?? '');
-    _skuCtrl = TextEditingController(text: p?.sku ?? '');
+    // A duplicate starts without an SKU — it must be unique per product.
+    _skuCtrl = TextEditingController(
+      text: widget.duplicate ? '' : (p?.sku ?? ''),
+    );
     _hsnCtrl = TextEditingController(text: p?.hsnCode ?? '');
     _costPriceCtrl = TextEditingController(
       text: p == null ? '' : p.costPrice.toStringAsFixed(0),
@@ -183,7 +192,11 @@ class _AddProductDialogState extends State<AddProductDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _isEdit ? 'Edit Product' : 'Add Product',
+                    _isEdit
+                        ? 'Edit Product'
+                        : widget.duplicate
+                        ? 'Duplicate Product'
+                        : 'Add Product',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,

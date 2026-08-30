@@ -128,7 +128,9 @@ pid = prod['id']
 sales_before = stats('sales')
 s, so = call('POST', '/sales-orders', {
     'soNumber': 'STATS-SO-1', 'client': 'Probe', 'date': '2026-08-10T00:00:00.000Z',
-    'amount': 5000, 'paymentStatus': 'Pending',
+    # Delivered, because only a delivered sale books its stock movement — the
+    # inventory assertion below depends on it.
+    'amount': 5000, 'paymentStatus': 'Pending', 'status': 'Delivered',
     'items': [{'productId': pid, 'product': 'Stats Probe Product', 'qty': 5,
                'unit': 'Piece', 'rate': 1000}],
 })

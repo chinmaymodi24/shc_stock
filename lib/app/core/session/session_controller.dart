@@ -56,6 +56,12 @@ class SessionController extends GetxController {
 
   bool get isSignedIn => user.value != null;
 
+  /// Completes once [restore] has finished reading disk on startup — the
+  /// splash screen awaits this before deciding between the login page and a
+  /// direct jump to the dashboard.
+  Future<void>? _restoreFuture;
+  Future<void> get ready => _restoreFuture ?? Future.value();
+
   /// Name to stamp on writes. Falls back to 'Admin' — the same default the
   /// backend uses — rather than inventing a person.
   String get actorName => user.value?.name.trim().isNotEmpty == true
@@ -65,7 +71,7 @@ class SessionController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    restore();
+    _restoreFuture = restore();
   }
 
   Future<void> restore() async {
@@ -81,12 +87,22 @@ class SessionController extends GetxController {
     }
   }
 
-  Future<void> signIn(Map<String, dynamic> loginResponse) async {
+  /// [persist] mirrors the login page's "Remember me" checkbox: when true the
+  /// session is written to disk so the next app launch skips the login page;
+  /// when false it lives only for this run and any stored session is cleared.
+  Future<void> signIn(
+    Map<String, dynamic> loginResponse, {
+    bool persist = true,
+  }) async {
     final u = SessionUser.fromJson(loginResponse);
     user.value = u;
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_key, jsonEncode(u.toJson()));
+      if (persist) {
+        await prefs.setString(_key, jsonEncode(u.toJson()));
+      } else {
+        await prefs.remove(_key);
+      }
     } catch (_) {}
   }
 

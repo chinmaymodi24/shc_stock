@@ -109,11 +109,66 @@ async function reverseStockFor(tx, refType, refId) {
   return movements.length;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Delivery gating.
+//
+// Stock does not move when an order is written — it moves when the goods
+// actually change hands. A purchase books its IN once it is "Received"; a sale
+// books its OUT once it is "Delivered". Every other status (Pending, Partial,
+// Confirmed, Processing, Shipped, Cancelled) leaves the ledger untouched, and
+// moving back out of a delivered status reverses what was booked.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DELIVERED_STATUS = { purchase: 'Received', sale: 'Delivered' };
+
+/// True when [status] is the one that means the goods have moved for [refType].
+function movesStock(refType, status) {
+  return String(status || '').trim() === DELIVERED_STATUS[refType];
+}
+
+/// Brings the ledger in line with an order's status: books the movements the
+/// first time it reaches its delivered status, reverses them if it leaves that
+/// status, and does nothing when the two already agree.
+///
+/// Callers that rewrote the order's items (PUT) pass `force: true`, having
+/// already reversed the old rows, so the new lines are re-booked.
+async function syncStockForStatus(
+  tx,
+  { refType, refId, status, lines, reference, note, createdBy, force = false }
+) {
+  const shouldHold = movesStock(refType, status);
+  const booked = force
+    ? 0
+    : await tx.stockMovement.count({ where: { refType, refId } });
+
+  if (shouldHold && booked === 0) {
+    return applyStock(tx, {
+      lines,
+      direction: refType === 'purchase' ? +1 : -1,
+      type: refType === 'purchase' ? 'IN' : 'OUT',
+      refType,
+      refId,
+      reference,
+      note,
+      createdBy,
+    });
+  }
+  if (!shouldHold && booked > 0) {
+    await reverseStockFor(tx, refType, refId);
+  }
+  return [];
+}
+
 /// Derived status shown in the inventory list.
-function stockStatus(product) {
+///
+/// [lowStockThreshold] is the business-wide fallback from AppSetting — used
+/// only when the product has no per-item minimumStock (<= 0). A product's own
+/// minimumStock always wins; 0 threshold means "no global rule".
+function stockStatus(product, lowStockThreshold = 0) {
   if (product.isActive === false) return 'inactive';
   if (product.currentStock <= 0) return 'outOfStock';
-  if (product.currentStock <= product.minimumStock) return 'lowStock';
+  const threshold = product.minimumStock > 0 ? product.minimumStock : lowStockThreshold;
+  if (threshold > 0 && product.currentStock <= threshold) return 'lowStock';
   return 'inStock';
 }
 
@@ -123,4 +178,7 @@ module.exports = {
   applyStock,
   reverseStockFor,
   stockStatus,
+  movesStock,
+  syncStockForStatus,
+  DELIVERED_STATUS,
 };

@@ -437,6 +437,19 @@ class LoginForm extends GetView<LoginController> {
 
   @override
   Widget build(BuildContext context) {
+    // The phone card is tighter than the desktop split-screen, so the logo
+    // and the type are a notch smaller there — otherwise the heading and
+    // field labels crowd the form.
+    final headingStyle = isMobile
+        ? AppTextStyles.heading1Ctx(context).copyWith(fontSize: 23)
+        : AppTextStyles.heading1Ctx(context);
+    final subtitleStyle = isMobile
+        ? AppTextStyles.subtitleCtx(context).copyWith(fontSize: 13)
+        : AppTextStyles.subtitleCtx(context);
+    final labelStyle = isMobile
+        ? AppTextStyles.labelCtx(context).copyWith(fontSize: 13)
+        : AppTextStyles.labelCtx(context);
+
     return Form(
       key: controller.formKey,
       child: Column(
@@ -444,25 +457,27 @@ class LoginForm extends GetView<LoginController> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (showLogo) ...[
-            const SHCLogo(width: 190),
-            const SizedBox(height: 24),
+            // Kept deliberately small so it reads as a brand mark above the
+            // heading rather than competing with it. Web was 190 back when
+            // dark mode showed only the orange flame (the navy wordmark was
+            // invisible on the dark card); now that the light wordmark is
+            // swapped in, that same 190 reads far too big.
+            SHCLogo(width: isMobile ? 120 : 150),
+            const SizedBox(height: 16),
           ],
 
           /// TITLE
-          Text('Welcome back', style: AppTextStyles.heading1Ctx(context)),
+          Text('Welcome back', style: headingStyle),
 
           const SizedBox(height: 4),
 
           /// SUBTITLE
-          Text(
-            'Sign in to manage your inventory',
-            style: AppTextStyles.subtitleCtx(context),
-          ),
+          Text('Sign in to manage your inventory', style: subtitleStyle),
 
-          SizedBox(height: isMobile ? 24 : 28),
+          SizedBox(height: isMobile ? 22 : 28),
 
           /// EMAIL LABEL
-          Text('Email or username', style: AppTextStyles.labelCtx(context)),
+          Text('Email or username', style: labelStyle),
 
           const SizedBox(height: 8),
 
@@ -471,7 +486,7 @@ class LoginForm extends GetView<LoginController> {
           const SizedBox(height: 18),
 
           /// PASSWORD LABEL
-          Text('Password', style: AppTextStyles.labelCtx(context)),
+          Text('Password', style: labelStyle),
 
           const SizedBox(height: 8),
 
@@ -528,10 +543,7 @@ class LoginForm extends GetView<LoginController> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(
-            color: context.appColors.accent,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: context.appColors.accent, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -584,10 +596,7 @@ class LoginForm extends GetView<LoginController> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(
-              color: context.appColors.accent,
-              width: 1.5,
-            ),
+            borderSide: BorderSide(color: context.appColors.accent, width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),

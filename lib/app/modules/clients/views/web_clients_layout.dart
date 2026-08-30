@@ -11,8 +11,7 @@ import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
-import 'package:shc_stock/app/modules/clients/views/client_details_dialog.dart';
-import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
+import 'package:shc_stock/app/modules/clients/views/client_actions.dart';
 import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 
 // ── Table column constants (header + row MUST match) ──────────────────────
@@ -171,73 +170,61 @@ class WebClientsLayout extends GetView<ClientsController> {
                                 const SizedBox(height: 20),
 
                                 // ── Stat Cards ───────────────────────────────────────────
-                                IntrinsicHeight(
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      Expanded(
-                                        child: AppStatCard(
-                                          label: 'Total Clients',
-                                          value: '${c.totalClients}',
-                                          icon: Icons.groups_rounded,
-                                          iconColor: AppColors.primaryOrange,
-                                          trend: c.stats.value.trendLabel(
-                                            'totalClients',
-                                          ),
-                                          trendUp: c.stats.value.trendUp(
-                                            'totalClients',
-                                          ),
-                                        ),
+                                AppStatCardRow(
+                                  cards: [
+                                    AppStatCard(
+                                      label: 'Total Clients',
+                                      value: '${c.totalClients}',
+                                      icon: Icons.groups_rounded,
+                                      iconColor: AppColors.primaryOrange,
+                                      trend: c.stats.value.trendLabel(
+                                        'totalClients',
                                       ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: AppStatCard(
-                                          label: 'GST Registered',
-                                          value: '${c.registeredClients}',
-                                          icon: Icons
-                                              .check_circle_outline_rounded,
-                                          iconColor: context.appColors.accent,
-                                          trend: c.stats.value.trendLabel(
-                                            'gstRegistered',
-                                          ),
-                                          trendUp: c.stats.value.trendUp(
-                                            'gstRegistered',
-                                          ),
-                                        ),
+                                      trendUp: c.stats.value.trendUp(
+                                        'totalClients',
                                       ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: AppStatCard(
-                                          label: 'Unregistered Clients',
-                                          value: '${c.unregisteredClients}',
-                                          icon: Icons.block_rounded,
-                                          iconColor: const Color(0xFFF59E0B),
-                                          trend: c.stats.value.trendLabel(
-                                            'unregistered',
-                                          ),
-                                          trendUp: c.stats.value.trendUp(
-                                            'unregistered',
-                                          ),
-                                        ),
+                                      showCaption: false,
+                                    ),
+                                    AppStatCard(
+                                      label: 'GST Registered',
+                                      value: '${c.registeredClients}',
+                                      icon: Icons.check_circle_outline_rounded,
+                                      iconColor: context.appColors.accent,
+                                      trend: c.stats.value.trendLabel(
+                                        'gstRegistered',
                                       ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: AppStatCard(
-                                          label: 'States Covered',
-                                          value: '${c.statesCovered}',
-                                          icon: Icons.map_outlined,
-                                          iconColor: const Color(0xFF22C55E),
-                                          trend: c.stats.value.trendLabel(
-                                            'statesCovered',
-                                          ),
-                                          trendUp: c.stats.value.trendUp(
-                                            'statesCovered',
-                                          ),
-                                        ),
+                                      trendUp: c.stats.value.trendUp(
+                                        'gstRegistered',
                                       ),
-                                    ],
-                                  ),
+                                      showCaption: false,
+                                    ),
+                                    AppStatCard(
+                                      label: 'Unregistered Clients',
+                                      value: '${c.unregisteredClients}',
+                                      icon: Icons.block_rounded,
+                                      iconColor: const Color(0xFFF59E0B),
+                                      trend: c.stats.value.trendLabel(
+                                        'unregistered',
+                                      ),
+                                      trendUp: c.stats.value.trendUp(
+                                        'unregistered',
+                                      ),
+                                      showCaption: false,
+                                    ),
+                                    AppStatCard(
+                                      label: 'States Covered',
+                                      value: '${c.statesCovered}',
+                                      icon: Icons.map_outlined,
+                                      iconColor: const Color(0xFF22C55E),
+                                      trend: c.stats.value.trendLabel(
+                                        'statesCovered',
+                                      ),
+                                      trendUp: c.stats.value.trendUp(
+                                        'statesCovered',
+                                      ),
+                                      showCaption: false,
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 20),
 
@@ -765,21 +752,7 @@ class _ClientRowState extends State<_ClientRow> {
                         color: context.appColors.success,
                         bg: context.appColors.success.withValues(alpha: 0.10),
                         tooltip: 'View',
-                        onTap: () => Get.dialog(
-                          ClientDetailsDialog(
-                            client: cl,
-                            onDelete: () {
-                              Get.back();
-                              confirmDelete(
-                                context,
-                                itemName: cl.name,
-                                itemLabel: 'Client',
-                                onConfirm: () => Get.find<ClientsController>()
-                                    .deleteClient(cl.id),
-                              );
-                            },
-                          ),
-                        ),
+                        onTap: () => ClientActions.view(context, cl),
                       ),
                       const SizedBox(width: 5),
                       RowActionButton(
@@ -787,7 +760,7 @@ class _ClientRowState extends State<_ClientRow> {
                         color: AppColors.primaryOrange,
                         bg: AppColors.primaryOrange.withValues(alpha: 0.10),
                         tooltip: 'Edit',
-                        onTap: () {},
+                        onTap: () => ClientActions.edit(cl),
                       ),
                       const SizedBox(width: 5),
                       RowActionButton(
@@ -795,11 +768,7 @@ class _ClientRowState extends State<_ClientRow> {
                         color: const Color(0xFF3B82F6),
                         bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
                         tooltip: 'Duplicate',
-                        // Opens Add Client pre-filled from this client, but
-                        // as a new draft — saving creates a new client and
-                        // never touches the one duplicated from.
-                        onTap: () =>
-                            Get.toNamed(AppRoutes.addClient, arguments: cl),
+                        onTap: () => ClientActions.duplicate(cl),
                       ),
                       const SizedBox(width: 5),
                       RowActionButton(
@@ -811,13 +780,7 @@ class _ClientRowState extends State<_ClientRow> {
                         // icon carry the warning color.
                         bg: context.appColors.tagBg,
                         tooltip: 'Delete',
-                        onTap: () => confirmDelete(
-                          context,
-                          itemName: cl.name,
-                          itemLabel: 'Client',
-                          onConfirm: () =>
-                              Get.find<ClientsController>().deleteClient(cl.id),
-                        ),
+                        onTap: () => ClientActions.delete(context, cl),
                       ),
                     ],
                   ),
@@ -950,20 +913,7 @@ class _NewThisMonthCard extends StatelessWidget {
                   // client out of the loaded list to show its details.
                   final full = c.clients.firstWhereOrNull((x) => x.id == cl.id);
                   if (full == null) return;
-                  Get.dialog(
-                    ClientDetailsDialog(
-                      client: full,
-                      onDelete: () {
-                        Get.back();
-                        confirmDelete(
-                          context,
-                          itemName: full.name,
-                          itemLabel: 'Client',
-                          onConfirm: () => c.deleteClient(full.id),
-                        );
-                      },
-                    ),
-                  );
+                  ClientActions.view(context, full);
                 },
                 child: Container(
                   decoration: e.key == recent.length - 1

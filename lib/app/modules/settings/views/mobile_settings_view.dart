@@ -5,17 +5,25 @@ import 'package:shc_stock/app/core/theme/theme_controller.dart';
 import 'package:shc_stock/app/core/theme/theme_switch_helper.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
+import 'package:shc_stock/app/shared/widgets/async_button.dart';
+import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Mobile Settings — back-bar header + horizontal tabs
-// (Preferences / Security / Notifications). Profile lives on its own page.
+// Mobile Settings detail — one dedicated full page per section. Which section
+// shows is picked by SettingsController.mobileTab, set by the Profile hub
+// before it navigates here. No tab bar: the header title is the section name.
 // State lives in SettingsController (registered by SettingsBinding) — no
 // setState anywhere in this file.
 // ─────────────────────────────────────────────────────────────────────────────
 class MobileSettingsView extends GetView<SettingsController> {
   const MobileSettingsView({super.key});
 
-  static const _tabs = ['Preferences', 'Security', 'Notifications'];
+  static const _titles = ['Preferences', 'Security', 'Notifications'];
+
+  String get _title {
+    final i = controller.mobileTab.value;
+    return (i >= 0 && i < _titles.length) ? _titles[i] : 'Settings';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,44 +47,32 @@ class MobileSettingsView extends GetView<SettingsController> {
             }
           },
         ),
-        title: Text(
-          'Settings',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: colors.textPrimary,
-            fontFamily: 'Poppins',
+        title: Obx(
+          () => Text(
+            _title,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: colors.textPrimary,
+              fontFamily: 'Poppins',
+            ),
           ),
         ),
         centerTitle: true,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(45),
-          child: Obx(
-            () => Column(
-              children: [
-                Row(
-                  children: [
-                    for (int i = 0; i < _tabs.length; i++)
-                      Expanded(
-                        child: _TopTab(
-                          label: _tabs[i],
-                          selected: controller.mobileTab.value == i,
-                          colors: colors,
-                          onTap: () => controller.mobileTab.value = i,
-                        ),
-                      ),
-                  ],
-                ),
-                Divider(height: 1, color: colors.divider),
-              ],
-            ),
-          ),
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: colors.divider),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Obx(() => _buildContent(context, colors)),
-      ),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const AppLoadingIndicator(label: 'Loading settings...');
+        }
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: _buildContent(context, colors),
+        );
+      }),
     );
   }
 
@@ -152,25 +148,8 @@ class MobileSettingsView extends GetView<SettingsController> {
           ),
         ),
         const SizedBox(height: 22),
-        Text(
-          'Default Rows Per Page',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: colors.textPrimary,
-            fontFamily: 'Poppins',
-          ),
-        ),
-        const SizedBox(height: 8),
-        _dropdown<int>(
-          value: controller.rowsPerPage.value,
-          width: 90,
-          items: const [5, 10, 20, 50],
-          itemLabel: (v) => '$v',
-          onChanged: (v) => controller.rowsPerPage.value = v,
-          colors: colors,
-        ),
-        const SizedBox(height: 22),
+        // "Default Rows Per Page" is web-only — mobile list pages scroll
+        // continuously with no pager — so it isn't shown here.
         Text(
           'Date Format',
           style: TextStyle(
@@ -193,6 +172,63 @@ class MobileSettingsView extends GetView<SettingsController> {
           onChanged: (v) => controller.dateFormat.value = v,
           colors: colors,
         ),
+        const SizedBox(height: 10),
+        Divider(height: 1, color: colors.divider),
+        Obx(
+          () => _toggleRow(
+            title: 'Auto-generate invoice numbers',
+            subtitle:
+                'Prefill "Invoice No." on Add Purchase / Add Sale with the next '
+                'number in the series',
+            value: controller.autoNumberDocs.value,
+            onChanged: (v) => controller.autoNumberDocs.value = v,
+            colors: colors,
+          ),
+        ),
+        Divider(height: 1, color: colors.divider),
+        const SizedBox(height: 20),
+        Text(
+          'Low Stock Alert Threshold',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: colors.textPrimary,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'Flag a product as Low Stock at or below this level, where the '
+          'product has no minimum of its own. Off = per-product minimums only.',
+          style: TextStyle(
+            fontSize: 12,
+            color: colors.textSecondary,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        const SizedBox(height: 8),
+        Obx(
+          () => _dropdown<int>(
+            value:
+                const [
+                  0,
+                  5,
+                  10,
+                  15,
+                  20,
+                  25,
+                  50,
+                  100,
+                ].contains(controller.lowStockThreshold.value)
+                ? controller.lowStockThreshold.value
+                : 0,
+            width: double.infinity,
+            items: const [0, 5, 10, 15, 20, 25, 50, 100],
+            itemLabel: (v) => v == 0 ? 'Off' : '$v units',
+            onChanged: (v) => controller.lowStockThreshold.value = v,
+            colors: colors,
+          ),
+        ),
         const SizedBox(height: 24),
         Row(
           children: [
@@ -201,16 +237,20 @@ class MobileSettingsView extends GetView<SettingsController> {
                 label: 'Reset',
                 colors: colors,
                 onTap: () {
-                  controller.rowsPerPage.value = 10;
                   controller.dateFormat.value = 'MMM D, YYYY (Jul 18, 2026)';
+                  controller.autoNumberDocs.value = true;
+                  controller.lowStockThreshold.value = 0;
                 },
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _orangeButton(
+              child: AppAsyncButton(
                 label: 'Apply',
-                onTap: controller.saveSettings,
+                onPressed: controller.saveSettings,
+                expand: true,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                radius: 10,
               ),
             ),
           ],
@@ -247,12 +287,13 @@ class MobileSettingsView extends GetView<SettingsController> {
           colors: colors,
         ),
         const SizedBox(height: 22),
-        SizedBox(
-          width: double.infinity,
-          child: _purpleButton(
-            label: 'Update Password',
-            onTap: controller.changePassword,
-          ),
+        AppAsyncButton(
+          label: 'Update Password',
+          onPressed: controller.changePassword,
+          expand: true,
+          background: AppColors.primaryPurple,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          radius: 10,
         ),
         const SizedBox(height: 24),
         Divider(height: 1, color: colors.divider),
@@ -524,52 +565,6 @@ class MobileSettingsView extends GetView<SettingsController> {
     );
   }
 
-  Widget _orangeButton({required String label, required VoidCallback onTap}) {
-    return ElevatedButton(
-      onPressed: onTap,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primaryOrange,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-          fontFamily: 'Poppins',
-        ),
-      ),
-    );
-  }
-
-  Widget _purpleButton({required String label, required VoidCallback onTap}) {
-    return ElevatedButton(
-      onPressed: onTap,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primaryPurple,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-          fontFamily: 'Poppins',
-        ),
-      ),
-    );
-  }
-
   Widget _greyButton({
     required String label,
     required AppThemeColors colors,
@@ -597,50 +592,6 @@ class MobileSettingsView extends GetView<SettingsController> {
               fontFamily: 'Poppins',
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// Horizontal top tab item with underline indicator
-class _TopTab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final AppThemeColors colors;
-  final VoidCallback onTap;
-  const _TopTab({
-    required this.label,
-    required this.selected,
-    required this.colors,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 10, top: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: selected ? colors.purple : colors.textSecondary,
-                fontFamily: 'Poppins',
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              height: 2,
-              width: 28,
-              color: selected ? colors.purple : Colors.transparent,
-            ),
-          ],
         ),
       ),
     );

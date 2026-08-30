@@ -3,8 +3,8 @@ const prisma = require('../prismaClient');
 const {
   InsufficientStockError,
   toStockLines,
-  applyStock,
   reverseStockFor,
+  syncStockForStatus,
 } = require('../stockService');
 
 const router = express.Router();
@@ -42,6 +42,9 @@ function orderFields(body) {
     invoiceDate: body.invoiceDate ? new Date(body.invoiceDate) : null,
     despatchedThrough: body.despatchedThrough || '',
     destination: body.destination || '',
+    expectedDelivery: body.expectedDelivery ? new Date(body.expectedDelivery) : null,
+    paymentType: body.paymentType || '',
+    paidAmount: Number(body.paidAmount) || 0,
   };
 }
 
@@ -67,8 +70,10 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// POST /api/sales-orders — goods going out, so every linked item removes stock.
-// Rejected with 409 if any line would take a product below zero.
+// POST /api/sales-orders — the stock OUT is booked only if the order is already
+// marked "Delivered"; otherwise it waits for delivery (a manual status change,
+// or the expectedDelivery sweep). Rejected with 409 if a booked line would take
+// a product below zero.
 router.post('/', async (req, res, next) => {
   try {
     const invalid = validate(req.body, { requireSoNumber: true });
@@ -84,12 +89,11 @@ router.post('/', async (req, res, next) => {
         },
         include: orderInclude,
       });
-      await applyStock(tx, {
-        lines: toStockLines(items),
-        direction: -1,
-        type: 'OUT',
+      await syncStockForStatus(tx, {
         refType: REF_TYPE,
         refId: created.id,
+        status: created.status,
+        lines: toStockLines(items),
         reference: created.soNumber,
         note: `Sale ${created.soNumber}`,
         createdBy: created.modifiedBy,
@@ -103,8 +107,9 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// PUT /api/sales-orders/:id — replaces the order and its items, reversing the
-// old stock movements and applying the new ones in the same transaction.
+// PUT /api/sales-orders/:id — replaces the order and its items. Anything the
+// old version had booked is reversed, and the new lines are booked again only
+// if the order is (still) "Delivered".
 router.put('/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
@@ -131,15 +136,15 @@ router.put('/:id', async (req, res, next) => {
         data: { ...data, items: { create: items } },
         include: orderInclude,
       });
-      await applyStock(tx, {
-        lines: toStockLines(items),
-        direction: -1,
-        type: 'OUT',
+      await syncStockForStatus(tx, {
         refType: REF_TYPE,
         refId: id,
+        status: updated.status,
+        lines: toStockLines(items),
         reference: updated.soNumber,
         note: `Sale ${updated.soNumber} (edited)`,
         createdBy: updated.modifiedBy,
+        force: true,
       });
       return updated;
     });
@@ -159,13 +164,27 @@ router.patch('/:id/status', async (req, res, next) => {
     if (!status && !paymentStatus) {
       return res.status(400).json({ error: 'status or paymentStatus is required' });
     }
-    const data = {};
+    const data = { modifiedAt: new Date() };
     if (status) data.status = status;
     if (paymentStatus) data.paymentStatus = paymentStatus;
-    const order = await prisma.salesOrder.update({
-      where: { id },
-      data,
-      include: orderInclude,
+    // Reaching "Delivered" is what takes the goods out of stock; leaving it
+    // puts them back.
+    const order = await prisma.$transaction(async (tx) => {
+      const updated = await tx.salesOrder.update({
+        where: { id },
+        data,
+        include: orderInclude,
+      });
+      await syncStockForStatus(tx, {
+        refType: REF_TYPE,
+        refId: id,
+        status: updated.status,
+        lines: toStockLines(updated.items),
+        reference: updated.soNumber,
+        note: `Sale ${updated.soNumber} (${updated.status})`,
+        createdBy: updated.modifiedBy,
+      });
+      return updated;
     });
     res.json(order);
   } catch (err) {

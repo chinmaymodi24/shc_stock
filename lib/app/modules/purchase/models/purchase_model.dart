@@ -1,3 +1,5 @@
+import 'package:shc_stock/app/shared/models/order_payment.dart';
+
 // Purchase Order model
 class PurchaseOrder {
   final String id;
@@ -26,6 +28,14 @@ class PurchaseOrder {
   final double freight;
   final String placeOfSupply;
   final DateTime? dueDate;
+
+  /// Optional. When set, the backend flips the order to Received on that date
+  /// — which is what books the stock IN. Null leaves the status alone.
+  final DateTime? expectedDelivery;
+
+  /// How much of this order has been paid to the supplier.
+  final OrderPaymentType paymentType;
+  final double paidAmount;
   final List<PurchaseDetailItem> items;
 
   const PurchaseOrder({
@@ -51,6 +61,9 @@ class PurchaseOrder {
     this.freight = 0,
     this.placeOfSupply = '',
     this.dueDate,
+    this.expectedDelivery,
+    this.paymentType = OrderPaymentType.none,
+    this.paidAmount = 0,
     this.items = const [],
   });
 
@@ -101,6 +114,9 @@ class PurchaseOrder {
       freight: (json['freight'] as num?)?.toDouble() ?? 0,
       placeOfSupply: json['placeOfSupply'] as String? ?? '',
       dueDate: parseDate(json['dueDate']),
+      expectedDelivery: parseDate(json['expectedDelivery']),
+      paymentType: orderPaymentTypeFrom(json['paymentType'] as String?),
+      paidAmount: (json['paidAmount'] as num?)?.toDouble() ?? 0,
       items: (json['items'] as List<dynamic>? ?? [])
           .map((e) => PurchaseDetailItem.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -128,6 +144,10 @@ class PurchaseOrder {
     'freight': freight,
     'placeOfSupply': placeOfSupply,
     if (dueDate != null) 'dueDate': dueDate!.toIso8601String(),
+    if (expectedDelivery != null)
+      'expectedDelivery': expectedDelivery!.toIso8601String(),
+    'paymentType': paymentType.label,
+    'paidAmount': paidAmount,
     'items': items.map((i) => i.toJson()).toList(),
   };
 }

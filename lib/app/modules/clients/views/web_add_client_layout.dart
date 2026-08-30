@@ -208,17 +208,23 @@ class WebAddClientLayout extends GetView<AddClientController> {
     controller.isSaving.value = true;
     // ClientsBinding registers this permanently, so the new client lands in
     // the already-loaded list without a full refetch.
-    final saved = await Get.find<ClientsController>().addClient(
-      controller.toPayload(),
-    );
+    final clients = Get.find<ClientsController>();
+    // Same form for both paths — an EditClient argument PUTs, anything else
+    // POSTs a new client (see AddClientController.onInit).
+    final saved = controller.isEdit
+        ? await clients.updateClient(
+            controller.editingId.value!,
+            controller.toPayload(),
+          )
+        : await clients.addClient(controller.toPayload());
     controller.isSaving.value = false;
     // addClient() already surfaced the API error toast on failure — keep the
     // form open so the entered data isn't lost.
     if (saved == null) return;
     Get.offNamed(AppRoutes.clients);
     showAppToast(
-      '✅ Client Saved',
-      '${saved.name} (${saved.code}) has been added.',
+      controller.isEdit ? '✅ Client Updated' : '✅ Client Saved',
+      '${saved.name} (${saved.code}) has been ${controller.isEdit ? 'updated' : 'added'}.',
       backgroundColor: const Color(0xFF22C55E),
       colorText: Colors.white,
     );

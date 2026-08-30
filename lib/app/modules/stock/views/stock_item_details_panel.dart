@@ -25,6 +25,16 @@ SalesController _salesController() {
   return Get.put(SalesController(), permanent: true);
 }
 
+/// This panel also opens from the Products page (see product_actions.dart),
+/// which has no StockBinding — a bare Get.find() threw "StockController not
+/// found" there and left both history sections spinning forever.
+StockController _stockController() {
+  if (Get.isRegistered<StockController>()) {
+    return Get.find<StockController>();
+  }
+  return Get.put(StockController(), permanent: true);
+}
+
 String _fmtQty(double q) =>
     q == q.roundToDouble() ? q.toStringAsFixed(0) : q.toStringAsFixed(2);
 
@@ -159,11 +169,16 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
   }
 
   Future<void> _load() async {
-    final data = await Get.find<StockController>().fetchMovements(
-      productId: widget.item.productId,
-    );
-    _movements.assignAll(data);
-    _loading.value = false;
+    try {
+      final data = await _stockController().fetchMovements(
+        productId: widget.item.productId,
+      );
+      _movements.assignAll(data);
+    } finally {
+      // Always clear the spinner — a throw here used to leave both history
+      // sections loading forever with no error shown.
+      _loading.value = false;
+    }
   }
 
   @override
@@ -334,7 +349,10 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
 
                         // ── Purchased From (Purchase History) — every
                         // purchase order that added this item's stock.
-                        _sectionLabel('Purchased From (Purchase History)', colors),
+                        _sectionLabel(
+                          'Purchased From (Purchase History)',
+                          colors,
+                        ),
                         const SizedBox(height: 10),
                         if (loading)
                           const Padding(
@@ -362,9 +380,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                             ),
                           )
                         else
-                          ...purchaseEntries.map(
-                            (e) => _historyRow(e, colors, showIcon: false),
-                          ),
+                          ...purchaseEntries.map((e) => _historyRow(e, colors)),
 
                         const SizedBox(height: 8),
                         Divider(height: 1, color: colors.divider),
@@ -401,9 +417,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                             ),
                           )
                         else
-                          ...salesEntries.map(
-                            (e) => _historyRow(e, colors, showIcon: false),
-                          ),
+                          ...salesEntries.map((e) => _historyRow(e, colors)),
 
                         const SizedBox(height: 8),
                         Divider(height: 1, color: colors.divider),
@@ -568,15 +582,10 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
     );
   }
 
-  /// [showIcon] is off for Sales History — every row there is a sale (always
-  /// stock-out), so the in/out icon would just repeat what the section
-  /// heading already says. Adjustment History mixes both directions, so it
-  /// keeps the icon.
-  Widget _historyRow(
-    _HistoryEntry e,
-    AppThemeColors colors, {
-    bool showIcon = true,
-  }) {
+  /// Every history row carries the same in/out badge: purchases and manual
+  /// stock-ins get the "in" icon, sales and stock-outs the "out" one, so the
+  /// three history sections read identically.
+  Widget _historyRow(_HistoryEntry e, AppThemeColors colors) {
     final color = e.isIn ? colors.success : colors.warning;
     final dateFmt = DateFormat('MMM d, yyyy');
     return Padding(
@@ -584,22 +593,20 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (showIcon) ...[
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                e.isIn ? Icons.call_received_rounded : Icons.call_made_rounded,
-                size: 15,
-                color: color,
-              ),
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(width: 10),
-          ],
+            child: Icon(
+              e.isIn ? Icons.call_received_rounded : Icons.call_made_rounded,
+              size: 15,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

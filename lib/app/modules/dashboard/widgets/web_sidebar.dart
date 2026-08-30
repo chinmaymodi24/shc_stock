@@ -16,24 +16,14 @@ class WebSidebar extends StatelessWidget {
       route: AppRoutes.dashboard,
     ),
     _NavItem(
-      icon: Icons.inventory_2_outlined,
-      label: 'Products',
-      route: AppRoutes.products,
-    ),
-    _NavItem(
       icon: Icons.category_outlined,
       label: 'Categories',
       route: AppRoutes.categories,
     ),
     _NavItem(
-      icon: Icons.warehouse_outlined,
-      label: 'Inventory',
-      route: AppRoutes.stock,
-    ),
-    _NavItem(
-      icon: Icons.swap_horiz_rounded,
-      label: 'Transactions',
-      route: AppRoutes.transactions,
+      icon: Icons.inventory_2_outlined,
+      label: 'Products',
+      route: AppRoutes.products,
     ),
     _NavItem(
       icon: Icons.shopping_bag_outlined,
@@ -46,19 +36,29 @@ class WebSidebar extends StatelessWidget {
       route: AppRoutes.sales,
     ),
     _NavItem(
+      icon: Icons.warehouse_outlined,
+      label: 'Inventory',
+      route: AppRoutes.stock,
+    ),
+    _NavItem(
       icon: Icons.people_outline_rounded,
       label: 'Clients',
       route: AppRoutes.clients,
     ),
     _NavItem(
-      icon: Icons.bar_chart_rounded,
-      label: 'Reports',
-      route: AppRoutes.reports,
+      icon: Icons.swap_horiz_rounded,
+      label: 'Transactions',
+      route: AppRoutes.transactions,
     ),
     _NavItem(
       icon: Icons.manage_accounts_outlined,
       label: 'Employee',
       route: AppRoutes.users,
+    ),
+    _NavItem(
+      icon: Icons.bar_chart_rounded,
+      label: 'Reports',
+      route: AppRoutes.reports,
     ),
     _NavItem(
       icon: Icons.settings_outlined,
@@ -103,13 +103,14 @@ class WebSidebar extends StatelessWidget {
             onTap: () => Get.offNamed(AppRoutes.dashboard),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+              // Even breathing room above and below the mark — it used to sit
+              // tight against the window chrome and the first nav item.
+              padding: const EdgeInsets.fromLTRB(20, 26, 20, 26),
               child: Center(
-                child: LogoPlate(isDark: context.isDarkMode, height: 66),
+                child: LogoPlate(isDark: context.isDarkMode, height: 40),
               ),
             ),
           ),
-          const SizedBox(height: 8),
 
           // ── Nav Items ────────────────────────────────────────────
           Expanded(

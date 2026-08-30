@@ -209,6 +209,10 @@ class _LegendItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     return Row(
+      // Shrink-wrap so the legend column takes only the width it needs —
+      // that lets the parent Row's mainAxisAlignment.center actually centre
+      // the [chart, legend] block instead of the legend eating the slack.
+      mainAxisSize: MainAxisSize.min,
       children: [
         AnimatedContainer(
           duration: const Duration(milliseconds: 120),
@@ -220,11 +224,14 @@ class _LegendItem extends StatelessWidget {
           ),
         ),
         SizedBox(width: highlighted ? 6 : 8),
-        // Flexible + ellipsis: category names come from the API and can be
-        // long, so the label shrinks rather than blowing out the legend.
-        Flexible(
+        // Capped width + ellipsis: category names come from the API and can
+        // be long, so the label shrinks rather than blowing out the legend.
+        // A fixed cap (not Flexible) keeps the row shrink-wrapped.
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 150),
           child: Text(
-            '${slice.label} — ${slice.percent.toStringAsFixed(0)}%',
+            slice.legendText ??
+                '${slice.label} — ${slice.percent.toStringAsFixed(0)}%',
             style: TextStyle(
               fontSize: 12.5,
               // Pinned line height so a legend row always fits its 18px slot,

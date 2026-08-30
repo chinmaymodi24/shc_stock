@@ -1,6 +1,7 @@
 const express = require('express');
 const prisma = require('../prismaClient');
 const { stockStatus } = require('../stockService');
+const { getAppSettings } = require('../appSettings');
 
 const router = express.Router();
 
@@ -85,9 +86,10 @@ router.get('/', async (req, res, next) => {
       ]);
 
     // ── Summary tiles ────────────────────────────────────────────────────
+    const { lowStockThreshold } = await getAppSettings();
     const totalStockItems = products.reduce((s, p) => s + p.currentStock, 0);
-    const outOfStock = products.filter((p) => stockStatus(p) === 'outOfStock').length;
-    const lowStock = products.filter((p) => stockStatus(p) === 'lowStock').length;
+    const outOfStock = products.filter((p) => stockStatus(p, lowStockThreshold) === 'outOfStock').length;
+    const lowStock = products.filter((p) => stockStatus(p, lowStockThreshold) === 'lowStock').length;
 
     const allSales = await prisma.salesOrder.findMany({
       select: { amount: true, paymentStatus: true, date: true },
@@ -161,7 +163,7 @@ router.get('/', async (req, res, next) => {
 
     // ── Low stock alerts ─────────────────────────────────────────────────
     const lowStockAlerts = products
-      .filter((p) => ['lowStock', 'outOfStock'].includes(stockStatus(p)))
+      .filter((p) => ['lowStock', 'outOfStock'].includes(stockStatus(p, lowStockThreshold)))
       .sort((a, b) => a.currentStock - b.currentStock)
       .slice(0, 5)
       .map((p) => ({

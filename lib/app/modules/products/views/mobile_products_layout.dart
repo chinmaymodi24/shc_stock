@@ -8,10 +8,13 @@ import 'package:shc_stock/app/modules/products/controllers/products_controller.d
 import 'package:shc_stock/app/modules/products/models/product_model.dart';
 import 'package:shc_stock/app/modules/products/views/add_product_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
-import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_list_scaffold.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/shared/widgets/mobile_filter_sheet.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_appbar_avatar.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_row_actions.dart';
+import 'package:shc_stock/app/modules/products/views/product_actions.dart';
 
 class MobileProductsLayout extends StatelessWidget {
   const MobileProductsLayout({super.key});
@@ -24,12 +27,12 @@ class MobileProductsLayout extends StatelessWidget {
       backgroundColor: colors.background,
       drawer: const AppDrawer(activeRoute: AppRoutes.products),
       appBar: _buildAppBar(context, c),
-      body: Column(
-        children: [
-          _buildStatCards(context, c),
-          _buildSearchBar(context, c),
-          Expanded(child: _buildProductList(c)),
-        ],
+      body: Obx(
+        () => MobileListScaffold(
+          statCards: _statCards(context, c),
+          search: _searchField(c),
+          sliver: _buildProductList(c),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Get.dialog(const AddProductDialog()),
@@ -60,35 +63,20 @@ class MobileProductsLayout extends StatelessWidget {
           fontFamily: 'Poppins',
         ),
       ),
+      centerTitle: true,
       actions: [
-        MobileFilterButton(
-          filters: _buildFilters(context, c),
-          onClear: c.resetFilters,
+        Obx(
+          () => MobileFilterButton(
+            filters: _buildFilters(context, c),
+            onClear: c.resetFilters,
+            activeCount:
+                c.selectedCategories.length +
+                c.selectedSubCategories.length +
+                (c.selectedStockStatus.value == 'All' ? 0 : 1) +
+                (c.sortOption.value == 'Default' ? 0 : 1),
+          ),
         ),
-        Stack(
-          children: [
-            IconButton(
-              icon: Icon(
-                Icons.notifications_outlined,
-                color: colors.textPrimary,
-                size: 24,
-              ),
-              onPressed: () {},
-            ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-          ],
-        ),
+        const MobileAppBarAvatar(),
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
@@ -98,70 +86,61 @@ class MobileProductsLayout extends StatelessWidget {
   }
 
   // ── Stat Cards ───────────────────────────────────────────────
-  // Same 4 cards as WebProductsLayout's _buildStatCards, stacked into a
-  // horizontally scrolling strip. IntrinsicHeight — not a fixed-height
-  // SizedBox — so a 2-line label ("Out of Stock") sizes the strip instead
-  // of overflowing a guessed fixed height (see the same fix on
-  // Stock/Transactions/Clients/Users).
-  Widget _buildStatCards(BuildContext context, ProductsController c) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Obx(
-        () => SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                _MobileStatCard(
-                  label: 'Total Products',
-                  value: '${c.stats.value.intOf('totalProducts')}',
-                  icon: Icons.inventory_2_outlined,
-                  color: const Color(0xFF3B6FC9),
-                ),
-                const SizedBox(width: 10),
-                _MobileStatCard(
-                  label: 'Low Stock',
-                  value: '${c.stats.value.intOf('lowStock')}',
-                  icon: Icons.warning_amber_rounded,
-                  color: const Color(0xFFC9822F),
-                ),
-                const SizedBox(width: 10),
-                _MobileStatCard(
-                  label: 'Out of Stock',
-                  value: '${c.stats.value.intOf('outOfStock')}',
-                  icon: Icons.block_rounded,
-                  color: const Color(0xFFD1494C),
-                ),
-                const SizedBox(width: 10),
-                _MobileStatCard(
-                  label: 'Total Value',
-                  value: formatRupees(c.stats.value.doubleOf('totalValue')),
-                  icon: Icons.currency_rupee_rounded,
-                  color: const Color(0xFF2E9E5B),
-                ),
-              ],
-            ),
+  // Same 4 KPIs as WebProductsLayout, laid out 2×2 by MobileListScaffold so
+  // all four are on screen at once (the scrolling strip hid two behind a
+  // swipe) and scroll away with the list.
+  List<MobileStatCardData> _statCards(BuildContext context, ProductsController c) {
+    return [
+          MobileStatCardData(
+            label: 'Total Products',
+            value: '${c.stats.value.intOf('totalProducts')}',
+            icon: Icons.inventory_2_outlined,
+            color: const Color(0xFF3B6FC9),
+            // Tap to drop the stock-status filter — back to the full list.
+            onTap: () => c.selectedStockStatus.value = 'All',
           ),
-        ),
-      ),
-    );
+          MobileStatCardData(
+            label: 'Low Stock',
+            value: '${c.stats.value.intOf('lowStock')}',
+            icon: Icons.warning_amber_rounded,
+            color: const Color(0xFFC9822F),
+            // Tap to filter the list to Low Stock; tap again to clear.
+            selected: c.selectedStockStatus.value == 'Low Stock',
+            onTap: () => c.selectedStockStatus.value =
+                c.selectedStockStatus.value == 'Low Stock'
+                ? 'All'
+                : 'Low Stock',
+          ),
+          MobileStatCardData(
+            label: 'Out of Stock',
+            value: '${c.stats.value.intOf('outOfStock')}',
+            icon: Icons.block_rounded,
+            color: const Color(0xFFD1494C),
+            selected: c.selectedStockStatus.value == 'Out of Stock',
+            onTap: () => c.selectedStockStatus.value =
+                c.selectedStockStatus.value == 'Out of Stock'
+                ? 'All'
+                : 'Out of Stock',
+          ),
+          MobileStatCardData(
+            label: 'Total Value',
+            value: formatRupees(c.stats.value.doubleOf('totalValue')),
+            icon: Icons.currency_rupee_rounded,
+            color: const Color(0xFF2E9E5B),
+          ),
+    ];
   }
+
+  Widget _searchField(ProductsController c) => FilterSearchField(
+    hint: 'Search products...',
+    onChanged: (v) => c.searchQuery.value = v,
+    width: double.infinity,
+  );
 
   // ── Search Bar ───────────────────────────────────────────────
   // Same FilterSearchField the web filter row uses — one search box look
   // across the whole app instead of every mobile page hand-rolling its own
   // TextField decoration.
-  Widget _buildSearchBar(BuildContext context, ProductsController c) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: FilterSearchField(
-        hint: 'Search products...',
-        onChanged: (v) => c.searchQuery.value = v,
-        width: double.infinity,
-      ),
-    );
-  }
-
   // ── Filters ───────────────────────────────────────────────────
   // Same data/controller bindings as WebProductsLayout's _buildFiltersRow —
   // Category, Subcategory, Sort — shown as flat chip groups instead of
@@ -210,43 +189,29 @@ class MobileProductsLayout extends StatelessWidget {
   }
 
   // ── Product List ─────────────────────────────────────────────
+  // A sliver, so it shares one scroll view with the KPI cards above.
   Widget _buildProductList(ProductsController c) {
-    return Obx(() {
-      if (c.isLoading.value) {
-        return const AppLoadingIndicator(label: 'Loading products...');
-      }
-      final products = c.filteredProducts;
-      if (products.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.inventory_2_outlined,
-                size: 56,
-                color: Colors.grey[300],
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'No products found.',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Color(0xFF9B9BB4),
-                  fontFamily: 'Poppins',
-                ),
-              ),
-            ],
-          ),
-        );
-      }
-      return ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+    if (c.isLoading.value) {
+      return const SliverFillRemaining(
+        hasScrollBody: false,
+        child: AppLoadingIndicator(label: 'Loading products...'),
+      );
+    }
+    final products = c.filteredProducts;
+    if (products.isEmpty) {
+      return const MobileListEmpty(
+        icon: Icons.inventory_2_outlined,
+        label: 'No products found.',
+      );
+    }
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+      sliver: SliverList.separated(
         itemCount: products.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (_, i) =>
-            _ProductCard(product: products[i], controller: c),
-      );
-    });
+        itemBuilder: (_, i) => _ProductCard(product: products[i], controller: c),
+      ),
+    );
   }
 }
 
@@ -277,23 +242,9 @@ class _ProductCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Top Row: icon + name + stock badge ──
+          // ── Top Row: name + stock badge ──
           Row(
             children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryOrange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.inventory_2_outlined,
-                  color: AppColors.primaryOrange,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -349,7 +300,7 @@ class _ProductCard extends StatelessWidget {
           const SizedBox(height: 12),
           Divider(height: 1, color: colors.divider),
           const SizedBox(height: 10),
-          // ── Bottom Row: price | stock | sub-cat + actions ──
+          // ── Row: price | sub-cat ──
           Row(
             children: [
               _InfoChip(
@@ -357,38 +308,32 @@ class _ProductCard extends StatelessWidget {
                 value: '\u20b9${product.sellingPrice.toStringAsFixed(0)}',
               ),
               const SizedBox(width: 8),
-              _InfoChip(
-                label: 'Stock',
-                value: '${product.currentStock} ${product.unit}',
-              ),
-              const SizedBox(width: 8),
               _InfoChip(label: 'Sub-Cat', value: product.subCategory, flex: 2),
             ],
           ),
-          const SizedBox(height: 12),
-          // ── Action Row ──
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              _MobileActionBtn(
-                icon: Icons.edit_outlined,
-                // Was AppColors.primaryPurple — the icon's own background is
-                // just a 10%-alpha tint of this same color, so on the dark
-                // theme's already-dark surface both the icon and its tint
-                // stayed dark and hard to see.
-                color: colors.purple,
-                onTap: () => Get.dialog(AddProductDialog(product: product)),
+          const SizedBox(height: 8),
+          // ── Row: stock (only as wide as its own text) + the same four
+          // actions the web table offers, pushed to the right ──
+          MobileActionRow(
+            leading: _InfoChip(
+              label: 'Stock',
+              value: '${product.currentStock} ${product.unit}',
+              expand: false,
+            ),
+            actions: [
+              MobileActionButton.view(
+                context: context,
+                onTap: () => ProductActions.view(product),
               ),
-              const SizedBox(width: 8),
-              _MobileActionBtn(
-                icon: Icons.delete_outline_rounded,
-                color: const Color(0xFFEF4444),
-                onTap: () => confirmDelete(
-                  context,
-                  itemName: product.name,
-                  itemLabel: 'Product',
-                  onConfirm: () => controller.deleteProduct(product.id),
-                ),
+              MobileActionButton.edit(
+                context: context,
+                onTap: () => ProductActions.edit(product),
+              ),
+              MobileActionButton.duplicate(
+                onTap: () => ProductActions.duplicate(product),
+              ),
+              MobileActionButton.delete(
+                onTap: () => ProductActions.delete(context, product),
               ),
             ],
           ),
@@ -402,100 +347,54 @@ class _InfoChip extends StatelessWidget {
   final String label;
   final String value;
   final int flex;
-  const _InfoChip({required this.label, required this.value, this.flex = 1});
+
+  /// False sizes the chip to its text instead of stretching it across the
+  /// row — a short value like "0 Bag" shouldn't own half the card.
+  final bool expand;
+
+  const _InfoChip({
+    required this.label,
+    required this.value,
+    this.flex = 1,
+    this.expand = true,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    return Expanded(
-      flex: flex,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: colors.tagBg,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10.5,
-                color: colors.textHint,
-                fontFamily: 'Poppins',
-              ),
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: colors.tagBg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.5,
+              color: colors.textHint,
+              fontFamily: 'Poppins',
             ),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: colors.textPrimary,
-                fontFamily: 'Poppins',
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: colors.textPrimary,
+              fontFamily: 'Poppins',
             ),
-          ],
-        ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
-  }
-}
-
-// ── Mobile Action Button ───────────────────────────────────────────────────────
-class _MobileActionBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-  const _MobileActionBtn({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        width: 34,
-        height: 34,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(9),
-        ),
-        child: Icon(icon, color: color, size: 17),
-      ),
-    );
-  }
-}
-
-class _MobileStatCard extends StatelessWidget {
-  final String label, value;
-  final IconData icon;
-  final Color color;
-  const _MobileStatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 150,
-      child: AppStatCard(
-        label: label,
-        value: value,
-        icon: icon,
-        iconColor: color,
-        smallValue: true,
-        showCaption: false,
-      ),
-    );
+    return expand ? Expanded(flex: flex, child: chip) : chip;
   }
 }

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
+import 'package:shc_stock/app/core/utils/doc_number.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
+import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
+import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
+import 'package:shc_stock/app/shared/models/order_payment.dart';
 
 class PurchaseItemRow {
   // Stable identity for list-item Keys, and a version bump whenever fields
@@ -74,6 +79,15 @@ class AddPurchaseController extends GetxController {
   final placeOfSupplyCtrl = TextEditingController();
   final dueDate = Rx<DateTime?>(null);
 
+  /// Optional expected delivery date. Left empty the order keeps whatever
+  /// status it has; set, the backend marks it Received on that date and books
+  /// the stock then.
+  final expectedDelivery = Rx<DateTime?>(null);
+
+  /// "Order Paid" — the dropdown choice and the amount behind it.
+  final paymentType = OrderPaymentType.none.obs;
+  final paidAmountCtrl = TextEditingController();
+
   final items = <PurchaseItemRow>[PurchaseItemRow()].obs;
 
   /// The order being edited, when the page was opened from the list's Edit
@@ -89,9 +103,38 @@ class AddPurchaseController extends GetxController {
     final arg = Get.arguments;
     if (arg is DuplicatePurchaseOrder) {
       loadFrom(arg.order, asDuplicate: true);
+      // A duplicate loads every field of the source order, so saving it as-is
+      // would create a byte-for-byte copy — same invoice number, same date.
+      // Force a fresh invoice number (regardless of the auto-numbering
+      // preference) and today's dates so the new record is distinct.
+      invoiceNoCtrl.text = _nextInvoiceNo();
+      final today = DateTime.now();
+      invoiceDate.value = today;
+      poDate.value = today;
     } else if (arg is PurchaseOrder) {
       loadFrom(arg);
+    } else {
+      _prefillInvoiceNo();
     }
+  }
+
+  /// The next number in the PO-2024 series, from the loaded orders.
+  String _nextInvoiceNo() {
+    final orders = Get.isRegistered<PurchaseController>()
+        ? Get.find<PurchaseController>().orders
+        : const <PurchaseOrder>[];
+    return nextDocNumber(
+      prefix: 'PO-2024',
+      existing: orders.map((o) => o.poNumber),
+    );
+  }
+
+  /// Fills "Invoice No." with [_nextInvoiceNo], unless the user turned
+  /// auto-numbering off in Settings › Preferences.
+  Future<void> _prefillInvoiceNo() async {
+    if (isEditing) return;
+    if (!await autoNumberDocsEnabled()) return;
+    invoiceNoCtrl.text = _nextInvoiceNo();
   }
 
   /// Fills the form from an existing order. When [asDuplicate] is true,
@@ -114,6 +157,11 @@ class AddPurchaseController extends GetxController {
     freightCtrl.text = o.freight == 0 ? '' : o.freight.toString();
     placeOfSupplyCtrl.text = o.placeOfSupply;
     dueDate.value = o.dueDate;
+    expectedDelivery.value = o.expectedDelivery;
+    paymentType.value = o.paymentType;
+    paidAmountCtrl.text = o.paidAmount == 0
+        ? ''
+        : trimAmount(o.paidAmount);
 
     items.assignAll(
       o.items.isEmpty
@@ -135,6 +183,22 @@ class AddPurchaseController extends GetxController {
               return row;
             }).toList(),
     );
+  }
+
+  /// Applies a dropdown pick and prefills the amount box: Full Payment fills
+  /// the grand total, Half Payment half of it, Other is left for the user to
+  /// type. The value stays editable in every case.
+  void setPaymentType(OrderPaymentType type) {
+    paymentType.value = type;
+    final suggested = type.suggestedAmount(grandTotal);
+    paidAmountCtrl.text = suggested == null ? '' : trimAmount(suggested);
+  }
+
+  /// The amount actually paid — whatever is in the box, 0 when it is empty or
+  /// no payment type was chosen.
+  double get paidAmount {
+    if (paymentType.value == OrderPaymentType.none) return 0;
+    return double.tryParse(paidAmountCtrl.text.trim()) ?? 0;
   }
 
   double get subTotal => items.fold(0.0, (s, r) => s + r.amount);
@@ -182,6 +246,7 @@ class AddPurchaseController extends GetxController {
     vehicleNoCtrl.dispose();
     freightCtrl.dispose();
     placeOfSupplyCtrl.dispose();
+    paidAmountCtrl.dispose();
     super.onClose();
   }
 }

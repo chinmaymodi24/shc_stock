@@ -53,6 +53,31 @@ const kRoles = <RoleOpt>[
   ),
 ];
 
+/// Wraps an employee routed into the wizard so it updates that record in
+/// place. A bare [UserModel] argument means Duplicate — pre-fill, save as new.
+class EditEmployee {
+  final UserModel user;
+  const EditEmployee(this.user);
+}
+
+/// The wizard role-option id that best represents a saved [UserRole] — the
+/// inverse of [userRoleForOptId], used when re-opening an existing employee.
+String roleOptIdForUserRole(UserRole role) {
+  switch (role) {
+    case UserRole.admin:
+      return 'admin';
+    case UserRole.manager:
+      return 'manager';
+    case UserRole.stockManager:
+      return 'store_staff';
+    case UserRole.salesman:
+      return 'sales';
+    // No dedicated wizard option — Accountant maps into the custom bucket.
+    case UserRole.accountant:
+      return 'custom';
+  }
+}
+
 /// Maps a wizard role-option id to the backend's [UserRole] enum — the same
 /// mapping [AddEmployeeWizardController.submit] uses when saving.
 UserRole userRoleForOptId(String id) {
@@ -184,6 +209,30 @@ class AddEmployeeWizardController extends GetxController {
     roleSearchCtrl.addListener(
       () => roleSearchQuery.value = roleSearchCtrl.text,
     );
+
+    final arg = Get.arguments;
+    if (arg is EditEmployee) {
+      editingId.value = arg.user.id;
+      _loadFrom(arg.user);
+    } else if (arg is UserModel) {
+      _loadFrom(arg);
+      // A duplicate needs its own login — the email is the unique key.
+      emailCtrl.clear();
+    }
+  }
+
+  /// Id of the employee being edited, or null for a new/duplicated one.
+  /// Drives whether [submit] POSTs or PUTs.
+  final editingId = RxnString();
+  bool get isEdit => editingId.value != null;
+
+  void _loadFrom(UserModel u) {
+    nameCtrl.text = u.name;
+    emailCtrl.text = u.email;
+    phoneCtrl.text = u.phone;
+    dept.value = u.department;
+    status.value = u.isActive ? 'Active' : 'Inactive';
+    roleId.value = roleOptIdForUserRole(u.role);
   }
 
   @override
@@ -301,26 +350,29 @@ class AddEmployeeWizardController extends GetxController {
     final ur = userRoleForOptId(roleId.value ?? 'sales');
 
     isSaving.value = true;
-    // The backend assigns the USR-#### code, hashes a starter password and
-    // returns the saved row — no locally invented ids or codes.
-    final created = await c.addUser({
+    final body = {
       'name': nameCtrl.text.trim(),
       'email': emailCtrl.text.trim(),
       'phone': phoneCtrl.text.trim(),
       'role': ur.label,
       'department': dept.value.isEmpty ? 'General' : dept.value,
       'isActive': status.value == 'Active',
-    });
+    };
+    // The backend assigns the USR-#### code, hashes a starter password and
+    // returns the saved row — no locally invented ids or codes.
+    final created = isEdit
+        ? await c.updateUser(editingId.value!, body)
+        : await c.addUser(body);
     isSaving.value = false;
 
-    // addUser() already surfaced the API error — keep the wizard open so the
-    // entered details aren't lost.
+    // addUser()/updateUser() already surfaced the API error — keep the wizard
+    // open so the entered details aren't lost.
     if (created == null) return;
 
     Get.offNamed(AppRoutes.users);
     showAppToast(
-      'Employee Created',
-      '${created.name} (${created.code}) has been added successfully.',
+      isEdit ? 'Employee Updated' : 'Employee Created',
+      '${created.name} (${created.code}) has been ${isEdit ? 'updated' : 'added'} successfully.',
       backgroundColor: const Color(0xFF22C55E),
       colorText: Colors.white,
       icon: Icons.check_circle_outline,

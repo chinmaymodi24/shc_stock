@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
 import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
-import 'package:shc_stock/app/modules/sales/controllers/add_sale_controller.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
 import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
-import 'package:shc_stock/app/modules/sales/views/sale_details_dialog.dart';
+import 'package:shc_stock/app/modules/sales/views/sales_actions.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
@@ -16,7 +15,6 @@ import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/modules/sales/views/update_sales_status_dialog.dart';
-import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -168,79 +166,54 @@ class WebSalesLayout extends GetView<SalesController> {
                           const SizedBox(height: 20),
 
                           // ── Stat Cards row ──────────────────────────────
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Total Sales (MTD)',
-                                    value: formatRupees(
-                                      c.stats.value.doubleOf('salesMTD'),
-                                    ),
-                                    icon: Icons.shopping_cart_outlined,
-                                    iconColor: kKpiBlue,
-                                    trend: c.stats.value.trendLabel('salesMTD'),
-                                    trendUp: c.stats.value.trendUp('salesMTD'),
-                                    showCaption: false,
-                                    smallValue: true,
-                                  ),
+                          AppStatCardRow(
+                            cards: [
+                              AppStatCard(
+                                label: 'Total Sales (MTD)',
+                                value: formatRupees(
+                                  c.stats.value.doubleOf('salesMTD'),
                                 ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Orders',
-                                    value:
-                                        '${c.stats.value.intOf('totalOrders')}',
-                                    icon: Icons.receipt_long_outlined,
-                                    iconColor: context.appColors.accent,
-                                    trend: c.stats.value.trendLabel(
-                                      'totalOrders',
-                                    ),
-                                    trendUp: c.stats.value.trendUp(
-                                      'totalOrders',
-                                    ),
-                                    showCaption: false,
-                                  ),
+                                icon: Icons.shopping_cart_outlined,
+                                iconColor: kKpiBlue,
+                                trend: c.stats.value.trendLabel('salesMTD'),
+                                trendUp: c.stats.value.trendUp('salesMTD'),
+                                showCaption: false,
+                                smallValue: true,
+                              ),
+                              AppStatCard(
+                                label: 'Orders',
+                                value: '${c.stats.value.intOf('totalOrders')}',
+                                icon: Icons.receipt_long_outlined,
+                                iconColor: context.appColors.accent,
+                                trend: c.stats.value.trendLabel('totalOrders'),
+                                trendUp: c.stats.value.trendUp('totalOrders'),
+                                showCaption: false,
+                              ),
+                              AppStatCard(
+                                label: 'Total Amount Due',
+                                value: formatRupees(
+                                  c.stats.value.doubleOf('amountDue'),
                                 ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Total Amount Due',
-                                    value: formatRupees(
-                                      c.stats.value.doubleOf('amountDue'),
-                                    ),
-                                    icon: Icons.warning_amber_rounded,
-                                    iconColor: kKpiAmber,
-                                    trend: c.stats.value.trendLabel(
-                                      'amountDue',
-                                    ),
-                                    trendUp: c.stats.value.trendUp('amountDue'),
-                                    showCaption: false,
-                                    smallValue: true,
-                                  ),
+                                icon: Icons.warning_amber_rounded,
+                                iconColor: kKpiAmber,
+                                trend: c.stats.value.trendLabel('amountDue'),
+                                trendUp: c.stats.value.trendUp('amountDue'),
+                                showCaption: false,
+                                smallValue: true,
+                              ),
+                              AppStatCard(
+                                label: 'Total Received (MTD)',
+                                value: formatRupees(
+                                  c.stats.value.doubleOf('receivedMTD'),
                                 ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Total Received (MTD)',
-                                    value: formatRupees(
-                                      c.stats.value.doubleOf('receivedMTD'),
-                                    ),
-                                    icon: Icons.check_circle_outline_rounded,
-                                    iconColor: kKpiGreen,
-                                    trend: c.stats.value.trendLabel(
-                                      'receivedMTD',
-                                    ),
-                                    trendUp: c.stats.value.trendUp(
-                                      'receivedMTD',
-                                    ),
-                                    showCaption: false,
-                                    smallValue: true,
-                                  ),
-                                ),
-                              ],
-                            ),
+                                icon: Icons.check_circle_outline_rounded,
+                                iconColor: kKpiGreen,
+                                trend: c.stats.value.trendLabel('receivedMTD'),
+                                trendUp: c.stats.value.trendUp('receivedMTD'),
+                                showCaption: false,
+                                smallValue: true,
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 20),
 
@@ -837,21 +810,7 @@ class _SalesRowState extends State<_SalesRow> {
                         color: context.appColors.success,
                         bg: context.appColors.success.withValues(alpha: 0.10),
                         tooltip: 'View',
-                        onTap: () => Get.dialog(
-                          SaleDetailsDialog(
-                            order: widget.order,
-                            onDelete: () {
-                              Get.back();
-                              confirmDelete(
-                                context,
-                                itemName: widget.order.soNumber,
-                                itemLabel: 'Sales Order',
-                                onConfirm: () => Get.find<SalesController>()
-                                    .deleteOrder(widget.order.id),
-                              );
-                            },
-                          ),
-                        ),
+                        onTap: () => SalesActions.view(context, widget.order),
                       ),
                       const SizedBox(width: 6),
                       RowActionButton(
@@ -859,12 +818,7 @@ class _SalesRowState extends State<_SalesRow> {
                         color: AppColors.primaryOrange,
                         bg: AppColors.primaryOrange.withValues(alpha: 0.10),
                         tooltip: 'Edit',
-                        // Opens the same form Add Sale uses, pre-filled from
-                        // this order; saving updates it in place.
-                        onTap: () => Get.toNamed(
-                          AppRoutes.addSale,
-                          arguments: widget.order,
-                        ),
+                        onTap: () => SalesActions.edit(widget.order),
                       ),
                       const SizedBox(width: 6),
                       RowActionButton(
@@ -872,13 +826,7 @@ class _SalesRowState extends State<_SalesRow> {
                         color: const Color(0xFF3B82F6),
                         bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
                         tooltip: 'Duplicate',
-                        // Opens Add Sale pre-filled from this order, but as a
-                        // new draft — saving creates a new record and never
-                        // touches the one duplicated from.
-                        onTap: () => Get.toNamed(
-                          AppRoutes.addSale,
-                          arguments: DuplicateSalesOrder(widget.order),
-                        ),
+                        onTap: () => SalesActions.duplicate(widget.order),
                       ),
                       const SizedBox(width: 6),
                       RowActionButton(
@@ -889,13 +837,7 @@ class _SalesRowState extends State<_SalesRow> {
                         // the warning color.
                         bg: context.appColors.tagBg,
                         tooltip: 'Delete',
-                        onTap: () => confirmDelete(
-                          context,
-                          itemName: widget.order.soNumber,
-                          itemLabel: 'Sales Order',
-                          onConfirm: () =>
-                              Get.find<SalesController>().deleteOrder(o.id),
-                        ),
+                        onTap: () => SalesActions.delete(context, widget.order),
                       ),
                     ],
                   ),
@@ -934,7 +876,6 @@ class _Badge extends StatelessWidget {
     );
   }
 }
-
 
 class _EmptyState extends StatelessWidget {
   final AppThemeColors colors;
@@ -1071,16 +1012,9 @@ class _TopClientsCard extends StatelessWidget {
   final SalesController controller;
   const _TopClientsCard({required this.colors, required this.controller});
 
-  String _fmtAmt(double v) {
-    final i = v.toInt();
-    if (i >= 100000) {
-      final l = i ~/ 100000;
-      final r = (i % 100000) ~/ 1000;
-      return '₹ $l,${r.toString().padLeft(2, '0')},${((i % 1000)).toString().padLeft(3, '0')}';
-    }
-    final s = i.toString();
-    return '₹ ${s.substring(0, s.length - 3)},${s.substring(s.length - 3)}';
-  }
+  // Shared Indian-grouped formatter — the hand-rolled version here crashed
+  // with a RangeError for any total under ₹1,000 (s.length - 3 went negative).
+  String _fmtAmt(double v) => formatRupees(v);
 
   @override
   Widget build(BuildContext context) {

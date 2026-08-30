@@ -10,8 +10,9 @@ import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
+import 'package:shc_stock/app/shared/widgets/logo_plate.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
-import 'package:shc_stock/app/core/session/session_controller.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_appbar_avatar.dart';
 
 class MobileDashboardLayout extends GetView<DashboardController> {
   const MobileDashboardLayout({super.key});
@@ -72,39 +73,18 @@ class MobileDashboardLayout extends GetView<DashboardController> {
                 )
               else ...[
                 // ── 2x2 stat tiles ──────────────────────────────────────
-                Row(
-                  children: [
-                    Expanded(
-                      child: _MobileStatTile(
-                        data: c.dashboardStats[0],
-                        label: _statLabels[0],
+                // MobileStatGrid — the same dense KPI tiles the list pages
+                // (Products, Stock, Clients…) use, so the dashboard's cards
+                // are exactly the same size as theirs.
+                MobileStatGrid(
+                  cards: [
+                    for (var i = 0; i < 4; i++)
+                      MobileStatCardData(
+                        label: _statLabels[i],
+                        value: c.dashboardStats[i].value,
+                        icon: c.dashboardStats[i].icon,
+                        color: c.dashboardStats[i].iconColor,
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _MobileStatTile(
-                        data: c.dashboardStats[1],
-                        label: _statLabels[1],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _MobileStatTile(
-                        data: c.dashboardStats[2],
-                        label: _statLabels[2],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _MobileStatTile(
-                        data: c.dashboardStats[3],
-                        label: _statLabels[3],
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -230,40 +210,15 @@ class MobileDashboardLayout extends GetView<DashboardController> {
           onPressed: () => Scaffold.of(ctx).openDrawer(),
         ),
       ),
-      title: Image.asset('assets/logo.png', width: 80, height: 40),
+      // In dark mode the navy wordmark is swapped for the light one so it
+      // stays legible on the dark app bar — no plate or border.
+      title: LogoPlate(isDark: context.isDarkMode, height: 26),
       centerTitle: true,
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: _AvatarMenuBtn(),
-        ),
-      ],
+      actions: const [MobileAppBarAvatar(trailingGap: 16)],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
         child: Divider(height: 1, color: colors.divider),
       ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 2x2 pastel stat tile
-// ─────────────────────────────────────────────────────────────────────────────
-/// Same summary card the web pages use — icon boxed on the left, flat tint,
-/// no border. The value drops a size because two tiles share a phone row.
-class _MobileStatTile extends StatelessWidget {
-  final DashboardStatData data;
-  final String label;
-  const _MobileStatTile({required this.data, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppStatCard(
-      label: label,
-      value: data.value,
-      icon: data.icon,
-      iconColor: data.iconColor,
-      smallValue: true,
     );
   }
 }
@@ -674,44 +629,6 @@ class _QuickLinkCard extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Avatar button — tapping it opens the Profile hub (account card + Profile /
-// Notifications / Security / Preferences + Sign Out) directly, no dropdown.
-// ─────────────────────────────────────────────────────────────────────────────
-class _AvatarMenuBtn extends StatelessWidget {
-  const _AvatarMenuBtn();
-
-  @override
-  Widget build(BuildContext context) {
-    final initials = Get.isRegistered<SessionController>()
-        ? Get.find<SessionController>().user.value?.initials ?? '—'
-        : '—';
-    return InkWell(
-      onTap: () => Get.toNamed(AppRoutes.settings),
-      borderRadius: BorderRadius.circular(17),
-      child: Container(
-        width: 34,
-        height: 34,
-        decoration: const BoxDecoration(
-          color: AppColors.primaryPurple,
-          shape: BoxShape.circle,
-        ),
-        child: Center(
-          child: Text(
-            initials,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              fontFamily: 'Poppins',
-            ),
-          ),
         ),
       ),
     );

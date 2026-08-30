@@ -75,6 +75,16 @@ router.put('/:id', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
+    // Block the delete while products still point at this category — hard
+    // delete would either be refused by the FK or orphan transaction history.
+    const productCount = await prisma.product.count({ where: { categoryId: id } });
+    if (productCount > 0) {
+      return res.status(409).json({
+        error:
+          `This category has ${productCount} product${productCount === 1 ? '' : 's'} linked to it. ` +
+          'Move or delete those products first, then try again.',
+      });
+    }
     await prisma.category.delete({ where: { id } });
     res.status(204).send();
   } catch (err) {

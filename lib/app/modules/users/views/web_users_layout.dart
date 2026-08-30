@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:shc_stock/app/modules/users/controllers/users_controller.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/modules/users/models/user_model.dart';
+import 'package:shc_stock/app/modules/users/views/employee_actions.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
@@ -12,7 +13,6 @@ import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
-import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 
 // ── Table column flex constants ────────────────────────────────────────────
@@ -154,71 +154,47 @@ class WebUsersLayout extends GetView<UsersController> {
                           const SizedBox(height: 20),
 
                           // ── Stat Cards ─────────────────────────────────────────────
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Total Employees',
-                                    value: '${c.totalUsers}',
-                                    icon: Icons.group_outlined,
-                                    iconColor: AppColors.primaryOrange,
-                                    trend: c.stats.value.trendLabel(
-                                      'totalUsers',
-                                    ),
-                                    trendUp: c.stats.value.trendUp(
-                                      'totalUsers',
-                                    ),
-                                  ),
+                          AppStatCardRow(
+                            cards: [
+                              AppStatCard(
+                                label: 'Total Employees',
+                                value: '${c.totalUsers}',
+                                icon: Icons.group_outlined,
+                                iconColor: AppColors.primaryOrange,
+                                trend: c.stats.value.trendLabel('totalUsers'),
+                                trendUp: c.stats.value.trendUp('totalUsers'),
+                                showCaption: false,
+                              ),
+                              AppStatCard(
+                                label: 'Active Employees',
+                                value: '${c.activeUsers}',
+                                icon: Icons.person_outline_rounded,
+                                iconColor: const Color(0xFF22C55E),
+                                trend: c.stats.value.trendLabel('activeUsers'),
+                                trendUp: c.stats.value.trendUp('activeUsers'),
+                                showCaption: false,
+                              ),
+                              AppStatCard(
+                                label: 'Admins',
+                                value: '${c.adminCount}',
+                                icon: Icons.admin_panel_settings_outlined,
+                                iconColor: context.appColors.accent,
+                                trend: c.stats.value.trendLabel('adminCount'),
+                                trendUp: c.stats.value.trendUp('adminCount'),
+                                showCaption: false,
+                              ),
+                              AppStatCard(
+                                label: 'Inactive Employees',
+                                value: '${c.inactiveUsers}',
+                                icon: Icons.person_off_outlined,
+                                iconColor: const Color(0xFFEF4444),
+                                trend: c.stats.value.trendLabel(
+                                  'inactiveUsers',
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Active Employees',
-                                    value: '${c.activeUsers}',
-                                    icon: Icons.person_outline_rounded,
-                                    iconColor: const Color(0xFF22C55E),
-                                    trend: c.stats.value.trendLabel(
-                                      'activeUsers',
-                                    ),
-                                    trendUp: c.stats.value.trendUp(
-                                      'activeUsers',
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Admins',
-                                    value: '${c.adminCount}',
-                                    icon: Icons.admin_panel_settings_outlined,
-                                    iconColor: context.appColors.accent,
-                                    trend: c.stats.value.trendLabel(
-                                      'adminCount',
-                                    ),
-                                    trendUp: c.stats.value.trendUp(
-                                      'adminCount',
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: AppStatCard(
-                                    label: 'Inactive Employees',
-                                    value: '${c.inactiveUsers}',
-                                    icon: Icons.person_off_outlined,
-                                    iconColor: const Color(0xFFEF4444),
-                                    trend: c.stats.value.trendLabel(
-                                      'inactiveUsers',
-                                    ),
-                                    trendUp: c.stats.value.trendUp(
-                                      'inactiveUsers',
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                                trendUp: c.stats.value.trendUp('inactiveUsers'),
+                                showCaption: false,
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 20),
 
@@ -806,7 +782,7 @@ class _UserRowState extends State<_UserRow> {
                         color: context.appColors.success,
                         bg: context.appColors.success.withValues(alpha: 0.10),
                         tooltip: 'View',
-                        onTap: () {},
+                        onTap: () => EmployeeActions.view(context, u),
                       ),
                       const SizedBox(width: 4),
                       RowActionButton(
@@ -814,7 +790,7 @@ class _UserRowState extends State<_UserRow> {
                         color: AppColors.primaryOrange,
                         bg: AppColors.primaryOrange.withValues(alpha: 0.10),
                         tooltip: 'Edit',
-                        onTap: () {},
+                        onTap: () => EmployeeActions.edit(u),
                       ),
                       const SizedBox(width: 4),
                       RowActionButton(
@@ -822,7 +798,7 @@ class _UserRowState extends State<_UserRow> {
                         color: const Color(0xFF3B82F6),
                         bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
                         tooltip: 'Duplicate',
-                        onTap: () {},
+                        onTap: () => EmployeeActions.duplicate(u),
                       ),
                       const SizedBox(width: 4),
                       RowActionButton(
@@ -833,13 +809,7 @@ class _UserRowState extends State<_UserRow> {
                         // the warning color.
                         bg: context.appColors.tagBg,
                         tooltip: 'Delete',
-                        onTap: () => confirmDelete(
-                          context,
-                          itemName: u.name,
-                          itemLabel: 'Employee',
-                          onConfirm: () =>
-                              Get.find<UsersController>().deleteUser(u.id),
-                        ),
+                        onTap: () => EmployeeActions.delete(context, u),
                       ),
                     ],
                   ),

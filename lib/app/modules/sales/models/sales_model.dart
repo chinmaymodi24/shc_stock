@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/shared/models/order_payment.dart';
 
 // ── Enums ────────────────────────────────────────────────────────────────────
 
@@ -93,6 +94,14 @@ class SalesOrder {
   final DateTime? invoiceDate;
   final String despatchedThrough;
   final String destination;
+
+  /// Optional. When set, the backend flips the order to Delivered on that date
+  /// — which is what books the stock OUT. Null leaves the status alone.
+  final DateTime? expectedDelivery;
+
+  /// How much of this order the client has actually paid.
+  final OrderPaymentType paymentType;
+  final double paidAmount;
   final List<SaleDetailItem> items;
 
   const SalesOrder({
@@ -115,6 +124,9 @@ class SalesOrder {
     this.invoiceDate,
     this.despatchedThrough = '',
     this.destination = '',
+    this.expectedDelivery,
+    this.paymentType = OrderPaymentType.none,
+    this.paidAmount = 0,
     this.items = const [],
   });
 
@@ -187,6 +199,9 @@ class SalesOrder {
       invoiceDate: parseDate(json['invoiceDate']),
       despatchedThrough: json['despatchedThrough'] as String? ?? '',
       destination: json['destination'] as String? ?? '',
+      expectedDelivery: parseDate(json['expectedDelivery']),
+      paymentType: orderPaymentTypeFrom(json['paymentType'] as String?),
+      paidAmount: (json['paidAmount'] as num?)?.toDouble() ?? 0,
       items: (json['items'] as List<dynamic>? ?? [])
           .map((e) => SaleDetailItem.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -210,6 +225,10 @@ class SalesOrder {
     if (invoiceDate != null) 'invoiceDate': invoiceDate!.toIso8601String(),
     'despatchedThrough': despatchedThrough,
     'destination': destination,
+    if (expectedDelivery != null)
+      'expectedDelivery': expectedDelivery!.toIso8601String(),
+    'paymentType': paymentType.label,
+    'paidAmount': paidAmount,
     'items': items.map((i) => i.toJson()).toList(),
   };
 }

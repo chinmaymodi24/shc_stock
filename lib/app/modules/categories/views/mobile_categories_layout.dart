@@ -10,6 +10,7 @@ import 'package:shc_stock/app/modules/products/controllers/products_controller.d
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_appbar_avatar.dart';
 
 ProductsController _productsController() {
   if (Get.isRegistered<ProductsController>()) {
@@ -39,7 +40,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
         final visible = c.visibleCategories;
         final selected = all.isEmpty
             ? null
-            : all.firstWhereOrNull((x) => x.id == c.selectedCatId.value);
+            : all.firstWhereOrNull((x) => x.id == c.expandedCatId.value);
 
         int skuCountFor(String categoryName) => products.products
             .where((p) => p.categoryName == categoryName)
@@ -65,24 +66,21 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Stat Cards ──────────────────────────────────
-              Row(
-                children: [
-                  Expanded(
-                    child: AppStatCard(
-                      icon: Icons.category_outlined,
-                      iconColor: AppColors.primaryOrange,
-                      label: 'Categories',
-                      value: '${c.totalCategories}',
-                    ),
+              // MobileStatGrid, same as every other mobile page, so the tiles
+              // are the exact size Products/Stock show.
+              MobileStatGrid(
+                cards: [
+                  MobileStatCardData(
+                    label: 'Categories',
+                    value: '${c.totalCategories}',
+                    icon: Icons.category_outlined,
+                    color: AppColors.primaryOrange,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: AppStatCard(
-                      icon: Icons.account_tree_outlined,
-                      iconColor: context.appColors.accent,
-                      label: 'Subcategories',
-                      value: '${c.totalSubCategories}',
-                    ),
+                  MobileStatCardData(
+                    label: 'Subcategories',
+                    value: '${c.totalSubCategories}',
+                    icon: Icons.account_tree_outlined,
+                    color: context.appColors.accent,
                   ),
                 ],
               ),
@@ -152,9 +150,9 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
 
               // ── Accordion list — every category is its own card; tapping
               // its header expands it in place (only one open at a time,
-              // tracked by the same selectedCatId the web page uses for its
-              // sidebar selection) instead of navigating to a full detail
-              // page. Matches the approved mobile design.
+              // tracked by expandedCatId which starts null, so the page
+              // opens fully collapsed) instead of navigating to a full
+              // detail page. Matches the approved mobile design.
               if (loading)
                 const AppLoadingIndicator(
                   label: 'Loading categories...',
@@ -184,9 +182,13 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
                             cat: cat,
                             skuCount: skuCountFor(cat.name),
                             subSkuCount: subSkuCountFor,
-                            expanded: selected?.id == cat.id,
+                            // Auto-expand when the search matched one of this
+                            // category's sub-categories.
+                            expanded:
+                                c.subMatchesSearch(cat) ||
+                                selected?.id == cat.id,
                             colors: colors,
-                            onToggle: () => c.selectedCatId.value =
+                            onToggle: () => c.expandedCatId.value =
                                 selected?.id == cat.id ? null : cat.id,
                             onEditCategory: () => _showEditDialog(c, cat),
                             onDeleteCategory: () =>
@@ -237,6 +239,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
           fontFamily: 'Poppins',
         ),
       ),
+      actions: const [MobileAppBarAvatar()],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
         child: Divider(height: 1, color: colors.divider),
@@ -319,7 +322,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
       message:
           'Are you sure you want to delete "${cat.name}"? This will also delete all ${cat.subProducts.length} sub-categories.',
       onConfirm: () async {
-        if (cat.id == c.selectedCatId.value) c.selectedCatId.value = null;
+        if (cat.id == c.expandedCatId.value) c.expandedCatId.value = null;
         await c.deleteCategory(cat.id);
       },
     );
@@ -336,7 +339,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
       context,
       title: 'Delete Sub-Category?',
       message: 'Are you sure you want to delete "$subName"?',
-      onConfirm: () => c.deleteSubCategory(cat.id, subIdx),
+      onConfirm: () async => c.deleteSubCategory(cat.id, subIdx),
     );
   }
 
@@ -344,7 +347,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
     BuildContext context, {
     required String title,
     required String message,
-    required VoidCallback onConfirm,
+    required Future<void> Function() onConfirm,
   }) {
     final colors = context.appColors;
     Get.dialog(
@@ -379,22 +382,14 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
               ),
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              onConfirm();
-              Get.back();
+          AppAsyncButton(
+            label: 'Delete',
+            background: const Color(0xFFEF4444),
+            radius: 8,
+            onPressed: () async {
+              await onConfirm();
+              if (Get.isDialogOpen ?? false) Get.back();
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Delete',
-              style: TextStyle(fontFamily: 'Poppins', color: Colors.white),
-            ),
           ),
         ],
       ),
@@ -435,132 +430,174 @@ class _CategoryAccordionCard extends StatelessWidget {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: colors.divider),
       ),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: onToggle,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          cat.name,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: colors.textPrimary,
-                            fontFamily: 'Poppins',
-                          ),
+      // Material immediately inside the clipping Container so the header /
+      // "Add Subcategory" InkWell ripples are trimmed to the rounded corners
+      // instead of spilling out as square splashes.
+      child: Material(
+        color: colors.surface,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header: name + counts, with the Edit/Delete icon chips sitting
+            // on the right of the same row when the card is wide enough, and
+            // dropping to their own row below it when it isn't.
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Two 32px chips + 8px gap ≈ 72px; keep ≥130px for the
+                // name/counts column and ~28px for the chevron.
+                final inlineActions =
+                    expanded && constraints.maxWidth - 28 - 72 >= 130;
+
+                final actions = Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _SubChipBtn(
+                      icon: Icons.edit_outlined,
+                      color: AppColors.primaryOrange,
+                      onTap: onEditCategory,
+                    ),
+                    const SizedBox(width: 8),
+                    _SubChipBtn(
+                      icon: Icons.delete_outline_rounded,
+                      color: const Color(0xFFEF4444),
+                      onTap: onDeleteCategory,
+                    ),
+                  ],
+                );
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    InkWell(
+                      onTap: onToggle,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    cat.name,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: colors.textPrimary,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    '${cat.subProducts.length} subcategories · $skuCount items',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: colors.textSecondary,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (inlineActions) ...[
+                              actions,
+                              const SizedBox(width: 6),
+                            ],
+                            Icon(
+                              expanded
+                                  ? Icons.keyboard_arrow_up_rounded
+                                  : Icons.keyboard_arrow_down_rounded,
+                              color: colors.textSecondary,
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          '${cat.subProducts.length} subcategories · $skuCount items',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: colors.textSecondary,
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                      ],
+                      ),
+                    ),
+                    if (expanded && !inlineActions)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                        child: actions,
+                      ),
+                  ],
+                );
+              },
+            ),
+
+            // ── Expanded body ────────────────────────────────────────────
+            if (expanded) ...[
+              Divider(height: 1, color: colors.divider),
+
+              if (cat.subProducts.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(30, 14, 16, 4),
+                  child: Text(
+                    'No subcategories yet',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: colors.textHint,
+                      fontFamily: 'Poppins',
                     ),
                   ),
-                  _HeaderIconBtn(
-                    icon: Icons.edit_outlined,
-                    color: colors.textSecondary,
-                    onTap: onEditCategory,
+                )
+              else
+                ...cat.subProducts.asMap().entries.map(
+                  (e) => Column(
+                    children: [
+                      _SubCategoryInlineRow(
+                        name: e.value,
+                        itemCount: subSkuCount(cat.name, e.value),
+                        colors: colors,
+                        onEdit: () => onEditSub(e.key),
+                        onDelete: () => onDeleteSub(e.key),
+                      ),
+                      if (e.key != cat.subProducts.length - 1)
+                        Divider(height: 1, color: colors.divider, indent: 30),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  _HeaderIconBtn(
-                    icon: Icons.delete_outline_rounded,
-                    color: const Color(0xFFEF4444),
-                    onTap: onDeleteCategory,
-                  ),
-                  Icon(
-                    expanded
-                        ? Icons.keyboard_arrow_up_rounded
-                        : Icons.keyboard_arrow_down_rounded,
-                    color: colors.textSecondary,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (expanded)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Divider(height: 1, color: colors.divider),
-                  const SizedBox(height: 12),
-                  if (cat.subProducts.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Text(
-                        'No subcategories yet',
+                ),
+
+              Divider(height: 1, color: colors.divider),
+              InkWell(
+                onTap: onAddSub,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 13, 16, 15),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.add_rounded,
+                        size: 17,
+                        color: AppColors.primaryOrange,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Add Subcategory',
                         style: TextStyle(
                           fontSize: 13,
-                          color: colors.textHint,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primaryOrange,
                           fontFamily: 'Poppins',
                         ),
                       ),
-                    )
-                  else
-                    ...cat.subProducts.asMap().entries.map(
-                      (e) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _SubCategoryInlineRow(
-                          name: e.value,
-                          itemCount: subSkuCount(cat.name, e.value),
-                          colors: colors,
-                          onEdit: () => onEditSub(e.key),
-                          onDelete: () => onDeleteSub(e.key),
-                        ),
-                      ),
-                    ),
-                  InkWell(
-                    onTap: onAddSub,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.add_rounded,
-                          size: 16,
-                          color: AppColors.primaryOrange,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Add subcategory',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryOrange,
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-        ],
+            ],
+          ],
+        ),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Subcategory row — plain (no card/border) so a stack of them inside the
-// expanded category reads as one list, not a card of cards.
+// Subcategory row — name + item count stacked on the left, tinted edit/delete
+// chips on the right. Plain (no card/border) so a stack of them reads as one
+// list inside the expanded category.
 // ─────────────────────────────────────────────────────────────────────────────
 class _SubCategoryInlineRow extends StatelessWidget {
   final String name;
@@ -578,40 +615,52 @@ class _SubCategoryInlineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            name,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w600,
-              color: colors.textPrimary,
-              fontFamily: 'Poppins',
+    return Padding(
+      // Indented from the category name so the sub-category list reads as a
+      // level below it.
+      padding: const EdgeInsets.fromLTRB(30, 11, 12, 11),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$itemCount items',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colors.accent,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '$itemCount items',
-          style: TextStyle(
-            fontSize: 12,
-            color: colors.textSecondary,
-            fontFamily: 'Poppins',
+          const SizedBox(width: 8),
+          _SubChipBtn(
+            icon: Icons.edit_outlined,
+            color: AppColors.primaryOrange,
+            onTap: onEdit,
           ),
-        ),
-        _HeaderIconBtn(
-          icon: Icons.edit_outlined,
-          color: colors.textSecondary,
-          onTap: onEdit,
-        ),
-        _HeaderIconBtn(
-          icon: Icons.delete_outline_rounded,
-          color: const Color(0xFFEF4444),
-          onTap: onDelete,
-        ),
-      ],
+          const SizedBox(width: 8),
+          _SubChipBtn(
+            icon: Icons.delete_outline_rounded,
+            color: const Color(0xFFEF4444),
+            onTap: onDelete,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -619,14 +668,13 @@ class _SubCategoryInlineRow extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-/// Bare icon button — no background chip — for the small edit/delete taps
-/// that sit inline in a header or row rather than standing alone as an
-/// action button.
-class _HeaderIconBtn extends StatelessWidget {
+/// Small square tinted-background icon button — used for both a subcategory
+/// row and the category's own Edit / Delete actions in an expanded card.
+class _SubChipBtn extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
-  const _HeaderIconBtn({
+  const _SubChipBtn({
     required this.icon,
     required this.color,
     required this.onTap,
@@ -637,8 +685,13 @@ class _HeaderIconBtn extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Icon(icon, size: 16, color: color),
       ),
     );

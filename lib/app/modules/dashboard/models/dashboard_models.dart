@@ -31,6 +31,11 @@ class DashboardStatData {
   final IconData icon;
   final Color iconColor;
 
+  /// Drops the value to the smaller type size — for the tiles whose value is
+  /// a rupee total or a product name rather than a short count, same as the
+  /// list pages do for their "Total Value" card.
+  final bool smallValue;
+
   const DashboardStatData({
     required this.title,
     required this.value,
@@ -38,6 +43,7 @@ class DashboardStatData {
     this.isPositive = true,
     required this.icon,
     required this.iconColor,
+    this.smallValue = false,
   });
 }
 
@@ -60,15 +66,25 @@ class CategorySlice {
   /// send one — the hover tooltip then falls back to the percentage alone.
   final double? value;
 
+  /// Overrides the legend's default "label — 25%" text. Inventory Health reads
+  /// out counts ("In Stock  18"), not shares.
+  final String? legendText;
+
+  /// Overrides the hover tooltip's value line.
+  final String? tooltipText;
+
   const CategorySlice({
     required this.label,
     required this.percent,
     required this.color,
     this.value,
+    this.legendText,
+    this.tooltipText,
   });
 
   /// What the hover tooltip reads out: the rupee value plus its share.
   String get tooltipValue {
+    if (tooltipText != null) return tooltipText!;
     // Whole numbers, matching the legend and the breakdown rows — only a
     // sliver under 1% gets a decimal, so it doesn't read as "0%".
     final share = '${percent.toStringAsFixed(percent < 1 ? 1 : 0)}%';

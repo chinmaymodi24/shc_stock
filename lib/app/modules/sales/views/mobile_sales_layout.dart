@@ -7,11 +7,13 @@ import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
-import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
-import 'package:shc_stock/app/modules/sales/views/sale_details_dialog.dart';
-import 'package:shc_stock/app/modules/sales/views/update_sales_status_dialog.dart';
+import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_list_scaffold.dart';
+import 'package:shc_stock/app/modules/sales/views/sales_actions.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_row_actions.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/shared/widgets/mobile_filter_sheet.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_appbar_avatar.dart';
 
 class MobileSalesLayout extends GetView<SalesController> {
   const MobileSalesLayout({super.key});
@@ -33,12 +35,16 @@ class MobileSalesLayout extends GetView<SalesController> {
             onPressed: () => Scaffold.of(ctx).openDrawer(),
           ),
         ),
-        title: Image.asset(
-          'assets/logo.png',
-          height: 32,
-          fit: BoxFit.fitHeight,
+        title: Text(
+          'Sales',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: colors.textPrimary,
+            fontFamily: 'Poppins',
+          ),
         ),
-        centerTitle: false,
+        centerTitle: true,
         actions: [
           Obx(
             () => MobileFilterButton(
@@ -47,32 +53,14 @@ class MobileSalesLayout extends GetView<SalesController> {
                 c.orders.map((o) => o.client).toSet().toList()..sort(),
               ),
               onClear: c.resetFilters,
+              activeCount:
+                  c.clientFilters.length +
+                  c.statusFilters.length +
+                  c.paymentFilters.length +
+                  (c.sortOption.value == 'Default' ? 0 : 1),
             ),
           ),
-          Stack(
-            children: [
-              IconButton(
-                icon: Icon(
-                  Icons.notifications_outlined,
-                  color: colors.textSecondary,
-                ),
-                onPressed: () {},
-              ),
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primaryOrange,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 4),
+          const MobileAppBarAvatar(),
         ],
       ),
       drawer: const AppDrawer(activeRoute: AppRoutes.sales),
@@ -107,129 +95,85 @@ class MobileSalesLayout extends GetView<SalesController> {
           return true;
         }).toList();
 
-        return Column(
-          children: [
-            // ── Stats row ─────────────────────────────────────────
-            Container(
-              color: colors.surface,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _MiniStat(
-                      label: 'Total Sales',
-                      value: formatRupees(c.stats.value.doubleOf('salesMTD')),
-                      icon: Icons.shopping_cart_outlined,
-                      color: AppColors.primaryOrange,
-                    ),
-                    const SizedBox(width: 10),
-                    _MiniStat(
-                      label: 'Orders',
-                      value: '${c.stats.value.intOf('totalOrders')}',
-                      icon: Icons.receipt_long_outlined,
-                      color: context.appColors.accent,
-                    ),
-                    const SizedBox(width: 10),
-                    _MiniStat(
-                      label: 'Amount Due',
-                      value: formatRupees(c.stats.value.doubleOf('amountDue')),
-                      icon: Icons.currency_rupee_rounded,
-                      color: const Color(0xFFF59E0B),
-                    ),
-                    const SizedBox(width: 10),
-                    _MiniStat(
-                      label: 'Received',
-                      value: formatRupees(
-                        c.stats.value.doubleOf('receivedMTD'),
-                      ),
-                      icon: Icons.check_circle_outline_rounded,
-                      color: const Color(0xFF22C55E),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+        final loading = c.isLoading.value;
 
-            // ── Search bar — same FilterSearchField the web filter row
-            // uses, instead of the ad-hoc TextField every other page used
-            // to hand-roll.
-            Container(
-              color: colors.surface,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: FilterSearchField(
-                hint: 'Search by item or SO...',
-                width: double.infinity,
-                onChanged: (v) {
-                  c.searchQuery.value = v;
-                  c.currentPage.value = 1;
-                },
-              ),
+        return MobileListScaffold(
+          statCards: [
+            MobileStatCardData(
+              label: 'Total Sales',
+              value: formatRupees(c.stats.value.doubleOf('salesMTD')),
+              icon: Icons.shopping_cart_outlined,
+              color: AppColors.primaryOrange,
             ),
-
-            // ── Tab chips ─────────────────────────────────────────
-            Container(
-              color: colors.surface,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Row(
-                children: [
-                  _TabChip(
-                    label: 'All',
-                    active: tabIndex == 0,
-                    onTap: () => c.mobileTabIndex.value = 0,
-                  ),
-                  const SizedBox(width: 8),
-                  _TabChip(
-                    label: 'Confirmed',
-                    active: tabIndex == 1,
-                    onTap: () => c.mobileTabIndex.value = 1,
-                  ),
-                  const SizedBox(width: 8),
-                  _TabChip(
-                    label: 'Delivered',
-                    active: tabIndex == 2,
-                    onTap: () => c.mobileTabIndex.value = 2,
-                  ),
-                ],
-              ),
+            MobileStatCardData(
+              label: 'Orders',
+              value: '${c.stats.value.intOf('totalOrders')}',
+              icon: Icons.receipt_long_outlined,
+              color: context.appColors.accent,
             ),
-            Divider(height: 1, color: colors.divider),
-
-            // ── Order cards ───────────────────────────────────────
-            Expanded(
-              child: c.isLoading.value
-                  ? const AppLoadingIndicator(label: 'Loading sales orders...')
-                  : filtered.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.point_of_sale_outlined,
-                            size: 48,
-                            color: colors.textHint,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'No orders found',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: colors.textHint,
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (_, i) =>
-                          _MobileOrderCard(order: filtered[i], colors: colors),
-                    ),
+            MobileStatCardData(
+              label: 'Amount Due',
+              value: formatRupees(c.stats.value.doubleOf('amountDue')),
+              icon: Icons.currency_rupee_rounded,
+              color: const Color(0xFFF59E0B),
+            ),
+            MobileStatCardData(
+              label: 'Received',
+              value: formatRupees(c.stats.value.doubleOf('receivedMTD')),
+              icon: Icons.check_circle_outline_rounded,
+              color: const Color(0xFF22C55E),
             ),
           ],
+          search: FilterSearchField(
+            hint: 'Search by item or SO...',
+            width: double.infinity,
+            onChanged: (v) {
+              c.searchQuery.value = v;
+              c.currentPage.value = 1;
+            },
+          ),
+          pinnedExtraHeight: 34,
+          pinnedExtra: Row(
+            children: [
+              _TabChip(
+                label: 'All',
+                active: tabIndex == 0,
+                onTap: () => c.mobileTabIndex.value = 0,
+              ),
+              const SizedBox(width: 8),
+              _TabChip(
+                label: 'Confirmed',
+                active: tabIndex == 1,
+                onTap: () => c.mobileTabIndex.value = 1,
+              ),
+              const SizedBox(width: 8),
+              _TabChip(
+                label: 'Delivered',
+                active: tabIndex == 2,
+                onTap: () => c.mobileTabIndex.value = 2,
+              ),
+            ],
+          ),
+          countLabel: loading ? null : 'Showing ${filtered.length} orders',
+          sliver: loading
+              ? const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: AppLoadingIndicator(label: 'Loading sales orders...'),
+                )
+              : filtered.isEmpty
+              ? const MobileListEmpty(
+                  icon: Icons.point_of_sale_outlined,
+                  label: 'No orders found',
+                )
+              : SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
+                  sliver: SliverList.separated(
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (_, i) =>
+                        _MobileOrderCard(order: filtered[i], colors: colors),
+                  ),
+                ),
         );
       }),
       floatingActionButton: FloatingActionButton(
@@ -263,63 +207,6 @@ class MobileSalesLayout extends GetView<SalesController> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Mini Stat Chip
-// ─────────────────────────────────────────────────────────────────────────────
-class _MiniStat extends StatelessWidget {
-  final String label, value;
-  final IconData icon;
-  final Color color;
-  const _MiniStat({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.20)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  color: colors.textSecondary,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Tab Chip
 // ─────────────────────────────────────────────────────────────────────────────
 class _TabChip extends StatelessWidget {
@@ -336,6 +223,7 @@ class _TabChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
@@ -497,7 +385,7 @@ class _MobileOrderCard extends StatelessWidget {
           Divider(height: 1, color: colors.divider),
           const SizedBox(height: 10),
 
-          // Row 3: Items + Amount + Actions
+          // Row 3: Items + Amount
           Row(
             children: [
               Icon(
@@ -524,55 +412,36 @@ class _MobileOrderCard extends StatelessWidget {
                   fontFamily: 'Poppins',
                 ),
               ),
-              const SizedBox(width: 14),
-              InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: () => Get.dialog(
-                  SaleDetailsDialog(
-                    order: o,
-                    onDelete: () {
-                      Get.back();
-                      confirmDelete(
-                        context,
-                        itemName: o.soNumber,
-                        itemLabel: 'Sales Order',
-                        onConfirm: () =>
-                            Get.find<SalesController>().deleteOrder(o.id),
-                      );
-                    },
-                  ),
-                ),
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: context.appColors.accent.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.remove_red_eye_outlined,
-                    color: context.appColors.accent,
-                    size: 16,
-                  ),
-                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Divider(height: 1, color: colors.divider),
+          const SizedBox(height: 8),
+
+          // Row 4: the web table's four actions, plus the mobile-only Update
+          // Status shortcut. Their own row — five 34px buttons alongside the
+          // amount would overflow a phone-width card.
+          MobileActionRow(
+            actions: [
+              MobileActionButton.view(
+                context: context,
+                onTap: () => SalesActions.view(context, o),
               ),
-              const SizedBox(width: 6),
-              InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: () => Get.dialog(UpdateSalesStatusDialog(order: o)),
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: colors.iconBgPurple,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.more_vert_rounded,
-                    color: colors.textSecondary,
-                    size: 16,
-                  ),
-                ),
+              MobileActionButton.edit(
+                context: context,
+                onTap: () => SalesActions.edit(o),
+              ),
+              MobileActionButton.duplicate(
+                onTap: () => SalesActions.duplicate(o),
+              ),
+              MobileActionButton(
+                icon: Icons.published_with_changes_rounded,
+                color: colors.accent,
+                tooltip: 'Update Status',
+                onTap: () => SalesActions.updateStatus(o),
+              ),
+              MobileActionButton.delete(
+                onTap: () => SalesActions.delete(context, o),
               ),
             ],
           ),

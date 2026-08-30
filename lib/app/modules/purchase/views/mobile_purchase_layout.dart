@@ -8,11 +8,12 @@ import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
-import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
-import 'package:shc_stock/app/modules/purchase/views/purchase_details_dialog.dart';
-import 'package:shc_stock/app/modules/purchase/views/update_purchase_status_dialog.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_list_scaffold.dart';
+import 'package:shc_stock/app/modules/purchase/views/purchase_actions.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_row_actions.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/shared/widgets/mobile_filter_sheet.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_appbar_avatar.dart';
 
 class MobilePurchaseLayout extends GetView<PurchaseController> {
   const MobilePurchaseLayout({super.key});
@@ -35,7 +36,7 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
           ),
         ),
         title: Text(
-          'Purchases',
+          'Purchase',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -43,20 +44,26 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
             fontFamily: 'Poppins',
           ),
         ),
+        centerTitle: true,
         actions: [
-          MobileFilterButton(
-            filters: _buildFilters(c),
-            onClear: c.resetFilters,
+          Obx(
+            () => MobileFilterButton(
+              filters: _buildFilters(c),
+              onClear: c.resetFilters,
+              activeCount: c.supplierFilter.value == 'Supplier: All' ? 0 : 1,
+            ),
           ),
-          IconButton(
-            icon: Icon(Icons.add_rounded, color: AppColors.primaryOrange),
-            onPressed: () => Get.toNamed(AppRoutes.addPurchase),
-          ),
+          const MobileAppBarAvatar(),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Divider(height: 1, color: colors.divider),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Get.toNamed(AppRoutes.addPurchase),
+        backgroundColor: AppColors.primaryOrange,
+        child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
       body: Obx(() {
         final all = c.orders;
@@ -80,119 +87,67 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
               .toList();
         }
 
-        return CustomScrollView(
-          slivers: [
-            // Stat cards strip
-            SliverToBoxAdapter(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: Row(
-                  children: [
-                    _MobileStatCard(
-                      label: 'Total Orders',
-                      value: '${c.stats.value.intOf('totalOrders')}',
-                      icon: Icons.receipt_long_outlined,
-                      color: context.appColors.accent,
-                    ),
-                    const SizedBox(width: 10),
-                    _MobileStatCard(
-                      label: 'Purchase (MTD)',
-                      value: formatRupees(
-                        c.stats.value.doubleOf('purchaseMTD'),
-                      ),
-                      icon: Icons.shopping_cart_outlined,
-                      color: AppColors.primaryOrange,
-                    ),
-                    const SizedBox(width: 10),
-                    _MobileStatCard(
-                      label: 'Amount Due',
-                      value: formatRupees(c.stats.value.doubleOf('amountDue')),
-                      icon: Icons.currency_rupee_rounded,
-                      color: const Color(0xFFF59E0B),
-                    ),
-                    const SizedBox(width: 10),
-                    _MobileStatCard(
-                      label: 'Amount Paid',
-                      value: formatRupees(c.stats.value.doubleOf('amountPaid')),
-                      icon: Icons.inventory_2_outlined,
-                      color: const Color(0xFF22C55E),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+        final loading = c.isLoading.value;
 
-            // Search bar — same FilterSearchField the web filter row uses,
-            // and the same searchCtrl so a Clear-all tap in the filter
-            // sheet also clears the visible text.
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                child: FilterSearchField(
-                  controller: c.searchCtrl,
-                  hint: 'Search by Item or PO...',
-                  width: double.infinity,
-                  onChanged: (v) => c.searchQuery.value = v,
-                ),
-              ),
+        return MobileListScaffold(
+          statCards: [
+            MobileStatCardData(
+              label: 'Total Orders',
+              value: '${c.stats.value.intOf('totalOrders')}',
+              icon: Icons.receipt_long_outlined,
+              color: context.appColors.accent,
             ),
-
-            // Showing count
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Text(
-                  'Showing ${filtered.length} purchases',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: colors.textSecondary,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ),
+            MobileStatCardData(
+              label: 'Purchase (MTD)',
+              value: formatRupees(c.stats.value.doubleOf('purchaseMTD')),
+              icon: Icons.shopping_cart_outlined,
+              color: AppColors.primaryOrange,
             ),
-
-            // Purchase cards
-            if (c.isLoading.value)
-              const SliverFillRemaining(
-                child: AppLoadingIndicator(label: 'Loading purchase orders...'),
-              )
-            else if (filtered.isEmpty)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.receipt_long_outlined,
-                        size: 48,
-                        color: colors.textHint,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No purchases found',
-                        style: TextStyle(
-                          color: colors.textHint,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (ctx, i) => _MobilePurchaseCard(
-                    order: filtered[i],
-                    index: i,
-                    colors: colors,
-                  ),
-                  childCount: filtered.length,
-                ),
-              ),
+            MobileStatCardData(
+              label: 'Amount Due',
+              value: formatRupees(c.stats.value.doubleOf('amountDue')),
+              icon: Icons.currency_rupee_rounded,
+              color: const Color(0xFFF59E0B),
+            ),
+            MobileStatCardData(
+              label: 'Amount Paid',
+              value: formatRupees(c.stats.value.doubleOf('amountPaid')),
+              icon: Icons.inventory_2_outlined,
+              color: const Color(0xFF22C55E),
+            ),
           ],
+          search: FilterSearchField(
+            controller: c.searchCtrl,
+            hint: 'Search by Item or PO...',
+            width: double.infinity,
+            onChanged: (v) => c.searchQuery.value = v,
+          ),
+          countLabel: loading ? null : 'Showing ${filtered.length} purchases',
+          sliver: loading
+              ? const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: AppLoadingIndicator(
+                    label: 'Loading purchase orders...',
+                  ),
+                )
+              : filtered.isEmpty
+              ? const MobileListEmpty(
+                  icon: Icons.receipt_long_outlined,
+                  label: 'No purchases found',
+                )
+              : SliverPadding(
+                  padding: const EdgeInsets.only(top: 4, bottom: 88),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _MobilePurchaseCard(
+                        order: filtered[i],
+                        index: i,
+                        colors: colors,
+                      ),
+                      childCount: filtered.length,
+                    ),
+                  ),
+                ),
         );
       }),
     );
@@ -215,35 +170,6 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
         ),
       ),
     ];
-  }
-}
-
-/// Same summary card as every other page, sized for the horizontal strip on
-/// a phone: fixed width, smaller value so rupee totals still fit.
-class _MobileStatCard extends StatelessWidget {
-  final String label, value;
-  final IconData icon;
-  final Color color;
-
-  const _MobileStatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 168,
-      child: AppStatCard(
-        label: label,
-        value: value,
-        icon: icon,
-        iconColor: color,
-        smallValue: true,
-      ),
-    );
   }
 }
 
@@ -296,21 +222,7 @@ class _MobilePurchaseCard extends StatelessWidget {
         children: [
           InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => Get.dialog(
-              PurchaseDetailsDialog(
-                order: o,
-                onDelete: () {
-                  Get.back();
-                  confirmDelete(
-                    context,
-                    itemName: o.poNumber,
-                    itemLabel: 'Purchase Order',
-                    onConfirm: () =>
-                        Get.find<PurchaseController>().deleteOrder(o.id),
-                  );
-                },
-              ),
-            ),
+            onTap: () => PurchaseActions.view(context, o),
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: _cardBody(context, dateStr, statusBg, statusFg),
@@ -319,27 +231,29 @@ class _MobilePurchaseCard extends StatelessWidget {
           Divider(height: 1, color: colors.divider),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                _MobileActionBtn(
-                  icon: Icons.edit_outlined,
+            // The web table's four actions, plus the mobile-only Update
+            // Status shortcut.
+            child: MobileActionRow(
+              actions: [
+                MobileActionButton.view(
+                  context: context,
+                  onTap: () => PurchaseActions.view(context, o),
+                ),
+                MobileActionButton.edit(
+                  context: context,
+                  onTap: () => PurchaseActions.edit(o),
+                ),
+                MobileActionButton.duplicate(
+                  onTap: () => PurchaseActions.duplicate(o),
+                ),
+                MobileActionButton(
+                  icon: Icons.published_with_changes_rounded,
                   color: colors.accent,
                   tooltip: 'Update Status',
-                  onTap: () => Get.dialog(UpdatePurchaseStatusDialog(order: o)),
+                  onTap: () => PurchaseActions.updateStatus(o),
                 ),
-                const SizedBox(width: 6),
-                _MobileActionBtn(
-                  icon: Icons.delete_outline_rounded,
-                  color: const Color(0xFFEF4444),
-                  tooltip: 'Delete',
-                  onTap: () => confirmDelete(
-                    context,
-                    itemName: o.poNumber,
-                    itemLabel: 'Purchase Order',
-                    onConfirm: () =>
-                        Get.find<PurchaseController>().deleteOrder(o.id),
-                  ),
+                MobileActionButton.delete(
+                  onTap: () => PurchaseActions.delete(context, o),
                 ),
               ],
             ),
@@ -510,35 +424,3 @@ class _MobilePurchaseCard extends StatelessWidget {
   }
 }
 
-class _MobileActionBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String tooltip;
-  final VoidCallback onTap;
-  const _MobileActionBtn({
-    required this.icon,
-    required this.color,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(9),
-        child: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Icon(icon, color: color, size: 17),
-        ),
-      ),
-    );
-  }
-}

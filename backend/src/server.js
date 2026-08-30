@@ -17,14 +17,26 @@ const usersRouter = require('./routes/users');
 const transactionsRouter = require('./routes/transactions');
 const dashboardRouter = require('./routes/dashboard');
 const settingsRouter = require('./routes/settings');
+const { startDeliverySweep } = require('./deliverySweep');
 
 const app = express();
 
-app.use(cors());
+// CORS_ORIGINS = comma-separated list of allowed web origins (Firebase, Render
+// static site, etc). Unset / "*" => allow any origin (handy for local dev).
+const corsOrigins = (process.env.CORS_ORIGINS || '*')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+app.use(
+  cors({
+    origin: corsOrigins.includes('*') ? true : corsOrigins,
+  }),
+);
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '..', process.env.UPLOADS_DIR || 'uploads')));
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 app.use('/api/categories', categoriesRouter);
 app.use('/api/sub-categories', subCategoriesRouter);
@@ -49,4 +61,6 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`SHC Stock backend running on http://localhost:${PORT}`);
+  // Flips orders whose expected delivery date has arrived, booking their stock.
+  startDeliverySweep();
 });

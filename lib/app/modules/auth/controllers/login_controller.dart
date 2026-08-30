@@ -118,7 +118,12 @@ class LoginController extends GetxController {
         'password': passwordController.text,
       });
       // Remember who signed in — drives the top bar and audit stamps.
-      await Get.find<SessionController>().signIn(res as Map<String, dynamic>);
+      // Only persist the session to disk when "Remember me" is ticked, so an
+      // unchecked login still lands on the login page next launch.
+      await Get.find<SessionController>().signIn(
+        res as Map<String, dynamic>,
+        persist: rememberMe.value,
+      );
 
       // Save remember-me silently — never block navigation
       try {

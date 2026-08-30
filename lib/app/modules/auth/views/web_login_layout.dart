@@ -90,7 +90,11 @@ class WebLoginLayout extends StatelessWidget {
             Padding(
               padding: EdgeInsets.only(left: size.width * 0.019),
               child: Image.asset(
-                'assets/logo.png',
+                // Dark mode swaps to the light wordmark so it stays readable
+                // over the night warehouse image.
+                context.isDarkMode
+                    ? 'assets/logo_dark.png'
+                    : 'assets/logo.png',
                 width: size.width * 0.15,
                 fit: BoxFit.fitWidth,
                 frameBuilder: (ctx, child, frame, wasSynchronouslyLoaded) {
@@ -356,8 +360,23 @@ class WebLoginLayout extends StatelessWidget {
           alignment: Alignment.topCenter,
         ),
 
-        // Purple tint overlay for text legibility
-        Container(color: AppColors.primaryPurple.withValues(alpha: 0.38)),
+        // Bottom scrim so the white caption stays readable. This replaces a
+        // flat 38%-purple wash over the whole panel, which turned the night
+        // warehouse photo blue and made web look nothing like mobile.
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [
+                Colors.black.withValues(alpha: 0.75),
+                Colors.black.withValues(alpha: 0.30),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.26, 0.55],
+            ),
+          ),
+        ),
 
         Padding(
           padding: const EdgeInsets.fromLTRB(40, 36, 32, 28),
