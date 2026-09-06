@@ -6,6 +6,9 @@ import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/modules/clients/export/clients_export.dart';
+import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
+import 'package:shc_stock/app/shared/widgets/export/list_scope_bar.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
@@ -47,32 +50,11 @@ class WebClientsLayout extends GetView<ClientsController> {
                 const WebTopBar(),
                 Expanded(
                   child: Obx(() {
-                    final all = c.clients;
-                    final searchQuery = c.searchQuery.value;
-                    final stateFilters = c.stateFilters;
-                    final cityFilters = c.cityFilters;
                     final rowsPerPage = c.rowsPerPage.value;
                     final currentPage = c.currentPage.value;
-                    final filtered = all.where((cl) {
-                      if (searchQuery.isNotEmpty) {
-                        final q = searchQuery.toLowerCase();
-                        final matches =
-                            cl.name.toLowerCase().contains(q) ||
-                            cl.code.toLowerCase().contains(q) ||
-                            cl.address.toLowerCase().contains(q) ||
-                            cl.gstin.toLowerCase().contains(q);
-                        if (!matches) return false;
-                      }
-                      if (stateFilters.isNotEmpty &&
-                          !stateFilters.contains(cl.state)) {
-                        return false;
-                      }
-                      if (cityFilters.isNotEmpty &&
-                          !cityFilters.contains(cl.city)) {
-                        return false;
-                      }
-                      return true;
-                    }).toList();
+                    // One source of truth: the table, the scope line and
+                    // the Export menu all read the controller's query.
+                    final filtered = c.filteredClients;
 
                     final totalPages = filtered.isEmpty
                         ? 1
@@ -239,6 +221,32 @@ class WebClientsLayout extends GetView<ClientsController> {
                                   },
                                 ),
                                 const SizedBox(height: 12),
+                                ListScopeBar(
+                                  shown: filtered.length,
+                                  total: c.clients.length,
+                                  noun: 'clients',
+                                  chips: [
+                                    if (c.searchQuery.value.isNotEmpty)
+                                      ListScopeChip(
+                                        'Search: "${c.searchQuery.value}"',
+                                        () {
+                                          c.searchCtrl.clear();
+                                          c.searchQuery.value = '';
+                                        },
+                                      ),
+                                    for (final state in c.stateFilters)
+                                      ListScopeChip(
+                                        state,
+                                        () => c.stateFilters.remove(state),
+                                      ),
+                                    for (final city in c.cityFilters)
+                                      ListScopeChip(
+                                        city,
+                                        () => c.cityFilters.remove(city),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
                                 Container(
                                   decoration: BoxDecoration(
                                     color: colors.surface,
@@ -399,27 +407,7 @@ class _Toolbar extends StatelessWidget {
         if (!c.hasActiveFilters) return const SizedBox.shrink();
         return ClearAllButton(onTap: c.resetFilters);
       }),
-      trailing: OutlinedButton.icon(
-        onPressed: () {},
-        icon: Icon(
-          Icons.upload_outlined,
-          size: 15,
-          color: colors.textSecondary,
-        ),
-        label: Text(
-          'Export',
-          style: TextStyle(
-            fontSize: 13,
-            fontFamily: 'Poppins',
-            color: colors.textSecondary,
-          ),
-        ),
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-          side: BorderSide(color: colors.border),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      ),
+      trailing: ExportMenuButton(source: clientsExportConfig(c)),
     );
   }
 }

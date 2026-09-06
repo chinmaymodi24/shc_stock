@@ -7,6 +7,9 @@ import 'package:shc_stock/app/modules/purchase/views/purchase_actions.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/modules/purchase/export/purchase_export.dart';
+import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
+import 'package:shc_stock/app/shared/widgets/export/list_scope_bar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
@@ -50,35 +53,12 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                 const WebTopBar(),
                 Expanded(
                   child: Obx(() {
-                    final all = c.orders;
-                    final searchQuery = c.searchQuery.value;
-                    final supplierFilter = c.supplierFilter.value;
                     final rowsPerPage = c.rowsPerPage.value;
                     final currentPage = c.currentPage.value;
 
-                    var filtered = all.toList();
-
-                    // Search filter
-                    if (searchQuery.isNotEmpty) {
-                      filtered = filtered
-                          .where(
-                            (o) =>
-                                o.supplier.toLowerCase().contains(
-                                  searchQuery.toLowerCase(),
-                                ) ||
-                                o.poNumber.toLowerCase().contains(
-                                  searchQuery.toLowerCase(),
-                                ),
-                          )
-                          .toList();
-                    }
-
-                    // Supplier filter
-                    if (supplierFilter != 'Supplier: All') {
-                      filtered = filtered
-                          .where((o) => o.supplier == supplierFilter)
-                          .toList();
-                    }
+                    // One source of truth: the table, the scope line and
+                    // the Export menu all read the controller's query.
+                    final filtered = c.filteredOrders;
 
                     final totalPages = filtered.isEmpty
                         ? 1
@@ -240,6 +220,39 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                       ),
                                       Divider(height: 1, color: colors.divider),
 
+                                      // States the export scope in words.
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          16,
+                                          12,
+                                          16,
+                                          4,
+                                        ),
+                                        child: ListScopeBar(
+                                          shown: filtered.length,
+                                          total: c.orders.length,
+                                          noun: 'purchase orders',
+                                          chips: [
+                                            if (c.searchQuery.value.isNotEmpty)
+                                              ListScopeChip(
+                                                'Search: "'
+                                                '${c.searchQuery.value}"',
+                                                () {
+                                                  c.searchCtrl.clear();
+                                                  c.searchQuery.value = '';
+                                                },
+                                              ),
+                                            if (c.supplierFilter.value !=
+                                                'Supplier: All')
+                                              ListScopeChip(
+                                                c.supplierFilter.value,
+                                                () => c.supplierFilter.value =
+                                                    'Supplier: All',
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+
                                       // Column Headers
                                       _ColumnHeader(colors: colors),
                                       Divider(height: 1, color: colors.divider),
@@ -368,33 +381,7 @@ class _TableToolbarState extends State<_TableToolbar> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Export
-            OutlinedButton.icon(
-              onPressed: () {},
-              icon: Icon(
-                Icons.upload_outlined,
-                size: 15,
-                color: colors.textSecondary,
-              ),
-              label: Text(
-                'Export',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontFamily: 'Poppins',
-                  color: colors.textSecondary,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 9,
-                ),
-                side: BorderSide(color: colors.border),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
+            ExportMenuButton(source: purchaseExportConfig(c)),
             const SizedBox(width: 8),
 
             // View toggle icon

@@ -6,8 +6,8 @@ import 'package:shc_stock/app/shared/widgets/async_button.dart';
 import 'package:shc_stock/app/modules/purchase/controllers/mobile_add_purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
-import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
 import 'package:shc_stock/app/modules/products/models/product_model.dart';
+import 'package:shc_stock/app/modules/products/widgets/product_autocomplete_field.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
 import 'package:shc_stock/app/modules/clients/widgets/client_autocomplete_field.dart';
 import 'package:shc_stock/app/shared/widgets/form_fields.dart';
@@ -564,10 +564,11 @@ class _MobileItemCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          _ProductAutocomplete(
+          ProductAutocompleteField(
             initialValue: row.product,
             colors: colors,
             onSelected: _applyProduct,
+            priceOf: (p) => p.costPrice,
           ),
           const SizedBox(height: 8),
           Row(
@@ -712,162 +713,6 @@ class _MobileItemCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Product autocomplete — typing filters ProductsController by name; selecting
-// an option fetches its HSN, density/grade, UoM and cost price into the row.
-// ─────────────────────────────────────────────────────────────────────────────
-class _ProductAutocomplete extends StatelessWidget {
-  final String initialValue;
-  final AppThemeColors colors;
-  final ValueChanged<ProductModel> onSelected;
-
-  const _ProductAutocomplete({
-    required this.initialValue,
-    required this.colors,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final products = Get.find<ProductsController>().products;
-    return Autocomplete<ProductModel>(
-      displayStringForOption: (p) => p.name,
-      optionsBuilder: (textEditingValue) {
-        final q = textEditingValue.text.trim().toLowerCase();
-        if (q.isEmpty) return const Iterable<ProductModel>.empty();
-        return products.where((p) => p.name.toLowerCase().contains(q)).take(30);
-      },
-      onSelected: onSelected,
-      fieldViewBuilder: (context, controller, focusNode, onSubmit) {
-        if (controller.text.isEmpty && initialValue.isNotEmpty) {
-          controller.text = initialValue;
-        }
-        return TextField(
-          controller: controller,
-          focusNode: focusNode,
-          style: TextStyle(
-            fontSize: 13,
-            color: colors.textPrimary,
-            fontFamily: 'Poppins',
-          ),
-          decoration: InputDecoration(
-            hintText: 'Type e.g. Ceramic Fiber Blanket 1260...',
-            hintStyle: TextStyle(
-              fontSize: 12.5,
-              color: colors.textHint,
-              fontFamily: 'Poppins',
-            ),
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 10,
-            ),
-            filled: true,
-            fillColor: colors.surface,
-            prefixIcon: Icon(
-              Icons.search_rounded,
-              size: 16,
-              color: colors.textHint,
-            ),
-            prefixIconConstraints: const BoxConstraints(
-              minWidth: 34,
-              minHeight: 20,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: AppColors.primaryOrange,
-                width: 1.2,
-              ),
-            ),
-          ),
-        );
-      },
-      optionsViewBuilder: (context, onSelect, options) {
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(10),
-            color: colors.surface,
-            child: Container(
-              width: MediaQuery.of(context).size.width - 56,
-              constraints: const BoxConstraints(maxHeight: 240),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: colors.border),
-              ),
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                shrinkWrap: true,
-                itemCount: options.length,
-                itemBuilder: (context, index) {
-                  final p = options.elementAt(index);
-                  return InkWell(
-                    onTap: () => onSelect(p),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  p.name,
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: colors.textPrimary,
-                                    fontFamily: 'Poppins',
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'HSN ${p.hsnCode ?? '—'} · ${p.unit}',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: colors.textHint,
-                                    fontFamily: 'Poppins',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            '₹${p.costPrice.toStringAsFixed(0)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: colors.textSecondary,
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }

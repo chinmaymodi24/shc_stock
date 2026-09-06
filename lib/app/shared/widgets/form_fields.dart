@@ -551,9 +551,8 @@ class _AppSmallStepperState extends State<AppSmallStepper> {
     _ctrl.text = _text(widget.value);
   }
 
-  static String _fmt(double v) => v == v.roundToDouble()
-      ? v.toStringAsFixed(0)
-      : v.toStringAsFixed(2);
+  static String _fmt(double v) =>
+      v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
 
   String _text(double v) => widget.mobile && v == 0 ? '' : _fmt(v);
 

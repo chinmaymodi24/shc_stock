@@ -226,22 +226,29 @@ class _LegendItem extends StatelessWidget {
         SizedBox(width: highlighted ? 6 : 8),
         // Capped width + ellipsis: category names come from the API and can
         // be long, so the label shrinks rather than blowing out the legend.
-        // A fixed cap (not Flexible) keeps the row shrink-wrapped.
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 150),
-          child: Text(
-            slice.legendText ??
-                '${slice.label} — ${slice.percent.toStringAsFixed(0)}%',
-            style: TextStyle(
-              fontSize: 12.5,
-              // Pinned line height so a legend row always fits its 18px slot,
-              // whatever line spacing the font itself reports.
-              height: 1.3,
-              fontWeight: highlighted ? FontWeight.w600 : FontWeight.w500,
-              color: dimmed ? colors.textSecondary : colors.textPrimary,
-              fontFamily: 'Poppins',
+        //
+        // Flexible around the cap, not the cap alone: `loose` still lets the
+        // row shrink-wrap (the label takes its natural width up to 150), but
+        // it also honours a legend column narrower than that cap — the
+        // Analytics tab's Inventory Health panel only offers ~153px, where a
+        // bare ConstrainedBox overflowed by 14px.
+        Flexible(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 150),
+            child: Text(
+              slice.legendText ??
+                  '${slice.label} — ${slice.percent.toStringAsFixed(0)}%',
+              style: TextStyle(
+                fontSize: 12.5,
+                // Pinned line height so a legend row always fits its 18px
+                // slot, whatever line spacing the font itself reports.
+                height: 1.3,
+                fontWeight: highlighted ? FontWeight.w600 : FontWeight.w500,
+                color: dimmed ? colors.textSecondary : colors.textPrimary,
+                fontFamily: 'Poppins',
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
-            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],

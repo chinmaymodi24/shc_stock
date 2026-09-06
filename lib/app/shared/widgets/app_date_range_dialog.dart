@@ -120,8 +120,7 @@ class _AppDateRangeDialogState extends State<AppDateRangeDialog> {
     _visible.value = DateTime(v.year, v.month + delta);
   }
 
-  bool get _canGoBack =>
-      _visible.value.isAfter(_monthOf(widget.firstDate));
+  bool get _canGoBack => _visible.value.isAfter(_monthOf(widget.firstDate));
 
   bool _canGoForward(int monthsShown) =>
       DateTime(
@@ -380,11 +379,7 @@ class _AppDateRangeDialogState extends State<AppDateRangeDialog> {
     });
   }
 
-  Widget _navButton(
-    AppThemeColors colors,
-    IconData icon,
-    VoidCallback? onTap,
-  ) {
+  Widget _navButton(AppThemeColors colors, IconData icon, VoidCallback? onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -542,10 +537,7 @@ class _AppDateRangeDialogState extends State<AppDateRangeDialog> {
             onPressed: () => Get.back<DateTimeRange>(),
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: colors.border),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 22,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),

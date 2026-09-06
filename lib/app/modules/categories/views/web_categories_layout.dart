@@ -4,6 +4,9 @@ import 'package:shc_stock/app/modules/categories/controllers/categories_controll
 import 'package:shc_stock/app/shared/widgets/async_button.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/modules/categories/export/categories_export.dart';
+import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
+import 'package:shc_stock/app/shared/widgets/export/list_scope_bar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/modules/categories/models/category_model.dart';
@@ -185,6 +188,22 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                               clearAll: c.hasActiveFilters
                                   ? ClearAllButton(onTap: c.resetFilters)
                                   : null,
+                              trailing: ExportMenuButton(
+                                source: categoriesExportConfig(c),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ListScopeBar(
+                              shown: c.visibleCategories.length,
+                              total: all.length,
+                              noun: 'categories',
+                              chips: [
+                                if (c.searchQuery.value.isNotEmpty)
+                                  ListScopeChip(
+                                    'Search: "${c.searchQuery.value}"',
+                                    c.resetFilters,
+                                  ),
+                              ],
                             ),
                             const SizedBox(height: 16),
                           ],
@@ -1208,44 +1227,54 @@ class _SimpleFormDialogState extends State<_SimpleFormDialog> {
                 onSubmitted: (_) => _save(),
               ),
               const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: Get.back,
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        decoration: BoxDecoration(
-                          color: colors.background.computeLuminance() > 0.5
-                              ? const Color(0xFFF3F1EC)
-                              : colors.inputFill,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          'Cancel',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: colors.textPrimary,
-                            fontFamily: 'Poppins',
+              // IntrinsicHeight + stretch rather than matching padding by eye:
+              // "Cancel" is a plain Container, "Save" an ElevatedButton inside
+              // AppAsyncButton, and Material's button metrics don't always
+              // agree with a hand-set padding down to the pixel — stretching
+              // both to the row's own tallest content guarantees they match
+              // regardless.
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: Get.back,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          decoration: BoxDecoration(
+                            color: colors.background.computeLuminance() > 0.5
+                                ? const Color(0xFFF3F1EC)
+                                : colors.inputFill,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: colors.textPrimary,
+                              fontFamily: 'Poppins',
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: AppAsyncButton(
-                      label: 'Save',
-                      onPressed: _save,
-                      expand: true,
-                      padding: const EdgeInsets.symmetric(vertical: 13),
-                      radius: 10,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: AppAsyncButton(
+                        label: 'Save',
+                        onPressed: _save,
+                        expand: true,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        radius: 10,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

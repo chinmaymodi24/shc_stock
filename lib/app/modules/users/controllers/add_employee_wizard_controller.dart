@@ -182,6 +182,8 @@ class AddEmployeeWizardController extends GetxController {
   final dob = Rx<DateTime?>(null);
   final eName = RxnString();
   final eEmail = RxnString();
+  final ePhone = RxnString();
+  final eAltPhone = RxnString();
   final eUser = RxnString();
   final ePass = RxnString();
   final eConf = RxnString();
@@ -286,6 +288,17 @@ class AddEmployeeWizardController extends GetxController {
   String get fmtDOB => _fmtDate(dob.value);
 
   // ── Validation ───────────────────────────────────────────────────────
+
+  /// Both phone fields are optional, but anything typed has to be a real
+  /// 10-digit Indian number. The fields themselves only accept digits (and
+  /// stop at 10), so the only way to land here is a half-typed number.
+  String? _phoneError(String raw, String label) {
+    final digits = raw.trim();
+    if (digits.isEmpty) return null;
+    if (digits.length != 10) return '$label must be 10 digits';
+    return null;
+  }
+
   bool v1() {
     eName.value = nameCtrl.text.trim().isEmpty ? 'Full name is required' : null;
     eEmail.value = emailCtrl.text.trim().isEmpty
@@ -295,6 +308,8 @@ class AddEmployeeWizardController extends GetxController {
           ).hasMatch(emailCtrl.text.trim())
         ? 'Enter a valid email'
         : null;
+    ePhone.value = _phoneError(phoneCtrl.text, 'Phone number');
+    eAltPhone.value = _phoneError(altPhoneCtrl.text, 'Alternate phone');
     eUser.value = userCtrl.text.trim().isEmpty ? 'Username is required' : null;
     ePass.value = passCtrl.text.isEmpty
         ? 'Password is required'
@@ -309,6 +324,8 @@ class AddEmployeeWizardController extends GetxController {
     return ![
       eName.value,
       eEmail.value,
+      ePhone.value,
+      eAltPhone.value,
       eUser.value,
       ePass.value,
       eConf.value,

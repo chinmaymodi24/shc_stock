@@ -172,6 +172,62 @@ class StockController extends GetxController {
     }
   }
 
+  // ── The list query ────────────────────────────────────────────────────────
+  /// Inventory exactly as the page shows it — search, category and status
+  /// filters, then the chosen sort. The table, the "Showing N of M" line and
+  /// every export read this one getter, so a file can never contain rows the
+  /// screen was hiding.
+  List<StockItemModel> get filteredItems {
+    final q = search.value.toLowerCase();
+    // Read every filter up front: an Obx only tracks what the build actually
+    // touches, and a predicate never runs when the list is empty.
+    final cats = catFilters.toSet();
+    final stats = statFilters.toSet();
+    final sort = sortOption.value;
+    final result = items.where((item) {
+      if (q.isNotEmpty &&
+          !item.name.toLowerCase().contains(q) &&
+          !item.sku.toLowerCase().contains(q)) {
+        return false;
+      }
+      if (cats.isNotEmpty && !cats.contains(item.category)) {
+        return false;
+      }
+      if (stats.isNotEmpty && !stats.contains(item.statusLabel)) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    switch (sort) {
+      // Default = last added / modified first. Sorted here too (not just by
+      // the API) so a row edited in place jumps to the top without a refetch.
+      case 'Default':
+        result.sort(
+          (a, b) => b.effectiveModifiedAt.compareTo(a.effectiveModifiedAt),
+        );
+      case 'Item Name (A-Z)':
+        result.sort((a, b) => a.name.compareTo(b.name));
+      case 'Item Name (Z-A)':
+        result.sort((a, b) => b.name.compareTo(a.name));
+      case 'Qty: Low to High':
+        result.sort((a, b) => a.stockInHand.compareTo(b.stockInHand));
+      case 'Qty: High to Low':
+        result.sort((a, b) => b.stockInHand.compareTo(a.stockInHand));
+      case 'Value: Low to High':
+        result.sort((a, b) => a.stockValue.compareTo(b.stockValue));
+      case 'Value: High to Low':
+        result.sort((a, b) => b.stockValue.compareTo(a.stockValue));
+    }
+    return result;
+  }
+
+  bool get hasActiveFilters =>
+      search.value.isNotEmpty ||
+      catFilters.isNotEmpty ||
+      statFilters.isNotEmpty ||
+      sortOption.value != 'Default';
+
   int get totalItems => items.length;
   int get inStockCount =>
       items.where((i) => i.status == StockStatus.inStock).length;

@@ -27,8 +27,7 @@ class StockActions {
 
   /// The product behind this inventory row, or null if the products list
   /// hasn't been loaded far enough to hold it yet.
-  static ProductModel? productFor(StockItemModel item) => _products()
-      .products
+  static ProductModel? productFor(StockItemModel item) => _products().products
       .firstWhereOrNull((p) => p.id == item.productId.toString());
 
   static void _needsProduct() => showAppToast(

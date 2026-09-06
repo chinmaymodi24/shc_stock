@@ -1,10 +1,14 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/api/api_client.dart';
 import 'package:shc_stock/app/modules/categories/controllers/categories_controller.dart';
 import 'package:shc_stock/app/modules/categories/models/category_model.dart';
 import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
 import 'package:shc_stock/app/modules/products/models/product_model.dart';
+import 'package:shc_stock/app/modules/products/widgets/product_image_drop_zone.dart';
+import 'package:shc_stock/app/modules/products/widgets/product_image_picker.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
 
@@ -48,6 +52,15 @@ class _AddProductDialogState extends State<AddProductDialog> {
   final _subCategory = ''.obs;
   final _unit = ''.obs;
   final _saving = false.obs;
+
+  // ── Photo ──────────────────────────────────────────────────────────────
+  // A file picked this session (not yet uploaded — that happens on Save);
+  // the product's existing photo, carried over on both edit and duplicate;
+  // and whether the user removed it. See ProductImagePicker for how the
+  // three combine into one preview.
+  final _pickedImageBytes = Rxn<Uint8List>();
+  final _pickedImageName = Rxn<String>();
+  final _imageRemoved = false.obs;
 
   bool get _isEdit => widget.product != null && !widget.duplicate;
 
@@ -94,7 +107,33 @@ class _AddProductDialogState extends State<AddProductDialog> {
     _subCategory.close();
     _unit.close();
     _saving.close();
+    _pickedImageBytes.close();
+    _pickedImageName.close();
+    _imageRemoved.close();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.bytes == null) return;
+    _setPickedImage(file.bytes!, file.name);
+  }
+
+  void _setPickedImage(Uint8List bytes, String name) {
+    _pickedImageBytes.value = bytes;
+    _pickedImageName.value = name;
+    _imageRemoved.value = false;
+  }
+
+  void _removeImage() {
+    _pickedImageBytes.value = null;
+    _pickedImageName.value = null;
+    _imageRemoved.value = true;
   }
 
   void _error(String msg) {
@@ -125,6 +164,27 @@ class _AddProductDialogState extends State<AddProductDialog> {
     final subId = subIdx == -1 ? null : cat.subCategories[subIdx].id;
 
     _saving.value = true;
+
+    // A freshly-picked photo has to be uploaded before it has a URL to save
+    // against the product. Nothing picked and nothing removed means "leave
+    // it as it was" — updateProduct rewrites every field on every save, so
+    // the existing url has to be threaded back through explicitly or it's
+    // wiped.
+    String? imageUrl;
+    if (_pickedImageBytes.value != null) {
+      try {
+        imageUrl = await ApiClient.instance.uploadImage(
+          _pickedImageBytes.value!,
+          _pickedImageName.value ?? 'photo.jpg',
+        );
+      } catch (e) {
+        _saving.value = false;
+        return _error('Failed to upload the photo. Please try again.');
+      }
+    } else if (!_imageRemoved.value) {
+      imageUrl = widget.product?.imageUrl;
+    }
+
     final c = Get.find<ProductsController>();
     final stock = int.tryParse(_stockCtrl.text.trim()) ?? 0;
     final ok = _isEdit
@@ -135,6 +195,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
             categoryId: cat.apiId,
             subCategoryId: subId,
             unit: _unit.value,
+            imageUrl: imageUrl,
             sellingPrice: sellPrice,
             costPrice: costPrice,
             currentStock: stock,
@@ -146,6 +207,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
             categoryId: cat.apiId,
             subCategoryId: subId,
             unit: _unit.value,
+            imageUrl: imageUrl,
             sellingPrice: sellPrice,
             costPrice: costPrice,
             currentStock: stock,
@@ -167,12 +229,18 @@ class _AddProductDialogState extends State<AddProductDialog> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    // Same 700px breakpoint every web/mobile layout split uses. The drop
+    // zone below only makes sense with somewhere to drop onto, so it — and
+    // the wider dialog it needs to read as the full-width zone it's meant to
+    // be rather than a cramped one — are web-only; mobile keeps the compact
+    // tap-to-pick square.
+    final isWeb = MediaQuery.sizeOf(context).width >= 700;
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
+          constraints: BoxConstraints(maxWidth: isWeb ? 640 : 420),
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -204,6 +272,33 @@ class _AddProductDialogState extends State<AddProductDialog> {
                       fontFamily: 'Poppins',
                     ),
                   ),
+                  const SizedBox(height: 18),
+
+                  _Label(text: 'Item Image', colors: colors),
+                  const SizedBox(height: 6),
+                  Obx(() {
+                    if (isWeb) {
+                      return ProductImageDropZone(
+                        pickedBytes: _pickedImageBytes.value,
+                        existingImageUrl: widget.product?.imageUrl,
+                        removed: _imageRemoved.value,
+                        onFile: _setPickedImage,
+                        onRemove: _removeImage,
+                        onRejected: _error,
+                        colors: colors,
+                      );
+                    }
+                    return Center(
+                      child: ProductImagePicker(
+                        pickedBytes: _pickedImageBytes.value,
+                        existingImageUrl: widget.product?.imageUrl,
+                        removed: _imageRemoved.value,
+                        onPick: _pickImage,
+                        onRemove: _removeImage,
+                        colors: colors,
+                      ),
+                    );
+                  }),
                   const SizedBox(height: 18),
 
                   Row(

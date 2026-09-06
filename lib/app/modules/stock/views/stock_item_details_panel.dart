@@ -10,6 +10,7 @@ import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
 import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
 import 'package:shc_stock/app/modules/stock/controllers/stock_controller.dart';
 import 'package:shc_stock/app/modules/stock/models/stock_item_model.dart';
+import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 
 PurchaseController _purchaseController() {
   if (Get.isRegistered<PurchaseController>()) {
@@ -50,6 +51,11 @@ class _HistoryEntry {
   final String subtitle;
   final double? amount;
   final DateTime? date;
+
+  /// The underlying `stock_movements.id` — only set for `refType == 'manual'`
+  /// entries, which are the only ones deletable on their own (a purchase/sale
+  /// movement is owned by its order; delete the order instead).
+  final int? movementId;
   const _HistoryEntry({
     required this.isIn,
     required this.refType,
@@ -57,6 +63,7 @@ class _HistoryEntry {
     required this.subtitle,
     this.amount,
     this.date,
+    this.movementId,
   });
 }
 
@@ -121,6 +128,7 @@ List<_HistoryEntry> _buildEntries(
           // manual corrections have none, and stay '—' in the row.
           amount: m.amount,
           date: m.createdAt,
+          movementId: m.id,
         ),
       );
     }
@@ -162,9 +170,16 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
   final RxBool _loading = true.obs;
   final RxList<StockMovement> _movements = <StockMovement>[].obs;
 
+  // The panel's own copy of the item — reactive, unlike `widget.item`, so
+  // "Quantity on Hand" / status update in place the moment a manual
+  // adjustment here is undone, without the caller having to rebuild this
+  // whole dialog.
+  late final Rx<StockItemModel> _item;
+
   @override
   void initState() {
     super.initState();
+    _item = widget.item.obs;
     _load();
   }
 
@@ -181,10 +196,37 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
     }
   }
 
+  /// Undoes a manual stock adjustment: confirms, reverts the qty on the
+  /// backend, then drops it from the ledger and refreshes the header. This
+  /// is the only way a "Stock Added"/"Stock Removed" entry ever leaves the
+  /// history — purchase/sale movements stay tied to their order and go away
+  /// only when that order is deleted.
+  Future<void> _confirmDeleteAdjustment(_HistoryEntry entry) {
+    final movementId = entry.movementId;
+    if (movementId == null) return Future.value();
+    return confirmDelete(
+      context,
+      itemName: entry.title,
+      itemLabel: 'adjustment',
+      message:
+          'This reverses "${entry.subtitle}" out of the current stock. '
+          'It cannot be undone.',
+      onConfirm: () async {
+        final updated = await _stockController().deleteAdjustment(movementId);
+        if (updated) {
+          _item.value = _stockController().items.firstWhere(
+            (i) => i.productId == widget.item.productId,
+            orElse: () => _item.value,
+          );
+          _movements.removeWhere((m) => m.id == movementId);
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final item = widget.item;
     final purchase = _purchaseController();
     final sales = _salesController();
 
@@ -247,6 +289,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
               Expanded(
                 child: Obx(() {
                   final loading = _loading.value;
+                  final item = _item.value;
                   final entries = _buildEntries(
                     item,
                     _movements,
@@ -444,7 +487,11 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                           )
                         else
                           ...adjustmentEntries.map(
-                            (e) => _historyRow(e, colors),
+                            (e) => _historyRow(
+                              e,
+                              colors,
+                              onDelete: () => _confirmDeleteAdjustment(e),
+                            ),
                           ),
 
                         const SizedBox(height: 8),
@@ -584,8 +631,14 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
 
   /// Every history row carries the same in/out badge: purchases and manual
   /// stock-ins get the "in" icon, sales and stock-outs the "out" one, so the
-  /// three history sections read identically.
-  Widget _historyRow(_HistoryEntry e, AppThemeColors colors) {
+  /// three history sections read identically. [onDelete] is only ever passed
+  /// for a manual adjustment — purchase/sale rows have no way to remove
+  /// themselves independently of their order.
+  Widget _historyRow(
+    _HistoryEntry e,
+    AppThemeColors colors, {
+    VoidCallback? onDelete,
+  }) {
     final color = e.isIn ? colors.success : colors.warning;
     final dateFmt = DateFormat('MMM d, yyyy');
     return Padding(
@@ -657,6 +710,21 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
               ),
             ],
           ),
+          if (onDelete != null) ...[
+            const SizedBox(width: 4),
+            InkWell(
+              onTap: onDelete,
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(
+                  Icons.delete_outline_rounded,
+                  size: 17,
+                  color: colors.textHint,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

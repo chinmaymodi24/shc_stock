@@ -159,9 +159,7 @@ class AddPurchaseController extends GetxController {
     dueDate.value = o.dueDate;
     expectedDelivery.value = o.expectedDelivery;
     paymentType.value = o.paymentType;
-    paidAmountCtrl.text = o.paidAmount == 0
-        ? ''
-        : trimAmount(o.paidAmount);
+    paidAmountCtrl.text = o.paidAmount == 0 ? '' : trimAmount(o.paidAmount);
 
     items.assignAll(
       o.items.isEmpty

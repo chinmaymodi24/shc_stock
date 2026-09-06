@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
-import 'api_config.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:shc_stock/app/core/api/api_config.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -36,6 +37,57 @@ class ApiClient {
 
   Future<void> _delay() => Future.delayed(artificialDelay);
 
+  /// Runs once, on the first request, and never again.
+  Future<void>? _hostProbe;
+
+  /// How long a single candidate gets to answer `/api/health`. Both candidates
+  /// are on the local network, so a reachable one replies in a few ms; this is
+  /// only the ceiling for the unreachable one.
+  static const Duration _probeTimeout = Duration(seconds: 2);
+
+  /// Picks the first base URL from [ApiConfig.candidateBaseUrls] whose
+  /// `/api/health` responds, and points [_dio] at it.
+  ///
+  /// Why probe instead of picking at build time: a phone reaches the dev
+  /// backend either by its LAN IP (Wi-Fi, no cable) or via `localhost` through
+  /// `adb reverse` (cable/emulator), and which one works flips the moment the
+  /// cable moves or the machine's IP changes. Hard-coding either meant every
+  /// call failed with a generic "Something went wrong" whenever the assumption
+  /// broke. Costs one short request at startup and nothing after that.
+  Future<void> _ensureHost() {
+    return _hostProbe ??= _probeHost();
+  }
+
+  Future<void> _probeHost() async {
+    final candidates = ApiConfig.candidateBaseUrls;
+    if (candidates.length == 1) {
+      ApiConfig.resolvedBaseUrl = candidates.first;
+      _dio.options.baseUrl = '${candidates.first}/api';
+      return;
+    }
+
+    final probe = Dio(
+      BaseOptions(connectTimeout: _probeTimeout, receiveTimeout: _probeTimeout),
+    );
+    for (final base in candidates) {
+      try {
+        await probe.get('$base/api/health');
+        ApiConfig.resolvedBaseUrl = base;
+        _dio.options.baseUrl = '$base/api';
+        debugPrint('ApiClient: backend reachable at $base');
+        return;
+      } on DioException {
+        debugPrint('ApiClient: $base unreachable, trying next');
+      }
+    }
+    // Nothing answered (backend down, firewall, wrong network). Keep the first
+    // candidate so the real request produces a proper error, and let the next
+    // call retry the probe rather than caching the failure for the session.
+    _hostProbe = null;
+    ApiConfig.resolvedBaseUrl = null;
+    _dio.options.baseUrl = '${candidates.first}/api';
+  }
+
   dynamic _unwrap(Response res) => res.data;
 
   Never _throwFrom(DioException e) {
@@ -54,6 +106,7 @@ class ApiClient {
 
   Future<dynamic> get(String path) async {
     try {
+      await _ensureHost();
       final res = await _dio.get(path);
       await _delay();
       return _unwrap(res);
@@ -65,6 +118,7 @@ class ApiClient {
 
   Future<dynamic> post(String path, Map<String, dynamic> body) async {
     try {
+      await _ensureHost();
       final res = await _dio.post(path, data: body);
       await _delay();
       return _unwrap(res);
@@ -76,6 +130,7 @@ class ApiClient {
 
   Future<dynamic> put(String path, Map<String, dynamic> body) async {
     try {
+      await _ensureHost();
       final res = await _dio.put(path, data: body);
       await _delay();
       return _unwrap(res);
@@ -87,6 +142,7 @@ class ApiClient {
 
   Future<dynamic> patch(String path, Map<String, dynamic> body) async {
     try {
+      await _ensureHost();
       final res = await _dio.patch(path, data: body);
       await _delay();
       return _unwrap(res);
@@ -98,6 +154,7 @@ class ApiClient {
 
   Future<void> delete(String path) async {
     try {
+      await _ensureHost();
       await _dio.delete(path);
       await _delay();
     } on DioException catch (e) {
@@ -111,6 +168,7 @@ class ApiClient {
   /// returns the recalculated inventory row).
   Future<dynamic> deleteJson(String path) async {
     try {
+      await _ensureHost();
       final res = await _dio.delete(path);
       await _delay();
       return _unwrap(res);
@@ -124,6 +182,7 @@ class ApiClient {
   /// (e.g. `/uploads/12345.png`) stored by the backend.
   Future<String> uploadImage(Uint8List bytes, String filename) async {
     try {
+      await _ensureHost();
       final form = FormData.fromMap({
         'image': MultipartFile.fromBytes(bytes, filename: filename),
       });

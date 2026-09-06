@@ -54,10 +54,9 @@ class _NotesTodoState extends State<NotesTodo> {
                 child: MouseRegion(
                   cursor: SystemMouseCursors.click,
                   onEnter: (_) => _hoveredIndex.value = index,
-                  onExit: (_) =>
-                      _hoveredIndex.value == index
-                          ? _hoveredIndex.value = -1
-                          : null,
+                  onExit: (_) => _hoveredIndex.value == index
+                      ? _hoveredIndex.value = -1
+                      : null,
                   child: InkWell(
                     mouseCursor: SystemMouseCursors.click,
                     onTap: () => widget.onToggle(index),

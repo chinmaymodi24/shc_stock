@@ -141,6 +141,13 @@ Widget wizRowN(bool wide, bool tablet, List<Widget> children) {
   return Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows);
 }
 
+/// Phone inputs: digits only, and the field itself refuses the 11th one —
+/// so a bad number can't even be typed, let alone submitted.
+final kPhoneInputFormatters = <TextInputFormatter>[
+  FilteringTextInputFormatter.digitsOnly,
+  LengthLimitingTextInputFormatter(10),
+];
+
 Widget wizTextField(
   AppThemeColors c, {
   required TextEditingController ctrl,
@@ -152,6 +159,8 @@ Widget wizTextField(
   ValueChanged<String>? onChange,
   bool readOnly = false,
   VoidCallback? onTap,
+  TextInputType? keyboardType,
+  List<TextInputFormatter>? inputFormatters,
 }) => Column(
   crossAxisAlignment: CrossAxisAlignment.start,
   children: [
@@ -182,6 +191,8 @@ Widget wizTextField(
       readOnly: readOnly,
       onTap: onTap,
       onChanged: onChange,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       style: TextStyle(
         fontSize: 13,
         color: c.textPrimary,

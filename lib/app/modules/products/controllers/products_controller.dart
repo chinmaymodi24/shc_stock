@@ -38,6 +38,41 @@ class ProductsController extends GetxController {
   final RxInt currentPage = 1.obs;
   final RxInt rowsPerPage = 10.obs;
 
+  /// Ids of the rows ticked in the table. Drives the "Export 12 selected"
+  /// label and the dialog's third scope; nothing else reads it, so an empty
+  /// set simply means "no selection" everywhere.
+  final RxSet<String> selectedIds = <String>{}.obs;
+
+  void toggleSelected(String id) {
+    if (selectedIds.contains(id)) {
+      selectedIds.remove(id);
+    } else {
+      selectedIds.add(id);
+    }
+  }
+
+  /// Ticks or clears every row currently on screen (the filtered list, not
+  /// just the visible page) — what a header checkbox is expected to do.
+  void toggleSelectAll() {
+    final visible = filteredProducts.map((p) => p.id).toSet();
+    if (visible.every(selectedIds.contains) && visible.isNotEmpty) {
+      selectedIds.removeAll(visible);
+    } else {
+      selectedIds.addAll(visible);
+    }
+  }
+
+  bool get allVisibleSelected {
+    final visible = filteredProducts.map((p) => p.id).toSet();
+    return visible.isNotEmpty && visible.every(selectedIds.contains);
+  }
+
+  void clearSelection() => selectedIds.clear();
+
+  /// Selected rows, in the list's current order.
+  List<ProductModel> get selectedProducts =>
+      filteredProducts.where((p) => selectedIds.contains(p.id)).toList();
+
   static const List<String> sortOptions = [
     'Default',
     'Product Name (A-Z)',
@@ -327,6 +362,10 @@ class ProductsController extends GetxController {
     String? hsnCode,
     String? description,
     double taxPercent = 18.0,
+
+    /// Relative `/uploads/...` path already returned by `uploadImage` — the
+    /// caller uploads the picked file first, then passes the path here.
+    String? imageUrl,
   }) async {
     try {
       final json = await _api.post('/products', {
@@ -335,6 +374,7 @@ class ProductsController extends GetxController {
         'categoryId': categoryId,
         if (subCategoryId != null) 'subCategoryId': subCategoryId,
         'unit': unit,
+        if (imageUrl != null && imageUrl.isNotEmpty) 'imageUrl': imageUrl,
         'sellingPrice': sellingPrice,
         'costPrice': costPrice,
         'currentStock': currentStock,
@@ -370,6 +410,13 @@ class ProductsController extends GetxController {
     String? hsnCode,
     String? description,
     double taxPercent = 18.0,
+
+    /// Relative `/uploads/...` path, or null to leave the product without a
+    /// photo. Every field this endpoint accepts is rewritten on every save
+    /// (there's no partial-patch on the backend), so the caller must pass the
+    /// product's *current* image back through when the user didn't touch it
+    /// — omitting it here clears the photo, it doesn't preserve it.
+    String? imageUrl,
   }) async {
     try {
       final json = await _api.put('/products/$id', {
@@ -378,6 +425,7 @@ class ProductsController extends GetxController {
         'categoryId': categoryId,
         if (subCategoryId != null) 'subCategoryId': subCategoryId,
         'unit': unit,
+        if (imageUrl != null && imageUrl.isNotEmpty) 'imageUrl': imageUrl,
         'sellingPrice': sellingPrice,
         'costPrice': costPrice,
         'currentStock': currentStock,

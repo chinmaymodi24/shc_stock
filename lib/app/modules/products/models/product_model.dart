@@ -8,6 +8,12 @@ class ProductModel {
   final String categoryName;
   final String subCategory;
   final String unit;
+
+  /// Relative path from the backend's `/uploads` static route (e.g.
+  /// `/uploads/xxx.png`), as returned by `ApiClient.uploadImage`. Null when
+  /// the product has no photo — the UI falls back to a placeholder icon.
+  /// Resolve to a loadable URL with `ApiConfig.resolveImageUrl`.
+  final String? imageUrl;
   final double sellingPrice;
   final double costPrice;
   final int currentStock;
@@ -43,6 +49,7 @@ class ProductModel {
     required this.categoryName,
     required this.subCategory,
     required this.unit,
+    this.imageUrl,
     required this.sellingPrice,
     required this.costPrice,
     required this.currentStock,
@@ -95,6 +102,7 @@ class ProductModel {
       categoryName: category?['name'] as String? ?? '',
       subCategory: subCategory?['name'] as String? ?? '',
       unit: json['unit'] as String? ?? '',
+      imageUrl: json['imageUrl'] as String?,
       sellingPrice: (json['sellingPrice'] as num).toDouble(),
       costPrice: (json['costPrice'] as num).toDouble(),
       currentStock: json['currentStock'] as int? ?? 0,

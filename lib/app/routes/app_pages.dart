@@ -20,6 +20,8 @@ import 'package:shc_stock/app/modules/settings/views/mobile_settings_view.dart';
 import 'package:shc_stock/app/modules/settings/views/mobile_profile_view.dart';
 import 'app_routes.dart';
 import 'package:shc_stock/app/modules/reports/views/reports_view.dart';
+import 'package:shc_stock/app/modules/reports/views/reports_catalog_view.dart';
+import 'package:shc_stock/app/modules/reports/views/report_screen.dart';
 import 'package:shc_stock/app/routes/reports_binding.dart';
 import 'products_binding.dart';
 import 'categories_binding.dart';
@@ -132,6 +134,17 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.reports,
+      page: () => const ReportsCatalogView(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.reportDetail,
+      page: () => const ReportScreenView(),
+      binding: ReportScreenBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.reportsInsights,
       page: () => const ReportsView(),
       binding: ReportsBinding(),
       transition: Transition.fadeIn,

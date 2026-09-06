@@ -14,6 +14,9 @@ import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/modules/transactions/export/transactions_export.dart';
+import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
+import 'package:shc_stock/app/shared/widgets/export/list_scope_bar.dart';
 import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,47 +43,13 @@ class WebTransactionsLayout extends GetView<TransactionsController> {
                 Expanded(
                   child: Obx(() {
                     final c = controller;
-                    final all = c.transactions.toList();
-                    final search = c.search.value;
-                    final typeFilters = c.typeFilters;
-                    final statusFilters = c.statusFilters;
-                    final sortOption = c.sortOption.value;
                     final rowsPerPage = c.rowsPerPage.value;
                     final currentPage = c.currentPage.value;
-                    final filtered = all.where((t) {
-                      final q = search.toLowerCase();
-                      if (q.isNotEmpty &&
-                          !t.item.toLowerCase().contains(q) &&
-                          !t.poNumber.toLowerCase().contains(q)) {
-                        return false;
-                      }
-                      if (typeFilters.isNotEmpty &&
-                          !typeFilters.contains(t.typeLabel)) {
-                        return false;
-                      }
-                      if (statusFilters.isNotEmpty &&
-                          !statusFilters.contains(t.statusLabel)) {
-                        return false;
-                      }
-                      return true;
-                    }).toList();
+                    // One source of truth: the table, the scope line and
+                    // the Export menu all read the controller's query.
+                    final filtered = c.filteredTransactions;
 
-                    switch (sortOption) {
-                      case 'Item Name (A-Z)':
-                        filtered.sort((a, b) => a.item.compareTo(b.item));
-                      case 'Item Name (Z-A)':
-                        filtered.sort((a, b) => b.item.compareTo(a.item));
-                      case 'Date: Newest First':
-                        filtered.sort((a, b) => b.date.compareTo(a.date));
-                      case 'Date: Oldest First':
-                        filtered.sort((a, b) => a.date.compareTo(b.date));
-                    }
-
-                    final hasActiveFilters =
-                        search.isNotEmpty ||
-                        typeFilters.isNotEmpty ||
-                        statusFilters.isNotEmpty ||
-                        sortOption != 'Default';
+                    final hasActiveFilters = c.hasActiveFilters;
                     final typeOptions = _kTypes.toList();
                     final statusOptions = _kStatuses.toList();
 
@@ -250,16 +219,42 @@ class WebTransactionsLayout extends GetView<TransactionsController> {
                                     },
                                   )
                                 : null,
-                            trailing: Text(
-                              '${filtered.length} transactions',
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                color: colors.textSecondary,
-                                fontFamily: 'Poppins',
-                              ),
+                            trailing: ExportMenuButton(
+                              source: transactionsExportConfig(c),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
+                          ListScopeBar(
+                            shown: filtered.length,
+                            total: c.transactions.length,
+                            noun: 'transactions',
+                            chips: [
+                              if (c.search.value.isNotEmpty)
+                                ListScopeChip(
+                                  'Search: "${c.search.value}"',
+                                  () {
+                                    c.searchCtrl.clear();
+                                    c.search.value = '';
+                                  },
+                                ),
+                              for (final type in c.typeFilters)
+                                ListScopeChip(
+                                  type,
+                                  () => c.typeFilters.remove(type),
+                                ),
+                              for (final stat in c.statusFilters)
+                                ListScopeChip(
+                                  stat,
+                                  () => c.statusFilters.remove(stat),
+                                ),
+                              if (c.sortOption.value != 'Default')
+                                ListScopeChip(
+                                  'Sorted: ${c.sortOption.value}',
+                                  () => c.sortOption.value = 'Default',
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
 
                           // ── Table Card ─────────────────────────────────────────────
                           Container(

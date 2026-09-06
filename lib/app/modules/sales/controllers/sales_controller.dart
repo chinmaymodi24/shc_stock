@@ -53,6 +53,55 @@ class SalesController extends GetxController {
     'Amount: High to Low',
   ];
 
+  // ── The list query ────────────────────────────────────────────────────────
+  /// Sales orders exactly as the page shows them — search, the status /
+  /// payment / client filters, then the chosen sort.
+  List<SalesOrder> get filteredOrders {
+    final q = searchQuery.value.toLowerCase();
+    // Read every filter up front: an Obx only tracks what the build actually
+    // touches, and a predicate never runs when the list is empty.
+    final statuses = statusFilters.toSet();
+    final payments = paymentFilters.toSet();
+    final clients = clientFilters.toSet();
+    final sort = sortOption.value;
+    final result = orders.where((o) {
+      if (q.isNotEmpty &&
+          !o.client.toLowerCase().contains(q) &&
+          !o.soNumber.toLowerCase().contains(q)) {
+        return false;
+      }
+      if (statuses.isNotEmpty && !statuses.contains(o.status.label)) {
+        return false;
+      }
+      if (payments.isNotEmpty && !payments.contains(o.paymentStatus.label)) {
+        return false;
+      }
+      if (clients.isNotEmpty && !clients.contains(o.client)) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    switch (sort) {
+      case 'Date: Newest First':
+        result.sort((a, b) => b.date.compareTo(a.date));
+      case 'Date: Oldest First':
+        result.sort((a, b) => a.date.compareTo(b.date));
+      case 'Amount: Low to High':
+        result.sort((a, b) => a.amount.compareTo(b.amount));
+      case 'Amount: High to Low':
+        result.sort((a, b) => b.amount.compareTo(a.amount));
+    }
+    return result;
+  }
+
+  bool get hasActiveFilters =>
+      searchQuery.value.isNotEmpty ||
+      statusFilters.isNotEmpty ||
+      paymentFilters.isNotEmpty ||
+      clientFilters.isNotEmpty ||
+      sortOption.value != 'Default';
+
   void resetFilters() {
     searchQuery.value = '';
     statusFilters.clear();

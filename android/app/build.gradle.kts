@@ -1,4 +1,6 @@
 import java.io.File
+import java.net.Inet4Address
+import java.net.NetworkInterface
 import java.util.Properties
 
 plugins {
@@ -104,4 +106,60 @@ val adbReverseBackendPort by tasks.registering {
 
 tasks.matching { it.name == "preDebugBuild" }.configureEach {
     dependsOn(adbReverseBackendPort)
+}
+
+// ── Bake the dev machine's LAN IP into the app ──────────────────────────────
+// A physical phone on Wi-Fi (no USB, so no `adb reverse`) can't reach
+// `localhost:4000`. We write the host's current LAN IPv4 into
+// lib/app/core/api/backend_host.g.dart so debug builds target it directly.
+//
+// This runs at Gradle *configuration* time (not as a task) on purpose: the
+// Dart kernel is compiled by `flutter assemble` deep inside the build graph,
+// and a task hooked to preDebugBuild is not guaranteed to run first — so the
+// file must already be correct on disk before any task executes, otherwise the
+// app compiles against a stale/empty value and silently falls back to
+// localhost (works with a cable via `adb reverse`, dead the moment it's out).
+//
+// The file is committed with an empty value and marked --skip-worktree here so
+// the machine-specific IP never pollutes `git status`. Release builds ignore it.
+run {
+    val generatedFile = rootProject.file("../lib/app/core/api/backend_host.g.dart")
+    val lanIp = try {
+        NetworkInterface.getNetworkInterfaces().toList()
+            .filter { it.isUp && !it.isLoopback && !it.isVirtual && !it.name.startsWith("tun") }
+            .flatMap { it.inetAddresses.toList() }
+            .filterIsInstance<Inet4Address>()
+            .firstOrNull { it.isSiteLocalAddress }
+            ?.hostAddress
+    } catch (e: Exception) {
+        null
+    } ?: ""
+
+    val body = buildString {
+        appendLine("// GENERATED FILE — do not edit by hand.")
+        appendLine("//")
+        appendLine("// Rewritten at Gradle configuration time by android/app/build.gradle.kts with")
+        appendLine("// the dev machine's current LAN IPv4, so a physical phone on the same Wi-Fi")
+        appendLine("// reaches the local backend without USB or `adb reverse`. Committed empty and")
+        appendLine("// marked --skip-worktree so the per-machine IP never shows up in `git status`.")
+        appendLine("//")
+        appendLine("// Empty string  → fall back to `localhost` (emulator / USB / web / release).")
+        appendLine("const String kGeneratedDevBackendHost = '$lanIp';")
+    }
+
+    if (!generatedFile.exists() || generatedFile.readText() != body) {
+        generatedFile.writeText(body)
+        logger.lifecycle("backend_host.g.dart: dev backend host set to '${lanIp.ifEmpty { "localhost" }}'")
+    }
+    // Best-effort: keep the local IP out of git without untracking the file.
+    try {
+        ProcessBuilder("git", "update-index", "--skip-worktree",
+            "lib/app/core/api/backend_host.g.dart")
+            .directory(rootProject.file(".."))
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+    } catch (e: Exception) {
+        // git missing or file not tracked yet — ignore.
+    }
 }

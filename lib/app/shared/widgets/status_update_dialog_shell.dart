@@ -85,49 +85,59 @@ class _StatusUpdateDialogShellState extends State<StatusUpdateDialogShell> {
                 const SizedBox(height: 16),
                 widget.body,
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: Get.back,
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          decoration: BoxDecoration(
-                            color: colors.background.computeLuminance() > 0.5
-                                ? const Color(0xFFF3F1EC)
-                                : colors.inputFill,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            'Cancel',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: colors.textPrimary,
-                              fontFamily: 'Poppins',
+                // IntrinsicHeight + stretch rather than trusting matching
+                // padding to land on the same pixel height: "Cancel" is a
+                // plain Container, "Update" an ElevatedButton (inside
+                // AppAsyncButton), and Material's own button metrics don't
+                // always agree with a hand-set padding — see
+                // web_categories_layout.dart's identical fix.
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: Get.back,
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            decoration: BoxDecoration(
+                              color: colors.background.computeLuminance() > 0.5
+                                  ? const Color(0xFFF3F1EC)
+                                  : colors.inputFill,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              'Cancel',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: colors.textPrimary,
+                                fontFamily: 'Poppins',
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      // The shared async button: it owns the busy state and
-                      // centres its spinner. The hand-rolled version put a
-                      // fixed-size SizedBox straight inside a full-width
-                      // Container, which stretched the spinner into an
-                      // ellipse across the whole button.
-                      child: AppAsyncButton(
-                        label: 'Update',
-                        onPressed: _save,
-                        expand: true,
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        radius: 10,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        // The shared async button: it owns the busy state and
+                        // centres its spinner. The hand-rolled version put a
+                        // fixed-size SizedBox straight inside a full-width
+                        // Container, which stretched the spinner into an
+                        // ellipse across the whole button.
+                        child: AppAsyncButton(
+                          label: 'Update',
+                          onPressed: _save,
+                          expand: true,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          radius: 10,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),

@@ -45,7 +45,10 @@ class MobileAddClientLayout extends GetView<AddClientController> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, AppThemeColors colors) {
+  PreferredSizeWidget _buildAppBar(
+    BuildContext context,
+    AppThemeColors colors,
+  ) {
     return AppBar(
       backgroundColor: colors.topBarBg,
       elevation: 0,
@@ -114,7 +117,9 @@ class MobileAddClientLayout extends GetView<AddClientController> {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 13),
             decoration: BoxDecoration(
-              color: AppColors.primaryOrange.withValues(alpha: saving ? 0.6 : 1),
+              color: AppColors.primaryOrange.withValues(
+                alpha: saving ? 0.6 : 1,
+              ),
               borderRadius: BorderRadius.circular(9),
             ),
             child: Row(

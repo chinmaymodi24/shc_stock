@@ -7,18 +7,26 @@ import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
 import 'package:shc_stock/app/modules/products/models/product_model.dart';
+import 'package:shc_stock/app/modules/products/widgets/product_thumbnail.dart';
 import 'package:intl/intl.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 import 'package:shc_stock/app/modules/products/views/product_actions.dart';
+import 'package:shc_stock/app/modules/products/export/products_export.dart';
+import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
+import 'package:shc_stock/app/shared/widgets/export/list_scope_bar.dart';
 
 class WebProductsLayout extends StatelessWidget {
   WebProductsLayout({super.key});
 
   final c = Get.find<ProductsController>();
   final _searchCtrl = TextEditingController();
+
+  /// Built once: the config is a set of closures over the controller, so it
+  /// stays live without being rebuilt on every frame.
+  late final _exportSource = productsExportConfig(c);
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +51,9 @@ class WebProductsLayout extends StatelessWidget {
                         _buildStatCards(c),
                         const SizedBox(height: 20),
                         _buildFiltersRow(context, c),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
+                        _buildScopeBar(c),
+                        const SizedBox(height: 12),
                         _buildTableSection(context, c),
                       ],
                     ),
@@ -251,6 +261,7 @@ class WebProductsLayout extends StatelessWidget {
           ),
         ),
       ],
+      trailing: ExportMenuButton(source: _exportSource),
       clearAll: Obx(() {
         final hasActiveFilters =
             c.searchQuery.value.isNotEmpty ||
@@ -268,6 +279,37 @@ class WebProductsLayout extends StatelessWidget {
     );
   }
 
+  // ── Scope Bar ─────────────────────────────────────────────────
+  // States, in words, exactly what an export will contain.
+  Widget _buildScopeBar(ProductsController c) {
+    return Obx(() {
+      final chips = <ListScopeChip>[
+        if (c.searchQuery.value.isNotEmpty)
+          ListScopeChip('Search: "${c.searchQuery.value}"', () {
+            _searchCtrl.clear();
+            c.searchQuery.value = '';
+          }),
+        for (final category in c.selectedCategories)
+          ListScopeChip(category, () => c.selectedCategories.remove(category)),
+        for (final sub in c.selectedSubCategories)
+          ListScopeChip(sub, () => c.selectedSubCategories.remove(sub)),
+        if (c.sortOption.value != 'Default')
+          ListScopeChip(
+            'Sorted: ${c.sortOption.value}',
+            () => c.sortOption.value = 'Default',
+          ),
+      ];
+      return ListScopeBar(
+        shown: c.filteredProducts.length,
+        total: c.products.length,
+        noun: 'products',
+        chips: chips,
+        selectedCount: c.selectedIds.length,
+        onClearSelection: c.clearSelection,
+      );
+    });
+  }
+
   // ── Table Header ──────────────────────────────────────────────
   Widget _buildTableHeader(BuildContext context) {
     final colors = context.appColors;
@@ -283,6 +325,15 @@ class WebProductsLayout extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
+          SizedBox(
+            width: 34,
+            child: Obx(
+              () => _SelectBox(
+                checked: c.allVisibleSelected,
+                onTap: c.toggleSelectAll,
+              ),
+            ),
+          ),
           Expanded(
             flex: 4,
             child: Row(
@@ -515,28 +566,49 @@ class _ProductRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            SizedBox(
+              width: 34,
+              child: Obx(
+                () => _SelectBox(
+                  checked: controller.selectedIds.contains(product.id),
+                  onTap: () => controller.toggleSelected(product.id),
+                ),
+              ),
+            ),
             Expanded(
               flex: 4,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    product.name,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: colors.textPrimary,
-                      fontFamily: 'Poppins',
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                  ProductThumbnail(
+                    imageUrl: product.imageUrl,
+                    fallbackLabel: product.name,
+                    size: 38,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    product.sku,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: colors.textHint,
-                      fontFamily: 'Poppins',
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.name,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                            fontFamily: 'Poppins',
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          product.sku,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: colors.textHint,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -668,6 +740,33 @@ class _ProductRow extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The row / select-all checkbox. Ticking rows is what turns the toolbar
+/// button into "Export 12 selected".
+class _SelectBox extends StatelessWidget {
+  final bool checked;
+  final VoidCallback onTap;
+  const _SelectBox({required this.checked, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Icon(
+          checked
+              ? Icons.check_box_rounded
+              : Icons.check_box_outline_blank_rounded,
+          size: 18,
+          color: checked ? AppColors.primaryOrange : colors.textHint,
         ),
       ),
     );

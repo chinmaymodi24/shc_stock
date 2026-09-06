@@ -86,6 +86,10 @@ model Product {
   subCategoryId      Int?
   subCategory        SubCategory? @relation(fields: [subCategoryId], references: [id])
   unit               String
+  /// Relative path from the `/uploads` static route (e.g. "/uploads/xxx.png"),
+  /// as returned by POST /api/upload. Null when the product has no photo —
+  /// the list/detail views fall back to a placeholder icon.
+  imageUrl           String?
   sellingPrice       Float
   costPrice          Float
   currentStock       Int          @default(0)

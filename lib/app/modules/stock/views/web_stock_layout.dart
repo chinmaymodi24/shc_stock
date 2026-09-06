@@ -10,6 +10,9 @@ import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/modules/stock/export/inventory_export.dart';
+import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
+import 'package:shc_stock/app/shared/widgets/export/list_scope_bar.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
@@ -46,67 +49,13 @@ class WebStockLayout extends GetView<StockController> {
                   child: Obx(() {
                     final c = controller;
                     final all = c.items.toList();
-                    final search = c.search.value;
-                    final catFilters = c.catFilters;
-                    final statFilters = c.statFilters;
-                    final sortOption = c.sortOption.value;
                     final rowsPerPage = c.rowsPerPage.value;
                     final currentPage = c.currentPage.value;
-                    final filtered = all.where((item) {
-                      final q = search.toLowerCase();
-                      if (q.isNotEmpty &&
-                          !item.name.toLowerCase().contains(q) &&
-                          !item.sku.toLowerCase().contains(q)) {
-                        return false;
-                      }
-                      if (catFilters.isNotEmpty &&
-                          !catFilters.contains(item.category)) {
-                        return false;
-                      }
-                      if (statFilters.isNotEmpty &&
-                          !statFilters.contains(item.statusLabel)) {
-                        return false;
-                      }
-                      return true;
-                    }).toList();
+                    // One source of truth: the table, the scope line and
+                    // the Export menu all read the controller's query.
+                    final filtered = c.filteredItems;
 
-                    switch (sortOption) {
-                      // Default = last added / modified first. Sorted here too
-                      // (not just by the API) so a row edited in place jumps to
-                      // the top without a refetch.
-                      case 'Default':
-                        filtered.sort(
-                          (a, b) => b.effectiveModifiedAt.compareTo(
-                            a.effectiveModifiedAt,
-                          ),
-                        );
-                      case 'Item Name (A-Z)':
-                        filtered.sort((a, b) => a.name.compareTo(b.name));
-                      case 'Item Name (Z-A)':
-                        filtered.sort((a, b) => b.name.compareTo(a.name));
-                      case 'Qty: Low to High':
-                        filtered.sort(
-                          (a, b) => a.stockInHand.compareTo(b.stockInHand),
-                        );
-                      case 'Qty: High to Low':
-                        filtered.sort(
-                          (a, b) => b.stockInHand.compareTo(a.stockInHand),
-                        );
-                      case 'Value: Low to High':
-                        filtered.sort(
-                          (a, b) => a.stockValue.compareTo(b.stockValue),
-                        );
-                      case 'Value: High to Low':
-                        filtered.sort(
-                          (a, b) => b.stockValue.compareTo(a.stockValue),
-                        );
-                    }
-
-                    final hasActiveFilters =
-                        search.isNotEmpty ||
-                        catFilters.isNotEmpty ||
-                        statFilters.isNotEmpty ||
-                        sortOption != 'Default';
+                    final hasActiveFilters = c.hasActiveFilters;
                     final categoryOptions =
                         all.map((i) => i.category).toSet().toList()..sort();
                     final statusOptions = _kStatuses.toList();
@@ -291,16 +240,42 @@ class WebStockLayout extends GetView<StockController> {
                                     },
                                   )
                                 : null,
-                            trailing: Text(
-                              '${c.totalItems} items',
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                color: colors.textSecondary,
-                                fontFamily: 'Poppins',
-                              ),
+                            trailing: ExportMenuButton(
+                              source: inventoryExportConfig(c),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
+                          ListScopeBar(
+                            shown: filtered.length,
+                            total: c.items.length,
+                            noun: 'items',
+                            chips: [
+                              if (c.search.value.isNotEmpty)
+                                ListScopeChip(
+                                  'Search: "${c.search.value}"',
+                                  () {
+                                    c.searchCtrl.clear();
+                                    c.search.value = '';
+                                  },
+                                ),
+                              for (final cat in c.catFilters)
+                                ListScopeChip(
+                                  cat,
+                                  () => c.catFilters.remove(cat),
+                                ),
+                              for (final stat in c.statFilters)
+                                ListScopeChip(
+                                  stat,
+                                  () => c.statFilters.remove(stat),
+                                ),
+                              if (c.sortOption.value != 'Default')
+                                ListScopeChip(
+                                  'Sorted: ${c.sortOption.value}',
+                                  () => c.sortOption.value = 'Default',
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
 
                           // ── Table Card ─────────────────────────────────────────────
                           Container(

@@ -410,8 +410,17 @@ class WebSettingsLayout extends GetView<SettingsController> {
         const SizedBox(height: 8),
         Obx(
           () => _dropdown<int>(
-            value: const [0, 5, 10, 15, 20, 25, 50, 100]
-                    .contains(controller.lowStockThreshold.value)
+            value:
+                const [
+                  0,
+                  5,
+                  10,
+                  15,
+                  20,
+                  25,
+                  50,
+                  100,
+                ].contains(controller.lowStockThreshold.value)
                 ? controller.lowStockThreshold.value
                 : 0,
             width: 120,
@@ -422,21 +431,28 @@ class WebSettingsLayout extends GetView<SettingsController> {
           ),
         ),
         const SizedBox(height: 24),
-        Row(
-          children: [
-            _greyButton(
-              label: 'Reset',
-              colors: colors,
-              onTap: () {
-                controller.rowsPerPage.value = 10;
-                controller.dateFormat.value = 'MMM D, YYYY (Jul 18, 2026)';
-                controller.autoNumberDocs.value = true;
-                controller.lowStockThreshold.value = 0;
-              },
-            ),
-            const SizedBox(width: 12),
-            _orangeButton(label: 'Apply', onTap: controller.saveSettings),
-          ],
+        // IntrinsicHeight + stretch rather than trusting matching padding to
+        // land on the same pixel height — see web_categories_layout.dart's
+        // identical fix for "Reset" (a plain Container) next to "Apply" (an
+        // ElevatedButton inside AppAsyncButton).
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _greyButton(
+                label: 'Reset',
+                colors: colors,
+                onTap: () {
+                  controller.rowsPerPage.value = 10;
+                  controller.dateFormat.value = 'MMM D, YYYY (Jul 18, 2026)';
+                  controller.autoNumberDocs.value = true;
+                  controller.lowStockThreshold.value = 0;
+                },
+              ),
+              const SizedBox(width: 12),
+              _orangeButton(label: 'Apply', onTap: controller.saveSettings),
+            ],
+          ),
         ),
       ],
     );
@@ -704,8 +720,14 @@ class WebSettingsLayout extends GetView<SettingsController> {
         : colors.inputFill;
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        alignment: Alignment.center,
+        // Vertical padding matches _orangeButton/_purpleButton's 14 — this
+        // used to be 12, which under-height'd every Reset/Apply pair by 4px
+        // on its own, on top of the Container-vs-ElevatedButton mismatch
+        // IntrinsicHeight now papers over at the call site regardless.
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(8),

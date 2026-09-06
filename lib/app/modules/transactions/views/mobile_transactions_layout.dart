@@ -230,8 +230,7 @@ class MobileTransactionsLayout extends StatelessWidget {
       return MobileListScaffold(
         statCards: _statCards(c),
         search: _searchField(c),
-        countLabel:
-            loading ? null : 'Showing ${filtered.length} transactions',
+        countLabel: loading ? null : 'Showing ${filtered.length} transactions',
         sliver: loading
             ? const SliverFillRemaining(
                 hasScrollBody: false,
@@ -380,4 +379,3 @@ class _MobileTxnCard extends StatelessWidget {
     );
   }
 }
-

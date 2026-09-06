@@ -10,7 +10,7 @@ import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/mobile_list_scaffold.dart';
 import 'package:shc_stock/app/modules/sales/views/sales_actions.dart';
-import 'package:shc_stock/app/shared/widgets/mobile_row_actions.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_order_row.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/shared/widgets/mobile_filter_sheet.dart';
 import 'package:shc_stock/app/shared/widgets/mobile_appbar_avatar.dart';
@@ -169,9 +169,8 @@ class MobileSalesLayout extends GetView<SalesController> {
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
                   sliver: SliverList.separated(
                     itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (_, i) =>
-                        _MobileOrderCard(order: filtered[i], colors: colors),
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (_, i) => _MobileSaleRow(order: filtered[i]),
                   ),
                 ),
         );
@@ -249,228 +248,96 @@ class _TabChip extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Mobile Order Card
+// One sale as a dense list row: what went out, to whom, and what's still to
+// be collected. Built on the shared [MobileOrderRow] so Sale and Purchase
+// read identically.
 // ─────────────────────────────────────────────────────────────────────────────
-class _MobileOrderCard extends StatelessWidget {
+class _MobileSaleRow extends StatelessWidget {
   final SalesOrder order;
-  final AppThemeColors colors;
-  const _MobileOrderCard({required this.order, required this.colors});
 
-  static const _months = [
-    '',
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
+  const _MobileSaleRow({required this.order});
 
-  String _fmtDate(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')} ${_months[d.month]} ${d.year}';
+  /// What was sold — the first line's product, falling back to the SO number
+  /// for older records saved without their lines.
+  String get _title =>
+      order.items.isEmpty ? order.soNumber : order.items.first.product;
 
-  String _fmtAmt(double v) {
-    final i = v.toInt();
-    if (i >= 100000) {
-      final l = i ~/ 100000;
-      final r = (i % 100000) ~/ 1000;
-      return '₹ $l,${r.toString().padLeft(2, '0')},${(i % 1000).toString().padLeft(3, '0')}';
+  /// "Suresh Patel · Qty 120" — the client, then how much of it went out.
+  String get _subtitle {
+    final qty = order.items.isEmpty ? null : 'Qty ${order.totalQtyLabel}';
+    return [
+      if (order.client.isNotEmpty) order.client,
+      qty ?? order.soNumber,
+    ].join(' · ');
+  }
+
+  /// Collection, not delivery. A Paid order is settled; anything else shows
+  /// what's left against what's come in so far. Matches how /api/stats/sales
+  /// splits Received from Amount Due.
+  (String, Color) _settlement() {
+    switch (order.paymentStatus) {
+      case PaymentStatus.paid:
+        return ('Received', const Color(0xFF22C55E));
+      case PaymentStatus.refunded:
+        return ('Refunded', const Color(0xFF9CA3AF));
+      case PaymentStatus.partial:
+      case PaymentStatus.pending:
+        final due = order.amount - order.paidAmount;
+        if (due <= 0) return ('Received', const Color(0xFF22C55E));
+        return ('${formatRupees(due)} due', const Color(0xFFF59E0B));
     }
-    final s = i.toString();
-    return s.length > 3
-        ? '₹ ${s.substring(0, s.length - 3)},${s.substring(s.length - 3)}'
-        : '₹ $s';
   }
 
   @override
   Widget build(BuildContext context) {
-    final o = order;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.divider),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Row 1: SO number + status badges
-          Row(
-            children: [
-              Text(
-                o.soNumber,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: context.appColors.accent,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-              const Spacer(),
-              _SmallBadge(label: o.status.label, color: o.status.color),
-              const SizedBox(width: 6),
-              _SmallBadge(
-                label: o.paymentStatus.label,
-                color: o.paymentStatus.color,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
+    final colors = context.appColors;
+    final (statusLabel, statusColor) = _settlement();
 
-          // Row 2: Client badge + name
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: o.clientColor.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    o.clientBadge,
-                    style: TextStyle(
-                      fontSize: o.clientBadge.length > 2 ? 9 : 11,
-                      fontWeight: FontWeight.w800,
-                      color: o.clientColor,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      o.client,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: colors.textPrimary,
-                        fontFamily: 'Poppins',
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      _fmtDate(o.date),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Divider(height: 1, color: colors.divider),
-          const SizedBox(height: 10),
-
-          // Row 3: Items + Amount
-          Row(
-            children: [
-              Icon(
-                Icons.inventory_2_outlined,
-                size: 14,
-                color: colors.textHint,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '${o.totalQtyLabel} items',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colors.textSecondary,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-              const Spacer(),
-              Text(
-                _fmtAmt(o.amount),
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: colors.textPrimary,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Divider(height: 1, color: colors.divider),
-          const SizedBox(height: 8),
-
-          // Row 4: the web table's four actions, plus the mobile-only Update
-          // Status shortcut. Their own row — five 34px buttons alongside the
-          // amount would overflow a phone-width card.
-          MobileActionRow(
-            actions: [
-              MobileActionButton.view(
-                context: context,
-                onTap: () => SalesActions.view(context, o),
-              ),
-              MobileActionButton.edit(
-                context: context,
-                onTap: () => SalesActions.edit(o),
-              ),
-              MobileActionButton.duplicate(
-                onTap: () => SalesActions.duplicate(o),
-              ),
-              MobileActionButton(
-                icon: Icons.published_with_changes_rounded,
-                color: colors.accent,
-                tooltip: 'Update Status',
-                onTap: () => SalesActions.updateStatus(o),
-              ),
-              MobileActionButton.delete(
-                onTap: () => SalesActions.delete(context, o),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return MobileOrderRow(
+      // The client's badge is what the rest of the Sales module identifies an
+      // order by (the web table and Top Clients both show it), so the row
+      // keeps that rather than deriving initials from the item.
+      badge: order.clientBadge.isNotEmpty
+          ? order.clientBadge
+          : mobileRowInitials(order.client),
+      title: _title,
+      subtitle: _subtitle,
+      amount: formatRupees(order.amount),
+      statusLabel: statusLabel,
+      statusColor: statusColor,
+      onTap: () => SalesActions.view(context, order),
+      menuItems: [
+        MobileRowMenuItem(
+          icon: Icons.remove_red_eye_outlined,
+          color: colors.success,
+          label: 'View',
+          onSelected: () => SalesActions.view(context, order),
+        ),
+        MobileRowMenuItem(
+          icon: Icons.edit_outlined,
+          color: colors.purple,
+          label: 'Edit',
+          onSelected: () => SalesActions.edit(order),
+        ),
+        MobileRowMenuItem(
+          icon: Icons.copy_outlined,
+          color: const Color(0xFF3B82F6),
+          label: 'Duplicate',
+          onSelected: () => SalesActions.duplicate(order),
+        ),
+        MobileRowMenuItem(
+          icon: Icons.published_with_changes_rounded,
+          color: colors.accent,
+          label: 'Update Status',
+          onSelected: () => SalesActions.updateStatus(order),
+        ),
+        MobileRowMenuItem(
+          icon: Icons.delete_outline_rounded,
+          color: const Color(0xFFEF4444),
+          label: 'Delete',
+          onSelected: () => SalesActions.delete(context, order),
+        ),
+      ],
     );
   }
-}
-
-class _SmallBadge extends StatelessWidget {
-  final String label;
-  final Color color;
-  const _SmallBadge({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.10),
-      borderRadius: BorderRadius.circular(999),
-    ),
-    child: Text(
-      label,
-      style: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        color: color,
-        fontFamily: 'Poppins',
-      ),
-    ),
-  );
 }

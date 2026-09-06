@@ -429,7 +429,8 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
                                         label: 'Expected Delivery',
                                         colors: colors,
                                         child: AppDateBox(
-                                          date: controller.expectedDelivery.value,
+                                          date:
+                                              controller.expectedDelivery.value,
                                           colors: colors,
                                           onTap: () => controller.pickDate(
                                             context,
@@ -445,11 +446,12 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
                                         colors: colors,
                                         child: AppDropBox(
                                           hint: 'Select...',
-                                          value: controller
-                                              .paymentType
-                                              .value
-                                              .label
-                                              .isEmpty
+                                          value:
+                                              controller
+                                                  .paymentType
+                                                  .value
+                                                  .label
+                                                  .isEmpty
                                               ? null
                                               : controller
                                                     .paymentType

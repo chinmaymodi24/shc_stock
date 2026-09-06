@@ -10,7 +10,7 @@ import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 import 'package:shc_stock/app/shared/widgets/mobile_list_scaffold.dart';
 import 'package:shc_stock/app/modules/purchase/views/purchase_actions.dart';
-import 'package:shc_stock/app/shared/widgets/mobile_row_actions.dart';
+import 'package:shc_stock/app/shared/widgets/mobile_order_row.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
 import 'package:shc_stock/app/shared/widgets/mobile_filter_sheet.dart';
 import 'package:shc_stock/app/shared/widgets/mobile_appbar_avatar.dart';
@@ -92,7 +92,7 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
         return MobileListScaffold(
           statCards: [
             MobileStatCardData(
-              label: 'Total Orders',
+              label: 'Orders',
               value: '${c.stats.value.intOf('totalOrders')}',
               icon: Icons.receipt_long_outlined,
               color: context.appColors.accent,
@@ -104,16 +104,16 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
               color: AppColors.primaryOrange,
             ),
             MobileStatCardData(
-              label: 'Amount Due',
-              value: formatRupees(c.stats.value.doubleOf('amountDue')),
-              icon: Icons.currency_rupee_rounded,
-              color: const Color(0xFFF59E0B),
-            ),
-            MobileStatCardData(
               label: 'Amount Paid',
               value: formatRupees(c.stats.value.doubleOf('amountPaid')),
-              icon: Icons.inventory_2_outlined,
+              icon: Icons.check_circle_outline_rounded,
               color: const Color(0xFF22C55E),
+            ),
+            MobileStatCardData(
+              label: 'Amount Due',
+              value: formatRupees(c.stats.value.doubleOf('amountDue')),
+              icon: Icons.warning_amber_rounded,
+              color: const Color(0xFFF59E0B),
             ),
           ],
           search: FilterSearchField(
@@ -136,16 +136,12 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
                   label: 'No purchases found',
                 )
               : SliverPadding(
-                  padding: const EdgeInsets.only(top: 4, bottom: 88),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (ctx, i) => _MobilePurchaseCard(
-                        order: filtered[i],
-                        index: i,
-                        colors: colors,
-                      ),
-                      childCount: filtered.length,
-                    ),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
+                  sliver: SliverList.separated(
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (_, i) =>
+                        _MobilePurchaseRow(order: filtered[i]),
                   ),
                 ),
         );
@@ -173,254 +169,89 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
   }
 }
 
-class _MobilePurchaseCard extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────────────────
+// One purchase as a dense list row: what was bought, who from, and what's
+// still owed on it. Built on the shared [MobileOrderRow] so Purchase and Sale
+// read identically.
+// ─────────────────────────────────────────────────────────────────────────────
+class _MobilePurchaseRow extends StatelessWidget {
   final PurchaseOrder order;
-  final int index;
-  final AppThemeColors colors;
 
-  const _MobilePurchaseCard({
-    required this.order,
-    required this.index,
-    required this.colors,
-  });
+  const _MobilePurchaseRow({required this.order});
+
+  /// What the order is for — the first line's product, falling back to the PO
+  /// number for older records saved without their lines.
+  String get _title =>
+      order.items.isEmpty ? order.poNumber : order.items.first.product;
+
+  /// "Ashoka Metals · INV-2201". The invoice number is what the supplier's
+  /// paperwork is filed under, so it identifies the order better than the
+  /// internal PO number — which is the fallback when there's no invoice.
+  String get _subtitle {
+    final ref = order.invoiceNo.isNotEmpty ? order.invoiceNo : order.poNumber;
+    return order.supplier.isEmpty ? ref : '${order.supplier} · $ref';
+  }
+
+  /// Settlement, not delivery. A Received order is settled; anything else
+  /// shows what's left against what's been paid so far. Matches how
+  /// /api/stats/purchase splits Amount Paid from Amount Due.
+  (String, Color) _settlement() {
+    if (order.status == PurchaseStatus.cancelled) {
+      return ('Cancelled', const Color(0xFF9CA3AF));
+    }
+    if (order.status == PurchaseStatus.received) {
+      return ('Paid', const Color(0xFF22C55E));
+    }
+    final due = order.amount - order.paidAmount;
+    if (due <= 0) return ('Paid', const Color(0xFF22C55E));
+    return ('${formatRupees(due)} due', const Color(0xFFF59E0B));
+  }
 
   @override
   Widget build(BuildContext context) {
-    final o = order;
-    final dateStr =
-        '${o.date.day.toString().padLeft(2, '0')} ${_month(o.date.month)} ${o.date.year}';
+    final colors = context.appColors;
+    final (statusLabel, statusColor) = _settlement();
 
-    Color statusBg, statusFg;
-    switch (o.status) {
-      case PurchaseStatus.received:
-        statusBg = const Color(0xFF22C55E).withValues(alpha: 0.1);
-        statusFg = const Color(0xFF22C55E);
-        break;
-      case PurchaseStatus.partial:
-        statusBg = const Color(0xFFF59E0B).withValues(alpha: 0.1);
-        statusFg = const Color(0xFFF59E0B);
-        break;
-      case PurchaseStatus.pending:
-        statusBg = context.appColors.accent.withValues(alpha: 0.1);
-        statusFg = context.appColors.accent;
-        break;
-      case PurchaseStatus.cancelled:
-        statusBg = const Color(0xFFEF4444).withValues(alpha: 0.1);
-        statusFg = const Color(0xFFEF4444);
-        break;
-    }
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => PurchaseActions.view(context, o),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: _cardBody(context, dateStr, statusBg, statusFg),
-            ),
-          ),
-          Divider(height: 1, color: colors.divider),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            // The web table's four actions, plus the mobile-only Update
-            // Status shortcut.
-            child: MobileActionRow(
-              actions: [
-                MobileActionButton.view(
-                  context: context,
-                  onTap: () => PurchaseActions.view(context, o),
-                ),
-                MobileActionButton.edit(
-                  context: context,
-                  onTap: () => PurchaseActions.edit(o),
-                ),
-                MobileActionButton.duplicate(
-                  onTap: () => PurchaseActions.duplicate(o),
-                ),
-                MobileActionButton(
-                  icon: Icons.published_with_changes_rounded,
-                  color: colors.accent,
-                  tooltip: 'Update Status',
-                  onTap: () => PurchaseActions.updateStatus(o),
-                ),
-                MobileActionButton.delete(
-                  onTap: () => PurchaseActions.delete(context, o),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _cardBody(
-    BuildContext context,
-    String dateStr,
-    Color statusBg,
-    Color statusFg,
-  ) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Index badge
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: AppColors.primaryOrange.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Center(
-            child: Text(
-              '${index + 1}',
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primaryOrange,
-                fontFamily: 'Poppins',
-              ),
-            ),
-          ),
+    return MobileOrderRow(
+      badge: mobileRowInitials(_title),
+      title: _title,
+      subtitle: _subtitle,
+      amount: formatRupees(order.amount),
+      statusLabel: statusLabel,
+      statusColor: statusColor,
+      onTap: () => PurchaseActions.view(context, order),
+      menuItems: [
+        MobileRowMenuItem(
+          icon: Icons.remove_red_eye_outlined,
+          color: colors.success,
+          label: 'View',
+          onSelected: () => PurchaseActions.view(context, order),
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      order.poNumber,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: context.appColors.accent,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusBg,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      order.status.label,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: statusFg,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                order.supplier,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: colors.textPrimary,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today_outlined,
-                    size: 12,
-                    color: colors.textHint,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    dateStr,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: colors.textSecondary,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Icon(
-                    Icons.inventory_2_outlined,
-                    size: 12,
-                    color: colors.textHint,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${order.totalQtyLabel} items',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: colors.textSecondary,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '₹ ${_fmt(order.amount)}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: colors.textPrimary,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        MobileRowMenuItem(
+          icon: Icons.edit_outlined,
+          color: colors.purple,
+          label: 'Edit',
+          onSelected: () => PurchaseActions.edit(order),
+        ),
+        MobileRowMenuItem(
+          icon: Icons.copy_outlined,
+          color: const Color(0xFF3B82F6),
+          label: 'Duplicate',
+          onSelected: () => PurchaseActions.duplicate(order),
+        ),
+        MobileRowMenuItem(
+          icon: Icons.published_with_changes_rounded,
+          color: colors.accent,
+          label: 'Update Status',
+          onSelected: () => PurchaseActions.updateStatus(order),
+        ),
+        MobileRowMenuItem(
+          icon: Icons.delete_outline_rounded,
+          color: const Color(0xFFEF4444),
+          label: 'Delete',
+          onSelected: () => PurchaseActions.delete(context, order),
         ),
       ],
     );
   }
-
-  String _month(int m) {
-    const months = [
-      '',
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return months[m];
-  }
-
-  String _fmt(double v) {
-    final s = v.toInt();
-    if (s >= 100000) {
-      return '${(s / 100000).toStringAsFixed(1)}L';
-    }
-    if (s >= 1000) {
-      final str = s.toString();
-      return '${str.substring(0, str.length - 3)},${str.substring(str.length - 3)}';
-    }
-    return s.toString();
-  }
 }
-

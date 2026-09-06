@@ -118,9 +118,9 @@ class SettingsController extends GetxController {
       autoNumberDocs.value = json['autoNumberDocs'] as bool? ?? true;
       await _cacheAutoNumberDocs();
 
-      final app =
-          await _api.get('/settings/app') as Map<String, dynamic>;
-      lowStockThreshold.value = (app['lowStockThreshold'] as num?)?.toInt() ?? 0;
+      final app = await _api.get('/settings/app') as Map<String, dynamic>;
+      lowStockThreshold.value =
+          (app['lowStockThreshold'] as num?)?.toInt() ?? 0;
     } catch (e) {
       _error('Failed to load settings. Is the backend running?');
     } finally {

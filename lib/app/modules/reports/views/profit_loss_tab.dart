@@ -19,8 +19,9 @@ import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 // which is why the statement stops at gross profit and says so rather than
 // printing a net line it can't stand behind.
 //
-// One body for both form factors: [compact] stacks the summary cards and drops
-// the two middle table columns on a phone.
+// One body for both form factors: [compact] moves the summary figures into the
+// same 2×2 [MobileStatGrid] every other mobile list page opens with, and drops
+// the two middle table columns.
 // ─────────────────────────────────────────────────────────────────────────────
 class ProfitLossTab extends GetView<ProfitLossController> {
   final bool compact;
@@ -29,9 +30,6 @@ class ProfitLossTab extends GetView<ProfitLossController> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
-    final gutter = compact ? 16.0 : 24.0;
-
     return Obx(() {
       if (controller.isLoading.value) {
         return AppLoadingIndicator(
@@ -40,59 +38,88 @@ class ProfitLossTab extends GetView<ProfitLossController> {
         );
       }
 
+      if (compact) {
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              MobileStatGrid(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                cards: _mobileCards(context),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                child: _panels(context),
+              ),
+            ],
+          ),
+        );
+      }
+
       return SingleChildScrollView(
-        padding: EdgeInsets.all(gutter),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _summary(context),
+            AppStatCardRow(cards: _summaryCards(context)),
             const SizedBox(height: 16),
-            SizedBox(
-              height: compact ? 230 : 250,
-              child: AnalyticsPanel(
-                title: compact
-                    ? 'Gross Profit by Month (6 months)'
-                    : 'Gross Profit by Month (12 months)',
-                subtitle: 'Revenue less cost of goods sold',
-                // LayoutBuilder runs its builder after the surrounding Obx has
-                // closed its tracking scope, so the read has to happen inside.
-                child: LayoutBuilder(
-                  builder: (context, constraints) => Obx(
-                    () => SimpleBarChart(
-                      height: constraints.maxHeight,
-                      barColor: kAnalyticsGreen,
-                      valueFormatter: formatRupeesCompact,
-                      // Twelve bars on a phone squeeze the month labels down
-                      // to "Se" / "Oc"; half as many stay readable, and the
-                      // statement below still lists all twelve.
-                      data: [
-                        for (final m in _chartMonths())
-                          ChartPoint(label: m.label, value: m.grossProfit),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _statement(context),
-            const SizedBox(height: 16),
-            _contribution(context),
-            const SizedBox(height: 12),
-            Text(
-              'Operating expenses (salaries, rent, freight, taxes) are not '
-              'recorded in the system, so this statement stops at gross '
-              'profit — it is not a net profit figure.',
-              style: TextStyle(
-                fontSize: 11.5,
-                color: colors.textHint,
-                fontFamily: 'Poppins',
-              ),
-            ),
+            _panels(context),
           ],
         ),
       );
     });
+  }
+
+  /// Everything below the summary cards — identical on both form factors.
+  Widget _panels(BuildContext context) {
+    final colors = context.appColors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: compact ? 230 : 250,
+          child: AnalyticsPanel(
+            title: compact
+                ? 'Gross Profit by Month (6 months)'
+                : 'Gross Profit by Month (12 months)',
+            subtitle: 'Revenue less cost of goods sold',
+            // LayoutBuilder runs its builder after the surrounding Obx has
+            // closed its tracking scope, so the read has to happen inside.
+            child: LayoutBuilder(
+              builder: (context, constraints) => Obx(
+                () => SimpleBarChart(
+                  height: constraints.maxHeight,
+                  barColor: kAnalyticsGreen,
+                  valueFormatter: formatRupeesCompact,
+                  // Twelve bars on a phone squeeze the month labels down
+                  // to "Se" / "Oc"; half as many stay readable, and the
+                  // statement below still lists all twelve.
+                  data: [
+                    for (final m in _chartMonths())
+                      ChartPoint(label: m.label, value: m.grossProfit),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _statement(context),
+        const SizedBox(height: 16),
+        _contribution(context),
+        const SizedBox(height: 12),
+        Text(
+          'Operating expenses (salaries, rent, freight, taxes) are not '
+          'recorded in the system, so this statement stops at gross '
+          'profit — it is not a net profit figure.',
+          style: TextStyle(
+            fontSize: 11.5,
+            color: colors.textHint,
+            fontFamily: 'Poppins',
+          ),
+        ),
+      ],
+    );
   }
 
   /// Months the bar chart plots — all twelve on the web, the most recent six
@@ -105,55 +132,69 @@ class ProfitLossTab extends GetView<ProfitLossController> {
 
   // ── Summary cards ──────────────────────────────────────────────────────────
 
-  Widget _summary(BuildContext context) {
-    final cards = [
-      AppStatCard(
+  /// The four icons this tab is about, in display order.
+  static const _summaryIcons = [
+    Icons.payments_outlined,
+    Icons.inventory_2_outlined,
+    Icons.trending_up_rounded,
+    Icons.percent_rounded,
+  ];
+
+  /// One definition of the four figures, so the desktop row and the phone
+  /// grid can never drift apart — same label, same full rupee amount, same
+  /// colour, exactly like every other page's stat cards.
+  List<({String label, String value, Color color})> _summaryFigures(
+    BuildContext context,
+  ) {
+    return [
+      (
         label: 'Revenue (12 months)',
         value: formatRupees(controller.revenue.value),
-        icon: Icons.payments_outlined,
-        iconColor: context.appColors.accent,
+        color: context.appColors.accent,
       ),
-      AppStatCard(
+      (
         label: 'Cost of Goods Sold',
         value: formatRupees(controller.cogs.value),
-        icon: Icons.inventory_2_outlined,
-        iconColor: AppColors.primaryOrange,
+        color: AppColors.primaryOrange,
       ),
-      AppStatCard(
+      (
         label: 'Gross Profit',
         value: formatRupees(controller.grossProfit.value),
-        icon: Icons.trending_up_rounded,
-        iconColor: kAnalyticsGreen,
+        color: kAnalyticsGreen,
       ),
-      AppStatCard(
+      (
         label: 'Gross Margin',
         value: '${controller.marginPct.value.toStringAsFixed(1)}%',
-        icon: Icons.percent_rounded,
-        iconColor: kAnalyticsPurple,
+        color: kAnalyticsPurple,
       ),
     ];
+  }
 
-    if (compact) {
-      return Column(
-        children: [
-          for (var i = 0; i < cards.length; i++) ...[
-            if (i > 0) const SizedBox(height: 10),
-            cards[i],
-          ],
-        ],
-      );
-    }
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var i = 0; i < cards.length; i++) ...[
-            if (i > 0) const SizedBox(width: 16),
-            Expanded(child: cards[i]),
-          ],
-        ],
-      ),
-    );
+  List<Widget> _summaryCards(BuildContext context) {
+    final figures = _summaryFigures(context);
+    return [
+      for (var i = 0; i < figures.length; i++)
+        AppStatCard(
+          label: figures[i].label,
+          value: figures[i].value,
+          icon: _summaryIcons[i],
+          iconColor: figures[i].color,
+        ),
+    ];
+  }
+
+  /// The same 2×2 grid every other mobile list page opens with.
+  List<MobileStatCardData> _mobileCards(BuildContext context) {
+    final figures = _summaryFigures(context);
+    return [
+      for (var i = 0; i < figures.length; i++)
+        MobileStatCardData(
+          label: figures[i].label,
+          value: figures[i].value,
+          icon: _summaryIcons[i],
+          color: figures[i].color,
+        ),
+    ];
   }
 
   // ── Monthly statement ──────────────────────────────────────────────────────

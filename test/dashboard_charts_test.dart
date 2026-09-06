@@ -159,9 +159,7 @@ void main() {
         _host(
           const SizedBox(
             height: 150,
-            child: Center(
-              child: CategoryDonutChart(slices: [], size: 120),
-            ),
+            child: Center(child: CategoryDonutChart(slices: [], size: 120)),
           ),
         ),
       );
@@ -181,10 +179,12 @@ void main() {
 
       expect(tester.takeException(), isNull);
       final legend = tester.getSize(
-        find.ancestor(
-          of: find.textContaining('Ceramic Fiber Products'),
-          matching: find.byType(Column),
-        ).first,
+        find
+            .ancestor(
+              of: find.textContaining('Ceramic Fiber Products'),
+              matching: find.byType(Column),
+            )
+            .first,
       );
       expect(legend.height, lessThanOrEqualTo(150));
     });
@@ -252,13 +252,19 @@ void main() {
         ),
       );
 
-      // 12 o'clock on the ring is inside the first (56%) slice. The donut box
-      // is the leading 120px of the chart row.
-      final chart = tester.getRect(find.byType(CategoryDonutChart));
-      await _hover(
-        tester,
-        Offset(chart.left + 60, chart.center.dy - 50),
+      // 12 o'clock on the ring is inside the first (56%) slice. The donut is
+      // located by its own 120px box rather than by offsetting from the chart's
+      // left edge: the legend shrink-wraps and the [donut, legend] pair is
+      // centred, so the ring does not start at the row's leading edge.
+      final donut = tester.getRect(
+        find.descendant(
+          of: find.byType(CategoryDonutChart),
+          matching: find.byWidgetPredicate(
+            (w) => w is SizedBox && w.width == 120,
+          ),
+        ),
       );
+      await _hover(tester, Offset(donut.center.dx, donut.center.dy - 50));
 
       expect(find.byType(ChartTooltip), findsOneWidget);
       expect(find.text('₹12,50,000 · 56%'), findsOneWidget);

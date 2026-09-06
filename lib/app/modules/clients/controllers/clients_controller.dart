@@ -27,6 +27,35 @@ class ClientsController extends GetxController {
   final RxInt rowsPerPage = 10.obs;
   final RxInt currentPage = 1.obs;
 
+  // ── The list query ────────────────────────────────────────────────────────
+  /// Clients exactly as the page shows them — search plus the state/city
+  /// filters. The table, the scope line and every export read this, so an
+  /// export can never widen past what the screen was showing.
+  List<ClientModel> get filteredClients {
+    final q = searchQuery.value.toLowerCase();
+    // Read every filter up front: an Obx only tracks what the build actually
+    // touches, and a predicate never runs when the list is empty.
+    final states = stateFilters.toSet();
+    final cities = cityFilters.toSet();
+    return clients.where((cl) {
+      if (q.isNotEmpty) {
+        final matches =
+            cl.name.toLowerCase().contains(q) ||
+            cl.code.toLowerCase().contains(q) ||
+            cl.address.toLowerCase().contains(q) ||
+            cl.gstin.toLowerCase().contains(q);
+        if (!matches) return false;
+      }
+      if (states.isNotEmpty && !states.contains(cl.state)) {
+        return false;
+      }
+      if (cities.isNotEmpty && !cities.contains(cl.city)) {
+        return false;
+      }
+      return true;
+    }).toList();
+  }
+
   bool get hasActiveFilters =>
       searchQuery.value.isNotEmpty ||
       stateFilters.isNotEmpty ||

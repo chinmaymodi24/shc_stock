@@ -13,6 +13,7 @@ const salesOrdersRouter = require('./routes/salesOrders');
 const clientsRouter = require('./routes/clients');
 const inventoryRouter = require('./routes/inventory');
 const statsRouter = require('./routes/stats');
+const statementsRouter = require('./routes/statements');
 const usersRouter = require('./routes/users');
 const transactionsRouter = require('./routes/transactions');
 const dashboardRouter = require('./routes/dashboard');
@@ -48,6 +49,7 @@ app.use('/api/sales-orders', salesOrdersRouter);
 app.use('/api/clients', clientsRouter);
 app.use('/api/inventory', inventoryRouter);
 app.use('/api/stats', statsRouter);
+app.use('/api/statements', statementsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/transactions', transactionsRouter);
 app.use('/api/dashboard', dashboardRouter);
@@ -59,8 +61,15 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
+// Bind to 0.0.0.0 so a physical phone on the same Wi-Fi can reach the dev
+// backend by the machine's LAN IP — no USB / adb reverse needed.
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`SHC Stock backend running on http://localhost:${PORT}`);
+  const os = require('os');
+  Object.values(os.networkInterfaces())
+    .flat()
+    .filter((i) => i && i.family === 'IPv4' && !i.internal)
+    .forEach((i) => console.log(`  LAN: http://${i.address}:${PORT}`));
   // Flips orders whose expected delivery date has arrived, booking their stock.
   startDeliverySweep();
 });

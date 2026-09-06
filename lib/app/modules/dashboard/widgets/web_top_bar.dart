@@ -10,9 +10,12 @@ import 'package:shc_stock/app/core/theme/theme_switch_helper.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
+import 'package:shc_stock/app/shared/widgets/export/export_overlay_host.dart';
 
 // Pages (+ quick-add actions) offered as search suggestions in the header.
-// `enabled: false` entries match WebSidebar's "Coming Soon" modules.
+// `enabled: false` entries match WebSidebar's "Coming Soon" modules. Every
+// module is live as of the Reports catalog landing, so nothing passes it right
+// now — the flag, its "Soon" badge and its toast stay for the next one.
 class _SearchSuggestion {
   final IconData icon;
   final String label;
@@ -22,6 +25,7 @@ class _SearchSuggestion {
     required this.icon,
     required this.label,
     required this.route,
+    // ignore: unused_element_parameter — see the note above.
     this.enabled = true,
   });
 }
@@ -91,7 +95,6 @@ const _searchSuggestions = <_SearchSuggestion>[
     icon: Icons.bar_chart_rounded,
     label: 'Reports',
     route: AppRoutes.reports,
-    enabled: false,
   ),
   _SearchSuggestion(
     icon: Icons.manage_accounts_outlined,
@@ -154,6 +157,8 @@ class HeaderActionsCluster extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        const DownloadsHeaderButton(),
+        const SizedBox(width: 12),
         _HeaderBellBtn(colors: colors),
         const SizedBox(width: 12),
         const _HeaderThemeToggle(),

@@ -109,8 +109,9 @@ class MobileUsersLayout extends StatelessWidget {
         icon: Icons.person_outline_rounded,
         color: const Color(0xFF22C55E),
         selected: c.filterStatus.value == 'Active',
-        onTap: () => c.filterStatus.value =
-            c.filterStatus.value == 'Active' ? 'All Status' : 'Active',
+        onTap: () => c.filterStatus.value = c.filterStatus.value == 'Active'
+            ? 'All Status'
+            : 'Active',
       ),
       MobileStatCardData(
         label: 'Admins',
@@ -118,8 +119,9 @@ class MobileUsersLayout extends StatelessWidget {
         icon: Icons.admin_panel_settings_outlined,
         color: context.appColors.accent,
         selected: c.filterRole.value == 'Admin',
-        onTap: () => c.filterRole.value =
-            c.filterRole.value == 'Admin' ? 'All Roles' : 'Admin',
+        onTap: () => c.filterRole.value = c.filterRole.value == 'Admin'
+            ? 'All Roles'
+            : 'Admin',
       ),
       MobileStatCardData(
         label: 'Inactive',
@@ -127,8 +129,9 @@ class MobileUsersLayout extends StatelessWidget {
         icon: Icons.person_off_outlined,
         color: const Color(0xFFEF4444),
         selected: c.filterStatus.value == 'Inactive',
-        onTap: () => c.filterStatus.value =
-            c.filterStatus.value == 'Inactive' ? 'All Status' : 'Inactive',
+        onTap: () => c.filterStatus.value = c.filterStatus.value == 'Inactive'
+            ? 'All Status'
+            : 'Inactive',
       ),
     ];
   }
@@ -379,4 +382,3 @@ class _MobileUserCard extends StatelessWidget {
     );
   }
 }
-

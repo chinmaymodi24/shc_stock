@@ -31,6 +31,25 @@ class PurchaseController extends GetxController {
   final RxInt rowsPerPage = 10.obs;
   final RxInt currentPage = 1.obs;
 
+  // ── The list query ────────────────────────────────────────────────────────
+  /// Purchase orders exactly as the page shows them — search over supplier
+  /// and PO number, then the supplier filter.
+  List<PurchaseOrder> get filteredOrders {
+    final q = searchQuery.value.toLowerCase();
+    return orders.where((o) {
+      if (q.isNotEmpty &&
+          !o.supplier.toLowerCase().contains(q) &&
+          !o.poNumber.toLowerCase().contains(q)) {
+        return false;
+      }
+      if (supplierFilter.value != 'Supplier: All' &&
+          o.supplier != supplierFilter.value) {
+        return false;
+      }
+      return true;
+    }).toList();
+  }
+
   bool get hasActiveFilters =>
       searchQuery.value.isNotEmpty || supplierFilter.value != 'Supplier: All';
 

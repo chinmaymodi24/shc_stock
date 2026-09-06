@@ -105,10 +105,7 @@ String _composeAddr({
   required String pin,
   required String country,
 }) {
-  final cityPin = [
-    city,
-    pin,
-  ].where((s) => s.trim().isNotEmpty).join(' - ');
+  final cityPin = [city, pin].where((s) => s.trim().isNotEmpty).join(' - ');
   final parts = [
     addr1,
     addr2,
@@ -162,16 +159,17 @@ class ClientDetailsDialog extends StatelessWidget {
               : client.address);
     final billAddr = switch (client.billingMode) {
       'registered' => regAddr,
-      'custom' => client.billAddr1.isNotEmpty
-          ? _composeAddr(
-              addr1: client.billAddr1,
-              addr2: client.billAddr2,
-              city: client.billCity,
-              state: client.billState,
-              pin: client.billPin,
-              country: client.billCountry,
-            )
-          : client.address,
+      'custom' =>
+        client.billAddr1.isNotEmpty
+            ? _composeAddr(
+                addr1: client.billAddr1,
+                addr2: client.billAddr2,
+                city: client.billCity,
+                state: client.billState,
+                pin: client.billPin,
+                country: client.billCountry,
+              )
+            : client.address,
       _ => shipAddr,
     };
     final paymentTermsAndPriceList = [
@@ -417,7 +415,8 @@ class ClientDetailsDialog extends StatelessWidget {
                       const SizedBox(height: 10),
                       Obx(() {
                         final loading =
-                            purchase.isLoading.value && purchase.orders.isEmpty ||
+                            purchase.isLoading.value &&
+                                purchase.orders.isEmpty ||
                             sales.isLoading.value && sales.orders.isEmpty;
                         final entries = _buildClientHistory(
                           client.name,

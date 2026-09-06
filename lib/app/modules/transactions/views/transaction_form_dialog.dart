@@ -163,109 +163,110 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                  AppField(
-                    label: 'Item',
-                    required: true,
-                    colors: colors,
-                    child: AppTextBox(
-                      controller: _item,
-                      hint: 'e.g. Copper Pipe 15mm',
+                    AppField(
+                      label: 'Item',
+                      required: true,
                       colors: colors,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: AppField(
-                          label: 'Type',
-                          colors: colors,
-                          child: Obx(
-                            () => AppDropBox(
-                              hint: 'Select type',
-                              value: _type.value,
-                              items: _types,
-                              colors: colors,
-                              onChanged: (v) => _type.value = v ?? 'Inbound',
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: AppField(
-                          label: 'Status',
-                          colors: colors,
-                          child: Obx(
-                            () => AppDropBox(
-                              hint: 'Select status',
-                              value: _status.value,
-                              items: _statuses,
-                              colors: colors,
-                              onChanged: (v) => _status.value = v ?? 'Pending',
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: AppField(
-                          label: 'Party',
-                          colors: colors,
-                          child: AppTextBox(
-                            controller: _party,
-                            hint: 'Supplier or client',
-                            colors: colors,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: AppField(
-                          label: 'PO #',
-                          colors: colors,
-                          child: AppTextBox(
-                            controller: _po,
-                            hint: 'e.g. #4421',
-                            colors: colors,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-
-                  AppField(
-                    label: 'Date',
-                    required: true,
-                    colors: colors,
-                    child: Obx(
-                      () => AppDateBox(
-                        date: _date.value,
+                      child: AppTextBox(
+                        controller: _item,
+                        hint: 'e.g. Copper Pipe 15mm',
                         colors: colors,
-                        onTap: _pickDate,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 14),
+                    const SizedBox(height: 14),
 
-                  AppField(
-                    label: 'Notes',
-                    colors: colors,
-                    child: AppTextBox(
-                      controller: _notes,
-                      hint: 'Optional',
-                      colors: colors,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: AppField(
+                            label: 'Type',
+                            colors: colors,
+                            child: Obx(
+                              () => AppDropBox(
+                                hint: 'Select type',
+                                value: _type.value,
+                                items: _types,
+                                colors: colors,
+                                onChanged: (v) => _type.value = v ?? 'Inbound',
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: AppField(
+                            label: 'Status',
+                            colors: colors,
+                            child: Obx(
+                              () => AppDropBox(
+                                hint: 'Select status',
+                                value: _status.value,
+                                items: _statuses,
+                                colors: colors,
+                                onChanged: (v) =>
+                                    _status.value = v ?? 'Pending',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                    const SizedBox(height: 14),
+
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: AppField(
+                            label: 'Party',
+                            colors: colors,
+                            child: AppTextBox(
+                              controller: _party,
+                              hint: 'Supplier or client',
+                              colors: colors,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: AppField(
+                            label: 'PO #',
+                            colors: colors,
+                            child: AppTextBox(
+                              controller: _po,
+                              hint: 'e.g. #4421',
+                              colors: colors,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    AppField(
+                      label: 'Date',
+                      required: true,
+                      colors: colors,
+                      child: Obx(
+                        () => AppDateBox(
+                          date: _date.value,
+                          colors: colors,
+                          onTap: _pickDate,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    AppField(
+                      label: 'Notes',
+                      colors: colors,
+                      child: AppTextBox(
+                        controller: _notes,
+                        hint: 'Optional',
+                        colors: colors,
+                      ),
+                    ),
                   ],
                 ),
               ),

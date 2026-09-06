@@ -29,6 +29,50 @@ class TransactionsController extends GetxController {
     'Date: Oldest First',
   ];
 
+  // ── The list query ────────────────────────────────────────────────────────
+  /// Transactions exactly as the page shows them — search over item and PO
+  /// number, the type/status filters, then the chosen sort.
+  List<TransactionModel> get filteredTransactions {
+    final q = search.value.toLowerCase();
+    // Read every filter up front: an Obx only tracks what the build actually
+    // touches, and a predicate never runs when the list is empty.
+    final types = typeFilters.toSet();
+    final statuses = statusFilters.toSet();
+    final sort = sortOption.value;
+    final result = transactions.where((t) {
+      if (q.isNotEmpty &&
+          !t.item.toLowerCase().contains(q) &&
+          !t.poNumber.toLowerCase().contains(q)) {
+        return false;
+      }
+      if (types.isNotEmpty && !types.contains(t.typeLabel)) {
+        return false;
+      }
+      if (statuses.isNotEmpty && !statuses.contains(t.statusLabel)) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    switch (sort) {
+      case 'Item Name (A-Z)':
+        result.sort((a, b) => a.item.compareTo(b.item));
+      case 'Item Name (Z-A)':
+        result.sort((a, b) => b.item.compareTo(a.item));
+      case 'Date: Newest First':
+        result.sort((a, b) => b.date.compareTo(a.date));
+      case 'Date: Oldest First':
+        result.sort((a, b) => a.date.compareTo(b.date));
+    }
+    return result;
+  }
+
+  bool get hasActiveFilters =>
+      search.value.isNotEmpty ||
+      typeFilters.isNotEmpty ||
+      statusFilters.isNotEmpty ||
+      sortOption.value != 'Default';
+
   // ── RETIRED static seed ────────────────────────────────────────────────
   // The old 6-transaction seed list is archived in static_data.txt at the
   // project root. Transactions now come from GET /api/transactions.

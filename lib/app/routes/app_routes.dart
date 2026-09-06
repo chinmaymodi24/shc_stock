@@ -14,6 +14,15 @@ abstract class AppRoutes {
   static const clients = '/clients';
   static const addClient = '/clients/add';
   static const reports = '/reports';
+
+  /// One report, opened from the catalog. The report key travels as the
+  /// route argument.
+  static const reportDetail = '/reports/detail';
+
+  /// The older consolidated snapshot + analytics + gross-profit tabs. Kept
+  /// alongside the catalog rather than deleted — it is a dashboard, not a
+  /// statement, so it never became a catalog entry.
+  static const reportsInsights = '/reports/insights';
   static const users = '/users';
   static const addEmployee = '/users/add';
   static const settings = '/settings';

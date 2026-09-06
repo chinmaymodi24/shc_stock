@@ -8,6 +8,9 @@ import 'package:shc_stock/app/modules/sales/views/sales_actions.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/modules/sales/export/sales_export.dart';
+import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
+import 'package:shc_stock/app/shared/widgets/export/list_scope_bar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
@@ -66,45 +69,11 @@ class WebSalesLayout extends GetView<SalesController> {
                 Expanded(
                   child: Obx(() {
                     final all = c.orders;
-                    final searchQuery = c.searchQuery.value;
-                    final statusFilters = c.statusFilters;
-                    final paymentFilters = c.paymentFilters;
-                    final clientFilters = c.clientFilters;
-                    final sortOption = c.sortOption.value;
                     final rowsPerPage = c.rowsPerPage.value;
                     final currentPage = c.currentPage.value;
-                    final filtered = all.where((o) {
-                      final q = searchQuery.toLowerCase();
-                      if (q.isNotEmpty &&
-                          !o.client.toLowerCase().contains(q) &&
-                          !o.soNumber.toLowerCase().contains(q)) {
-                        return false;
-                      }
-                      if (statusFilters.isNotEmpty &&
-                          !statusFilters.contains(o.status.label)) {
-                        return false;
-                      }
-                      if (paymentFilters.isNotEmpty &&
-                          !paymentFilters.contains(o.paymentStatus.label)) {
-                        return false;
-                      }
-                      if (clientFilters.isNotEmpty &&
-                          !clientFilters.contains(o.client)) {
-                        return false;
-                      }
-                      return true;
-                    }).toList();
-
-                    switch (sortOption) {
-                      case 'Date: Newest First':
-                        filtered.sort((a, b) => b.date.compareTo(a.date));
-                      case 'Date: Oldest First':
-                        filtered.sort((a, b) => a.date.compareTo(b.date));
-                      case 'Amount: Low to High':
-                        filtered.sort((a, b) => a.amount.compareTo(b.amount));
-                      case 'Amount: High to Low':
-                        filtered.sort((a, b) => b.amount.compareTo(a.amount));
-                    }
+                    // One source of truth: the table, the scope line and
+                    // the Export menu all read the controller's query.
+                    final filtered = c.filteredOrders;
 
                     final totalPages = filtered.isEmpty
                         ? 1
@@ -241,7 +210,43 @@ class WebSalesLayout extends GetView<SalesController> {
                                               .toList()
                                             ..sort(),
                                     ),
-                                    const SizedBox(height: 14),
+                                    const SizedBox(height: 12),
+                                    ListScopeBar(
+                                      shown: filtered.length,
+                                      total: c.orders.length,
+                                      noun: 'sales orders',
+                                      chips: [
+                                        if (c.searchQuery.value.isNotEmpty)
+                                          ListScopeChip(
+                                            'Search: "${c.searchQuery.value}"',
+                                            () => c.searchQuery.value = '',
+                                          ),
+                                        for (final client in c.clientFilters)
+                                          ListScopeChip(
+                                            client,
+                                            () =>
+                                                c.clientFilters.remove(client),
+                                          ),
+                                        for (final status in c.statusFilters)
+                                          ListScopeChip(
+                                            status,
+                                            () =>
+                                                c.statusFilters.remove(status),
+                                          ),
+                                        for (final pay in c.paymentFilters)
+                                          ListScopeChip(
+                                            pay,
+                                            () => c.paymentFilters.remove(pay),
+                                          ),
+                                        if (c.sortOption.value != 'Default')
+                                          ListScopeChip(
+                                            'Sorted: ${c.sortOption.value}',
+                                            () =>
+                                                c.sortOption.value = 'Default',
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
                                     _TableCard(
                                       colors: colors,
                                       pageItems: pageItems,
@@ -416,6 +421,7 @@ class _Toolbar extends StatelessWidget {
         if (!active) return const SizedBox.shrink();
         return ClearAllButton(onTap: c.resetFilters);
       }),
+      trailing: ExportMenuButton(source: salesExportConfig(controller)),
     );
   }
 }

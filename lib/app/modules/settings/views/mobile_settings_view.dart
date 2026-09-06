@@ -230,30 +230,37 @@ class MobileSettingsView extends GetView<SettingsController> {
           ),
         ),
         const SizedBox(height: 24),
-        Row(
-          children: [
-            Expanded(
-              child: _greyButton(
-                label: 'Reset',
-                colors: colors,
-                onTap: () {
-                  controller.dateFormat.value = 'MMM D, YYYY (Jul 18, 2026)';
-                  controller.autoNumberDocs.value = true;
-                  controller.lowStockThreshold.value = 0;
-                },
+        // IntrinsicHeight + stretch rather than trusting matching padding to
+        // land on the same pixel height — see web_categories_layout.dart's
+        // identical fix for "Reset" (a plain Container) next to "Apply" (an
+        // ElevatedButton inside AppAsyncButton).
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _greyButton(
+                  label: 'Reset',
+                  colors: colors,
+                  onTap: () {
+                    controller.dateFormat.value = 'MMM D, YYYY (Jul 18, 2026)';
+                    controller.autoNumberDocs.value = true;
+                    controller.lowStockThreshold.value = 0;
+                  },
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: AppAsyncButton(
-                label: 'Apply',
-                onPressed: controller.saveSettings,
-                expand: true,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                radius: 10,
+              const SizedBox(width: 12),
+              Expanded(
+                child: AppAsyncButton(
+                  label: 'Apply',
+                  onPressed: controller.saveSettings,
+                  expand: true,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  radius: 10,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

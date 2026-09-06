@@ -5,6 +5,9 @@ import 'app/core/theme/theme_controller.dart';
 import 'app/core/theme/theme_ripple_controller.dart';
 import 'app/core/theme/theme_ripple_overlay.dart';
 import 'app/core/session/session_controller.dart';
+import 'app/core/export/export_presets.dart';
+import 'app/core/export/export_service.dart';
+import 'app/shared/widgets/export/export_overlay_host.dart';
 import 'app/routes/app_pages.dart';
 
 void main() {
@@ -13,6 +16,12 @@ void main() {
   // Restored from disk in onInit — the top bar and every audit
   // (`modifiedBy`) field read the signed-in user from here.
   Get.put(SessionController(), permanent: true);
+  // One export pipeline for the whole app: a job started on Products keeps
+  // running (and keeps its toast) after the user navigates elsewhere, and
+  // every finished file lands in the same Downloads panel.
+  Get.put(ExportService(), permanent: true);
+  // Saved column sets, restored from disk — see the dialog's COLUMN PRESET.
+  Get.put(ExportPresetStore(), permanent: true);
   runApp(SecureHeatCareApp(themeController: themeController));
 }
 
@@ -47,7 +56,9 @@ class SecureHeatCareApp extends StatelessWidget {
               OverlayEntry(
                 builder: (context) {
                   final content = ThemeRippleHost(
-                    child: child ?? const SizedBox.shrink(),
+                    child: ExportOverlayHost(
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                   );
                   // Mobile: text must not be selectable or copyable, so the
                   // app-wide SelectionArea is web/desktop only.

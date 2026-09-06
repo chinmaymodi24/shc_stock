@@ -9,8 +9,9 @@ import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Reports → Analytics on a phone: the same panels as the web tab, stacked in
-// one column, with the four KPI figures in the shared horizontally-scrolling
-// strip every mobile page uses.
+// one column, with the four KPI figures in the same 2×2 [MobileStatGrid] every
+// other mobile list page opens with (Products, Clients, Sales, …) — all four
+// visible at once, no sideways swipe to find the last card.
 //
 // Chart panels carry explicit heights here too — a chart needs a box, and a
 // scrolling column hands out an unbounded one.
@@ -32,8 +33,8 @@ class MobileAnalyticsTab extends GetView<AnalyticsController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            MobileStatStrip(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            MobileStatGrid(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               cards: [
                 MobileStatCardData(
                   label: 'Total Sales',
@@ -62,7 +63,7 @@ class MobileAnalyticsTab extends GetView<AnalyticsController> {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: const [

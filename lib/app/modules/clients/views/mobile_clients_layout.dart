@@ -111,7 +111,10 @@ class MobileClientsLayout extends StatelessWidget {
     ];
   }
 
-  List<MobileStatCardData> _statCards(BuildContext context, ClientsController c) {
+  List<MobileStatCardData> _statCards(
+    BuildContext context,
+    ClientsController c,
+  ) {
     return [
       MobileStatCardData(
         label: 'Total Clients',
@@ -184,8 +187,7 @@ class MobileClientsLayout extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
                 sliver: SliverList.builder(
                   itemCount: filtered.length,
-                  itemBuilder: (_, i) =>
-                      _MobileClientCard(client: filtered[i]),
+                  itemBuilder: (_, i) => _MobileClientCard(client: filtered[i]),
                 ),
               ),
       );
