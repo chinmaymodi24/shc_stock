@@ -3,6 +3,7 @@ const prisma = require('../prismaClient');
 const {
   InsufficientStockError,
   applyStock,
+  shiftStock,
   stockStatus,
 } = require('../stockService');
 const { getAppSettings } = require('../appSettings');
@@ -183,10 +184,10 @@ router.delete('/movements/:id', async (req, res, next) => {
 
     const item = await prisma.$transaction(async (tx) => {
       const delta = movement.type === 'IN' ? -Math.round(movement.qty) : Math.round(movement.qty);
-      await tx.product.update({
-        where: { id: movement.productId },
-        data: { currentStock: { increment: delta }, modifiedAt: new Date() },
-      });
+      // Floored at zero. Undoing a +2 against a product that no longer holds
+      // those 2 units used to leave it at -2, which is what put a negative
+      // "Total Stock Items" on the dashboard.
+      await shiftStock(tx, movement.productId, delta);
       await tx.stockMovement.delete({ where: { id } });
       const fresh = await tx.product.findUnique({
         where: { id: movement.productId },

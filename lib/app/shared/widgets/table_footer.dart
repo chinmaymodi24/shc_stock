@@ -65,7 +65,7 @@ class AppTableFooter extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12.5,
                   color: colors.textSecondary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ),
@@ -76,7 +76,7 @@ class AppTableFooter extends StatelessWidget {
             style: TextStyle(
               fontSize: 12.5,
               color: colors.textSecondary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           const SizedBox(width: 8),
@@ -95,7 +95,7 @@ class AppTableFooter extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12.5,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
                 dropdownColor: colors.surface,
                 items: rowsPerPageOptions
@@ -192,7 +192,7 @@ class AppTableFooter extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               color: colors.textSecondary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         );
@@ -224,7 +224,7 @@ class AppTableFooter extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             color: colors.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       );
@@ -261,7 +261,7 @@ class AppTableFooter extends StatelessWidget {
               fontSize: 13,
               fontWeight: weight,
               color: isActive ? Colors.white : colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ),

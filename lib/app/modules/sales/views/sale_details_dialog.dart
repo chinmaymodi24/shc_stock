@@ -10,12 +10,14 @@ import 'package:shc_stock/app/shared/models/order_payment.dart';
 /// (older/seed orders predate the full-detail fields).
 class SaleDetailsDialog extends StatelessWidget {
   final SalesOrder order;
+  final VoidCallback? onBill;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
   const SaleDetailsDialog({
     super.key,
     required this.order,
+    this.onBill,
     this.onEdit,
     this.onDelete,
   });
@@ -66,7 +68,7 @@ class SaleDetailsDialog extends StatelessWidget {
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
                           color: colors.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -99,7 +101,7 @@ class SaleDetailsDialog extends StatelessWidget {
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: colors.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                       if (order.clientAddress.isNotEmpty) ...[
@@ -113,7 +115,7 @@ class SaleDetailsDialog extends StatelessWidget {
                             // dark theme's surface. Muted secondary text
                             // reads correctly in both themes.
                             color: colors.textSecondary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                             height: 1.4,
                           ),
                         ),
@@ -169,7 +171,9 @@ class SaleDetailsDialog extends StatelessWidget {
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: colors.inputFill,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              appColors.radius,
+                            ),
                             border: Border.all(color: colors.border),
                           ),
                           child: Text(
@@ -177,7 +181,7 @@ class SaleDetailsDialog extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12.5,
                               color: colors.textHint,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         )
@@ -189,7 +193,9 @@ class SaleDetailsDialog extends StatelessWidget {
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: colors.surface,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(
+                                appColors.radius,
+                              ),
                               border: Border.all(color: colors.border),
                             ),
                             child: Column(
@@ -201,7 +207,7 @@ class SaleDetailsDialog extends StatelessWidget {
                                     fontSize: 13.5,
                                     fontWeight: FontWeight.w700,
                                     color: colors.textPrimary,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                                 const SizedBox(height: 3),
@@ -211,7 +217,7 @@ class SaleDetailsDialog extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     color: colors.textHint,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                               ],
@@ -226,7 +232,7 @@ class SaleDetailsDialog extends StatelessWidget {
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: colors.inputFill,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(appColors.radius),
                         ),
                         child: Column(
                           children: [
@@ -269,7 +275,7 @@ class SaleDetailsDialog extends StatelessWidget {
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: colors.inputFill,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(appColors.radius),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,13 +287,13 @@ class SaleDetailsDialog extends StatelessWidget {
                                 CircleAvatar(
                                   radius: 15,
                                   backgroundColor: AppColors.primaryPurple,
-                                  child: const Text(
+                                  child: Text(
                                     'CM',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.white,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                 ),
@@ -301,7 +307,7 @@ class SaleDetailsDialog extends StatelessWidget {
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
                                         color: colors.textPrimary,
-                                        fontFamily: 'Poppins',
+                                        fontFamily: brandFontFamily,
                                       ),
                                     ),
                                     Text(
@@ -313,7 +319,7 @@ class SaleDetailsDialog extends StatelessWidget {
                                       style: TextStyle(
                                         fontSize: 11.5,
                                         color: colors.textHint,
-                                        fontFamily: 'Poppins',
+                                        fontFamily: brandFontFamily,
                                       ),
                                     ),
                                   ],
@@ -328,58 +334,97 @@ class SaleDetailsDialog extends StatelessWidget {
                 ),
               ),
 
-              // ── Footer: Edit / Delete ──────────────────────────────
+              // ── Footer: Generate Bill / Edit / Delete ──────────────
+              // Billing is what this panel most often leads to, so it takes
+              // the primary slot and the width; deleting is a single icon.
               Divider(height: 1, color: colors.divider),
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: onEdit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryOrange,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text(
-                          'Edit',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: ElevatedButton.icon(
+                          onPressed: onBill,
+                          icon: const Icon(
+                            Icons.receipt_long_rounded,
+                            size: 17,
                             color: Colors.white,
-                            fontFamily: 'Poppins',
+                          ),
+                          label: Text(
+                            'Generate Bill',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              fontFamily: brandFontFamily,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryOrange,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                appColors.radius,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: onDelete,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colors.inputFill,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 2,
+                        child: ElevatedButton(
+                          onPressed: onEdit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: colors.inputFill,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                appColors.radius,
+                              ),
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          'Delete',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: colors.textPrimary,
-                            fontFamily: 'Poppins',
+                          child: Text(
+                            'Edit',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: colors.textPrimary,
+                              fontFamily: brandFontFamily,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      Tooltip(
+                        message: 'Delete',
+                        child: InkWell(
+                          onTap: onDelete,
+                          borderRadius: BorderRadius.circular(appColors.radius),
+                          child: Container(
+                            width: 46,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: colors.inputFill,
+                              borderRadius: BorderRadius.circular(
+                                appColors.radius,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.delete_outline_rounded,
+                              size: 19,
+                              color: colors.error,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -406,7 +451,7 @@ class _Label extends StatelessWidget {
         fontSize: 10.5,
         fontWeight: FontWeight.w700,
         color: colors.textHint,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
         letterSpacing: 0.5,
       ),
     );
@@ -426,7 +471,7 @@ class _Value extends StatelessWidget {
         fontSize: 13.5,
         fontWeight: FontWeight.w600,
         color: colors.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
     );
   }
@@ -501,7 +546,7 @@ class _TotalLine extends StatelessWidget {
             fontSize: bold ? 14 : 13,
             fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
             color: bold ? colors.textPrimary : colors.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         Text(
@@ -510,7 +555,7 @@ class _TotalLine extends StatelessWidget {
             fontSize: bold ? 15 : 13,
             fontWeight: FontWeight.w700,
             color: valueColor ?? colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ],

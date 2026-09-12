@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'app/core/theme/app_theme.dart';
+import 'app/core/theme/brand_controller.dart';
 import 'app/core/theme/theme_controller.dart';
 import 'app/core/theme/theme_ripple_controller.dart';
 import 'app/core/theme/theme_ripple_overlay.dart';
 import 'app/core/session/session_controller.dart';
 import 'app/core/export/export_presets.dart';
+import 'app/modules/billing/controllers/billing_profile_controller.dart';
 import 'app/core/export/export_service.dart';
 import 'app/shared/widgets/export/export_overlay_host.dart';
 import 'app/routes/app_pages.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // The buyer's brand is read from disk BEFORE the first frame: a blue-branded
+  // buyer must never see a flash of the shipped orange on the login screen
+  // while the theme loads in.
+  final brandController = Get.put(BrandController(), permanent: true);
+  await brandController.load();
+
   final themeController = Get.put(ThemeController(), permanent: true);
   Get.put(ThemeRippleController(), permanent: true);
   // Restored from disk in onInit — the top bar and every audit
@@ -22,18 +31,34 @@ void main() {
   Get.put(ExportService(), permanent: true);
   // Saved column sets, restored from disk — see the dialog's COLUMN PRESET.
   Get.put(ExportPresetStore(), permanent: true);
-  runApp(SecureHeatCareApp(themeController: themeController));
+  // Seller identity, bank details and the invoice defaults. Portal-wide and
+  // fetched once — every bill screen reads the same profile.
+  Get.put(BillingProfileController(), permanent: true);
+  runApp(
+    SecureHeatCareApp(
+      themeController: themeController,
+      brandController: brandController,
+    ),
+  );
 }
 
 class SecureHeatCareApp extends StatelessWidget {
   final ThemeController themeController;
-  const SecureHeatCareApp({super.key, required this.themeController});
+  final BrandController brandController;
+  const SecureHeatCareApp({
+    super.key,
+    required this.themeController,
+    required this.brandController,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => GetMaterialApp(
-        title: 'Secure Heat Care',
+    return Obx(() {
+      // Read inside the Obx so applying a brand re-themes every screen in
+      // place — the spec is explicit that a theme change needs no reload.
+      final title = brandController.applied.value.companyName;
+      return GetMaterialApp(
+        title: title,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
@@ -70,7 +95,7 @@ class SecureHeatCareApp extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

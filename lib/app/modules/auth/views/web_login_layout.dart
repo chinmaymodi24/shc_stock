@@ -236,7 +236,7 @@ class WebLoginLayout extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: size.height * 0.018),
       child: Text(
-        '© 2024 Secure Heat Care. All rights reserved.',
+        '© 2024 ${brand.companyName}. All rights reserved.',
         style: AppTextStyles.copyrightCtx(context),
       ),
     );

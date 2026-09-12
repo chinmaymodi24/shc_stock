@@ -77,7 +77,8 @@ class _StubSession extends SessionController {
     id: 1,
     name: 'Chinmay Modi',
     email: 'shc@gmail.com',
-    role: 'Admin',
+    role: 'Super Admin',
+    isSuperAdmin: true,
   );
 }
 
@@ -103,7 +104,7 @@ void main() {
 
     await tester.pumpWidget(
       GetMaterialApp(
-        theme: ThemeData(extensions: const [AppThemeColors.light]),
+        theme: ThemeData(extensions: [AppThemeColors.light]),
         home: const WebNewSalesLayout(),
       ),
     );

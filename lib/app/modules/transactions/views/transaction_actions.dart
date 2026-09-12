@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/transactions/controllers/transactions_controller.dart';
@@ -16,19 +17,25 @@ class TransactionActions {
   static void view(TransactionModel txn) =>
       Get.dialog(TransactionFormDialog(existing: txn, readOnly: true));
 
-  static void edit(TransactionModel txn) =>
-      Get.dialog(TransactionFormDialog(existing: txn));
+  static void edit(TransactionModel txn) {
+    if (!requireWrite('Transactions')) return;
+    Get.dialog(TransactionFormDialog(existing: txn));
+  }
 
   /// Pre-fills the form from this transaction but saves as a new record.
-  static void duplicate(TransactionModel txn) =>
-      Get.dialog(TransactionFormDialog(existing: txn, duplicate: true));
+  static void duplicate(TransactionModel txn) {
+    if (!requireWrite('Transactions')) return;
+    Get.dialog(TransactionFormDialog(existing: txn, duplicate: true));
+  }
 
-  static void delete(BuildContext context, TransactionModel txn) =>
-      confirmDelete(
-        context,
-        itemName: txn.item,
-        itemLabel: 'Transaction',
-        onConfirm: () =>
-            Get.find<TransactionsController>().deleteTransaction(txn.id),
-      );
+  static void delete(BuildContext context, TransactionModel txn) {
+    if (!requireWrite('Transactions')) return;
+    confirmDelete(
+      context,
+      itemName: txn.item,
+      itemLabel: 'Transaction',
+      onConfirm: () =>
+          Get.find<TransactionsController>().deleteTransaction(txn.id),
+    );
+  }
 }

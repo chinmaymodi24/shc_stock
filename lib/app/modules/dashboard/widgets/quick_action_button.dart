@@ -42,7 +42,7 @@ class QuickActionButton extends StatelessWidget {
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],

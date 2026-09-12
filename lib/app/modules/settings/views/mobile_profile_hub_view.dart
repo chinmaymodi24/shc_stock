@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -8,8 +9,9 @@ import 'package:shc_stock/app/shared/widgets/sign_out_dialog.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mobile "Profile" hub — the landing screen reached from Settings/My Profile.
-// Mirrors the web Settings page's four sections (Profile / Notifications /
-// Security / Preferences) as a list of entry points instead of tabs, plus an
+// Mirrors the web Settings page's sections (Profile / Notifications /
+// Security / Preferences / Appearance / Billing) as a list of entry points
+// instead of tabs, plus an
 // account summary card up top. Tapping a row (or the card's edit button)
 // reuses the existing edit pages instead of duplicating their UI here.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -57,7 +59,7 @@ class MobileProfileHubView extends StatelessWidget {
             fontSize: 17,
             fontWeight: FontWeight.w700,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         centerTitle: true,
@@ -85,18 +87,18 @@ class MobileProfileHubView extends StatelessWidget {
                   Container(
                     width: 48,
                     height: 48,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.primaryPurple,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
                       child: Text(
                         user?.initials ?? '—',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -114,7 +116,7 @@ class MobileProfileHubView extends StatelessWidget {
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: colors.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -123,7 +125,7 @@ class MobileProfileHubView extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12.5,
                             color: colors.accent,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -143,7 +145,7 @@ class MobileProfileHubView extends StatelessWidget {
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w600,
                                 color: colors.success,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ),
@@ -153,13 +155,13 @@ class MobileProfileHubView extends StatelessWidget {
                   const SizedBox(width: 8),
                   InkWell(
                     onTap: () => Get.toNamed(AppRoutes.profile),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(appColors.radius),
                     child: Container(
                       width: 34,
                       height: 34,
                       decoration: BoxDecoration(
                         color: colors.iconBgPurple,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(appColors.radius),
                       ),
                       child: Icon(
                         Icons.edit_outlined,
@@ -183,7 +185,7 @@ class MobileProfileHubView extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.6,
                   color: colors.textSecondary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ),
@@ -205,15 +207,16 @@ class MobileProfileHubView extends StatelessWidget {
                     onTap: () => Get.toNamed(AppRoutes.profile),
                   ),
                   Divider(height: 1, color: colors.divider, indent: 60),
-                  _settingsRow(
-                    colors: colors,
-                    icon: Icons.notifications_none_rounded,
-                    iconColor: AppColors.primaryOrange,
-                    iconBg: AppColors.primaryOrange.withValues(alpha: 0.12),
-                    title: 'Notifications',
-                    subtitle: 'Low stock, deliveries, payments',
-                    onTap: () => _openSettingsTab(2),
-                  ),
+                  if (canOpenSettingsTab('Notifications'))
+                    _settingsRow(
+                      colors: colors,
+                      icon: Icons.notifications_none_rounded,
+                      iconColor: AppColors.primaryOrange,
+                      iconBg: AppColors.primaryOrange.withValues(alpha: 0.12),
+                      title: 'Notifications',
+                      subtitle: 'Low stock, deliveries, payments',
+                      onTap: () => _openSettingsTab(2),
+                    ),
                   Divider(height: 1, color: colors.divider, indent: 60),
                   _settingsRow(
                     colors: colors,
@@ -225,15 +228,37 @@ class MobileProfileHubView extends StatelessWidget {
                     onTap: () => _openSettingsTab(1),
                   ),
                   Divider(height: 1, color: colors.divider, indent: 60),
-                  _settingsRow(
-                    colors: colors,
-                    icon: Icons.tune_rounded,
-                    iconColor: colors.success,
-                    iconBg: colors.success.withValues(alpha: 0.12),
-                    title: 'Preferences',
-                    subtitle: 'Theme, rows per page, date format',
-                    onTap: () => _openSettingsTab(0),
-                  ),
+                  if (canOpenSettingsTab('Preferences'))
+                    _settingsRow(
+                      colors: colors,
+                      icon: Icons.tune_rounded,
+                      iconColor: colors.success,
+                      iconBg: colors.success.withValues(alpha: 0.12),
+                      title: 'Preferences',
+                      subtitle: 'Theme, rows per page, date format',
+                      onTap: () => _openSettingsTab(0),
+                    ),
+                  if (canOpenSettingsTab('Appearance'))
+                    _settingsRow(
+                      colors: colors,
+                      icon: Icons.palette_outlined,
+                      iconColor: colors.accent,
+                      iconBg: colors.accent.withValues(alpha: 0.12),
+                      title: 'Appearance',
+                      subtitle: 'Logo, colors, font and corner radius',
+                      onTap: () => _openSettingsTab(3),
+                    ),
+                  if (canOpenSettingsTab('Billing'))
+                    _settingsRow(
+                      colors: colors,
+                      icon: Icons.receipt_long_outlined,
+                      iconColor: AppColors.primaryOrange,
+                      iconBg: AppColors.primaryOrange.withValues(alpha: 0.12),
+                      title: 'Billing',
+                      subtitle:
+                          'GSTIN, bank details, signature, invoice series',
+                      onTap: () => _openSettingsTab(4),
+                    ),
                 ],
               ),
             ),
@@ -259,7 +284,7 @@ class MobileProfileHubView extends StatelessWidget {
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
                           color: colors.error,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ],
@@ -293,7 +318,7 @@ class MobileProfileHubView extends StatelessWidget {
               height: 36,
               decoration: BoxDecoration(
                 color: iconBg,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(appColors.radius),
               ),
               child: Icon(icon, size: 18, color: iconColor),
             ),
@@ -308,7 +333,7 @@ class MobileProfileHubView extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -317,7 +342,7 @@ class MobileProfileHubView extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       color: colors.accent,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ],

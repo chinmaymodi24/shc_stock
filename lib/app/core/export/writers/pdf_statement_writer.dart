@@ -1,3 +1,5 @@
+import 'package:shc_stock/app/core/theme/brand_controller.dart';
+import 'package:shc_stock/app/core/theme/brand_theme.dart';
 import 'dart:typed_data';
 
 import 'package:shc_stock/app/core/export/statement.dart';
@@ -5,20 +7,31 @@ import 'package:shc_stock/app/core/export/writers/pdf_document.dart';
 
 // The same paper palette the on-screen sheet uses, so the printout and the
 // screen are recognisably the same document.
-const _ink = PdfColor(0.102, 0.102, 0.180); // #1a1a2e
-const _inkSoft = PdfColor(0.353, 0.341, 0.439); // #5a5770
-const _inkFaint = PdfColor(0.541, 0.529, 0.592); // #8a8797
-const _rule = PdfColor(0.847, 0.835, 0.804); // #d8d5cd
-const _hairline = PdfColor(0.969, 0.965, 0.953); // #f7f6f3
-const _band = PdfColor(0.980, 0.976, 0.968); // #faf9f7
-const _resultBand = PdfColor(0.914, 0.969, 0.937); // #e9f7ef
-const _resultInk = PdfColor(0.118, 0.518, 0.286); // #1e8449
+// The statement's ink and rules come off the buyer's brand, so an exported
+// PDF matches the screens it was produced from. These were the shipped hexes
+// compiled in; a rebranded deployment used to export Secure Heat Care's
+// palette no matter what the app looked like.
+PdfColor get _ink => PdfColor.of(brand.textPrimary);
+PdfColor get _inkSoft => PdfColor.of(brand.textSecondary);
+PdfColor get _inkFaint => PdfColor.of(brand.textTertiary);
+PdfColor get _rule => PdfColor.of(brand.border);
+PdfColor get _hairline => PdfColor.of(tint(brand.border, 0.55));
+PdfColor get _band => PdfColor.of(brand.tableHeaderBg);
+PdfColor get _resultBand => PdfColor.of(brand.tintSuccess);
+PdfColor get _resultInk => PdfColor.of(brand.success);
 
 /// Renders a [StatementDoc] as the printed twin of the on-screen sheet:
 /// centred company header, ruled column heads, indented line items, tinted
 /// derived and result bands.
-Uint8List buildStatementPdf(StatementDoc doc, {required String generatedLine}) {
-  final pdf = PdfDocument(title: doc.title);
+Uint8List buildStatementPdf(
+  StatementDoc doc, {
+  required String generatedLine,
+
+  /// The buyer's logo, already decoded. Null just means the statement leads
+  /// with the company name alone, as it always did.
+  PdfImage? logo,
+}) {
+  final pdf = PdfDocument(title: doc.title, images: [if (logo != null) logo]);
   const margin = 56.0;
   final contentWidth = kA4Width - margin * 2;
   final right = kA4Width - margin;
@@ -30,6 +43,16 @@ Uint8List buildStatementPdf(StatementDoc doc, {required String generatedLine}) {
   final pages = <PdfPage>[page];
 
   void header() {
+    // A centred logo above the company name — a statement is the most
+    // "letterhead" thing the app produces, so the mark leads it.
+    if (logo != null) {
+      const box = 34.0;
+      final scale = box / (logo.width > logo.height ? logo.width : logo.height);
+      final w = logo.width * scale;
+      final h = logo.height * scale;
+      page.image(0, (kA4Width - w) / 2, y, w, h);
+      y += h + 8;
+    }
     page.textCenter(
       doc.companyName,
       kA4Width / 2,

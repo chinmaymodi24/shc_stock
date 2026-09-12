@@ -20,13 +20,25 @@ model User {
   name         String
   email        String @unique
   passwordHash String
-  /// Admin | Manager | Salesman | Stock Manager | Accountant
+  /// Display name of the assigned role ("Super Admin", "Store Staff", or a
+  /// custom role's name). Kept as text so the Employee list still reads
+  /// sensibly for a row whose role was since deleted.
   role         String @default("Admin")
+  /// The role this employee was created from. Null for a role that was
+  /// deleted, or for legacy rows no preset maps onto.
+  roleId       Int?
+  roleRef      Role?  @relation(fields: [roleId], references: [id], onDelete: SetNull)
 
   phone       String    @default("")
   department  String    @default("")
   isActive    Boolean   @default(true)
   lastLoginAt DateTime?
+
+  /// Per-module access, as {"Products": {"read", "write", "summary"}, …} plus
+  /// "Settings: <tab>" entries — see src/permissions.js. Set by the Add
+  /// Employee wizard's Permissions step and enforced by the API guard, the
+  /// sidebar and every route guard. A Super Admin role ignores this map.
+  permissions Json @default("{}")
 
   // Settings page — per-user preferences.
   notifyLowStock Boolean @default(true)
@@ -48,6 +60,34 @@ model User {
   updatedAt  DateTime  @updatedAt
 
   @@map("users")
+}
+
+/// A reusable set of permissions an employee can be created from.
+///
+/// The ready-made roles (isSystem) are rebuilt from src/permissions.js on every
+/// server start, so a new module reaches them without a migration; custom
+/// roles are created from the Add Employee wizard. Assigning a role copies its
+/// permissions onto the employee, who can then be fine-tuned individually.
+model Role {
+  id           Int     @id @default(autoincrement())
+  /// Stable id of a ready-made role (super_admin, admin, …). Null for custom.
+  key          String? @unique
+  name         String  @unique
+  description  String  @default("")
+  /// Icon name the app maps to an icon (stars, admin, manager, sales, store, custom).
+  icon         String  @default("custom")
+  permissions  Json    @default("{}")
+  isSystem     Boolean @default(false)
+  /// Holds every permission regardless of the map — only "Super Admin".
+  isSuperAdmin Boolean @default(false)
+
+  users User[]
+
+  modifiedBy String   @default("Admin")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("roles")
 }
 
 model Category {
@@ -200,6 +240,7 @@ model SalesOrder {
   paymentType       String     @default("")
   paidAmount        Float      @default(0)
   items             SaleItem[]
+  bill              Bill?
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
@@ -365,6 +406,69 @@ model DashboardNote {
   @@map("dashboard_notes")
 }
 
+/// The bill raised against a sale. One per sales order: a sale is billed once,
+/// and re-opening the bill screen shows the document that was generated rather
+/// than minting a new invoice number.
+///
+/// Line items, buyer and amounts are NOT copied here — they are read from the
+/// sales order, so correcting a sale corrects its bill. Only what is specific
+/// to the document lives here.
+model Bill {
+  id           Int        @id @default(autoincrement())
+  salesOrderId Int        @unique
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+
+  /// Invoice number in the billing series, e.g. "ST/0248/26-27". Assigned once,
+  /// on generation, and never reused.
+  invoiceNo String   @unique
+  issuedOn  DateTime @default(now())
+
+  // ── Per-invoice "what appears on the bill" overrides ────────────────────
+  // Defaults come from the billing profile in app_settings; these five hold
+  // whatever the user toggled for THIS invoice.
+  showHsnSummary  Boolean @default(true)
+  showBankDetails Boolean @default(true)
+  showUpiQr       Boolean @default(true)
+  showEInvoice    Boolean @default(true)
+  showDeclaration Boolean @default(true)
+
+  // ── e-Invoice (IRP) ─────────────────────────────────────────────────────
+  // Null until an invoice is actually registered with the Invoice Registration
+  // Portal. There is no IRP integration yet, so in practice these stay null and
+  // the document prints "Not registered" rather than a made-up IRN.
+  irn     String?
+  ackNo   String?
+  ackDate DateTime?
+
+  generatedBy String      @default("Admin")
+  events      BillEvent[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("bills")
+}
+
+/// One entry of a bill's audit trail — what happened, who did it, when.
+/// Append-only: nothing here is ever edited or removed, which is the point.
+model BillEvent {
+  id     Int  @id @default(autoincrement())
+  billId Int
+  bill   Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  /// generated | irn_received | sent_whatsapp | sent_email | payment_received
+  type String
+
+  /// Free-text detail shown under the event, e.g. the number it was sent to.
+  note String @default("")
+
+  /// The person, or "System" for anything the app did on its own.
+  actor String   @default("Admin")
+  at    DateTime @default(now())
+
+  @@index([billId])
+  @@map("bill_events")
+}
+
 /// Business-wide configuration — a single row (id = 1). Not per-user: these
 /// are shared settings every operator sees the same.
 model AppSetting {
@@ -374,6 +478,17 @@ model AppSetting {
   /// below — applied only to products that have no per-item minimumStock set
   /// (minimumStock <= 0). 0 disables the global rule.
   lowStockThreshold Int @default(0)
+
+  /// The white-label brand: colours, logo, company name, font and radius, as
+  /// the Appearance screen saves it. Stored here rather than per-device
+  /// because an admin sets the brand for the WHOLE portal — a per-browser
+  /// copy would mean every employee saw a different app.
+  brandTheme Json @default("{}")
+
+  /// Seller identity, bank details, declaration and the default "what appears
+  /// on the bill" toggles — everything the tax invoice prints that is not part
+  /// of the sale. Portal-wide for the same reason the brand is.
+  billingProfile Json @default("{}")
 
   updatedAt DateTime @updatedAt
 

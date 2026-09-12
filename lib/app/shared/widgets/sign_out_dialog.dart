@@ -43,7 +43,7 @@ class SignOutConfirmDialog extends StatelessWidget {
                     color: AppColors.primaryOrange.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.logout_rounded,
                     color: AppColors.primaryOrange,
                     size: 22,
@@ -57,7 +57,7 @@ class SignOutConfirmDialog extends StatelessWidget {
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -69,7 +69,7 @@ class SignOutConfirmDialog extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13.5,
                 color: colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
                 height: 1.4,
               ),
             ),
@@ -83,14 +83,14 @@ class SignOutConfirmDialog extends StatelessWidget {
                       side: BorderSide(color: colors.border),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(appColors.radius),
                       ),
                     ),
                     child: Text(
                       'Cancel',
                       style: TextStyle(
                         fontSize: 14,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                         color: colors.textSecondary,
                       ),
                     ),
@@ -109,16 +109,16 @@ class SignOutConfirmDialog extends StatelessWidget {
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(appColors.radius),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Sign Out',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),

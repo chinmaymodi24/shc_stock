@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -31,11 +32,13 @@ class MobileUsersLayout extends StatelessWidget {
       drawer: const AppDrawer(activeRoute: AppRoutes.users),
       appBar: _buildAppBar(context, c),
       body: _buildList(context, c),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Get.toNamed(AppRoutes.addEmployee),
-        backgroundColor: AppColors.primaryOrange,
-        child: const Icon(Icons.person_add_outlined, color: Colors.white),
-      ),
+      floatingActionButton: canWriteModule('Employee')
+          ? FloatingActionButton(
+              onPressed: () => Get.toNamed(AppRoutes.addEmployee),
+              backgroundColor: AppColors.primaryOrange,
+              child: const Icon(Icons.person_add_outlined, color: Colors.white),
+            )
+          : null,
     );
   }
 
@@ -56,7 +59,7 @@ class MobileUsersLayout extends StatelessWidget {
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: colors.textPrimary,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
       centerTitle: true,
@@ -145,7 +148,7 @@ class MobileUsersLayout extends StatelessWidget {
         () => MobileFilterChoiceGroup(
           label: 'Role',
           value: c.filterRole.value,
-          items: ['All Roles', ...UserRole.values.map((r) => r.label)],
+          items: ['All Roles', ...c.roleNames],
           onChanged: (v) => c.filterRole.value = v,
         ),
       ),
@@ -184,6 +187,7 @@ class MobileUsersLayout extends StatelessWidget {
       }).toList();
 
       return MobileListScaffold(
+        summaryModule: 'Employee',
         statCards: _statCards(context, c),
         search: _searchField(c),
         countLabel: loading ? null : 'Showing ${filtered.length} employees',
@@ -245,7 +249,7 @@ class _MobileUserCard extends StatelessWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: u.badgeColor,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -261,7 +265,7 @@ class _MobileUserCard extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: colors.textPrimary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -271,7 +275,7 @@ class _MobileUserCard extends StatelessWidget {
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
                         color: context.appColors.accent,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ],
@@ -280,8 +284,12 @@ class _MobileUserCard extends StatelessWidget {
               // Status — tap to activate / deactivate, same as web's badge.
               InkWell(
                 borderRadius: BorderRadius.circular(999),
-                onTap: () =>
-                    Get.find<UsersController>().setActive(u.id, !u.isActive),
+                onTap: canWriteModule('Employee')
+                    ? () => Get.find<UsersController>().setActive(
+                        u.id,
+                        !u.isActive,
+                      )
+                    : null,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 9,
@@ -301,7 +309,7 @@ class _MobileUserCard extends StatelessWidget {
                       color: u.isActive
                           ? const Color(0xFF22C55E)
                           : colors.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -323,7 +331,7 @@ class _MobileUserCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color: colors.textSecondary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -341,7 +349,7 @@ class _MobileUserCard extends StatelessWidget {
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: u.role.color,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               const Spacer(),
@@ -350,7 +358,7 @@ class _MobileUserCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   color: colors.textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ],
@@ -365,16 +373,18 @@ class _MobileUserCard extends StatelessWidget {
                 context: context,
                 onTap: () => EmployeeActions.view(context, u),
               ),
-              MobileActionButton.edit(
-                context: context,
-                onTap: () => EmployeeActions.edit(u),
-              ),
-              MobileActionButton.duplicate(
-                onTap: () => EmployeeActions.duplicate(u),
-              ),
-              MobileActionButton.delete(
-                onTap: () => EmployeeActions.delete(context, u),
-              ),
+              if (canWriteModule('Employee')) ...[
+                MobileActionButton.edit(
+                  context: context,
+                  onTap: () => EmployeeActions.edit(u),
+                ),
+                MobileActionButton.duplicate(
+                  onTap: () => EmployeeActions.duplicate(u),
+                ),
+                MobileActionButton.delete(
+                  onTap: () => EmployeeActions.delete(context, u),
+                ),
+              ],
             ],
           ),
         ],

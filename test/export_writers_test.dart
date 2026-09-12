@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shc_stock/app/core/export/export_table.dart';
 import 'package:shc_stock/app/core/export/writers/csv_writer.dart';
+import 'package:shc_stock/app/core/export/writers/pdf_document.dart';
 import 'package:shc_stock/app/core/export/writers/pdf_table_writer.dart';
 import 'package:shc_stock/app/core/export/writers/xlsx_writer.dart';
 import 'package:shc_stock/app/core/export/writers/zip_writer.dart';
@@ -121,6 +122,23 @@ void main() {
       expect(pageCount, greaterThan(1));
       expect(text.contains('Page $pageCount of $pageCount'), isTrue);
     });
+
+    test(
+      'maps typographic punctuation into WinAnsi rather than dropping it',
+      () {
+        final page = PdfDocument().addPage();
+        page.text('em — dash, curly “quotes”, ellipsis…', 20, 20);
+        final bytes = PdfDocument().save();
+        expect(bytes, isNotEmpty);
+        // 0x97 em dash, 0x93/0x94 curly quotes, 0x85 ellipsis.
+        expect(PdfText.sanitize('—').codeUnitAt(0), 0x97);
+        expect(PdfText.sanitize('“').codeUnitAt(0), 0x93);
+        expect(PdfText.sanitize('”').codeUnitAt(0), 0x94);
+        expect(PdfText.sanitize('…').codeUnitAt(0), 0x85);
+        // Devanagari has no WinAnsi slot, so it still degrades to '?'.
+        expect(PdfText.sanitize('क'), '?');
+      },
+    );
 
     test('substitutes the rupee sign, which base-14 fonts cannot draw', () {
       final text = latin1.decode(

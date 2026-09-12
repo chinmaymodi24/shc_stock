@@ -1,3 +1,6 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
+import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
+import 'package:shc_stock/app/modules/purchase/export/purchase_export.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
@@ -41,7 +44,7 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         centerTitle: true,
@@ -53,6 +56,9 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
               activeCount: c.supplierFilter.value == 'Supplier: All' ? 0 : 1,
             ),
           ),
+          // Export reaches the phone too: the same menu the web toolbar
+          // opens, as an AppBar icon.
+          ExportMenuButton(source: purchaseExportConfig(c), iconOnly: true),
           const MobileAppBarAvatar(),
         ],
         bottom: PreferredSize(
@@ -60,11 +66,13 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
           child: Divider(height: 1, color: colors.divider),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Get.toNamed(AppRoutes.addPurchase),
-        backgroundColor: AppColors.primaryOrange,
-        child: const Icon(Icons.add_rounded, color: Colors.white),
-      ),
+      floatingActionButton: canWriteModule('Purchase')
+          ? FloatingActionButton(
+              onPressed: () => Get.toNamed(AppRoutes.addPurchase),
+              backgroundColor: AppColors.primaryOrange,
+              child: const Icon(Icons.add_rounded, color: Colors.white),
+            )
+          : null,
       body: Obx(() {
         final all = c.orders;
         final query = c.searchQuery.value;
@@ -90,6 +98,7 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
         final loading = c.isLoading.value;
 
         return MobileListScaffold(
+          summaryModule: 'Purchase',
           statCards: [
             MobileStatCardData(
               label: 'Orders',
@@ -227,30 +236,32 @@ class _MobilePurchaseRow extends StatelessWidget {
           label: 'View',
           onSelected: () => PurchaseActions.view(context, order),
         ),
-        MobileRowMenuItem(
-          icon: Icons.edit_outlined,
-          color: colors.purple,
-          label: 'Edit',
-          onSelected: () => PurchaseActions.edit(order),
-        ),
-        MobileRowMenuItem(
-          icon: Icons.copy_outlined,
-          color: const Color(0xFF3B82F6),
-          label: 'Duplicate',
-          onSelected: () => PurchaseActions.duplicate(order),
-        ),
-        MobileRowMenuItem(
-          icon: Icons.published_with_changes_rounded,
-          color: colors.accent,
-          label: 'Update Status',
-          onSelected: () => PurchaseActions.updateStatus(order),
-        ),
-        MobileRowMenuItem(
-          icon: Icons.delete_outline_rounded,
-          color: const Color(0xFFEF4444),
-          label: 'Delete',
-          onSelected: () => PurchaseActions.delete(context, order),
-        ),
+        if (canWriteModule('Purchase')) ...[
+          MobileRowMenuItem(
+            icon: Icons.edit_outlined,
+            color: colors.purple,
+            label: 'Edit',
+            onSelected: () => PurchaseActions.edit(order),
+          ),
+          MobileRowMenuItem(
+            icon: Icons.copy_outlined,
+            color: const Color(0xFF3B82F6),
+            label: 'Duplicate',
+            onSelected: () => PurchaseActions.duplicate(order),
+          ),
+          MobileRowMenuItem(
+            icon: Icons.published_with_changes_rounded,
+            color: colors.accent,
+            label: 'Update Status',
+            onSelected: () => PurchaseActions.updateStatus(order),
+          ),
+          MobileRowMenuItem(
+            icon: Icons.delete_outline_rounded,
+            color: const Color(0xFFEF4444),
+            label: 'Delete',
+            onSelected: () => PurchaseActions.delete(context, order),
+          ),
+        ],
       ],
     );
   }

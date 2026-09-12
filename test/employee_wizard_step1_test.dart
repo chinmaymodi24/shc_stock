@@ -19,7 +19,7 @@ import 'package:shc_stock/app/modules/users/views/wizard/step1_employee_details.
 // ─────────────────────────────────────────────────────────────────────────────
 
 Widget _host() => GetMaterialApp(
-  theme: ThemeData(extensions: const [AppThemeColors.light]),
+  theme: ThemeData(extensions: [AppThemeColors.light]),
   home: const Scaffold(
     body: SingleChildScrollView(
       child: EmployeeDetailsStep(wide: true, tablet: true),

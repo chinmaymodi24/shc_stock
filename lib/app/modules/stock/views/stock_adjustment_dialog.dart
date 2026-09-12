@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -125,6 +126,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
       StockItemDetailsPanel(
         item: sel,
         onEdit: () {
+          if (!requireWrite('Products')) return;
           final product = _productsController().products.firstWhereOrNull(
             (p) => p.id == sel.productId.toString(),
           );
@@ -134,6 +136,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
           }
         },
         onDelete: () {
+          if (!requireWrite('Products')) return;
           Get.back(); // close the details panel
           confirmDelete(
             context,
@@ -275,7 +278,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                               fontSize: 17,
                               fontWeight: FontWeight.w700,
                               color: colors.textPrimary,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ),
@@ -298,7 +301,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                       style: TextStyle(
                         fontSize: 12.5,
                         color: colors.textSecondary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ],
@@ -339,7 +342,9 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                             color: AppColors.primaryOrange.withValues(
                               alpha: 0.08,
                             ),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              appColors.radius,
+                            ),
                             border: Border.all(
                               color: AppColors.primaryOrange.withValues(
                                 alpha: 0.25,
@@ -354,11 +359,11 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                                   children: [
                                     Text(
                                       sel.name,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.w700,
                                         color: AppColors.primaryOrange,
-                                        fontFamily: 'Poppins',
+                                        fontFamily: brandFontFamily,
                                       ),
                                     ),
                                     const SizedBox(height: 3),
@@ -367,7 +372,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                                       style: TextStyle(
                                         fontSize: 11.5,
                                         color: colors.textSecondary,
-                                        fontFamily: 'Poppins',
+                                        fontFamily: brandFontFamily,
                                       ),
                                     ),
                                   ],
@@ -381,7 +386,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: colors.textSecondary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -391,7 +396,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                                       fontSize: 17,
                                       fontWeight: FontWeight.w700,
                                       color: colors.textPrimary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                 ],
@@ -426,7 +431,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
                                     color: colors.accent,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                               ],
@@ -464,7 +469,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                           style: TextStyle(
                             fontSize: 13,
                             color: colors.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                           decoration: InputDecoration(
                             isDense: true,
@@ -484,7 +489,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(
+                              borderSide: BorderSide(
                                 color: AppColors.primaryOrange,
                                 width: 1.5,
                               ),
@@ -511,7 +516,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                             style: TextStyle(
                               fontSize: 13,
                               color: colors.textPrimary,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                             decoration: InputDecoration(
                               hintText:
@@ -519,14 +524,14 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                               hintStyle: TextStyle(
                                 fontSize: 12.5,
                                 color: colors.textHint,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                               isDense: true,
                               prefixText: '₹ ',
                               prefixStyle: TextStyle(
                                 fontSize: 13,
                                 color: colors.textSecondary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -544,7 +549,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
+                                borderSide: BorderSide(
                                   color: AppColors.primaryOrange,
                                   width: 1.5,
                                 ),
@@ -578,17 +583,17 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                               style: TextStyle(
                                 fontSize: 12.5,
                                 color: colors.textSecondary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                             const Spacer(),
                             Text(
                               '$preview',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primaryOrange,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ],
@@ -613,7 +618,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                       Expanded(
                         child: InkWell(
                           onTap: Get.back,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(appColors.radius),
                           child: Container(
                             alignment: Alignment.center,
                             padding: const EdgeInsets.symmetric(vertical: 13),
@@ -621,7 +626,9 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                               color: colors.background.computeLuminance() > 0.5
                                   ? const Color(0xFFF3F1EC)
                                   : colors.inputFill,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(
+                                appColors.radius,
+                              ),
                             ),
                             child: Text(
                               'Cancel',
@@ -630,7 +637,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: colors.textPrimary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ),
@@ -699,14 +706,14 @@ class _ItemAutocomplete extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
           decoration: InputDecoration(
             hintText: 'Type item name or SKU...',
             hintStyle: TextStyle(
               fontSize: 13,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(
@@ -730,7 +737,7 @@ class _ItemAutocomplete extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
+              borderSide: BorderSide(
                 color: AppColors.primaryOrange,
                 width: 1.5,
               ),
@@ -743,13 +750,13 @@ class _ItemAutocomplete extends StatelessWidget {
           alignment: Alignment.topLeft,
           child: Material(
             elevation: 4,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(appColors.radius),
             color: colors.surface,
             child: Container(
               width: 432,
               constraints: const BoxConstraints(maxHeight: 260),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(appColors.radius),
                 border: Border.all(color: colors.border),
               ),
               child: ListView.builder(
@@ -785,7 +792,7 @@ class _ItemAutocomplete extends StatelessWidget {
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                   color: colors.textPrimary,
-                                  fontFamily: 'Poppins',
+                                  fontFamily: brandFontFamily,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -795,7 +802,7 @@ class _ItemAutocomplete extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 11,
                                 color: colors.textHint,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ],

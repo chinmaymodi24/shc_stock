@@ -149,7 +149,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               const SizedBox(height: 18),
@@ -292,7 +292,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                       widget.readOnly ? 'Close' : 'Cancel',
                       style: TextStyle(
                         fontSize: 13.5,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                         color: colors.textSecondary,
                       ),
                     ),
@@ -333,11 +333,11 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                               _saving.value
                                   ? 'Saving…'
                                   : (widget.isEdit ? 'Save Changes' : 'Add'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ],

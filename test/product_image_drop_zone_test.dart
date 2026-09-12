@@ -15,7 +15,7 @@ final _validPng = base64Decode(
 const _promptText = 'Drag & drop\nor click to browse';
 
 Widget _host(Widget child) => MaterialApp(
-  theme: ThemeData(extensions: const [AppThemeColors.light]),
+  theme: ThemeData(extensions: [AppThemeColors.light]),
   home: Scaffold(body: Center(child: child)),
 );
 

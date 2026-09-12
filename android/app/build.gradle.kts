@@ -11,7 +11,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.shc_stock"
+    namespace = "com.godaam.app"
     compileSdk = flutter.compileSdkVersion
     // Several plugins (file_picker, desktop_drop, flutter_secure_storage, …) ask
     // for 27.x, which is backward compatible with the Flutter default.
@@ -27,8 +27,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.shc_stock"
+        applicationId = "com.godaam.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

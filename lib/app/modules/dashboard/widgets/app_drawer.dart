@@ -1,6 +1,8 @@
+import 'package:shc_stock/app/core/export/export_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
@@ -115,7 +117,7 @@ class AppDrawer extends StatelessWidget {
                       Navigator.of(context).pop(); // close drawer
                       Get.toNamed(AppRoutes.settings);
                     },
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(appColors.radius),
                     // Real session data — same SessionController the web top
                     // bar reads, instead of a hardcoded "Admin" placeholder.
                     child: Obx(() {
@@ -128,11 +130,11 @@ class AppDrawer extends StatelessWidget {
                             backgroundColor: const Color(0x33F47B20),
                             child: Text(
                               user?.initials ?? '?',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primaryOrange,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ),
@@ -141,21 +143,21 @@ class AppDrawer extends StatelessWidget {
                             user?.name.trim().isNotEmpty == true
                                 ? user!.name
                                 : 'Signed out',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                           Text(
                             user?.role.trim().isNotEmpty == true
                                 ? user!.role
                                 : (user?.email ?? ''),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               color: Color(0xFFB0AECF),
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ],
@@ -170,7 +172,12 @@ class AppDrawer extends StatelessWidget {
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                children: _items.map((item) {
+                // Same permission gate as the web sidebar: an employee sees
+                // only the modules the admin granted. Gated by route, not by
+                // label — this drawer calls the settings route "Profile".
+                children: _items.where((i) => canOpenRoute(i.route)).map((
+                  item,
+                ) {
                   final isActive = item.route == activeRoute;
                   final isEnabled = _enabled.contains(item.route);
                   return _DrawerTile(
@@ -195,6 +202,11 @@ class AppDrawer extends StatelessWidget {
                 }).toList(),
               ),
             ),
+
+            // ── Downloads ────────────────────────────────────
+            // The web header has a Downloads button; on a phone there is no
+            // header, so the drawer is where exported files are reached.
+            const _DrawerDownloads(),
           ],
         ),
       ),
@@ -224,10 +236,10 @@ class _DrawerTile extends StatelessWidget {
         color: isActive
             ? AppColors.primaryOrange.withValues(alpha: 0.1)
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(appColors.radius),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: Row(
@@ -253,7 +265,7 @@ class _DrawerTile extends StatelessWidget {
                           : isEnabled
                           ? colors.textPrimary
                           : colors.textHint,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -272,7 +284,7 @@ class _DrawerTile extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 10,
                         color: colors.textSecondary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -294,4 +306,69 @@ class _DrawerItem {
     required this.label,
     required this.route,
   });
+}
+
+/// Opens the global Downloads panel, with the same orange dot the web header
+/// shows when something new is ready.
+class _DrawerDownloads extends StatelessWidget {
+  const _DrawerDownloads();
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<ExportService>()) return const SizedBox.shrink();
+    final service = ExportService.to;
+    return Obx(
+      () => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Divider(height: 1, color: Color(0x22FFFFFF)),
+          ListTile(
+            onTap: () {
+              Navigator.of(context).pop();
+              service.openPanel();
+            },
+            leading: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(
+                  Icons.download_rounded,
+                  size: 21,
+                  color: Color(0xFFB0AECF),
+                ),
+                if (service.hasNewDownload.value)
+                  Positioned(
+                    top: -1,
+                    right: -2,
+                    child: Container(
+                      width: 7,
+                      height: 7,
+                      // Not const: the brand's primary resolves at runtime.
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                      ).copyWith(color: AppColors.primaryOrange),
+                    ),
+                  ),
+              ],
+            ),
+            title: Text(
+              'Downloads',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+                fontFamily: brandFontFamily,
+              ),
+            ),
+            subtitle: Text(
+              service.downloads.isEmpty
+                  ? 'Nothing exported yet'
+                  : '${service.downloads.length} file'
+                        '${service.downloads.length == 1 ? '' : 's'}',
+              style: const TextStyle(fontSize: 11, color: Color(0xFFB0AECF)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

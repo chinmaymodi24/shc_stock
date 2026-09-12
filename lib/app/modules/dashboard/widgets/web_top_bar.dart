@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/theme/brand_theme.dart';
+import 'package:shc_stock/app/core/theme/brand_controller.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -299,7 +301,7 @@ class _HeaderSearchBoxState extends State<HeaderSearchBox> {
                     style: TextStyle(
                       fontSize: 13,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     onSubmitted: (_) => onFieldSubmitted(),
                     decoration: InputDecoration(
@@ -317,7 +319,7 @@ class _HeaderSearchBoxState extends State<HeaderSearchBox> {
                       hintStyle: TextStyle(
                         fontSize: 13,
                         color: colors.textHint,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -337,7 +339,7 @@ class _HeaderSearchBoxState extends State<HeaderSearchBox> {
                     style: TextStyle(
                       fontSize: 10,
                       color: colors.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -400,7 +402,7 @@ class _HeaderSearchBoxState extends State<HeaderSearchBox> {
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: colors.textPrimary,
-                                  fontFamily: 'Poppins',
+                                  fontFamily: brandFontFamily,
                                 ),
                               ),
                             ),
@@ -419,7 +421,7 @@ class _HeaderSearchBoxState extends State<HeaderSearchBox> {
                                   style: TextStyle(
                                     fontSize: 9.5,
                                     color: colors.textSecondary,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                               ),
@@ -491,14 +493,15 @@ class _HeaderBellBtn extends StatelessWidget {
 class _HeaderThemeToggle extends StatelessWidget {
   const _HeaderThemeToggle();
 
-  // Exact values from the approved design (Secure Heat Care Dashboard.dc.html):
-  // switchTrackBg, sunColor/sunOpacity, moonColor/moonOpacity.
-  static const _trackDark = Color(0xFF2D1B8C);
-  static const _trackLight = Color(0xFFE4E2EE);
-  static const _sunColorDark = Color(0xFFF0B45C);
-  static const _sunColorLight = Color(0xFFA05A00);
-  static const _moonColorDark = Color(0xFFA78BFA);
-  static const _moonColorLight = Color(0xFF2D1B8C);
+  // Shapes and opacities are from the approved design; the colours now come
+  // from the brand, so the toggle stops being the one control still wearing
+  // Secure Heat Care's navy on a rebranded deployment.
+  static Color get _trackDark => brand.secondary;
+  static Color get _trackLight => tint(brand.secondary, 0.86);
+  static Color get _sunColorDark => tint(brand.warning, 0.35);
+  static Color get _sunColorLight => brand.warning;
+  static Color get _moonColorDark => tint(brand.accent, 0.45);
+  static Color get _moonColorLight => brand.secondary;
 
   @override
   Widget build(BuildContext context) {
@@ -594,18 +597,18 @@ class _HeaderAvatar extends StatelessWidget {
       trigger: Container(
         width: 42,
         height: 42,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.primaryPurple,
           shape: BoxShape.circle,
         ),
         child: Center(
           child: Text(
             initials ?? _sessionInitials(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: Colors.white,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ),
@@ -670,18 +673,18 @@ class _ProfileAvatarMenuState extends State<ProfileAvatarMenu> {
                             Container(
                               width: 56,
                               height: 56,
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 color: AppColors.primaryPurple,
                                 shape: BoxShape.circle,
                               ),
                               child: Center(
                                 child: Text(
                                   widget.initials ?? _sessionInitials(),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
                                     color: Colors.white,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                               ),
@@ -694,18 +697,18 @@ class _ProfileAvatarMenuState extends State<ProfileAvatarMenu> {
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w700,
                                 color: colors.textPrimary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               Get.find<SessionController>().user.value?.role ??
                                   '',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.primaryOrange,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ],
@@ -747,7 +750,7 @@ class _ProfileAvatarMenuState extends State<ProfileAvatarMenu> {
                         borderRadius: const BorderRadius.vertical(
                           bottom: Radius.circular(16),
                         ),
-                        child: const Padding(
+                        child: Padding(
                           padding: EdgeInsets.symmetric(vertical: 12),
                           child: Center(
                             child: Text(
@@ -756,7 +759,7 @@ class _ProfileAvatarMenuState extends State<ProfileAvatarMenu> {
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primaryOrange,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ),
@@ -800,7 +803,7 @@ class _ProfileMenuItem extends StatelessWidget {
           style: TextStyle(
             fontSize: 13.5,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ),
@@ -852,7 +855,7 @@ class _SignOutDialog extends StatelessWidget {
                           ),
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.logout_rounded,
                           color: AppColors.primaryOrange,
                           size: 24,
@@ -869,7 +872,7 @@ class _SignOutDialog extends StatelessWidget {
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
                                 color: colors.textPrimary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -878,7 +881,7 @@ class _SignOutDialog extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12.5,
                                 color: colors.textSecondary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ],
@@ -935,7 +938,7 @@ class _SignOutDialog extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12.5,
                               color: colors.textSecondary,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                               height: 1.5,
                             ),
                           ),
@@ -963,7 +966,7 @@ class _SignOutDialog extends StatelessWidget {
                             'Cancel',
                             style: TextStyle(
                               fontSize: 14,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                               color: colors.textSecondary,
                             ),
                           ),
@@ -982,12 +985,12 @@ class _SignOutDialog extends StatelessWidget {
                             color: Colors.white,
                             size: 16,
                           ),
-                          label: const Text(
+                          label: Text(
                             'Yes, Sign Out',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                               color: Colors.white,
                             ),
                           ),

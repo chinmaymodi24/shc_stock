@@ -269,7 +269,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -465,7 +465,9 @@ class _AddProductDialogState extends State<AddProductDialog> {
                             side: BorderSide.none,
                             padding: const EdgeInsets.symmetric(vertical: 13),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(
+                                appColors.radius,
+                              ),
                             ),
                           ),
                           child: Text(
@@ -474,7 +476,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: colors.textPrimary,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ),
@@ -489,7 +491,9 @@ class _AddProductDialogState extends State<AddProductDialog> {
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(vertical: 13),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(
+                                  appColors.radius,
+                                ),
                               ),
                             ),
                             child: _saving.value
@@ -503,11 +507,11 @@ class _AddProductDialogState extends State<AddProductDialog> {
                                   )
                                 : Text(
                                     _isEdit ? 'Update' : 'Save',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                           ),
@@ -537,7 +541,7 @@ class _Label extends StatelessWidget {
       fontSize: 12.5,
       fontWeight: FontWeight.w600,
       color: colors.textPrimary,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
     ),
   );
 }
@@ -567,14 +571,14 @@ class _TextBox extends StatelessWidget {
       style: TextStyle(
         fontSize: 13,
         color: colors.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
           fontSize: 13,
           color: colors.textHint,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(
@@ -584,19 +588,16 @@ class _TextBox extends StatelessWidget {
         filled: true,
         fillColor: colors.inputFill,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           borderSide: BorderSide(color: colors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           borderSide: BorderSide(color: colors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: AppColors.primaryOrange,
-            width: 1.5,
-          ),
+          borderRadius: BorderRadius.circular(appColors.radius),
+          borderSide: BorderSide(color: AppColors.primaryOrange, width: 1.5),
         ),
       ),
     );
@@ -626,7 +627,7 @@ class _DropBox extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: colors.inputFill,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(appColors.radius),
         border: Border.all(color: colors.border),
       ),
       child: DropdownButtonHideUnderline(
@@ -637,7 +638,7 @@ class _DropBox extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           isDense: true,
@@ -651,7 +652,7 @@ class _DropBox extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
           items: items
               .map(

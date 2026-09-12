@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
@@ -16,32 +17,43 @@ class EmployeeActions {
     Get.dialog(
       EmployeeDetailsDialog(
         user: user,
-        onEdit: () {
-          Get.back();
-          edit(user);
-        },
-        onDelete: () {
-          Get.back();
-          delete(context, user);
-        },
+        onEdit: canWriteModule('Employee')
+            ? () {
+                Get.back();
+                edit(user);
+              }
+            : null,
+        onDelete: canWriteModule('Employee')
+            ? () {
+                Get.back();
+                delete(context, user);
+              }
+            : null,
       ),
     );
   }
 
   /// Opens the Add Employee wizard on this record; finishing updates it in
   /// place.
-  static void edit(UserModel user) =>
-      Get.toNamed(AppRoutes.addEmployee, arguments: EditEmployee(user));
+  static void edit(UserModel user) {
+    if (!requireWrite('Employee')) return;
+    Get.toNamed(AppRoutes.addEmployee, arguments: EditEmployee(user));
+  }
 
   /// Opens the wizard pre-filled from this employee but as a new draft — the
   /// email is cleared because it is the unique login.
-  static void duplicate(UserModel user) =>
-      Get.toNamed(AppRoutes.addEmployee, arguments: user);
+  static void duplicate(UserModel user) {
+    if (!requireWrite('Employee')) return;
+    Get.toNamed(AppRoutes.addEmployee, arguments: user);
+  }
 
-  static void delete(BuildContext context, UserModel user) => confirmDelete(
-    context,
-    itemName: user.name,
-    itemLabel: 'Employee',
-    onConfirm: () => Get.find<UsersController>().deleteUser(user.id),
-  );
+  static void delete(BuildContext context, UserModel user) {
+    if (!requireWrite('Employee')) return;
+    confirmDelete(
+      context,
+      itemName: user.name,
+      itemLabel: 'Employee',
+      onConfirm: () => Get.find<UsersController>().deleteUser(user.id),
+    );
+  }
 }

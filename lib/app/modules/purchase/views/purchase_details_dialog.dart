@@ -66,7 +66,7 @@ class PurchaseDetailsDialog extends StatelessWidget {
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
                           color: colors.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -99,7 +99,7 @@ class PurchaseDetailsDialog extends StatelessWidget {
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: colors.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                       if (order.supplierAddress.isNotEmpty) ...[
@@ -113,7 +113,7 @@ class PurchaseDetailsDialog extends StatelessWidget {
                             // dark theme's surface. Muted secondary text
                             // reads correctly in both themes.
                             color: colors.textSecondary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                             height: 1.4,
                           ),
                         ),
@@ -202,7 +202,9 @@ class PurchaseDetailsDialog extends StatelessWidget {
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: colors.inputFill,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              appColors.radius,
+                            ),
                             border: Border.all(color: colors.border),
                           ),
                           child: Text(
@@ -210,7 +212,7 @@ class PurchaseDetailsDialog extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12.5,
                               color: colors.textHint,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         )
@@ -222,7 +224,9 @@ class PurchaseDetailsDialog extends StatelessWidget {
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: colors.surface,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(
+                                appColors.radius,
+                              ),
                               border: Border.all(color: colors.border),
                             ),
                             child: Column(
@@ -234,7 +238,7 @@ class PurchaseDetailsDialog extends StatelessWidget {
                                     fontSize: 13.5,
                                     fontWeight: FontWeight.w700,
                                     color: colors.textPrimary,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                                 const SizedBox(height: 3),
@@ -245,7 +249,7 @@ class PurchaseDetailsDialog extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     color: colors.textHint,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                               ],
@@ -260,7 +264,7 @@ class PurchaseDetailsDialog extends StatelessWidget {
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: colors.inputFill,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(appColors.radius),
                         ),
                         child: Column(
                           children: [
@@ -303,7 +307,7 @@ class PurchaseDetailsDialog extends StatelessWidget {
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: colors.inputFill,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(appColors.radius),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,13 +319,13 @@ class PurchaseDetailsDialog extends StatelessWidget {
                                 CircleAvatar(
                                   radius: 15,
                                   backgroundColor: AppColors.primaryPurple,
-                                  child: const Text(
+                                  child: Text(
                                     'CM',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.white,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                 ),
@@ -335,7 +339,7 @@ class PurchaseDetailsDialog extends StatelessWidget {
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
                                         color: colors.textPrimary,
-                                        fontFamily: 'Poppins',
+                                        fontFamily: brandFontFamily,
                                       ),
                                     ),
                                     Text(
@@ -347,7 +351,7 @@ class PurchaseDetailsDialog extends StatelessWidget {
                                       style: TextStyle(
                                         fontSize: 11.5,
                                         color: colors.textHint,
-                                        fontFamily: 'Poppins',
+                                        fontFamily: brandFontFamily,
                                       ),
                                     ),
                                   ],
@@ -376,16 +380,18 @@ class PurchaseDetailsDialog extends StatelessWidget {
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              appColors.radius,
+                            ),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Edit',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                       ),
@@ -399,7 +405,9 @@ class PurchaseDetailsDialog extends StatelessWidget {
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              appColors.radius,
+                            ),
                           ),
                         ),
                         child: Text(
@@ -408,7 +416,7 @@ class PurchaseDetailsDialog extends StatelessWidget {
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: colors.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                       ),
@@ -440,7 +448,7 @@ class _Label extends StatelessWidget {
         fontSize: 10.5,
         fontWeight: FontWeight.w700,
         color: colors.textHint,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
         letterSpacing: 0.5,
       ),
     );
@@ -460,7 +468,7 @@ class _Value extends StatelessWidget {
         fontSize: 13.5,
         fontWeight: FontWeight.w600,
         color: colors.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
     );
   }
@@ -535,7 +543,7 @@ class _TotalLine extends StatelessWidget {
             fontSize: bold ? 14 : 13,
             fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
             color: bold ? colors.textPrimary : colors.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         Text(
@@ -544,7 +552,7 @@ class _TotalLine extends StatelessWidget {
             fontSize: bold ? 15 : 13,
             fontWeight: FontWeight.w700,
             color: valueColor ?? colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ],

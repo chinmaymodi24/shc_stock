@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
@@ -99,7 +100,7 @@ class WebClientsLayout extends GetView<ClientsController> {
                                               fontSize: 22,
                                               fontWeight: FontWeight.w700,
                                               color: colors.textPrimary,
-                                              fontFamily: 'Poppins',
+                                              fontFamily: brandFontFamily,
                                             ),
                                           ),
                                           const SizedBox(height: 3),
@@ -108,107 +109,111 @@ class WebClientsLayout extends GetView<ClientsController> {
                                             style: TextStyle(
                                               fontSize: 13,
                                               color: colors.textSecondary,
-                                              fontFamily: 'Poppins',
+                                              fontFamily: brandFontFamily,
                                             ),
                                           ),
                                         ],
                                       ),
                                     ),
                                     const SizedBox(width: 12),
-                                    ElevatedButton.icon(
-                                      onPressed: () =>
-                                          Get.toNamed(AppRoutes.addClient),
-                                      icon: const Icon(
-                                        Icons.add_rounded,
-                                        color: Colors.white,
-                                        size: 18,
-                                      ),
-                                      label: const Text(
-                                        'Add New Client',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
+                                    if (canWriteModule('Clients'))
+                                      ElevatedButton.icon(
+                                        onPressed: () =>
+                                            Get.toNamed(AppRoutes.addClient),
+                                        icon: const Icon(
+                                          Icons.add_rounded,
                                           color: Colors.white,
-                                          fontFamily: 'Poppins',
+                                          size: 18,
                                         ),
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor:
-                                            AppColors.primaryOrange,
-                                        elevation: 0,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 20,
-                                          vertical: 14,
+                                        label: Text(
+                                          'Add New Client',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                            fontFamily: brandFontFamily,
+                                          ),
                                         ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            10,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              AppColors.primaryOrange,
+                                          elevation: 0,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 20,
+                                            vertical: 14,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 20),
 
                                 // ── Stat Cards ───────────────────────────────────────────
-                                AppStatCardRow(
-                                  cards: [
-                                    AppStatCard(
-                                      label: 'Total Clients',
-                                      value: '${c.totalClients}',
-                                      icon: Icons.groups_rounded,
-                                      iconColor: AppColors.primaryOrange,
-                                      trend: c.stats.value.trendLabel(
-                                        'totalClients',
+                                if (canSeeSummary('Clients')) ...[
+                                  AppStatCardRow(
+                                    cards: [
+                                      AppStatCard(
+                                        label: 'Total Clients',
+                                        value: '${c.totalClients}',
+                                        icon: Icons.groups_rounded,
+                                        iconColor: AppColors.primaryOrange,
+                                        trend: c.stats.value.trendLabel(
+                                          'totalClients',
+                                        ),
+                                        trendUp: c.stats.value.trendUp(
+                                          'totalClients',
+                                        ),
+                                        showCaption: false,
                                       ),
-                                      trendUp: c.stats.value.trendUp(
-                                        'totalClients',
+                                      AppStatCard(
+                                        label: 'GST Registered',
+                                        value: '${c.registeredClients}',
+                                        icon:
+                                            Icons.check_circle_outline_rounded,
+                                        iconColor: context.appColors.accent,
+                                        trend: c.stats.value.trendLabel(
+                                          'gstRegistered',
+                                        ),
+                                        trendUp: c.stats.value.trendUp(
+                                          'gstRegistered',
+                                        ),
+                                        showCaption: false,
                                       ),
-                                      showCaption: false,
-                                    ),
-                                    AppStatCard(
-                                      label: 'GST Registered',
-                                      value: '${c.registeredClients}',
-                                      icon: Icons.check_circle_outline_rounded,
-                                      iconColor: context.appColors.accent,
-                                      trend: c.stats.value.trendLabel(
-                                        'gstRegistered',
+                                      AppStatCard(
+                                        label: 'Unregistered Clients',
+                                        value: '${c.unregisteredClients}',
+                                        icon: Icons.block_rounded,
+                                        iconColor: const Color(0xFFF59E0B),
+                                        trend: c.stats.value.trendLabel(
+                                          'unregistered',
+                                        ),
+                                        trendUp: c.stats.value.trendUp(
+                                          'unregistered',
+                                        ),
+                                        showCaption: false,
                                       ),
-                                      trendUp: c.stats.value.trendUp(
-                                        'gstRegistered',
+                                      AppStatCard(
+                                        label: 'States Covered',
+                                        value: '${c.statesCovered}',
+                                        icon: Icons.map_outlined,
+                                        iconColor: const Color(0xFF22C55E),
+                                        trend: c.stats.value.trendLabel(
+                                          'statesCovered',
+                                        ),
+                                        trendUp: c.stats.value.trendUp(
+                                          'statesCovered',
+                                        ),
+                                        showCaption: false,
                                       ),
-                                      showCaption: false,
-                                    ),
-                                    AppStatCard(
-                                      label: 'Unregistered Clients',
-                                      value: '${c.unregisteredClients}',
-                                      icon: Icons.block_rounded,
-                                      iconColor: const Color(0xFFF59E0B),
-                                      trend: c.stats.value.trendLabel(
-                                        'unregistered',
-                                      ),
-                                      trendUp: c.stats.value.trendUp(
-                                        'unregistered',
-                                      ),
-                                      showCaption: false,
-                                    ),
-                                    AppStatCard(
-                                      label: 'States Covered',
-                                      value: '${c.statesCovered}',
-                                      icon: Icons.map_outlined,
-                                      iconColor: const Color(0xFF22C55E),
-                                      trend: c.stats.value.trendLabel(
-                                        'statesCovered',
-                                      ),
-                                      trendUp: c.stats.value.trendUp(
-                                        'statesCovered',
-                                      ),
-                                      showCaption: false,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 20),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 20),
+                                ],
 
                                 // Reference design keeps the toolbar above and
                                 // the pagination below the bordered table card,
@@ -220,11 +225,7 @@ class WebClientsLayout extends GetView<ClientsController> {
                                     c.currentPage.value = 1;
                                   },
                                 ),
-                                const SizedBox(height: 12),
                                 ListScopeBar(
-                                  shown: filtered.length,
-                                  total: c.clients.length,
-                                  noun: 'clients',
                                   chips: [
                                     if (c.searchQuery.value.isNotEmpty)
                                       ListScopeChip(
@@ -292,7 +293,7 @@ class WebClientsLayout extends GetView<ClientsController> {
                                                   style: TextStyle(
                                                     fontSize: 14,
                                                     color: colors.textHint,
-                                                    fontFamily: 'Poppins',
+                                                    fontFamily: brandFontFamily,
                                                   ),
                                                 ),
                                               ],
@@ -328,21 +329,24 @@ class WebClientsLayout extends GetView<ClientsController> {
                             ),
                           ),
 
-                          const SizedBox(width: 16),
-
                           // ── RIGHT: Panel ─────────────────────────────────────────
                           // Starts at the top of the page, level with the header
-                          // and summary cards.
+                          // and summary cards. The figures need the Clients
+                          // summary right; Quick Actions shows only what this
+                          // person may do.
+                          const SizedBox(width: 16),
                           SizedBox(
                             width: 272,
                             child: Column(
                               children: [
-                                _TopClientsCard(colors: colors, c: c),
-                                const SizedBox(height: 14),
-                                _QuickStatsCard(c: c),
-                                const SizedBox(height: 14),
-                                _NewThisMonthCard(colors: colors, c: c),
-                                const SizedBox(height: 14),
+                                if (canSeeSummary('Clients')) ...[
+                                  _TopClientsCard(colors: colors, c: c),
+                                  const SizedBox(height: 14),
+                                  _QuickStatsCard(c: c),
+                                  const SizedBox(height: 14),
+                                  _NewThisMonthCard(colors: colors, c: c),
+                                  const SizedBox(height: 14),
+                                ],
                                 _QuickActionsCard(colors: colors),
                               ],
                             ),
@@ -423,7 +427,7 @@ class _ColumnHeader extends StatelessWidget {
     fontSize: 12.5,
     fontWeight: FontWeight.w600,
     color: colors.textSecondary,
-    fontFamily: 'Poppins',
+    fontFamily: brandFontFamily,
     letterSpacing: 0.1,
   );
 
@@ -535,11 +539,11 @@ class _ClientRowState extends State<_ClientRow> {
                   child: Center(
                     child: Text(
                       '${widget.displayIndex}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: AppColors.primaryOrange,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -551,11 +555,11 @@ class _ClientRowState extends State<_ClientRow> {
                   flex: _kCodeFlex,
                   child: Text(
                     cl.code,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: AppColors.primaryOrange,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -580,7 +584,7 @@ class _ClientRowState extends State<_ClientRow> {
                               fontSize: cl.initials.length > 2 ? 9.5 : 11,
                               fontWeight: FontWeight.w700,
                               color: cl.badgeColor,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ),
@@ -593,7 +597,7 @@ class _ClientRowState extends State<_ClientRow> {
                             fontSize: 13.5,
                             fontWeight: FontWeight.w500,
                             color: c.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -610,7 +614,7 @@ class _ClientRowState extends State<_ClientRow> {
                     style: TextStyle(
                       fontSize: 12.5,
                       color: c.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -625,7 +629,7 @@ class _ClientRowState extends State<_ClientRow> {
                     style: TextStyle(
                       fontSize: 12.5,
                       color: c.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -654,7 +658,7 @@ class _ClientRowState extends State<_ClientRow> {
                           color: isRegistered
                               ? const Color(0xFF22C55E)
                               : c.textSecondary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -686,11 +690,11 @@ class _ClientRowState extends State<_ClientRow> {
                                 )
                               : Text(
                                   cl.contactInitials,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 9,
                                     fontWeight: FontWeight.w700,
                                     color: Colors.white,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                         ),
@@ -708,7 +712,7 @@ class _ClientRowState extends State<_ClientRow> {
                                 color: cl.contactPerson.isEmpty
                                     ? c.textHint
                                     : c.textPrimary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -718,7 +722,7 @@ class _ClientRowState extends State<_ClientRow> {
                                 style: TextStyle(
                                   fontSize: 9.5,
                                   color: c.textHint,
-                                  fontFamily: 'Poppins',
+                                  fontFamily: brandFontFamily,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -742,34 +746,36 @@ class _ClientRowState extends State<_ClientRow> {
                         tooltip: 'View',
                         onTap: () => ClientActions.view(context, cl),
                       ),
-                      const SizedBox(width: 5),
-                      RowActionButton(
-                        icon: Icons.edit_outlined,
-                        color: AppColors.primaryOrange,
-                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
-                        tooltip: 'Edit',
-                        onTap: () => ClientActions.edit(cl),
-                      ),
-                      const SizedBox(width: 5),
-                      RowActionButton(
-                        icon: Icons.copy_outlined,
-                        color: const Color(0xFF3B82F6),
-                        bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
-                        tooltip: 'Duplicate',
-                        onTap: () => ClientActions.duplicate(cl),
-                      ),
-                      const SizedBox(width: 5),
-                      RowActionButton(
-                        icon: Icons.delete_outline_rounded,
-                        iconSize: 18,
-                        color: context.appColors.error,
-                        // Neutral, not red-tinted — matches the design, which
-                        // leaves Delete's background plain and lets only the
-                        // icon carry the warning color.
-                        bg: context.appColors.tagBg,
-                        tooltip: 'Delete',
-                        onTap: () => ClientActions.delete(context, cl),
-                      ),
+                      if (canWriteModule('Clients')) ...[
+                        const SizedBox(width: 5),
+                        RowActionButton(
+                          icon: Icons.edit_outlined,
+                          color: AppColors.primaryOrange,
+                          bg: AppColors.primaryOrange.withValues(alpha: 0.10),
+                          tooltip: 'Edit',
+                          onTap: () => ClientActions.edit(cl),
+                        ),
+                        const SizedBox(width: 5),
+                        RowActionButton(
+                          icon: Icons.copy_outlined,
+                          color: const Color(0xFF3B82F6),
+                          bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                          tooltip: 'Duplicate',
+                          onTap: () => ClientActions.duplicate(cl),
+                        ),
+                        const SizedBox(width: 5),
+                        RowActionButton(
+                          icon: Icons.delete_outline_rounded,
+                          iconSize: 18,
+                          color: context.appColors.error,
+                          // Neutral, not red-tinted — matches the design, which
+                          // leaves Delete's background plain and lets only the
+                          // icon carry the warning color.
+                          bg: context.appColors.tagBg,
+                          tooltip: 'Delete',
+                          onTap: () => ClientActions.delete(context, cl),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -816,7 +822,7 @@ class _QuickStatsCard extends StatelessWidget {
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -875,7 +881,7 @@ class _NewThisMonthCard extends StatelessWidget {
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -888,7 +894,7 @@ class _NewThisMonthCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   color: colors.textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             )
@@ -934,7 +940,7 @@ class _NewThisMonthCard extends StatelessWidget {
                               fontSize: cl.initials.length > 2 ? 9 : 10.5,
                               fontWeight: FontWeight.w700,
                               color: cl.badgeColor,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ),
@@ -947,7 +953,7 @@ class _NewThisMonthCard extends StatelessWidget {
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
                             color: colors.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -993,7 +999,7 @@ class _SumRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 color: colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -1003,7 +1009,7 @@ class _SumRow extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w700,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ],
@@ -1050,7 +1056,7 @@ class _TopClientsCard extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 Text(
@@ -1058,7 +1064,7 @@ class _TopClientsCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     color: colors.textHint,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ],
@@ -1100,7 +1106,7 @@ class _TopClientsCard extends StatelessWidget {
                         fontSize: 12.5,
                         fontWeight: FontWeight.w500,
                         color: colors.textPrimary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1112,7 +1118,7 @@ class _TopClientsCard extends StatelessWidget {
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ],
@@ -1158,18 +1164,20 @@ class _QuickActionsCard extends StatelessWidget {
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
-          Divider(height: 1, color: colors.divider),
-          _QAction(
-            icon: Icons.person_add_outlined,
-            label: 'Add New Client',
-            iconColor: AppColors.primaryOrange,
-            colors: colors,
-            onTap: () => Get.toNamed(AppRoutes.addClient),
-          ),
+          if (canWriteModule('Clients')) ...[
+            Divider(height: 1, color: colors.divider),
+            _QAction(
+              icon: Icons.person_add_outlined,
+              label: 'Add New Client',
+              iconColor: AppColors.primaryOrange,
+              colors: colors,
+              onTap: () => Get.toNamed(AppRoutes.addClient),
+            ),
+          ],
           Divider(height: 1, color: colors.divider),
           _QAction(
             icon: Icons.receipt_long_outlined,
@@ -1181,9 +1189,12 @@ class _QuickActionsCard extends StatelessWidget {
           _QAction(
             icon: Icons.history_rounded,
             label: 'All Transactions History',
-            iconColor: const Color(0xFF2D1B8C),
+            iconColor: colors.purple,
             colors: colors,
-            onTap: () => Get.toNamed(AppRoutes.transactions),
+            // The route guard would bounce anyone without Transactions.
+            onTap: canReadModule('Transactions')
+                ? () => Get.toNamed(AppRoutes.transactions)
+                : null,
           ),
           Divider(height: 1, color: colors.divider),
           _QAction(
@@ -1262,7 +1273,7 @@ class _QActionState extends State<_QAction> {
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: c.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),

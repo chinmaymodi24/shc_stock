@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/shared/widgets/brand_mark.dart';
 
-/// SHC brand logo.
-/// Adapts its size dynamically based on the available screen width.
-/// On mobile it uses 38% of screen width; on web the parent passes an explicit size.
+/// The brand mark on the login screens.
 ///
-/// In dark mode it swaps to `logo_dark.png` — the default artwork's deep-navy
-/// wordmark is unreadable on the dark login card. Same rule as [LogoPlate].
+/// Adapts its size to the available width: on mobile 38% of the screen, on web
+/// the parent passes an explicit one. Renders the buyer's uploaded logo, or
+/// their short code on a secondary plate — the login screen is the first thing
+/// anyone sees, so it must already be their brand, not ours.
 class SHCLogo extends StatelessWidget {
-  /// Override the width. If null, falls back to 38% of screen width (mobile default).
+  /// Override the width. If null, falls back to 38% of screen width.
   final double? width;
 
   const SHCLogo({super.key, this.width});
@@ -16,11 +17,6 @@ class SHCLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double logoWidth = width ?? MediaQuery.of(context).size.width * 0.38;
-
-    return Image.asset(
-      context.isDarkMode ? 'assets/logo_dark.png' : 'assets/logo.png',
-      width: logoWidth,
-      fit: BoxFit.fitWidth,
-    );
+    return BrandMark(width: logoWidth, isDark: context.isDarkMode);
   }
 }

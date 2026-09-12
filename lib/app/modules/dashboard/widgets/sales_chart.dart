@@ -10,7 +10,11 @@ import 'package:shc_stock/app/core/theme/app_colors.dart';
 /// parent rebuilds; the index itself is an Rx read through [Obx].
 class SalesLineChart extends StatefulWidget {
   final List<ChartPoint> data;
-  final Color lineColor;
+
+  /// Defaults to the brand primary. Nullable rather than defaulted in the
+  /// constructor because the brand is a runtime value now — a default
+  /// parameter has to be a compile-time constant.
+  final Color? lineColor;
 
   /// Formats the hover tooltip value. Defaults to a plain count.
   final String Function(double value)? valueFormatter;
@@ -18,7 +22,7 @@ class SalesLineChart extends StatefulWidget {
   const SalesLineChart({
     super.key,
     required this.data,
-    this.lineColor = AppColors.primaryOrange,
+    this.lineColor,
     this.valueFormatter,
   });
 
@@ -64,7 +68,8 @@ class _SalesLineChartState extends State<SalesLineChart> {
                       child: CustomPaint(
                         painter: _SalesChartPainter(
                           data: widget.data,
-                          lineColor: widget.lineColor,
+                          lineColor:
+                              widget.lineColor ?? AppColors.primaryOrange,
                           gridColor: colors.divider,
                           labelColor: colors.textSecondary,
                           dotBorderColor: colors.surface,
@@ -118,7 +123,7 @@ class _SalesLineChartState extends State<SalesLineChart> {
             (value == value.roundToDouble()
                 ? value.round().toString()
                 : value.toStringAsFixed(1)),
-        accent: widget.lineColor,
+        accent: widget.lineColor ?? AppColors.primaryOrange,
       ),
     );
   }
@@ -178,7 +183,7 @@ class _SalesChartPainter extends CustomPainter {
     final textStyle = TextStyle(
       fontSize: 11,
       color: labelColor,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
     );
 
     final points = ChartGeometry.linePoints(size, data);

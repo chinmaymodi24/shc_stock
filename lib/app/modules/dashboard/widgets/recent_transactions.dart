@@ -58,7 +58,7 @@ class RecentTransactions extends StatelessWidget {
     fontSize: 12,
     fontWeight: FontWeight.w500,
     color: colors.textSecondary,
-    fontFamily: 'Poppins',
+    fontFamily: brandFontFamily,
   );
 }
 
@@ -82,7 +82,7 @@ class _TransactionRowTile extends StatelessWidget {
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -93,7 +93,7 @@ class _TransactionRowTile extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 color: colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -104,7 +104,7 @@ class _TransactionRowTile extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 color: colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -115,7 +115,7 @@ class _TransactionRowTile extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 color: colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -164,7 +164,7 @@ class _StatusChip extends StatelessWidget {
             fontSize: 11.5,
             fontWeight: FontWeight.w600,
             color: fg,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ),

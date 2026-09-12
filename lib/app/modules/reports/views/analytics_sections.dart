@@ -174,7 +174,7 @@ class InventoryHealthPanel extends GetView<AnalyticsController> {
               style: TextStyle(
                 fontSize: 12.5,
                 color: context.appColors.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           );
@@ -273,7 +273,7 @@ class PaymentCollectionPanel extends GetView<AnalyticsController> {
           style: TextStyle(
             fontSize: 11,
             color: colors.textHint,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         const SizedBox(height: 2),
@@ -285,7 +285,7 @@ class PaymentCollectionPanel extends GetView<AnalyticsController> {
             fontSize: 13,
             fontWeight: FontWeight.w700,
             color: color,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ],
@@ -300,7 +300,7 @@ class ReceivablesAgingPanel extends GetView<AnalyticsController> {
 
   /// Fresh money is green and ages through to red — the same reading order as
   /// the buckets themselves.
-  static const List<Color> bucketColors = [
+  static List<Color> bucketColors = [
     kAnalyticsGreen,
     AppColors.primaryOrange,
     kAnalyticsAmber,
@@ -427,7 +427,7 @@ class MonthComparisonPanel extends GetView<AnalyticsController> {
               padding: const EdgeInsets.symmetric(vertical: 11),
               decoration: BoxDecoration(
                 color: growthColor.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(appColors.radius),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -450,7 +450,7 @@ class MonthComparisonPanel extends GetView<AnalyticsController> {
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: growthColor,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ],

@@ -35,6 +35,33 @@ function toStockLines(items = []) {
 /// Applies stock lines in `direction` (+1 adds, -1 removes) and logs a movement
 /// row for each. Throws InsufficientStockError when a removal would go
 /// negative, so the surrounding transaction rolls back.
+
+/// Moves a product's running total by [delta], floored at zero.
+///
+/// Physical stock cannot be negative — you cannot hold -2 kg of fibre. Two
+/// paths could previously drive it below zero, because neither has a
+/// shortfall check the way a sale does:
+///
+///   * reversing a received purchase whose goods have since been sold,
+///   * deleting a manual adjustment whose quantity is no longer in stock.
+///
+/// The second one shipped a real -2 onto a dashboard. Both now stop at zero.
+/// Read-modify-write rather than  because that is the only way to
+/// apply the floor; it is safe here since every caller is already inside a
+/// transaction.
+async function shiftStock(tx, productId, delta) {
+  const product = await tx.product.findUnique({
+    where: { id: productId },
+    select: { currentStock: true },
+  });
+  if (!product) return; // deleted since the movement was written
+  const next = Math.max(0, product.currentStock + delta);
+  await tx.product.update({
+    where: { id: productId },
+    data: { currentStock: next, modifiedAt: new Date() },
+  });
+}
+
 async function applyStock(tx, { lines, direction, type, refType, refId, reference, note = '', createdBy = 'Admin', rate = null }) {
   if (!lines.length) return [];
 
@@ -96,14 +123,9 @@ async function reverseStockFor(tx, refType, refId) {
   const movements = await tx.stockMovement.findMany({ where: { refType, refId } });
   for (const m of movements) {
     const delta = m.type === 'IN' ? -Math.round(m.qty) : Math.round(m.qty);
-    // The product may have been deleted; skip rather than fail the whole undo.
-    const exists = await tx.product.findUnique({ where: { id: m.productId }, select: { id: true } });
-    if (exists) {
-      await tx.product.update({
-        where: { id: m.productId },
-        data: { currentStock: { increment: delta }, modifiedAt: new Date() },
-      });
-    }
+    // Floored, and a product deleted since the movement was written is
+    // skipped rather than failing the whole undo.
+    await shiftStock(tx, m.productId, delta);
   }
   await tx.stockMovement.deleteMany({ where: { refType, refId } });
   return movements.length;
@@ -177,6 +199,7 @@ module.exports = {
   toStockLines,
   applyStock,
   reverseStockFor,
+  shiftStock,
   stockStatus,
   movesStock,
   syncStockForStatus,

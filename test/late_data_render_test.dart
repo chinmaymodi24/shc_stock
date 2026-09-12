@@ -61,7 +61,8 @@ class _StubSession extends SessionController {
     id: 1,
     name: 'Chinmay Modi',
     email: 'shc@gmail.com',
-    role: 'Admin',
+    role: 'Super Admin',
+    isSuperAdmin: true,
   );
 }
 

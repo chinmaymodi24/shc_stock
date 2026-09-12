@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/dashboard/controllers/dashboard_controller.dart';
@@ -67,65 +68,61 @@ class WebDashboardLayout extends StatelessWidget {
                       );
                     }
 
+                    // Each block shows only to someone allowed to see it:
+                    // the KPIs, charts and category breakdown are the
+                    // Dashboard summary right; each list needs read on the
+                    // module it comes from. Notes are always the user's own.
+                    final showSummary = canSeeSummary('Dashboard');
+                    final middle = <(int, Widget)>[
+                      if (canReadModule('Transactions'))
+                        (65, _buildRecentTransactions(context, c)),
+                      if (canReadModule('Purchase'))
+                        (35, _buildIncomingDeliveries(context, c)),
+                    ];
+                    final bottom = <(int, Widget)>[
+                      if (showSummary) (1, _buildCategoryBreakdown(context, c)),
+                      if (canReadModule('Inventory'))
+                        (1, _buildLowStockAlerts(context, c)),
+                      (1, _buildNotesTodo(context, c)),
+                    ];
+
                     return SingleChildScrollView(
                       padding: const EdgeInsets.all(24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          AppStatCardRow(
-                            cards: c.dashboardStats
-                                .map((d) => _DashboardStatTile(data: d))
-                                .toList(),
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(child: _buildPurchasesChart(context, c)),
-                              const SizedBox(width: 16),
-                              Expanded(child: _buildSalesChart(context, c)),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _buildNewClientsChart(context, c),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(child: _buildCategoryDonut(context, c)),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          IntrinsicHeight(
-                            child: Row(
+                          if (showSummary) ...[
+                            AppStatCardRow(
+                              cards: c.dashboardStats
+                                  .map((d) => _DashboardStatTile(data: d))
+                                  .toList(),
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
-                                  flex: 65,
-                                  child: _buildRecentTransactions(context, c),
+                                  child: _buildPurchasesChart(context, c),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(child: _buildSalesChart(context, c)),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildNewClientsChart(context, c),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
-                                  flex: 35,
-                                  child: _buildIncomingDeliveries(context, c),
+                                  child: _buildCategoryDonut(context, c),
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: 20),
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: _buildCategoryBreakdown(context, c),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: _buildLowStockAlerts(context, c),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(child: _buildNotesTodo(context, c)),
-                              ],
-                            ),
-                          ),
+                            const SizedBox(height: 20),
+                          ],
+                          if (middle.isNotEmpty) ...[
+                            _flexRow(middle),
+                            const SizedBox(height: 20),
+                          ],
+                          _flexRow(bottom),
                         ],
                       ),
                     );
@@ -140,6 +137,19 @@ class WebDashboardLayout extends StatelessWidget {
   }
 
   // ── Top bar: greeting + search + bell + avatar ───────────────────────────
+  /// Equal-height row of dashboard cards, 16px apart, sized by flex.
+  Widget _flexRow(List<(int, Widget)> items) => IntrinsicHeight(
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(width: 16),
+          Expanded(flex: items[i].$1, child: items[i].$2),
+        ],
+      ],
+    ),
+  );
+
   Widget _buildTopBar(BuildContext context, DashboardController c) {
     final colors = context.appColors;
     return Container(
@@ -160,7 +170,7 @@ class WebDashboardLayout extends StatelessWidget {
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -169,7 +179,7 @@ class WebDashboardLayout extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     color: colors.textSecondary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ],
@@ -287,13 +297,13 @@ class WebDashboardLayout extends StatelessWidget {
             onDelete: c.deleteNote,
           ),
         ),
-        child: const Text(
+        child: Text(
           'View All',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: AppColors.primaryOrange,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ),
@@ -369,7 +379,7 @@ class _SectionCard extends StatelessWidget {
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -421,7 +431,7 @@ class _ChartCard extends StatelessWidget {
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           const SizedBox(height: 14),
@@ -436,11 +446,11 @@ class _ChartCard extends StatelessWidget {
             maintainState: true,
             child: Text(
               changeText ?? '',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF2FA85C),
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),

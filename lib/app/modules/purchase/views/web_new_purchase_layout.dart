@@ -136,7 +136,7 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
                                     fontSize: 20,
                                     fontWeight: FontWeight.w700,
                                     color: colors.textPrimary,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -147,7 +147,7 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     color: colors.textSecondary,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                               ],
@@ -563,16 +563,16 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
                                               fontSize: 15,
                                               fontWeight: FontWeight.w700,
                                               color: colors.textPrimary,
-                                              fontFamily: 'Poppins',
+                                              fontFamily: brandFontFamily,
                                             ),
                                           ),
                                           Text(
                                             '₹${controller.grandTotal.toStringAsFixed(0)}',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w800,
                                               color: AppColors.primaryOrange,
-                                              fontFamily: 'Poppins',
+                                              fontFamily: brandFontFamily,
                                             ),
                                           ),
                                         ],
@@ -606,7 +606,7 @@ class WebNewPurchaseLayout extends GetView<AddPurchaseController> {
                                 'Cancel',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  fontFamily: 'Poppins',
+                                  fontFamily: brandFontFamily,
                                   color: colors.textSecondary,
                                 ),
                               ),
@@ -664,7 +664,7 @@ class _ItemDetailsTable extends StatelessWidget {
     fontSize: 11.5,
     fontWeight: FontWeight.w600,
     color: colors.textSecondary,
-    fontFamily: 'Poppins',
+    fontFamily: brandFontFamily,
   );
 
   @override
@@ -926,7 +926,7 @@ class _ItemDetailsRow extends StatelessWidget {
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
               textAlign: TextAlign.right,
             ),
@@ -988,14 +988,14 @@ class _ProductAutocomplete extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
           decoration: InputDecoration(
             hintText: 'Type e.g. Ceramic Fiber Blanket 1260...',
             hintStyle: TextStyle(
               fontSize: 12,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(
@@ -1014,7 +1014,7 @@ class _ProductAutocomplete extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
-              borderSide: const BorderSide(
+              borderSide: BorderSide(
                 color: AppColors.primaryOrange,
                 width: 1.2,
               ),
@@ -1027,13 +1027,13 @@ class _ProductAutocomplete extends StatelessWidget {
           alignment: Alignment.topLeft,
           child: Material(
             elevation: 4,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(appColors.radius),
             color: colors.surface,
             child: Container(
               width: 380,
               constraints: const BoxConstraints(maxHeight: 260),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(appColors.radius),
                 border: Border.all(color: colors.border),
               ),
               child: ListView.builder(
@@ -1072,7 +1072,7 @@ class _ProductAutocomplete extends StatelessWidget {
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                       color: colors.textPrimary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -1081,7 +1081,7 @@ class _ProductAutocomplete extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: colors.textHint,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                 ],
@@ -1093,7 +1093,7 @@ class _ProductAutocomplete extends StatelessWidget {
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w600,
                                 color: colors.textSecondary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ],

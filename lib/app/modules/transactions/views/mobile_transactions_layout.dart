@@ -1,3 +1,6 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
+import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
+import 'package:shc_stock/app/modules/transactions/export/transactions_export.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -32,11 +35,13 @@ class MobileTransactionsLayout extends StatelessWidget {
       drawer: const AppDrawer(activeRoute: AppRoutes.transactions),
       appBar: _buildAppBar(context, c),
       body: _buildList(context, c),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Get.dialog(const TransactionFormDialog()),
-        backgroundColor: AppColors.primaryOrange,
-        child: const Icon(Icons.add_rounded, color: Colors.white),
-      ),
+      floatingActionButton: canWriteModule('Transactions')
+          ? FloatingActionButton(
+              onPressed: () => Get.dialog(const TransactionFormDialog()),
+              backgroundColor: AppColors.primaryOrange,
+              child: const Icon(Icons.add_rounded, color: Colors.white),
+            )
+          : null,
     );
   }
 
@@ -60,7 +65,7 @@ class MobileTransactionsLayout extends StatelessWidget {
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: colors.textPrimary,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
       centerTitle: true,
@@ -82,6 +87,9 @@ class MobileTransactionsLayout extends StatelessWidget {
                 (c.sortOption.value == 'Default' ? 0 : 1),
           ),
         ),
+        // Export reaches the phone too: the same menu the web toolbar
+        // opens, as an AppBar icon.
+        ExportMenuButton(source: transactionsExportConfig(c), iconOnly: true),
         const MobileAppBarAvatar(),
       ],
       bottom: PreferredSize(
@@ -228,6 +236,7 @@ class MobileTransactionsLayout extends StatelessWidget {
       }
 
       return MobileListScaffold(
+        summaryModule: 'Transactions',
         statCards: _statCards(c),
         search: _searchField(c),
         countLabel: loading ? null : 'Showing ${filtered.length} transactions',
@@ -285,7 +294,7 @@ class _MobileTxnCard extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -306,7 +315,7 @@ class _MobileTxnCard extends StatelessWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: txn.typeColor,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -318,7 +327,7 @@ class _MobileTxnCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 color: colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -336,7 +345,7 @@ class _MobileTxnCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11.5,
                     color: colors.textSecondary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 const Spacer(),
@@ -346,7 +355,7 @@ class _MobileTxnCard extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: txn.statusColor,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ],
@@ -361,16 +370,18 @@ class _MobileTxnCard extends StatelessWidget {
                   context: context,
                   onTap: () => TransactionActions.view(txn),
                 ),
-                MobileActionButton.edit(
-                  context: context,
-                  onTap: () => TransactionActions.edit(txn),
-                ),
-                MobileActionButton.duplicate(
-                  onTap: () => TransactionActions.duplicate(txn),
-                ),
-                MobileActionButton.delete(
-                  onTap: () => TransactionActions.delete(context, txn),
-                ),
+                if (canWriteModule('Transactions')) ...[
+                  MobileActionButton.edit(
+                    context: context,
+                    onTap: () => TransactionActions.edit(txn),
+                  ),
+                  MobileActionButton.duplicate(
+                    onTap: () => TransactionActions.duplicate(txn),
+                  ),
+                  MobileActionButton.delete(
+                    onTap: () => TransactionActions.delete(context, txn),
+                  ),
+                ],
               ],
             ),
           ],

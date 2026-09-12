@@ -122,7 +122,7 @@ class _ReportPeriodSelectorState extends State<ReportPeriodSelector> {
                       color: open
                           ? AppColors.primaryOrange
                           : colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                   const SizedBox(width: 5),
@@ -239,7 +239,7 @@ class _MenuRow extends StatelessWidget {
                   fontSize: 12.5,
                   fontWeight: active ? FontWeight.w600 : FontWeight.w500,
                   color: active ? AppColors.primaryOrange : colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ),

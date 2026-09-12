@@ -1,3 +1,5 @@
+import 'package:shc_stock/app/core/export/writers/pdf_logo.dart';
+import 'package:shc_stock/app/core/theme/brand_controller.dart';
 import 'dart:typed_data';
 
 import 'package:get/get.dart';
@@ -88,6 +90,43 @@ class ExportService extends GetxService {
     );
   }
 
+  /// Registers an already-rendered file — a bill PDF, say — as a finished
+  /// export: it is saved now and listed in Downloads alongside everything
+  /// else, without pretending to be a row query.
+  Future<ExportJob> startPrebuiltBytes({
+    required String filename,
+    required ExportFormat format,
+    required Uint8List bytes,
+    int rowCount = 0,
+  }) async {
+    final id = _nextId++;
+    final job = ExportJob(
+      id: id,
+      filename: filename,
+      format: format,
+      totalRows: rowCount,
+      processedRows: rowCount,
+      state: ExportJobState.ready,
+      bytes: bytes,
+    );
+    pruneExpired();
+    downloads.insert(
+      0,
+      DownloadEntry(
+        id: id,
+        filename: filename,
+        format: format,
+        rowCount: rowCount,
+        bytes: bytes,
+        createdAt: DateTime.now(),
+      ),
+    );
+    hasNewDownload.value = true;
+    await save(filename, format, bytes);
+    jobs.add(job);
+    return job;
+  }
+
   Future<void> retry(ExportJob job) async {
     final spec = _specs[job.id];
     if (spec == null) return;
@@ -143,7 +182,9 @@ class ExportService extends GetxService {
     downloads.removeWhere((entry) => entry.createdAt.isBefore(cutoff));
   }
 
-  /// The `Generated <date, time> · <user>` line printed on every PDF.
+  /// The `<company> · Generated <date, time> · <user>` line printed on every
+  /// PDF. The company is the buyer's, so an exported report identifies THEIR
+  /// business rather than the app it was built from.
   String generatedLine() {
     final now = DateTime.now();
     const months = [
@@ -165,7 +206,7 @@ class ExportService extends GetxService {
         '${now.day.toString().padLeft(2, '0')} ${months[now.month - 1]} '
         '${now.year}, $hour12:${now.minute.toString().padLeft(2, '0')} '
         '${now.hour < 12 ? 'AM' : 'PM'}';
-    return 'Generated $stamp · $currentActorName';
+    return '${brand.companyName} · Generated $stamp · $currentActorName';
   }
 
   // ── Internals ─────────────────────────────────────────────────────────────
@@ -264,6 +305,7 @@ class ExportService extends GetxService {
         table,
         layout: request.pageLayout,
         generatedLine: generatedLine(),
+        logo: brandPdfLogo,
       ),
     };
   }

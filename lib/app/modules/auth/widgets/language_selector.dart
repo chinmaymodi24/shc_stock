@@ -13,7 +13,7 @@ class LanguageSelector extends GetView<LoginController> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           border: Border.all(color: AppColors.inputBorder, width: 1),
           boxShadow: [
             BoxShadow(
@@ -35,10 +35,7 @@ class LanguageSelector extends GetView<LoginController> {
                   value: lang,
                   child: Text(
                     lang,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textDark,
-                    ),
+                    style: TextStyle(fontSize: 13, color: AppColors.textDark),
                   ),
                 ),
               )
@@ -46,7 +43,7 @@ class LanguageSelector extends GetView<LoginController> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.language_rounded,
                 size: 16,
                 color: AppColors.textMedium,
@@ -54,14 +51,14 @@ class LanguageSelector extends GetView<LoginController> {
               const SizedBox(width: 6),
               Text(
                 controller.selectedLanguage.value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: AppColors.textDark,
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(
+              Icon(
                 Icons.keyboard_arrow_down_rounded,
                 size: 16,
                 color: AppColors.textMedium,

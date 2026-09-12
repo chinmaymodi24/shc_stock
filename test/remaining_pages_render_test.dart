@@ -35,7 +35,8 @@ const _signedIn = SessionUser(
   id: 1,
   name: 'Chinmay Modi',
   email: 'shc@gmail.com',
-  role: 'Admin',
+  role: 'Super Admin',
+  isSuperAdmin: true,
 );
 
 class _StubSession extends SessionController {
@@ -192,7 +193,7 @@ Future<void> _pump(
 
   await tester.pumpWidget(
     GetMaterialApp(
-      theme: ThemeData(extensions: const [AppThemeColors.light]),
+      theme: ThemeData(extensions: [AppThemeColors.light]),
       home: page,
     ),
   );

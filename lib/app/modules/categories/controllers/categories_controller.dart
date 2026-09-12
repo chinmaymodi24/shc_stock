@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
@@ -183,6 +184,7 @@ class CategoriesController extends GetxController {
   /// Reorder categories (drag & drop). Optimistically updates the UI, then
   /// persists the new order; reverts by re-fetching if the request fails.
   Future<void> reorderCategory(int oldIndex, int newIndex) async {
+    if (!requireWrite('Categories')) return;
     if (oldIndex == newIndex) return;
     final list = List<CategoryModel>.from(categories);
     if (newIndex > oldIndex) newIndex -= 1;
@@ -276,6 +278,7 @@ class CategoriesController extends GetxController {
 
   /// Reorder sub-categories within a parent (drag & drop).
   Future<void> reorderSubCategory(String catId, int oldSi, int newSi) async {
+    if (!requireWrite('Categories')) return;
     if (oldSi == newSi) return;
     final idx = categories.indexWhere((c) => c.id == catId);
     if (idx == -1) return;

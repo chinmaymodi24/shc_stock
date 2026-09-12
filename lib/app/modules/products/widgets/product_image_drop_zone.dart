@@ -194,7 +194,7 @@ class _ProductImageDropZoneState extends State<ProductImageDropZone> {
           style: TextStyle(
             fontSize: 10.5,
             color: colors.textHint,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ],
@@ -254,7 +254,7 @@ class _Prompt extends StatelessWidget {
                 color: dragging
                     ? AppColors.primaryOrange
                     : colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],

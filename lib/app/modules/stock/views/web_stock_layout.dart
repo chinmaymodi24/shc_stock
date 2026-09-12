@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
@@ -90,7 +91,7 @@ class WebStockLayout extends GetView<StockController> {
                                       fontSize: 22,
                                       fontWeight: FontWeight.w700,
                                       color: colors.textPrimary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                   const SizedBox(height: 3),
@@ -99,88 +100,93 @@ class WebStockLayout extends GetView<StockController> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: colors.textSecondary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                 ],
                               ),
-                              ElevatedButton.icon(
-                                // Inventory quantities only ever move through
-                                // purchases/sales (automatic) or here
-                                // (manual, with a reason) — there's no
-                                // freeform "add item" on this page.
-                                onPressed: () =>
-                                    Get.dialog(const StockAdjustmentDialog()),
-                                icon: const Icon(
-                                  Icons.tune_rounded,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                                label: const Text(
-                                  'Adjust Stock',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                              if (canWriteModule('Inventory'))
+                                ElevatedButton.icon(
+                                  // Inventory quantities only ever move through
+                                  // purchases/sales (automatic) or here
+                                  // (manual, with a reason) — there's no
+                                  // freeform "add item" on this page.
+                                  onPressed: () =>
+                                      Get.dialog(const StockAdjustmentDialog()),
+                                  icon: const Icon(
+                                    Icons.tune_rounded,
                                     color: Colors.white,
-                                    fontFamily: 'Poppins',
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    'Adjust Stock',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      fontFamily: brandFontFamily,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryOrange,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        appColors.radius,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryOrange,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 20),
 
                           // ── Summary cards — all from GET /api/stats/inventory ─────
-                          AppStatCardRow(
-                            cards: [
-                              AppStatCard(
-                                label: 'Total Items',
-                                value: '${c.stats.value.intOf('totalItems')}',
-                                icon: Icons.inventory_2_outlined,
-                                iconColor: AppColors.primaryOrange,
-                                trend: c.stats.value.trendLabel('totalItems'),
-                                trendUp: c.stats.value.trendUp('totalItems'),
-                                showCaption: false,
-                              ),
-                              AppStatCard(
-                                label: 'Low Stock',
-                                value: '${c.stats.value.intOf('lowStock')}',
-                                icon: Icons.warning_amber_rounded,
-                                iconColor: const Color(0xFFF59E0B),
-                              ),
-                              AppStatCard(
-                                label: 'Out of Stock',
-                                value: '${c.stats.value.intOf('outOfStock')}',
-                                icon: Icons.block_rounded,
-                                iconColor: const Color(0xFFEF4444),
-                              ),
-                              AppStatCard(
-                                label: 'Stock Value',
-                                value: formatRupees(
-                                  c.stats.value.doubleOf('totalValue'),
+                          if (canSeeSummary('Inventory')) ...[
+                            AppStatCardRow(
+                              cards: [
+                                AppStatCard(
+                                  label: 'Total Items',
+                                  value: '${c.stats.value.intOf('totalItems')}',
+                                  icon: Icons.inventory_2_outlined,
+                                  iconColor: AppColors.primaryOrange,
+                                  trend: c.stats.value.trendLabel('totalItems'),
+                                  trendUp: c.stats.value.trendUp('totalItems'),
+                                  showCaption: false,
                                 ),
-                                smallValue: true,
-                                icon: Icons.currency_rupee_rounded,
-                                iconColor: const Color(0xFF22C55E),
-                                // Stock movement volume this month vs last.
-                                trend: c.stats.value.trendLabel('movement'),
-                                trendUp: c.stats.value.trendUp('movement'),
-                                showCaption: false,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
+                                AppStatCard(
+                                  label: 'Low Stock',
+                                  value: '${c.stats.value.intOf('lowStock')}',
+                                  icon: Icons.warning_amber_rounded,
+                                  iconColor: const Color(0xFFF59E0B),
+                                ),
+                                AppStatCard(
+                                  label: 'Out of Stock',
+                                  value: '${c.stats.value.intOf('outOfStock')}',
+                                  icon: Icons.block_rounded,
+                                  iconColor: const Color(0xFFEF4444),
+                                ),
+                                AppStatCard(
+                                  label: 'Stock Value',
+                                  value: formatRupees(
+                                    c.stats.value.doubleOf('totalValue'),
+                                  ),
+                                  smallValue: true,
+                                  icon: Icons.currency_rupee_rounded,
+                                  iconColor: const Color(0xFF22C55E),
+                                  // Stock movement volume this month vs last.
+                                  trend: c.stats.value.trendLabel('movement'),
+                                  trendUp: c.stats.value.trendUp('movement'),
+                                  showCaption: false,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                          ],
 
                           // ── Toolbar: search + filters ─────────────────────────────
                           FilterBar(
@@ -244,11 +250,7 @@ class WebStockLayout extends GetView<StockController> {
                               source: inventoryExportConfig(c),
                             ),
                           ),
-                          const SizedBox(height: 12),
                           ListScopeBar(
-                            shown: filtered.length,
-                            total: c.items.length,
-                            noun: 'items',
                             chips: [
                               if (c.search.value.isNotEmpty)
                                 ListScopeChip(
@@ -312,7 +314,7 @@ class WebStockLayout extends GetView<StockController> {
                                             style: TextStyle(
                                               fontSize: 14,
                                               color: colors.textHint,
-                                              fontFamily: 'Poppins',
+                                              fontFamily: brandFontFamily,
                                             ),
                                           ),
                                         ],
@@ -367,7 +369,7 @@ class _ColHeader extends StatelessWidget {
     fontSize: 12,
     fontWeight: FontWeight.w600,
     color: colors.textSecondary,
-    fontFamily: 'Poppins',
+    fontFamily: brandFontFamily,
     letterSpacing: 0.1,
   );
   Widget _sortIcon() =>
@@ -471,7 +473,7 @@ class _StockRowState extends State<_StockRow> {
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                       color: c.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -485,7 +487,7 @@ class _StockRowState extends State<_StockRow> {
                     style: TextStyle(
                       fontSize: 12.5,
                       color: c.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -498,7 +500,7 @@ class _StockRowState extends State<_StockRow> {
                     style: TextStyle(
                       fontSize: 12.5,
                       color: c.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -513,7 +515,7 @@ class _StockRowState extends State<_StockRow> {
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                       color: context.appColors.accent,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -538,7 +540,7 @@ class _StockRowState extends State<_StockRow> {
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
                           color: item.statusColor,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -581,34 +583,36 @@ class _StockRowState extends State<_StockRow> {
                         tooltip: 'View',
                         onTap: () => StockActions.view(context, item),
                       ),
-                      const SizedBox(width: 6),
-                      RowActionButton(
-                        icon: Icons.edit_outlined,
-                        color: AppColors.primaryOrange,
-                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
-                        tooltip: 'Edit',
-                        onTap: () => StockActions.edit(item),
-                      ),
-                      const SizedBox(width: 6),
-                      RowActionButton(
-                        icon: Icons.copy_outlined,
-                        color: const Color(0xFF3B82F6),
-                        bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
-                        tooltip: 'Duplicate',
-                        onTap: () => StockActions.duplicate(item),
-                      ),
-                      const SizedBox(width: 6),
-                      RowActionButton(
-                        icon: Icons.delete_outline_rounded,
-                        iconSize: 18,
-                        color: const Color(0xFFEF4444),
-                        // Neutral, not red-tinted — the design leaves
-                        // Delete's background plain and lets only the icon
-                        // carry the warning color.
-                        bg: c.tagBg,
-                        tooltip: 'Delete',
-                        onTap: () => StockActions.delete(context, item),
-                      ),
+                      if (canWriteModule('Products')) ...[
+                        const SizedBox(width: 6),
+                        RowActionButton(
+                          icon: Icons.edit_outlined,
+                          color: AppColors.primaryOrange,
+                          bg: AppColors.primaryOrange.withValues(alpha: 0.10),
+                          tooltip: 'Edit',
+                          onTap: () => StockActions.edit(item),
+                        ),
+                        const SizedBox(width: 6),
+                        RowActionButton(
+                          icon: Icons.copy_outlined,
+                          color: const Color(0xFF3B82F6),
+                          bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                          tooltip: 'Duplicate',
+                          onTap: () => StockActions.duplicate(item),
+                        ),
+                        const SizedBox(width: 6),
+                        RowActionButton(
+                          icon: Icons.delete_outline_rounded,
+                          iconSize: 18,
+                          color: const Color(0xFFEF4444),
+                          // Neutral, not red-tinted — the design leaves
+                          // Delete's background plain and lets only the icon
+                          // carry the warning color.
+                          bg: c.tagBg,
+                          tooltip: 'Delete',
+                          onTap: () => StockActions.delete(context, item),
+                        ),
+                      ],
                     ],
                   ),
                 ),

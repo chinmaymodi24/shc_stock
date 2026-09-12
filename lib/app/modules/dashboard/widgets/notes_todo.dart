@@ -96,7 +96,7 @@ class _NotesTodoState extends State<NotesTodo> {
                               decoration: note.done
                                   ? TextDecoration.lineThrough
                                   : null,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ),
@@ -130,7 +130,7 @@ class _NotesTodoState extends State<NotesTodo> {
         Container(
           decoration: BoxDecoration(
             color: colors.tagBg,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(appColors.radius),
           ),
           child: TextField(
             controller: _controller,
@@ -138,14 +138,14 @@ class _NotesTodoState extends State<NotesTodo> {
             style: TextStyle(
               fontSize: 13,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             decoration: InputDecoration(
               hintText: '+ Add a note...',
               hintStyle: TextStyle(
                 fontSize: 13,
                 color: colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(

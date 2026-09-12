@@ -1,3 +1,6 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
+import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
+import 'package:shc_stock/app/modules/stock/export/inventory_export.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -32,19 +35,21 @@ class MobileStockLayout extends StatelessWidget {
       drawer: const AppDrawer(activeRoute: AppRoutes.stock),
       appBar: _buildAppBar(context, c),
       body: _buildList(context, c),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Get.dialog(const StockAdjustmentDialog()),
-        backgroundColor: AppColors.primaryOrange,
-        icon: const Icon(Icons.tune_rounded, color: Colors.white),
-        label: const Text(
-          'Adjust Stock',
-          style: TextStyle(
-            color: Colors.white,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      floatingActionButton: canWriteModule('Inventory')
+          ? FloatingActionButton.extended(
+              onPressed: () => Get.dialog(const StockAdjustmentDialog()),
+              backgroundColor: AppColors.primaryOrange,
+              icon: const Icon(Icons.tune_rounded, color: Colors.white),
+              label: Text(
+                'Adjust Stock',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontFamily: brandFontFamily,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+          : null,
     );
   }
 
@@ -65,7 +70,7 @@ class MobileStockLayout extends StatelessWidget {
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: colors.textPrimary,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
       centerTitle: true,
@@ -87,6 +92,9 @@ class MobileStockLayout extends StatelessWidget {
                 (c.sortOption.value == 'Default' ? 0 : 1),
           ),
         ),
+        // Export reaches the phone too: the same menu the web toolbar
+        // opens, as an AppBar icon.
+        ExportMenuButton(source: inventoryExportConfig(c), iconOnly: true),
         const MobileAppBarAvatar(),
       ],
       bottom: PreferredSize(
@@ -236,6 +244,7 @@ class MobileStockLayout extends StatelessWidget {
       }
 
       return MobileListScaffold(
+        summaryModule: 'Inventory',
         statCards: _statCards(c),
         search: _searchField(c),
         countLabel: loading ? null : 'Showing ${filtered.length} items',
@@ -292,7 +301,7 @@ class _MobileStockCard extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -313,7 +322,7 @@ class _MobileStockCard extends StatelessWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: item.statusColor,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -325,7 +334,7 @@ class _MobileStockCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 color: colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -344,7 +353,7 @@ class _MobileStockCard extends StatelessWidget {
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                     color: context.appColors.accent,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 const Spacer(),
@@ -354,7 +363,7 @@ class _MobileStockCard extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ],
@@ -370,16 +379,18 @@ class _MobileStockCard extends StatelessWidget {
                   context: context,
                   onTap: () => StockActions.view(context, item),
                 ),
-                MobileActionButton.edit(
-                  context: context,
-                  onTap: () => StockActions.edit(item),
-                ),
-                MobileActionButton.duplicate(
-                  onTap: () => StockActions.duplicate(item),
-                ),
-                MobileActionButton.delete(
-                  onTap: () => StockActions.delete(context, item),
-                ),
+                if (canWriteModule('Products')) ...[
+                  MobileActionButton.edit(
+                    context: context,
+                    onTap: () => StockActions.edit(item),
+                  ),
+                  MobileActionButton.duplicate(
+                    onTap: () => StockActions.duplicate(item),
+                  ),
+                  MobileActionButton.delete(
+                    onTap: () => StockActions.delete(context, item),
+                  ),
+                ],
               ],
             ),
           ],

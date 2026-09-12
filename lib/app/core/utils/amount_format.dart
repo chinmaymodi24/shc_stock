@@ -52,3 +52,31 @@ String trimAmount(double v) {
       .replaceFirst(RegExp(r'0+$'), '')
       .replaceFirst(RegExp(r'\.$'), '');
 }
+
+/// Indian-grouped number with exactly two decimals and no symbol —
+/// "1,42,00,000.00". What every cell of a tax invoice prints.
+///
+/// The invoice is a legal document: a figure there is never rounded for
+/// display, so this keeps both paise even when they are zero.
+String formatIndian2(double v) {
+  final negative = v < 0;
+  final fixed = v.abs().toStringAsFixed(2);
+  final parts = fixed.split('.');
+  final grouped = groupIndian(parts[0]);
+  return '${negative ? '-' : ''}$grouped.${parts[1]}';
+}
+
+/// Indian digit grouping on an already-formatted integer string: last three,
+/// then pairs. "14200000" -> "1,42,00,000".
+String groupIndian(String digits) {
+  if (digits.length <= 3) return digits;
+  final last3 = digits.substring(digits.length - 3);
+  var rest = digits.substring(0, digits.length - 3);
+  final parts = <String>[];
+  while (rest.length > 2) {
+    parts.insert(0, rest.substring(rest.length - 2));
+    rest = rest.substring(0, rest.length - 2);
+  }
+  if (rest.isNotEmpty) parts.insert(0, rest);
+  return '${parts.join(',')},$last3';
+}

@@ -115,7 +115,7 @@ class ProfitLossTab extends GetView<ProfitLossController> {
           style: TextStyle(
             fontSize: 11.5,
             color: colors.textHint,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ],
@@ -257,7 +257,7 @@ class ProfitLossTab extends GetView<ProfitLossController> {
       fontSize: 12,
       fontWeight: header ? FontWeight.w700 : FontWeight.w500,
       color: header ? colors.textPrimary : colors.textSecondary,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
     );
 
     Widget cell(String text, {int flex = 2, Color? color, bool right = true}) =>
@@ -311,7 +311,7 @@ class ProfitLossTab extends GetView<ProfitLossController> {
                   style: TextStyle(
                     fontSize: 12.5,
                     color: colors.textHint,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -335,7 +335,7 @@ class ProfitLossTab extends GetView<ProfitLossController> {
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w600,
                                   color: colors.textPrimary,
-                                  fontFamily: 'Poppins',
+                                  fontFamily: brandFontFamily,
                                 ),
                               ),
                               Text(
@@ -346,7 +346,7 @@ class ProfitLossTab extends GetView<ProfitLossController> {
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: colors.textHint,
-                                  fontFamily: 'Poppins',
+                                  fontFamily: brandFontFamily,
                                 ),
                               ),
                             ],
@@ -364,7 +364,7 @@ class ProfitLossTab extends GetView<ProfitLossController> {
                                 color: p.grossProfit >= 0
                                     ? kAnalyticsGreen
                                     : kAnalyticsRed,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                             Text(
@@ -372,7 +372,7 @@ class ProfitLossTab extends GetView<ProfitLossController> {
                               style: TextStyle(
                                 fontSize: 11,
                                 color: colors.textHint,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ],

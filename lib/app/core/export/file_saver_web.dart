@@ -21,3 +21,37 @@ Future<SavedFile> saveExportFile(
     ..click();
   return const SavedFile(path: '', location: 'Downloads');
 }
+
+/// Loads the PDF into an off-screen iframe and prints that frame, so the
+/// browser's print preview shows the real document. The frame is left in the
+/// DOM until the dialog closes — removing it immediately cancels the print on
+/// Chrome.
+Future<bool> printPdfBytes(String filename, Uint8List bytes) async {
+  final url = 'data:application/pdf;base64,${base64Encode(bytes)}';
+  final frame = html.IFrameElement()
+    ..style.position = 'fixed'
+    ..style.right = '0'
+    ..style.bottom = '0'
+    ..style.width = '0'
+    ..style.height = '0'
+    ..style.border = '0'
+    ..src = url;
+  html.document.body!.append(frame);
+  await frame.onLoad.first;
+  try {
+    // contentWindow is typed WindowBase, which has no print(); the frame is
+    // same-origin enough for the cast to hold on a data: URL.
+    (frame.contentWindow as html.Window?)?.print();
+    return true;
+  } catch (e) {
+    // Cross-origin restrictions on a data: frame in some browsers — fall back
+    // to a download so the user still gets the document.
+    frame.remove();
+    return false;
+  }
+}
+
+Future<bool> openExternalUrl(String url) async {
+  html.window.open(url, '_blank');
+  return true;
+}

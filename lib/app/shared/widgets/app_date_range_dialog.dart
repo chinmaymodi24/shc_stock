@@ -238,7 +238,7 @@ class _AppDateRangeDialogState extends State<AppDateRangeDialog> {
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -248,7 +248,7 @@ class _AppDateRangeDialogState extends State<AppDateRangeDialog> {
                     style: TextStyle(
                       fontSize: 12.5,
                       color: colors.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -331,7 +331,7 @@ class _AppDateRangeDialogState extends State<AppDateRangeDialog> {
                   entry.key,
                   style: TextStyle(
                     fontSize: 12,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                     fontWeight: active ? FontWeight.w600 : FontWeight.w500,
                     color: active ? colors.accent : colors.textSecondary,
                   ),
@@ -365,7 +365,7 @@ class _AppDateRangeDialogState extends State<AppDateRangeDialog> {
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -430,7 +430,7 @@ class _AppDateRangeDialogState extends State<AppDateRangeDialog> {
                       fontSize: 11.5,
                       fontWeight: FontWeight.w600,
                       color: colors.textHint,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -510,7 +510,7 @@ class _AppDateRangeDialogState extends State<AppDateRangeDialog> {
                   '${day.day}',
                   style: TextStyle(
                     fontSize: 13,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                     fontWeight: edge ? FontWeight.w700 : FontWeight.w500,
                     color: disabled
                         ? colors.textHint
@@ -539,14 +539,14 @@ class _AppDateRangeDialogState extends State<AppDateRangeDialog> {
               side: BorderSide(color: colors.border),
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(appColors.radius),
               ),
             ),
             child: Text(
               'Cancel',
               style: TextStyle(
                 fontSize: 14,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
                 color: colors.textSecondary,
               ),
             ),
@@ -572,16 +572,16 @@ class _AppDateRangeDialogState extends State<AppDateRangeDialog> {
                   vertical: 13,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(appColors.radius),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'Apply',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             );

@@ -65,7 +65,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               bottom: PreferredSize(
@@ -129,7 +129,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
                               color: colors.textPrimary,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -138,7 +138,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                             style: TextStyle(
                               fontSize: 12.5,
                               color: colors.textSecondary,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ],
@@ -269,7 +269,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                                             : (done
                                                   ? AppColors.primaryOrange
                                                   : c.textHint),
-                                        fontFamily: 'Poppins',
+                                        fontFamily: brandFontFamily,
                                       ),
                                     ),
                             ),
@@ -300,7 +300,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                             color: active
                                 ? AppColors.primaryOrange
                                 : (done ? c.textSecondary : c.textHint),
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -310,7 +310,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                             style: TextStyle(
                               fontSize: 11,
                               color: c.textHint,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -382,7 +382,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                   style: TextStyle(
                     fontSize: 11.5,
                     color: c.textHint,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -392,7 +392,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: c.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -401,7 +401,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                   style: TextStyle(
                     fontSize: 12,
                     color: c.textSecondary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                     height: 1.55,
                   ),
                 ),
@@ -419,14 +419,14 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.primaryOrange.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(appColors.radius),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.lightbulb_outline_rounded,
                         color: AppColors.primaryOrange,
                         size: 15,
@@ -438,7 +438,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: AppColors.primaryOrange,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ],
@@ -454,7 +454,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                             margin: const EdgeInsets.only(top: 5, right: 8),
                             width: 4,
                             height: 4,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: AppColors.primaryOrange,
                             ),
@@ -465,7 +465,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                               style: TextStyle(
                                 fontSize: 12,
                                 color: c.textSecondary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                                 height: 1.45,
                               ),
                             ),
@@ -509,7 +509,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                 'Back',
                 style: TextStyle(
                   fontSize: 13.5,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                   color: c.textSecondary,
                 ),
               ),
@@ -551,7 +551,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
               'Cancel',
               style: TextStyle(
                 fontSize: 13.5,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
                 color: c.textSecondary,
               ),
             ),
@@ -638,9 +638,14 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
           'Employee can create, edit and delete information',
         ),
         (
-          'Granular Control',
-          Icons.tune_rounded,
-          'You can customize permissions module by module',
+          'Summary Access',
+          Icons.insights_outlined,
+          'Employee can see the totals and stat cards at the top of a page',
+        ),
+        (
+          'Settings Access',
+          Icons.settings_outlined,
+          'Which Settings tabs the employee can open and save',
         ),
       ],
       [
@@ -657,12 +662,12 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
         (
           'Role',
           Icons.manage_accounts_outlined,
-          '${controller.customTab.value ? 'Custom Role' : (controller.selRole?.name ?? 'Not selected')}\n${controller.selRole != null ? '${roleOptUserCount(controller.selRole!.id)} users with this role' : ''}',
+          '${controller.selRole?.name ?? 'Not selected'}\n${controller.selRole != null ? '${controller.selRole!.userCount} users with this role' : ''}',
         ),
         (
           'Permissions',
           Icons.shield_outlined,
-          'Read: ${controller.readCnt} modules\nWrite: ${controller.writeCnt} modules',
+          'Read: ${controller.editor.readCnt} · Write: ${controller.editor.writeCnt} · Summary: ${controller.editor.summaryCnt} modules\nSettings: ${controller.editor.settingsReadCnt} of ${controller.editor.settingsCnt} tabs',
         ),
       ],
     ][controller.step.value];
@@ -686,7 +691,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: c.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -695,7 +700,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                         style: TextStyle(
                           fontSize: 11.5,
                           color: c.textSecondary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                           height: 1.45,
                         ),
                       ),

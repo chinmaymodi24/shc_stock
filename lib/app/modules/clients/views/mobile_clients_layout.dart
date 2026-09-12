@@ -1,3 +1,6 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
+import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
+import 'package:shc_stock/app/modules/clients/export/clients_export.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -31,11 +34,13 @@ class MobileClientsLayout extends StatelessWidget {
       drawer: const AppDrawer(activeRoute: AppRoutes.clients),
       appBar: _buildAppBar(context, c),
       body: _buildList(context, c),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Get.toNamed(AppRoutes.addClient),
-        backgroundColor: AppColors.primaryOrange,
-        child: const Icon(Icons.add_rounded, color: Colors.white),
-      ),
+      floatingActionButton: canWriteModule('Clients')
+          ? FloatingActionButton(
+              onPressed: () => Get.toNamed(AppRoutes.addClient),
+              backgroundColor: AppColors.primaryOrange,
+              child: const Icon(Icons.add_rounded, color: Colors.white),
+            )
+          : null,
     );
   }
 
@@ -56,7 +61,7 @@ class MobileClientsLayout extends StatelessWidget {
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: colors.textPrimary,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
       centerTitle: true,
@@ -68,6 +73,9 @@ class MobileClientsLayout extends StatelessWidget {
             activeCount: c.stateFilters.length + c.cityFilters.length,
           ),
         ),
+        // Export reaches the phone too: the same menu the web toolbar
+        // opens, as an AppBar icon.
+        ExportMenuButton(source: clientsExportConfig(c), iconOnly: true),
         const MobileAppBarAvatar(),
       ],
       bottom: PreferredSize(
@@ -170,6 +178,7 @@ class MobileClientsLayout extends StatelessWidget {
       }).toList();
 
       return MobileListScaffold(
+        summaryModule: 'Clients',
         statCards: _statCards(context, c),
         search: _searchField(c),
         countLabel: loading ? null : 'Showing ${filtered.length} clients',
@@ -232,7 +241,7 @@ class _MobileClientCard extends StatelessWidget {
                       fontSize: cl.initials.length > 2 ? 9.5 : 11.5,
                       fontWeight: FontWeight.w700,
                       color: cl.badgeColor,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -248,17 +257,17 @@ class _MobileClientCard extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: colors.textPrimary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       cl.code,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
                         color: AppColors.primaryOrange,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ],
@@ -280,7 +289,7 @@ class _MobileClientCard extends StatelessWidget {
                     color: isRegistered
                         ? const Color(0xFF22C55E)
                         : colors.textSecondary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -293,7 +302,7 @@ class _MobileClientCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 color: colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -306,7 +315,7 @@ class _MobileClientCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11.5,
                 color: colors.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],
@@ -320,16 +329,18 @@ class _MobileClientCard extends StatelessWidget {
                 context: context,
                 onTap: () => ClientActions.view(context, cl),
               ),
-              MobileActionButton.edit(
-                context: context,
-                onTap: () => ClientActions.edit(cl),
-              ),
-              MobileActionButton.duplicate(
-                onTap: () => ClientActions.duplicate(cl),
-              ),
-              MobileActionButton.delete(
-                onTap: () => ClientActions.delete(context, cl),
-              ),
+              if (canWriteModule('Clients')) ...[
+                MobileActionButton.edit(
+                  context: context,
+                  onTap: () => ClientActions.edit(cl),
+                ),
+                MobileActionButton.duplicate(
+                  onTap: () => ClientActions.duplicate(cl),
+                ),
+                MobileActionButton.delete(
+                  onTap: () => ClientActions.delete(context, cl),
+                ),
+              ],
             ],
           ),
         ],

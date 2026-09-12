@@ -1,3 +1,6 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
+import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
+import 'package:shc_stock/app/modules/categories/export/categories_export.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -31,7 +34,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
     return Scaffold(
       backgroundColor: colors.background,
       drawer: const AppDrawer(activeRoute: AppRoutes.categories),
-      appBar: _buildAppBar(context),
+      appBar: _buildAppBar(context, c),
       body: Obx(() {
         // Only the list area loads — the cards above it used to be replaced
         // by the spinner, blanking the page on every fetch.
@@ -114,7 +117,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
                             style: TextStyle(
                               fontSize: 11,
                               color: colors.textSecondary,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -124,7 +127,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: colors.textPrimary,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -167,7 +170,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
                       style: TextStyle(
                         fontSize: 14,
                         color: colors.textHint,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -209,16 +212,21 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
       // Always "Add Category" — each expanded card already carries its own
       // "+ Add subcategory" link, so the FAB doesn't need to branch on
       // whatever's currently expanded.
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddCategoryDialog(c),
-        backgroundColor: AppColors.primaryOrange,
-        elevation: 4,
-        child: const Icon(Icons.add_rounded, color: Colors.white),
-      ),
+      floatingActionButton: canWriteModule('Categories')
+          ? FloatingActionButton(
+              onPressed: () => _showAddCategoryDialog(c),
+              backgroundColor: AppColors.primaryOrange,
+              elevation: 4,
+              child: const Icon(Icons.add_rounded, color: Colors.white),
+            )
+          : null,
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
+  PreferredSizeWidget _buildAppBar(
+    BuildContext context,
+    CategoriesController c,
+  ) {
     final colors = context.appColors;
     return AppBar(
       backgroundColor: colors.topBarBg,
@@ -236,10 +244,15 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
           fontSize: 17,
           fontWeight: FontWeight.w700,
           color: colors.textPrimary,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
-      actions: const [MobileAppBarAvatar()],
+      actions: [
+        // Export reaches the phone too: the same menu the web toolbar
+        // opens, as an AppBar icon.
+        ExportMenuButton(source: categoriesExportConfig(c), iconOnly: true),
+        const MobileAppBarAvatar(),
+      ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
         child: Divider(height: 1, color: colors.divider),
@@ -248,6 +261,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
   }
 
   void _showAddCategoryDialog(CategoriesController c) {
+    if (!requireWrite('Categories')) return;
     final ctrl = TextEditingController();
     Get.dialog(
       _MobileFormDialog(
@@ -263,6 +277,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
   }
 
   void _showEditDialog(CategoriesController c, CategoryModel cat) {
+    if (!requireWrite('Categories')) return;
     final ctrl = TextEditingController(text: cat.name);
     Get.dialog(
       _MobileFormDialog(
@@ -278,6 +293,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
   }
 
   void _showAddSubDialog(CategoriesController c, String catId) {
+    if (!requireWrite('Categories')) return;
     final ctrl = TextEditingController();
     Get.dialog(
       _MobileFormDialog(
@@ -297,6 +313,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
     CategoryModel cat,
     int subIdx,
   ) {
+    if (!requireWrite('Categories')) return;
     final ctrl = TextEditingController(text: cat.subProducts[subIdx]);
     Get.dialog(
       _MobileFormDialog(
@@ -316,6 +333,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
     CategoriesController c,
     CategoryModel cat,
   ) {
+    if (!requireWrite('Categories')) return;
     _confirmDelete(
       context,
       title: 'Delete Category?',
@@ -334,6 +352,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
     CategoryModel cat,
     int subIdx,
   ) {
+    if (!requireWrite('Categories')) return;
     final subName = cat.subProducts[subIdx];
     _confirmDelete(
       context,
@@ -359,7 +378,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
             color: colors.textPrimary,
           ),
         ),
@@ -368,7 +387,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
           style: TextStyle(
             fontSize: 13.5,
             color: colors.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         actions: [
@@ -377,7 +396,7 @@ class MobileCategoriesLayout extends GetView<CategoriesController> {
             child: Text(
               'Cancel',
               style: TextStyle(
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
                 color: colors.textSecondary,
               ),
             ),
@@ -487,7 +506,7 @@ class _CategoryAccordionCard extends StatelessWidget {
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
                                       color: colors.textPrimary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                   const SizedBox(height: 3),
@@ -496,7 +515,7 @@ class _CategoryAccordionCard extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: colors.textSecondary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                 ],
@@ -538,7 +557,7 @@ class _CategoryAccordionCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       color: colors.textHint,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 )
@@ -567,7 +586,7 @@ class _CategoryAccordionCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.add_rounded,
                         size: 17,
                         color: AppColors.primaryOrange,
@@ -579,7 +598,7 @@ class _CategoryAccordionCard extends StatelessWidget {
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: AppColors.primaryOrange,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ],
@@ -632,7 +651,7 @@ class _SubCategoryInlineRow extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -641,7 +660,7 @@ class _SubCategoryInlineRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color: colors.accent,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ],
@@ -735,7 +754,7 @@ class _MobileFormDialog extends StatelessWidget {
                     color: AppColors.primaryOrange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(9),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.edit_note_rounded,
                     color: AppColors.primaryOrange,
                     size: 18,
@@ -748,7 +767,7 @@ class _MobileFormDialog extends StatelessWidget {
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ],
@@ -760,13 +779,13 @@ class _MobileFormDialog extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
               decoration: InputDecoration(
                 hintText: hint,
                 hintStyle: TextStyle(
                   color: colors.textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
@@ -776,16 +795,16 @@ class _MobileFormDialog extends StatelessWidget {
                 filled: true,
                 fillColor: colors.inputFill,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(appColors.radius),
                   borderSide: BorderSide(color: colors.border),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(appColors.radius),
                   borderSide: BorderSide(color: colors.border),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
+                  borderRadius: BorderRadius.circular(appColors.radius),
+                  borderSide: BorderSide(
                     color: AppColors.primaryOrange,
                     width: 1.5,
                   ),
@@ -802,7 +821,7 @@ class _MobileFormDialog extends StatelessWidget {
                   child: Text(
                     'Cancel',
                     style: TextStyle(
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                       color: colors.textSecondary,
                     ),
                   ),

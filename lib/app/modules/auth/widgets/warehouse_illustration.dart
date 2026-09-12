@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/theme/brand_theme.dart';
+import 'package:shc_stock/app/core/theme/brand_controller.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:get/get.dart';
 
 /// Warehouse background image — fills its container completely.
@@ -77,7 +80,7 @@ class _ImageShimmerState extends State<_ImageShimmer>
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDarkMode;
-    final base = isDark ? const Color(0xFF1A1A2E) : const Color(0xFFE8E6FF);
+    final base = isDark ? appColors.background : tint(brand.secondary, 0.88);
     final shine = isDark ? const Color(0xFF252545) : const Color(0xFFF0EEFF);
 
     return AnimatedBuilder(

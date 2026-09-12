@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
@@ -196,6 +197,7 @@ class PurchaseController extends GetxController {
   }
 
   Future<void> updateStatus(String id, PurchaseStatus status) async {
+    if (!requireWrite('Purchase')) return;
     final idx = orders.indexWhere((o) => o.id == id);
     if (idx == -1) return;
     try {

@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -267,7 +268,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
                           color: colors.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -324,7 +325,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: colors.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -333,7 +334,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                           style: TextStyle(
                             fontSize: 12,
                             color: colors.textSecondary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                         const SizedBox(height: 18),
@@ -362,7 +363,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                               fontSize: 11.5,
                               fontWeight: FontWeight.w600,
                               color: item.statusColor,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ),
@@ -418,7 +419,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                               style: TextStyle(
                                 fontSize: 12.5,
                                 color: colors.textHint,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           )
@@ -455,7 +456,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                               style: TextStyle(
                                 fontSize: 12.5,
                                 color: colors.textHint,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           )
@@ -481,7 +482,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                               style: TextStyle(
                                 fontSize: 12.5,
                                 color: colors.textHint,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           )
@@ -490,7 +491,10 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                             (e) => _historyRow(
                               e,
                               colors,
-                              onDelete: () => _confirmDeleteAdjustment(e),
+                              // Undoing an adjustment changes stock.
+                              onDelete: canWriteModule('Inventory')
+                                  ? () => _confirmDeleteAdjustment(e)
+                                  : null,
                             ),
                           ),
 
@@ -536,16 +540,18 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              appColors.radius,
+                            ),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Edit',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                       ),
@@ -559,7 +565,9 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              appColors.radius,
+                            ),
                           ),
                         ),
                         child: Text(
@@ -568,7 +576,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: colors.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                       ),
@@ -589,7 +597,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
       fontSize: 10.5,
       fontWeight: FontWeight.w700,
       color: colors.textHint,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
       letterSpacing: 0.5,
     ),
   );
@@ -606,7 +614,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ],
@@ -671,7 +679,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -680,7 +688,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                   style: TextStyle(
                     fontSize: 11.5,
                     color: colors.textSecondary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ],
@@ -696,7 +704,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               const SizedBox(height: 2),
@@ -705,7 +713,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                 style: TextStyle(
                   fontSize: 11,
                   color: colors.textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ],

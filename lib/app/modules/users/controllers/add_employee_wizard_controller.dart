@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
+import 'package:shc_stock/app/modules/users/models/permission_editor.dart';
+import 'package:shc_stock/app/modules/users/models/role_model.dart';
 import 'package:shc_stock/app/modules/users/models/user_model.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
@@ -8,50 +11,6 @@ import 'users_controller.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // Static data types shared with the wizard view
 // ─────────────────────────────────────────────────────────────────────────────
-class RoleOpt {
-  final String id, name, desc;
-  final IconData icon;
-  const RoleOpt(this.id, this.name, this.desc, this.icon);
-}
-
-const kRoles = <RoleOpt>[
-  RoleOpt(
-    'super_admin',
-    'Super Admin',
-    'Full access to all modules and settings',
-    Icons.stars_rounded,
-  ),
-  RoleOpt(
-    'admin',
-    'Admin',
-    'Manage most modules and system settings',
-    Icons.admin_panel_settings_outlined,
-  ),
-  RoleOpt(
-    'manager',
-    'Manager',
-    'Manage stock, purchases, sales and reports',
-    Icons.manage_accounts_outlined,
-  ),
-  RoleOpt(
-    'sales',
-    'Sales',
-    'Access to sales, customers and invoices',
-    Icons.point_of_sale_outlined,
-  ),
-  RoleOpt(
-    'store_staff',
-    'Store Staff',
-    'Access to stock and warehouse operations',
-    Icons.warehouse_outlined,
-  ),
-  RoleOpt(
-    'custom',
-    'Custom Role',
-    'Custom role with specific permissions',
-    Icons.tune_rounded,
-  ),
-];
 
 /// Wraps an employee routed into the wizard so it updates that record in
 /// place. A bare [UserModel] argument means Duplicate — pre-fill, save as new.
@@ -59,71 +18,6 @@ class EditEmployee {
   final UserModel user;
   const EditEmployee(this.user);
 }
-
-/// The wizard role-option id that best represents a saved [UserRole] — the
-/// inverse of [userRoleForOptId], used when re-opening an existing employee.
-String roleOptIdForUserRole(UserRole role) {
-  switch (role) {
-    case UserRole.admin:
-      return 'admin';
-    case UserRole.manager:
-      return 'manager';
-    case UserRole.stockManager:
-      return 'store_staff';
-    case UserRole.salesman:
-      return 'sales';
-    // No dedicated wizard option — Accountant maps into the custom bucket.
-    case UserRole.accountant:
-      return 'custom';
-  }
-}
-
-/// Maps a wizard role-option id to the backend's [UserRole] enum — the same
-/// mapping [AddEmployeeWizardController.submit] uses when saving.
-UserRole userRoleForOptId(String id) {
-  switch (id) {
-    case 'super_admin':
-    case 'admin':
-      return UserRole.admin;
-    case 'manager':
-    case 'custom':
-      return UserRole.manager;
-    case 'sales':
-      return UserRole.salesman;
-    case 'store_staff':
-      return UserRole.stockManager;
-    default:
-      return UserRole.salesman;
-  }
-}
-
-/// Live "N users with this role" count, from the real `/api/users` role
-/// breakdown — not a hardcoded number. Two wizard options can share one
-/// [UserRole] bucket (e.g. Super Admin & Admin both map to `UserRole.admin`)
-/// since the backend doesn't track "custom" as its own role.
-int roleOptUserCount(String id) {
-  if (!Get.isRegistered<UsersController>()) return 0;
-  return Get.find<UsersController>().roleBreakdown[userRoleForOptId(id)] ?? 0;
-}
-
-class WizMod {
-  final String name;
-  final IconData icon;
-  const WizMod(this.name, this.icon);
-}
-
-const kMods = <WizMod>[
-  WizMod('Dashboard', Icons.dashboard_rounded),
-  WizMod('Categories', Icons.category_outlined),
-  WizMod('Products', Icons.inventory_2_outlined),
-  WizMod('Inventory', Icons.warehouse_outlined),
-  WizMod('Purchase', Icons.shopping_bag_outlined),
-  WizMod('Sale', Icons.point_of_sale_outlined),
-  WizMod('Clients', Icons.people_outline_rounded),
-  WizMod('Transactions', Icons.swap_horiz_rounded),
-  WizMod('Reports', Icons.bar_chart_rounded),
-  WizMod('Settings', Icons.settings_outlined),
-];
 
 const kDepts = <String>[
   'Sales',
@@ -141,19 +35,6 @@ const kEmploymentTypes = <String>[
   'Contract',
   'Intern',
 ];
-
-class WizPerm {
-  final String module;
-  final IconData icon;
-  bool read;
-  bool write;
-  WizPerm({
-    required this.module,
-    required this.icon,
-    this.read = true,
-    this.write = true,
-  });
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Controller — all wizard state, no setState in the view.
@@ -178,6 +59,9 @@ class AddEmployeeWizardController extends GetxController {
   final welcome = true.obs;
   final showPass = false.obs;
   final showConf = false.obs;
+  // Review step's own eye toggle — separate from Step 1's so the summary
+  // always opens masked, even if the password was left visible while typing.
+  final showReviewPass = false.obs;
   final doj = Rx<DateTime?>(null);
   final dob = Rx<DateTime?>(null);
   final eName = RxnString();
@@ -189,25 +73,21 @@ class AddEmployeeWizardController extends GetxController {
   final eConf = RxnString();
 
   // ── Step 2 ────────────────────────────────────────────────────────────
-  final roleId = RxnString();
+  /// Id of the chosen role (from GET /api/roles).
+  final roleId = RxnInt();
   final customTab = false.obs;
   final roleErr = false.obs;
   final roleSearchCtrl = TextEditingController();
   final roleSearchQuery = ''.obs;
 
   // ── Step 3 ────────────────────────────────────────────────────────────
-  late final RxList<WizPerm> perms;
+  /// The Permissions table — rows, counts and toggle rules.
+  final editor = PermissionEditor();
+  RxList<WizPerm> get perms => editor.perms;
 
   @override
   void onInit() {
     super.onInit();
-    perms = kMods
-        .map(
-          (m) =>
-              WizPerm(module: m.name, icon: m.icon, read: true, write: false),
-        )
-        .toList()
-        .obs;
     roleSearchCtrl.addListener(
       () => roleSearchQuery.value = roleSearchCtrl.text,
     );
@@ -234,7 +114,11 @@ class AddEmployeeWizardController extends GetxController {
     phoneCtrl.text = u.phone;
     dept.value = u.department;
     status.value = u.isActive ? 'Active' : 'Inactive';
-    roleId.value = roleOptIdForUserRole(u.role);
+    roleId.value = u.role.id;
+    // Show the access this employee actually has, so saving an edit doesn't
+    // quietly hand back the role's defaults instead.
+    // A Super Admin holds everything regardless of the stored map.
+    editor.load(u.permissions, everything: u.role.isSuperAdmin);
   }
 
   @override
@@ -258,13 +142,27 @@ class AddEmployeeWizardController extends GetxController {
   }
 
   // ── Computed ─────────────────────────────────────────────────────────
-  int get readCnt => perms.where((p) => p.read).length;
-  int get writeCnt => perms.where((p) => p.write).length;
-  int get noCnt => perms.where((p) => !p.read && !p.write).length;
+  UsersController get _users => Get.find<UsersController>();
 
-  RoleOpt? get selRole => roleId.value == null
+  /// Roles this person may hand out. Only a Super Admin can make another.
+  List<RoleModel> get assignableRoles {
+    final session = Get.find<SessionController>();
+    return _users.roles
+        .where((r) => !r.isSuperAdmin || session.isSuperAdmin)
+        .toList();
+  }
+
+  RoleModel? get selRole => roleId.value == null
       ? null
-      : kRoles.where((r) => r.id == roleId.value).firstOrNull;
+      : _users.roles.firstWhereOrNull((r) => r.id == roleId.value);
+
+  /// Picks [role] and fills the Permissions step with its access, which can
+  /// then be fine-tuned for this one employee.
+  void selectRole(RoleModel role) {
+    roleId.value = role.id;
+    roleErr.value = false;
+    editor.load(role.permissions, everything: role.isSuperAdmin);
+  }
 
   static const _months = [
     'Jan',
@@ -311,12 +209,20 @@ class AddEmployeeWizardController extends GetxController {
     ePhone.value = _phoneError(phoneCtrl.text, 'Phone number');
     eAltPhone.value = _phoneError(altPhoneCtrl.text, 'Alternate phone');
     eUser.value = userCtrl.text.trim().isEmpty ? 'Username is required' : null;
-    ePass.value = passCtrl.text.isEmpty
+    // On a new employee the password is what they will sign in with, so it is
+    // required. On an edit, leaving both fields blank means "keep the current
+    // password" — only a typed one is validated and sent.
+    final passwordOptional = isEdit && passCtrl.text.isEmpty;
+    ePass.value = passwordOptional
+        ? null
+        : passCtrl.text.isEmpty
         ? 'Password is required'
         : passCtrl.text.length < 6
         ? 'Minimum 6 characters'
         : null;
-    eConf.value = confCtrl.text.isEmpty
+    eConf.value = passwordOptional && confCtrl.text.isEmpty
+        ? null
+        : confCtrl.text.isEmpty
         ? 'Confirm your password'
         : confCtrl.text != passCtrl.text
         ? 'Passwords do not match'
@@ -332,8 +238,9 @@ class AddEmployeeWizardController extends GetxController {
     ].any((e) => e != null);
   }
 
+  /// A role is required — a custom one has to be defined (and so saved)
+  /// before moving on.
   bool v2() {
-    if (customTab.value) return true;
     roleErr.value = roleId.value == null;
     return roleId.value != null;
   }
@@ -364,19 +271,25 @@ class AddEmployeeWizardController extends GetxController {
 
   Future<void> submit() async {
     final c = Get.find<UsersController>();
-    final ur = userRoleForOptId(roleId.value ?? 'sales');
-
     isSaving.value = true;
     final body = {
       'name': nameCtrl.text.trim(),
       'email': emailCtrl.text.trim(),
       'phone': phoneCtrl.text.trim(),
-      'role': ur.label,
+      'roleId': roleId.value,
       'department': dept.value.isEmpty ? 'General' : dept.value,
       'isActive': status.value == 'Active',
+      // What step 3 ticked, in the shape the API stores and the sidebar
+      // reads back: {"Products": {"read", "write", "summary"}, …}.
+      'permissions': editor.toJson(),
+      // The password the admin typed IS the employee's login password. It
+      // used to be dropped here, so the backend fell back to a starter
+      // password and nobody could sign in with what the form had shown.
+      // On an edit a blank field means "leave the password alone".
+      if (passCtrl.text.isNotEmpty) 'password': passCtrl.text,
     };
-    // The backend assigns the USR-#### code, hashes a starter password and
-    // returns the saved row — no locally invented ids or codes.
+    // The backend assigns the USR-#### code, hashes the password and returns
+    // the saved row — no locally invented ids or codes.
     final created = isEdit
         ? await c.updateUser(editingId.value!, body)
         : await c.addUser(body);

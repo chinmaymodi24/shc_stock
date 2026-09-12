@@ -13,7 +13,7 @@ import 'package:shc_stock/app/shared/widgets/async_button.dart';
 
 Future<void> _pump(WidgetTester tester, Widget button) => tester.pumpWidget(
   MaterialApp(
-    theme: ThemeData(extensions: const [AppThemeColors.light]),
+    theme: ThemeData(extensions: [AppThemeColors.light]),
     home: Scaffold(body: Center(child: button)),
   ),
 );
@@ -101,7 +101,7 @@ void main() {
     final gate = Completer<void>();
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(extensions: const [AppThemeColors.light]),
+        theme: ThemeData(extensions: [AppThemeColors.light]),
         home: Scaffold(
           body: Center(
             child: SizedBox(

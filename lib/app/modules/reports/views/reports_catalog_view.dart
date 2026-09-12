@@ -83,7 +83,7 @@ class _ReportsCatalogViewState extends State<ReportsCatalogView> {
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               actions: const [MobileAppBarAvatar(), SizedBox(width: 8)],
@@ -127,7 +127,7 @@ class _ReportsCatalogViewState extends State<ReportsCatalogView> {
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               const SizedBox(height: 3),
@@ -136,7 +136,7 @@ class _ReportsCatalogViewState extends State<ReportsCatalogView> {
                 style: TextStyle(
                   fontSize: 13,
                   color: colors.textSecondary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ],
@@ -156,7 +156,7 @@ class _ReportsCatalogViewState extends State<ReportsCatalogView> {
       onChanged: (v) => _query.value = v,
       style: TextStyle(
         fontSize: 13,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
         color: colors.textPrimary,
       ),
       decoration: InputDecoration(
@@ -164,7 +164,7 @@ class _ReportsCatalogViewState extends State<ReportsCatalogView> {
         hintStyle: TextStyle(
           fontSize: 13,
           color: colors.textHint,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
         prefixIcon: Icon(
           Icons.search_rounded,
@@ -179,19 +179,16 @@ class _ReportsCatalogViewState extends State<ReportsCatalogView> {
         filled: true,
         fillColor: fill,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: AppColors.primaryOrange,
-            width: 1.5,
-          ),
+          borderRadius: BorderRadius.circular(appColors.radius),
+          borderSide: BorderSide(color: AppColors.primaryOrange, width: 1.5),
         ),
       ),
     );
@@ -210,7 +207,7 @@ class _ReportsCatalogViewState extends State<ReportsCatalogView> {
               style: TextStyle(
                 fontSize: 13,
                 color: colors.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -233,7 +230,7 @@ class _ReportsCatalogViewState extends State<ReportsCatalogView> {
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.06 * 10.5,
                 color: colors.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -324,7 +321,7 @@ class _ReportCard extends StatelessWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               const SizedBox(height: 3),
@@ -336,7 +333,7 @@ class _ReportCard extends StatelessWidget {
                   fontSize: 10.5,
                   height: 1.4,
                   color: colors.textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ],

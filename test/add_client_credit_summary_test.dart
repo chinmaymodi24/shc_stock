@@ -25,7 +25,7 @@ void main() {
 
     await tester.pumpWidget(
       GetMaterialApp(
-        theme: ThemeData(extensions: const [AppThemeColors.light]),
+        theme: ThemeData(extensions: [AppThemeColors.light]),
         home: const WebAddClientLayout(),
       ),
     );

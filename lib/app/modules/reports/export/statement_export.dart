@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/export/writers/pdf_logo.dart';
 import 'dart:typed_data';
 
 import 'package:shc_stock/app/core/export/export_source.dart';
@@ -110,5 +111,5 @@ class StatementExportSource implements ExportSource {
 
   @override
   Uint8List? renderCustomPdf(String generatedLine) =>
-      buildStatementPdf(doc, generatedLine: generatedLine);
+      buildStatementPdf(doc, generatedLine: generatedLine, logo: brandPdfLogo);
 }

@@ -4,7 +4,7 @@ const prisma = require('./prismaClient');
 /// Read a lot (every stats/inventory request) so the row is cached in memory
 /// and the cache is dropped whenever it is written.
 
-const DEFAULTS = { lowStockThreshold: 0 };
+const DEFAULTS = { lowStockThreshold: 0, brandTheme: {}, billingProfile: {} };
 
 let cache = null;
 

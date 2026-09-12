@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/theme/brand_controller.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 
 /// The business this app runs for. Printed at the top of every statement.
-const String kCompanyName = 'Secure Heat Care';
+/// The company the reports are FOR — the buyer's, not ours. Reads through to
+/// the applied brand so exported PDFs and the catalog header carry whoever the
+/// app was rebranded to.
+String get kCompanyName => brand.companyName;
 
 /// Whether a report covers a stretch of time or a single moment.
 enum ReportBasis {
@@ -41,7 +46,7 @@ class ReportDefinition {
   /// the card and says so, rather than opening an empty statement.
   final bool available;
 
-  const ReportDefinition({
+  ReportDefinition({
     required this.key,
     required this.name,
     required this.description,
@@ -53,19 +58,21 @@ class ReportDefinition {
   });
 }
 
-// Card tints — the app's existing accent family, one per domain-ish role.
-const _blue = Color(0xFF3B6FC9);
-const _purple = Color(0xFF6B5CBF);
-const _green = Color(0xFF2E9E5B);
-const _amber = Color(0xFFC9822F);
-const _red = Color(0xFFD1494C);
+// Card tints — one per domain-ish role, taken from the brand so a rebrand
+// recolours the catalog with everything else. Getters, not consts: the brand
+// is a runtime value.
+Color get _blue => appColors.info;
+Color get _purple => appColors.accent;
+Color get _green => appColors.success;
+Color get _amber => appColors.warning;
+Color get _red => appColors.error;
 
 /// Every report the catalog offers.
 ///
 /// Profit & Loss and Balance Sheet are the two built against the
 /// `/api/statements` endpoints; the rest are declared here so the catalog is
 /// complete and each one only needs its data source to go live.
-const List<ReportDefinition> kReportCatalog = [
+List<ReportDefinition> kReportCatalog = [
   // ── Financial ─────────────────────────────────────────────────────────────
   ReportDefinition(
     key: 'profit-loss',

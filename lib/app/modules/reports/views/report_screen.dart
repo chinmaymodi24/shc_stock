@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/export/export_service.dart';
@@ -78,15 +79,19 @@ class _WebReportScreen extends GetView<ReportScreenController> {
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       child: Column(
         children: [
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: StatementSheet.maxWidth,
+          // The KPI strip is the statement's headline figures — the Reports
+          // Summary right; the statement itself only needs Reports read.
+          if (canSeeSummary('Reports')) ...[
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: StatementSheet.maxWidth,
+                ),
+                child: ReportKpiStrip(kpis: doc.kpis),
               ),
-              child: ReportKpiStrip(kpis: doc.kpis),
             ),
-          ),
-          const SizedBox(height: 18),
+            const SizedBox(height: 18),
+          ],
           StatementSheet(
             doc: doc,
             generatedLine: ExportService.to.generatedLine(),
@@ -121,7 +126,7 @@ class _MobileReportScreen extends GetView<ReportScreenController> {
             fontSize: 15,
             fontWeight: FontWeight.w700,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         actions: const [MobileAppBarAvatar(), SizedBox(width: 8)],
@@ -143,8 +148,10 @@ class _MobileReportScreen extends GetView<ReportScreenController> {
                 padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
                 child: Column(
                   children: [
-                    ReportKpiStrip(kpis: doc.kpis, columns: 2),
-                    const SizedBox(height: 14),
+                    if (canSeeSummary('Reports')) ...[
+                      ReportKpiStrip(kpis: doc.kpis, columns: 2),
+                      const SizedBox(height: 14),
+                    ],
                     StatementSheet(
                       doc: doc,
                       generatedLine: ExportService.to.generatedLine(),
@@ -196,7 +203,7 @@ class ReportBreadcrumb extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 color: colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -214,7 +221,7 @@ class ReportBreadcrumb extends StatelessWidget {
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ],
@@ -234,9 +241,7 @@ class ReportToolbar extends GetView<ReportScreenController> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: colors.background.computeLuminance() > 0.5
-            ? const Color(0xFFFAF9F7)
-            : colors.inputFill,
+        color: colors.tableHeaderBg,
         border: Border(bottom: BorderSide(color: colors.divider)),
       ),
       child: Obx(
@@ -267,7 +272,7 @@ class ReportToolbar extends GetView<ReportScreenController> {
                   style: TextStyle(
                     fontSize: 12.5,
                     color: colors.textSecondary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -352,7 +357,7 @@ class _Card extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           const SizedBox(height: 5),
@@ -362,7 +367,7 @@ class _Card extends StatelessWidget {
               fontSize: 17,
               fontWeight: FontWeight.w800,
               color: kpi.positive ? colors.success : colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ],
@@ -402,7 +407,7 @@ class ReportUnavailable extends StatelessWidget {
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
             const SizedBox(height: 6),
@@ -416,7 +421,7 @@ class ReportUnavailable extends StatelessWidget {
                 fontSize: 12,
                 height: 1.5,
                 color: colors.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
             if (failed) ...[
@@ -433,7 +438,7 @@ class ReportUnavailable extends StatelessWidget {
                   'Try again',
                   style: TextStyle(
                     fontSize: 12.5,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                     color: colors.textPrimary,
                   ),
                 ),

@@ -54,7 +54,7 @@ class ReportsTabBar extends GetView<ReportsController> {
             fontSize: 13.5,
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
             color: active ? colors.textPrimary : colors.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ),

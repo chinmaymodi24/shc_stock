@@ -51,7 +51,7 @@ class EmployeeDetailsDialog extends StatelessWidget {
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: u.badgeColor,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -67,7 +67,7 @@ class EmployeeDetailsDialog extends StatelessWidget {
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
                             color: colors.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                         Text(
@@ -76,7 +76,7 @@ class EmployeeDetailsDialog extends StatelessWidget {
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
                             color: colors.accent,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                       ],
@@ -101,7 +101,7 @@ class EmployeeDetailsDialog extends StatelessWidget {
                         color: u.isActive
                             ? const Color(0xFF22C55E)
                             : colors.textSecondary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -143,7 +143,7 @@ class EmployeeDetailsDialog extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13.5,
                         color: colors.textSecondary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -161,13 +161,13 @@ class EmployeeDetailsDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(9),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Delete',
                         style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFFEF4444),
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -187,13 +187,13 @@ class EmployeeDetailsDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(9),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Edit',
                         style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -229,7 +229,7 @@ class _Row extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 color: colors.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -240,7 +240,7 @@ class _Row extends StatelessWidget {
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: color ?? colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),

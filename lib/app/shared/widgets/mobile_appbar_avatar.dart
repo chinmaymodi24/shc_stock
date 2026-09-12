@@ -27,18 +27,18 @@ class MobileAppBarAvatar extends StatelessWidget {
         child: Container(
           width: 34,
           height: 34,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.primaryPurple,
             shape: BoxShape.circle,
           ),
           child: Center(
             child: Text(
               initials,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),

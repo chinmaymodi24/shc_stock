@@ -129,7 +129,7 @@ class _FilterSearchFieldState extends State<FilterSearchField> {
         onChanged: widget.onChanged,
         style: TextStyle(
           fontSize: 13,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
           color: colors.textPrimary,
         ),
         decoration: InputDecoration(
@@ -137,7 +137,7 @@ class _FilterSearchFieldState extends State<FilterSearchField> {
           hintStyle: TextStyle(
             fontSize: 13,
             color: colors.textHint,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
           prefixIcon: Icon(
             Icons.search_rounded,
@@ -174,19 +174,16 @@ class _FilterSearchFieldState extends State<FilterSearchField> {
             vertical: 10,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(appColors.radius),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(appColors.radius),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(
-              color: AppColors.primaryOrange,
-              width: 1.5,
-            ),
+            borderRadius: BorderRadius.circular(appColors.radius),
+            borderSide: BorderSide(color: AppColors.primaryOrange, width: 1.5),
           ),
           filled: true,
           fillColor: fill,
@@ -236,7 +233,7 @@ class _MenuPanel extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: colors.surface,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           border: Border.all(color: colors.border),
           boxShadow: [
             BoxShadow(
@@ -261,7 +258,7 @@ TextStyle _pillLabelStyle(AppThemeColors colors) => TextStyle(
   fontSize: 13,
   fontWeight: FontWeight.w600,
   color: colors.textPrimary,
-  fontFamily: 'Poppins',
+  fontFamily: brandFontFamily,
 );
 
 // ── Multi-select pill ───────────────────────────────────────────────────────
@@ -334,7 +331,7 @@ class _MultiSelectFilterPillState extends State<MultiSelectFilterPill> {
                                     label,
                                     style: TextStyle(
                                       fontSize: 13,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                       color: colors.textPrimary,
                                     ),
                                     overflow: TextOverflow.ellipsis,
@@ -369,11 +366,11 @@ class _MultiSelectFilterPillState extends State<MultiSelectFilterPill> {
                 ),
                 child: Text(
                   '$count',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               );
@@ -463,7 +460,7 @@ class _SingleSelectFilterPillState extends State<SingleSelectFilterPill> {
                         option,
                         style: TextStyle(
                           fontSize: 13,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                           fontWeight: selected
                               ? FontWeight.w600
                               : FontWeight.w500,

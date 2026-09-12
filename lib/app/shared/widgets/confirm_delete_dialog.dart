@@ -99,7 +99,7 @@ class _ConfirmDeleteDialog extends StatelessWidget {
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             color: colors.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                       ),
@@ -137,7 +137,7 @@ class _ConfirmDeleteDialog extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 14,
                             color: colors.textSecondary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                             height: 1.55,
                           ),
                           children: [
@@ -174,14 +174,16 @@ class _ConfirmDeleteDialog extends StatelessWidget {
                                 vertical: 12,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(
+                                  appColors.radius,
+                                ),
                               ),
                             ),
                             child: Text(
                               'Cancel',
                               style: TextStyle(
                                 fontSize: 14,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                                 color: colors.textSecondary,
                               ),
                             ),

@@ -50,14 +50,14 @@ class ClientAutocompleteField extends StatelessWidget {
       textStyle: TextStyle(
         fontSize: 13,
         color: colors.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
           fontSize: 13,
           color: colors.textHint,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(
@@ -77,10 +77,7 @@ class ClientAutocompleteField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: AppColors.primaryOrange,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: AppColors.primaryOrange, width: 1.5),
         ),
       ),
       optionBuilder: (context, c, highlighted) {
@@ -103,7 +100,7 @@ class ClientAutocompleteField extends StatelessWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               const SizedBox(height: 2),
@@ -113,7 +110,7 @@ class ClientAutocompleteField extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   color: colors.textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
 
@@ -150,19 +151,23 @@ class SettingsController extends GetxController {
       });
       await _cacheAutoNumberDocs();
 
-      // Business-wide low-stock threshold — its own endpoint, not per-user.
-      await _api.put('/settings/app', {
-        'lowStockThreshold': lowStockThreshold.value,
-      });
+      // Business-wide low-stock threshold — its own endpoint, not per-user,
+      // and only for someone allowed to change Preferences.
+      if (canSaveSettingsTab('Preferences')) {
+        await _api.put('/settings/app', {
+          'lowStockThreshold': lowStockThreshold.value,
+        });
+      }
 
-      // Name/email may have changed — keep the top bar in step.
+      // Name/email may have changed — keep the top bar in step. Updating the
+      // profile in place keeps the session's token and permissions; signing
+      // in again with this partial map used to wipe both.
       final map = json as Map<String, dynamic>;
-      await Get.find<SessionController>().signIn({
-        'id': map['id'],
-        'name': map['name'],
-        'email': map['email'],
-        'role': map['role'],
-      });
+      await Get.find<SessionController>().updateProfile(
+        name: map['name'] as String?,
+        email: map['email'] as String?,
+        phone: map['phone'] as String?,
+      );
       _ok('Settings Saved', 'Your changes have been saved.');
     } catch (e) {
       _error(e is ApiException ? e.message : 'Failed to save settings.');

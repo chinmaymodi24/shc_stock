@@ -14,10 +14,14 @@ const clientsRouter = require('./routes/clients');
 const inventoryRouter = require('./routes/inventory');
 const statsRouter = require('./routes/stats');
 const statementsRouter = require('./routes/statements');
+const billsRouter = require('./routes/bills');
 const usersRouter = require('./routes/users');
 const transactionsRouter = require('./routes/transactions');
 const dashboardRouter = require('./routes/dashboard');
 const settingsRouter = require('./routes/settings');
+const rolesRouter = require('./routes/roles');
+const { guard } = require('./auth/middleware');
+const { syncSystemRoles } = require('./roles');
 const { startDeliverySweep } = require('./deliverySweep');
 
 const app = express();
@@ -39,6 +43,10 @@ app.use('/uploads', express.static(path.join(__dirname, '..', process.env.UPLOAD
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
+// Every /api request past this point needs a signed-in employee with the right
+// permission — see src/auth/policy.js for which request needs what.
+app.use('/api', guard);
+
 app.use('/api/categories', categoriesRouter);
 app.use('/api/sub-categories', subCategoriesRouter);
 app.use('/api/upload', uploadRouter);
@@ -50,7 +58,9 @@ app.use('/api/clients', clientsRouter);
 app.use('/api/inventory', inventoryRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/statements', statementsRouter);
+app.use('/api/bills', billsRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/roles', rolesRouter);
 app.use('/api/transactions', transactionsRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/settings', settingsRouter);
@@ -70,6 +80,9 @@ app.listen(PORT, '0.0.0.0', () => {
     .flat()
     .filter((i) => i && i.family === 'IPv4' && !i.internal)
     .forEach((i) => console.log(`  LAN: http://${i.address}:${PORT}`));
+  // Ready-made roles follow src/permissions.js, so a new module reaches them
+  // on the next start.
+  syncSystemRoles().catch((err) => console.error('Role sync failed:', err));
   // Flips orders whose expected delivery date has arrived, booking their stock.
   startDeliverySweep();
 });

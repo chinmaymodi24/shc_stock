@@ -1,3 +1,6 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
+import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
+import 'package:shc_stock/app/modules/products/export/products_export.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -30,16 +33,19 @@ class MobileProductsLayout extends StatelessWidget {
       appBar: _buildAppBar(context, c),
       body: Obx(
         () => MobileListScaffold(
+          summaryModule: 'Products',
           statCards: _statCards(context, c),
           search: _searchField(c),
           sliver: _buildProductList(c),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Get.dialog(const AddProductDialog()),
-        backgroundColor: AppColors.primaryOrange,
-        child: const Icon(Icons.add_rounded, color: Colors.white),
-      ),
+      floatingActionButton: canWriteModule('Products')
+          ? FloatingActionButton(
+              onPressed: () => Get.dialog(const AddProductDialog()),
+              backgroundColor: AppColors.primaryOrange,
+              child: const Icon(Icons.add_rounded, color: Colors.white),
+            )
+          : null,
     );
   }
 
@@ -61,7 +67,7 @@ class MobileProductsLayout extends StatelessWidget {
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: colors.textPrimary,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
       centerTitle: true,
@@ -77,6 +83,9 @@ class MobileProductsLayout extends StatelessWidget {
                 (c.sortOption.value == 'Default' ? 0 : 1),
           ),
         ),
+        // Export reaches the phone too: the same menu the web toolbar
+        // opens, as an AppBar icon.
+        ExportMenuButton(source: productsExportConfig(c), iconOnly: true),
         const MobileAppBarAvatar(),
       ],
       bottom: PreferredSize(
@@ -270,7 +279,7 @@ class _ProductRow extends StatelessWidget {
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
                           color: status.color,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ],
@@ -284,7 +293,7 @@ class _ProductRow extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -295,7 +304,7 @@ class _ProductRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       color: colors.textHint,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ],
@@ -310,24 +319,26 @@ class _ProductRow extends StatelessWidget {
                   label: 'View',
                   onSelected: () => ProductActions.view(product),
                 ),
-                MobileRowMenuItem(
-                  icon: Icons.edit_outlined,
-                  color: colors.purple,
-                  label: 'Edit',
-                  onSelected: () => ProductActions.edit(product),
-                ),
-                MobileRowMenuItem(
-                  icon: Icons.copy_outlined,
-                  color: const Color(0xFF3B82F6),
-                  label: 'Duplicate',
-                  onSelected: () => ProductActions.duplicate(product),
-                ),
-                MobileRowMenuItem(
-                  icon: Icons.delete_outline_rounded,
-                  color: const Color(0xFFEF4444),
-                  label: 'Delete',
-                  onSelected: () => ProductActions.delete(context, product),
-                ),
+                if (canWriteModule('Products')) ...[
+                  MobileRowMenuItem(
+                    icon: Icons.edit_outlined,
+                    color: colors.purple,
+                    label: 'Edit',
+                    onSelected: () => ProductActions.edit(product),
+                  ),
+                  MobileRowMenuItem(
+                    icon: Icons.copy_outlined,
+                    color: const Color(0xFF3B82F6),
+                    label: 'Duplicate',
+                    onSelected: () => ProductActions.duplicate(product),
+                  ),
+                  MobileRowMenuItem(
+                    icon: Icons.delete_outline_rounded,
+                    color: const Color(0xFFEF4444),
+                    label: 'Delete',
+                    onSelected: () => ProductActions.delete(context, product),
+                  ),
+                ],
               ],
             ),
           ],

@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
@@ -35,6 +36,7 @@ class ProfitLossController extends GetxController {
   double _num(dynamic v) => (v as num?)?.toDouble() ?? 0;
 
   Future<void> fetchProfitLoss() async {
+    if (!canSeeSummary('Reports')) return;
     isLoading.value = true;
     try {
       final json = await _api.get('/stats/profit-loss') as Map<String, dynamic>;

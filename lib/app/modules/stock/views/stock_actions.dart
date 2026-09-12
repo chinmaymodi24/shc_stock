@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
@@ -41,38 +42,47 @@ class StockActions {
     Get.dialog(
       StockItemDetailsPanel(
         item: item,
-        onEdit: () {
-          Get.back();
-          edit(item);
-        },
-        onDelete: () {
-          Get.back();
-          delete(context, item);
-        },
+        // Edit / Delete act on the product — disabled without write on it.
+        onEdit: canWriteModule('Products')
+            ? () {
+                Get.back();
+                edit(item);
+              }
+            : null,
+        onDelete: canWriteModule('Products')
+            ? () {
+                Get.back();
+                delete(context, item);
+              }
+            : null,
       ),
     );
   }
 
   static void edit(StockItemModel item) {
+    if (!requireWrite('Products')) return;
     final product = productFor(item);
     if (product == null) return _needsProduct();
     Get.dialog(AddProductDialog(product: product));
   }
 
   static void duplicate(StockItemModel item) {
+    if (!requireWrite('Products')) return;
     final product = productFor(item);
     if (product == null) return _needsProduct();
     Get.dialog(AddProductDialog(product: product, duplicate: true));
   }
 
-  static void delete(BuildContext context, StockItemModel item) =>
-      confirmDelete(
-        context,
-        itemName: item.name,
-        itemLabel: 'Product',
-        onConfirm: () async {
-          await _products().deleteProduct(item.productId.toString());
-          await refreshStockViews();
-        },
-      );
+  static void delete(BuildContext context, StockItemModel item) {
+    if (!requireWrite('Products')) return;
+    confirmDelete(
+      context,
+      itemName: item.name,
+      itemLabel: 'Product',
+      onConfirm: () async {
+        await _products().deleteProduct(item.productId.toString());
+        await refreshStockViews();
+      },
+    );
+  }
 }

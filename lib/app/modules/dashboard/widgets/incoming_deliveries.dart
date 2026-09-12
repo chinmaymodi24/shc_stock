@@ -103,7 +103,7 @@ class _DeliveryRow extends StatelessWidget {
                       decoration: isDone
                           ? TextDecoration.lineThrough
                           : TextDecoration.none,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -113,7 +113,7 @@ class _DeliveryRow extends StatelessWidget {
                       fontSize: 12,
                       fontWeight: isNext ? FontWeight.w600 : FontWeight.w400,
                       color: subtitleColor,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ],

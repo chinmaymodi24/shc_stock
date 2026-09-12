@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
@@ -16,27 +17,36 @@ class ClientActions {
     Get.dialog(
       ClientDetailsDialog(
         client: client,
-        onDelete: () {
-          Get.back();
-          delete(context, client);
-        },
+        onDelete: canWriteModule('Clients')
+            ? () {
+                Get.back();
+                delete(context, client);
+              }
+            : null,
       ),
     );
   }
 
   /// Opens Add Client on this record; saving updates it in place.
-  static void edit(ClientModel client) =>
-      Get.toNamed(AppRoutes.addClient, arguments: EditClient(client));
+  static void edit(ClientModel client) {
+    if (!requireWrite('Clients')) return;
+    Get.toNamed(AppRoutes.addClient, arguments: EditClient(client));
+  }
 
   /// Opens Add Client pre-filled from this client but as a new draft — saving
   /// creates a new client and never touches the one duplicated from.
-  static void duplicate(ClientModel client) =>
-      Get.toNamed(AppRoutes.addClient, arguments: client);
+  static void duplicate(ClientModel client) {
+    if (!requireWrite('Clients')) return;
+    Get.toNamed(AppRoutes.addClient, arguments: client);
+  }
 
-  static void delete(BuildContext context, ClientModel client) => confirmDelete(
-    context,
-    itemName: client.name,
-    itemLabel: 'Client',
-    onConfirm: () => Get.find<ClientsController>().deleteClient(client.id),
-  );
+  static void delete(BuildContext context, ClientModel client) {
+    if (!requireWrite('Clients')) return;
+    confirmDelete(
+      context,
+      itemName: client.name,
+      itemLabel: 'Client',
+      onConfirm: () => Get.find<ClientsController>().deleteClient(client.id),
+    );
+  }
 }

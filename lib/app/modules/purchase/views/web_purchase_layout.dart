@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
@@ -90,7 +91,7 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                       fontSize: 22,
                                       fontWeight: FontWeight.w700,
                                       color: colors.textPrimary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                   const SizedBox(height: 3),
@@ -99,92 +100,102 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: colors.textSecondary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                 ],
                               ),
-                              ElevatedButton.icon(
-                                onPressed: () =>
-                                    Get.toNamed(AppRoutes.addPurchase),
-                                icon: const Icon(
-                                  Icons.add_rounded,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                                label: const Text(
-                                  'New Purchase',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                              if (canWriteModule('Purchase'))
+                                ElevatedButton.icon(
+                                  onPressed: () =>
+                                      Get.toNamed(AppRoutes.addPurchase),
+                                  icon: const Icon(
+                                    Icons.add_rounded,
                                     color: Colors.white,
-                                    fontFamily: 'Poppins',
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    'New Purchase',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      fontFamily: brandFontFamily,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryOrange,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        appColors.radius,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryOrange,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 20),
 
                           // ── 4 Stat Cards ─────────────────────────────────
-                          AppStatCardRow(
-                            cards: [
-                              AppStatCard(
-                                label: 'Orders',
-                                value: '${c.stats.value.intOf('totalOrders')}',
-                                icon: Icons.receipt_long_outlined,
-                                iconColor: context.appColors.accent,
-                                trend: c.stats.value.trendLabel('totalOrders'),
-                                showCaption: false,
-                              ),
-                              AppStatCard(
-                                label: 'Purchase (MTD)',
-                                value: formatRupees(
-                                  c.stats.value.doubleOf('purchaseMTD'),
+                          if (canSeeSummary('Purchase')) ...[
+                            AppStatCardRow(
+                              cards: [
+                                AppStatCard(
+                                  label: 'Orders',
+                                  value:
+                                      '${c.stats.value.intOf('totalOrders')}',
+                                  icon: Icons.receipt_long_outlined,
+                                  iconColor: context.appColors.accent,
+                                  trend: c.stats.value.trendLabel(
+                                    'totalOrders',
+                                  ),
+                                  showCaption: false,
                                 ),
-                                icon: Icons.shopping_cart_outlined,
-                                iconColor: AppColors.primaryOrange,
-                                trend: c.stats.value.trendLabel('purchaseMTD'),
-                                showCaption: false,
-                                smallValue: true,
-                              ),
-                              AppStatCard(
-                                label: 'Amount Paid',
-                                value: formatRupees(
-                                  c.stats.value.doubleOf('amountPaid'),
+                                AppStatCard(
+                                  label: 'Purchase (MTD)',
+                                  value: formatRupees(
+                                    c.stats.value.doubleOf('purchaseMTD'),
+                                  ),
+                                  icon: Icons.shopping_cart_outlined,
+                                  iconColor: AppColors.primaryOrange,
+                                  trend: c.stats.value.trendLabel(
+                                    'purchaseMTD',
+                                  ),
+                                  showCaption: false,
+                                  smallValue: true,
                                 ),
-                                icon: Icons.check_circle_outline_rounded,
-                                iconColor: const Color(0xFF22C55E),
-                                trend: c.stats.value.trendLabel('amountPaid'),
-                                showCaption: false,
-                                smallValue: true,
-                              ),
-                              AppStatCard(
-                                label: 'Amount Due',
-                                value: formatRupees(
-                                  c.stats.value.doubleOf('amountDue'),
+                                AppStatCard(
+                                  label: 'Amount Paid',
+                                  value: formatRupees(
+                                    c.stats.value.doubleOf('amountPaid'),
+                                  ),
+                                  icon: Icons.check_circle_outline_rounded,
+                                  iconColor: const Color(0xFF22C55E),
+                                  trend: c.stats.value.trendLabel('amountPaid'),
+                                  showCaption: false,
+                                  smallValue: true,
                                 ),
-                                icon: Icons.currency_rupee_rounded,
-                                iconColor: const Color(0xFFF59E0B),
-                                trend: c.stats.value.trendLabel('amountDue'),
-                                trendUp: false,
-                                showCaption: false,
-                                smallValue: true,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
+                                AppStatCard(
+                                  label: 'Amount Due',
+                                  value: formatRupees(
+                                    c.stats.value.doubleOf('amountDue'),
+                                  ),
+                                  icon: Icons.currency_rupee_rounded,
+                                  iconColor: const Color(0xFFF59E0B),
+                                  trend: c.stats.value.trendLabel('amountDue'),
+                                  trendUp: false,
+                                  showCaption: false,
+                                  smallValue: true,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                          ],
 
                           // ── Body: Table + Right Panel ─────────────────────
                           Row(
@@ -224,14 +235,11 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                       Padding(
                                         padding: const EdgeInsets.fromLTRB(
                                           16,
-                                          12,
+                                          0,
                                           16,
                                           4,
                                         ),
                                         child: ListScopeBar(
-                                          shown: filtered.length,
-                                          total: c.orders.length,
-                                          noun: 'purchase orders',
                                           chips: [
                                             if (c.searchQuery.value.isNotEmpty)
                                               ListScopeChip(
@@ -417,7 +425,7 @@ class _ColumnHeader extends StatelessWidget {
     fontSize: 12.5,
     fontWeight: FontWeight.w600,
     color: colors.textSecondary,
-    fontFamily: 'Poppins',
+    fontFamily: brandFontFamily,
     letterSpacing: 0.1,
   );
 
@@ -541,11 +549,11 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                   child: Center(
                     child: Text(
                       '${widget.index + 1}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: AppColors.primaryOrange,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -561,7 +569,7 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: context.appColors.accent,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -595,7 +603,7 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                             color: colors.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -612,7 +620,7 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                     style: TextStyle(
                       fontSize: 12.5,
                       color: colors.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -634,7 +642,7 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: colors.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -650,7 +658,7 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -700,33 +708,35 @@ class _PurchaseRowState extends State<_PurchaseRow> {
                         onTap: () =>
                             PurchaseActions.view(context, widget.order),
                       ),
-                      const SizedBox(width: 5),
-                      RowActionButton(
-                        icon: Icons.edit_outlined,
-                        color: AppColors.primaryOrange,
-                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
-                        tooltip: 'Edit',
-                        onTap: () => PurchaseActions.edit(widget.order),
-                      ),
-                      const SizedBox(width: 5),
-                      RowActionButton(
-                        icon: Icons.copy_outlined,
-                        color: const Color(0xFF3B82F6),
-                        bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
-                        tooltip: 'Duplicate',
-                        onTap: () => PurchaseActions.duplicate(widget.order),
-                      ),
-                      const SizedBox(width: 5),
-                      RowActionButton(
-                        icon: Icons.delete_outline_rounded,
-                        iconSize: 18,
-                        color: context.appColors.error,
-                        // Neutral, not red-tinted — only the icon carries
-                        // the warning color.
-                        bg: context.appColors.tagBg,
-                        tooltip: 'Delete',
-                        onTap: widget.onDelete,
-                      ),
+                      if (canWriteModule('Purchase')) ...[
+                        const SizedBox(width: 5),
+                        RowActionButton(
+                          icon: Icons.edit_outlined,
+                          color: AppColors.primaryOrange,
+                          bg: AppColors.primaryOrange.withValues(alpha: 0.10),
+                          tooltip: 'Edit',
+                          onTap: () => PurchaseActions.edit(widget.order),
+                        ),
+                        const SizedBox(width: 5),
+                        RowActionButton(
+                          icon: Icons.copy_outlined,
+                          color: const Color(0xFF3B82F6),
+                          bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                          tooltip: 'Duplicate',
+                          onTap: () => PurchaseActions.duplicate(widget.order),
+                        ),
+                        const SizedBox(width: 5),
+                        RowActionButton(
+                          icon: Icons.delete_outline_rounded,
+                          iconSize: 18,
+                          color: context.appColors.error,
+                          // Neutral, not red-tinted — only the icon carries
+                          // the warning color.
+                          bg: context.appColors.tagBg,
+                          tooltip: 'Delete',
+                          onTap: widget.onDelete,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -814,7 +824,7 @@ class _StatusBadge extends StatelessWidget {
           fontSize: 12,
           fontWeight: FontWeight.w600,
           color: fg,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
     );
@@ -841,7 +851,7 @@ class _EmptyState extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 color: colors.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],
@@ -904,7 +914,7 @@ class _PurchaseSummaryCard extends StatelessWidget {
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ),
@@ -976,7 +986,7 @@ class _SumRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 color: colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -986,7 +996,7 @@ class _SumRow extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w700,
               color: valueColor ?? colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ],
@@ -1060,17 +1070,17 @@ class _TopSuppliersCard extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: colors.textPrimary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
                   Text(
                     'View All',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: AppColors.primaryOrange,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ],
@@ -1113,7 +1123,7 @@ class _TopSuppliersCard extends StatelessWidget {
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             color: context.appColors.accent,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                       ),
@@ -1129,7 +1139,7 @@ class _TopSuppliersCard extends StatelessWidget {
                               fontSize: 12.5,
                               fontWeight: FontWeight.w500,
                               color: colors.textPrimary,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1138,7 +1148,7 @@ class _TopSuppliersCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               color: colors.textHint,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ],
@@ -1151,7 +1161,7 @@ class _TopSuppliersCard extends StatelessWidget {
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         color: colors.textPrimary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ],

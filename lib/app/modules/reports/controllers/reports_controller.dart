@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
@@ -61,6 +62,7 @@ class ReportsController extends GetxController {
   }
 
   Future<void> fetchReport() async {
+    if (!canSeeSummary('Reports')) return;
     isLoading.value = true;
     try {
       final params = <String>[];

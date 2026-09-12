@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
@@ -83,7 +84,7 @@ class WebTransactionsLayout extends GetView<TransactionsController> {
                                       fontSize: 22,
                                       fontWeight: FontWeight.w700,
                                       color: colors.textPrimary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                   const SizedBox(height: 3),
@@ -92,74 +93,79 @@ class WebTransactionsLayout extends GetView<TransactionsController> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: colors.textSecondary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                 ],
                               ),
-                              ElevatedButton.icon(
-                                onPressed: () =>
-                                    Get.dialog(const TransactionFormDialog()),
-                                icon: const Icon(
-                                  Icons.add_rounded,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                                label: const Text(
-                                  'New Transaction',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                              if (canWriteModule('Transactions'))
+                                ElevatedButton.icon(
+                                  onPressed: () =>
+                                      Get.dialog(const TransactionFormDialog()),
+                                  icon: const Icon(
+                                    Icons.add_rounded,
                                     color: Colors.white,
-                                    fontFamily: 'Poppins',
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    'New Transaction',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      fontFamily: brandFontFamily,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryOrange,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        appColors.radius,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryOrange,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 20),
 
                           // ── Summary Stat Cards ───────────────────────────────────
-                          AppStatCardRow(
-                            cards: [
-                              AppStatCard(
-                                label: 'Total Transactions (This Month)',
-                                value: '${c.totalThisMonth}',
-                                icon: Icons.swap_horiz_rounded,
-                                iconColor: const Color(0xFF3B6FC9),
-                              ),
-                              AppStatCard(
-                                label: 'Inbound',
-                                value: '${c.inboundCount}',
-                                icon: Icons.call_received_rounded,
-                                iconColor: const Color(0xFF2E9E5B),
-                              ),
-                              AppStatCard(
-                                label: 'Outbound',
-                                value: '${c.outboundCount}',
-                                icon: Icons.call_made_rounded,
-                                iconColor: const Color(0xFFC9822F),
-                              ),
-                              AppStatCard(
-                                label: 'Pending',
-                                value: '${c.pendingCount}',
-                                icon: Icons.schedule_rounded,
-                                iconColor: const Color(0xFFD1494C),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
+                          if (canSeeSummary('Transactions')) ...[
+                            AppStatCardRow(
+                              cards: [
+                                AppStatCard(
+                                  label: 'Total Transactions (This Month)',
+                                  value: '${c.totalThisMonth}',
+                                  icon: Icons.swap_horiz_rounded,
+                                  iconColor: const Color(0xFF3B6FC9),
+                                ),
+                                AppStatCard(
+                                  label: 'Inbound',
+                                  value: '${c.inboundCount}',
+                                  icon: Icons.call_received_rounded,
+                                  iconColor: const Color(0xFF2E9E5B),
+                                ),
+                                AppStatCard(
+                                  label: 'Outbound',
+                                  value: '${c.outboundCount}',
+                                  icon: Icons.call_made_rounded,
+                                  iconColor: const Color(0xFFC9822F),
+                                ),
+                                AppStatCard(
+                                  label: 'Pending',
+                                  value: '${c.pendingCount}',
+                                  icon: Icons.schedule_rounded,
+                                  iconColor: const Color(0xFFD1494C),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                          ],
 
                           // ── Toolbar: search + filters ─────────────────────────────
                           FilterBar(
@@ -223,11 +229,7 @@ class WebTransactionsLayout extends GetView<TransactionsController> {
                               source: transactionsExportConfig(c),
                             ),
                           ),
-                          const SizedBox(height: 12),
                           ListScopeBar(
-                            shown: filtered.length,
-                            total: c.transactions.length,
-                            noun: 'transactions',
                             chips: [
                               if (c.search.value.isNotEmpty)
                                 ListScopeChip(
@@ -291,7 +293,7 @@ class WebTransactionsLayout extends GetView<TransactionsController> {
                                             style: TextStyle(
                                               fontSize: 14,
                                               color: colors.textHint,
-                                              fontFamily: 'Poppins',
+                                              fontFamily: brandFontFamily,
                                             ),
                                           ),
                                         ],
@@ -346,7 +348,7 @@ class _ColHeader extends StatelessWidget {
     fontSize: 12,
     fontWeight: FontWeight.w600,
     color: colors.textSecondary,
-    fontFamily: 'Poppins',
+    fontFamily: brandFontFamily,
     letterSpacing: 0.1,
   );
 
@@ -432,7 +434,7 @@ class _TransactionRowState extends State<_TransactionRow> {
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                       color: c.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -458,7 +460,7 @@ class _TransactionRowState extends State<_TransactionRow> {
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
                           color: txn.typeColor,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -473,7 +475,7 @@ class _TransactionRowState extends State<_TransactionRow> {
                     style: TextStyle(
                       fontSize: 12.5,
                       color: c.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -488,7 +490,7 @@ class _TransactionRowState extends State<_TransactionRow> {
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: c.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -501,7 +503,7 @@ class _TransactionRowState extends State<_TransactionRow> {
                     style: TextStyle(
                       fontSize: 12.5,
                       color: c.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -515,7 +517,7 @@ class _TransactionRowState extends State<_TransactionRow> {
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: txn.statusColor,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -555,33 +557,35 @@ class _TransactionRowState extends State<_TransactionRow> {
                         tooltip: 'View',
                         onTap: () => TransactionActions.view(txn),
                       ),
-                      const SizedBox(width: 6),
-                      RowActionButton(
-                        icon: Icons.edit_outlined,
-                        color: AppColors.primaryOrange,
-                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
-                        tooltip: 'Edit',
-                        onTap: () => TransactionActions.edit(txn),
-                      ),
-                      const SizedBox(width: 6),
-                      RowActionButton(
-                        icon: Icons.copy_outlined,
-                        color: const Color(0xFF3B82F6),
-                        bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
-                        tooltip: 'Duplicate',
-                        onTap: () => TransactionActions.duplicate(txn),
-                      ),
-                      const SizedBox(width: 6),
-                      RowActionButton(
-                        icon: Icons.delete_outline_rounded,
-                        iconSize: 18,
-                        color: context.appColors.error,
-                        // Neutral, not red-tinted — only the icon carries
-                        // the warning color.
-                        bg: context.appColors.tagBg,
-                        tooltip: 'Delete',
-                        onTap: () => TransactionActions.delete(context, txn),
-                      ),
+                      if (canWriteModule('Transactions')) ...[
+                        const SizedBox(width: 6),
+                        RowActionButton(
+                          icon: Icons.edit_outlined,
+                          color: AppColors.primaryOrange,
+                          bg: AppColors.primaryOrange.withValues(alpha: 0.10),
+                          tooltip: 'Edit',
+                          onTap: () => TransactionActions.edit(txn),
+                        ),
+                        const SizedBox(width: 6),
+                        RowActionButton(
+                          icon: Icons.copy_outlined,
+                          color: const Color(0xFF3B82F6),
+                          bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                          tooltip: 'Duplicate',
+                          onTap: () => TransactionActions.duplicate(txn),
+                        ),
+                        const SizedBox(width: 6),
+                        RowActionButton(
+                          icon: Icons.delete_outline_rounded,
+                          iconSize: 18,
+                          color: context.appColors.error,
+                          // Neutral, not red-tinted — only the icon carries
+                          // the warning color.
+                          bg: context.appColors.tagBg,
+                          tooltip: 'Delete',
+                          onTap: () => TransactionActions.delete(context, txn),
+                        ),
+                      ],
                     ],
                   ),
                 ),

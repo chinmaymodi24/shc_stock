@@ -23,11 +23,20 @@ class ExportOverlayHost extends StatelessWidget {
     return Stack(
       children: [
         child,
-        const Positioned(
-          right: 20,
+        // Bounded on both sides rather than given a fixed width: 400pt is
+        // wider than a phone, and a fixed width there pushed the card off the
+        // screen edge.
+        Positioned(
+          left: 16,
+          right: 16,
           bottom: 20,
-          width: 400,
-          child: _ToastStack(),
+          child: Align(
+            alignment: Alignment.bottomRight,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: const _ToastStack(),
+            ),
+          ),
         ),
         const Positioned(top: 0, bottom: 0, right: 0, child: DownloadsPanel()),
       ],
@@ -97,7 +106,7 @@ class ExportToastCard extends StatelessWidget {
     children: [
       Row(
         children: [
-          const Icon(
+          Icon(
             Icons.hourglass_top_rounded,
             size: 17,
             color: AppColors.primaryOrange,
@@ -114,7 +123,7 @@ class ExportToastCard extends StatelessWidget {
           value: job.progress,
           minHeight: 4,
           backgroundColor: colors.tagBg,
-          valueColor: const AlwaysStoppedAnimation(AppColors.primaryOrange),
+          valueColor: AlwaysStoppedAnimation(AppColors.primaryOrange),
         ),
       ),
       const SizedBox(height: 8),
@@ -181,7 +190,7 @@ class ExportToastCard extends StatelessWidget {
       fontSize: 12.5,
       fontWeight: FontWeight.w700,
       color: colors.textPrimary,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
     ),
   );
 
@@ -190,7 +199,7 @@ class ExportToastCard extends StatelessWidget {
     style: TextStyle(
       fontSize: 11,
       color: colors.textHint,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
     ),
   );
 
@@ -221,11 +230,11 @@ class _FilledMiniButton extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11.5,
           fontWeight: FontWeight.w600,
           color: Colors.white,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
     ),
@@ -255,7 +264,7 @@ class _OutlinedMiniButton extends StatelessWidget {
             fontSize: 11.5,
             fontWeight: FontWeight.w600,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ),
@@ -305,7 +314,7 @@ class DownloadsPanel extends StatelessWidget {
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                           color: colors.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -344,9 +353,7 @@ class DownloadsPanel extends StatelessWidget {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: colors.background.computeLuminance() > 0.5
-                      ? const Color(0xFFFAF9F7)
-                      : colors.inputFill,
+                  color: colors.tableHeaderBg,
                   border: Border(top: BorderSide(color: colors.divider)),
                 ),
                 child: Text(
@@ -355,7 +362,7 @@ class DownloadsPanel extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     color: colors.textHint,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -376,7 +383,7 @@ class DownloadsPanel extends StatelessWidget {
           fontSize: 12,
           height: 1.5,
           color: colors.textHint,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
     ),
@@ -415,7 +422,7 @@ class _DownloadRow extends StatelessWidget {
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -424,7 +431,7 @@ class _DownloadRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10.5,
                       color: colors.textHint,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ],

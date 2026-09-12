@@ -120,7 +120,7 @@ class _TabletThemeToggle extends StatelessWidget {
         height: 36,
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.30),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
         ),
         child: Row(

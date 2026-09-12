@@ -70,7 +70,7 @@ class _StatusUpdateDialogShellState extends State<StatusUpdateDialogShell> {
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -79,7 +79,7 @@ class _StatusUpdateDialogShellState extends State<StatusUpdateDialogShell> {
                   style: TextStyle(
                     fontSize: 12.5,
                     color: colors.textSecondary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -98,7 +98,7 @@ class _StatusUpdateDialogShellState extends State<StatusUpdateDialogShell> {
                       Expanded(
                         child: InkWell(
                           onTap: Get.back,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(appColors.radius),
                           child: Container(
                             alignment: Alignment.center,
                             padding: const EdgeInsets.symmetric(vertical: 13),
@@ -106,7 +106,9 @@ class _StatusUpdateDialogShellState extends State<StatusUpdateDialogShell> {
                               color: colors.background.computeLuminance() > 0.5
                                   ? const Color(0xFFF3F1EC)
                                   : colors.inputFill,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(
+                                appColors.radius,
+                              ),
                             ),
                             child: Text(
                               'Cancel',
@@ -115,7 +117,7 @@ class _StatusUpdateDialogShellState extends State<StatusUpdateDialogShell> {
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: colors.textPrimary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ),
@@ -179,7 +181,7 @@ class StatusRadioGroup<T> extends StatelessWidget {
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         Obx(
@@ -198,7 +200,7 @@ class StatusRadioGroup<T> extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13.5,
                         color: colors.textPrimary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                     onChanged: (v) => selected.value = v as T,

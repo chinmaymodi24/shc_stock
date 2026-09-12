@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/dashboard/controllers/dashboard_controller.dart';
@@ -6,6 +7,7 @@ import 'package:shc_stock/app/modules/dashboard/widgets/bar_chart.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/sales_chart.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/category_breakdown.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/notes_todo.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
@@ -52,7 +54,7 @@ class MobileDashboardLayout extends GetView<DashboardController> {
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               const SizedBox(height: 3),
@@ -61,7 +63,7 @@ class MobileDashboardLayout extends GetView<DashboardController> {
                 style: TextStyle(
                   fontSize: 13,
                   color: colors.textSecondary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               const SizedBox(height: 16),
@@ -72,131 +74,183 @@ class MobileDashboardLayout extends GetView<DashboardController> {
                   padding: 72,
                 )
               else ...[
-                // ── 2x2 stat tiles ──────────────────────────────────────
-                // MobileStatGrid — the same dense KPI tiles the list pages
-                // (Products, Stock, Clients…) use, so the dashboard's cards
-                // are exactly the same size as theirs.
-                MobileStatGrid(
-                  cards: [
-                    for (var i = 0; i < 4; i++)
-                      MobileStatCardData(
-                        label: _statLabels[i],
-                        value: c.dashboardStats[i].value,
-                        icon: c.dashboardStats[i].icon,
-                        color: c.dashboardStats[i].iconColor,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
+                if (canSeeSummary('Dashboard')) ...[
+                  // ── 2x2 stat tiles ──────────────────────────────────────
+                  // MobileStatGrid — the same dense KPI tiles the list pages
+                  // (Products, Stock, Clients…) use, so the dashboard's cards
+                  // are exactly the same size as theirs.
+                  MobileStatGrid(
+                    cards: [
+                      for (var i = 0; i < 4; i++)
+                        MobileStatCardData(
+                          label: _statLabels[i],
+                          value: c.dashboardStats[i].value,
+                          icon: c.dashboardStats[i].icon,
+                          color: c.dashboardStats[i].iconColor,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
 
-                // ── Top selling product banner ──────────────────────────
-                _TopSellingBanner(data: c.dashboardStats[4]),
-                const SizedBox(height: 16),
-
-                // ── Incoming deliveries ──────────────────────────────────
-                _MobileCard(
-                  title: 'Incoming deliveries',
-                  child: Column(
-                    children: c.incomingDeliveries
-                        .take(2)
-                        .map(
-                          (d) => Padding(
-                            padding: const EdgeInsets.only(bottom: 14),
-                            child: _DeliveryRow(data: d),
+                  // ── Top selling product banner ──────────────────────────
+                  _TopSellingBanner(data: c.dashboardStats[4]),
+                  const SizedBox(height: 16),
+                ],
+                if (canReadModule('Purchase')) ...[
+                  // ── Incoming deliveries ──────────────────────────────────
+                  _MobileCard(
+                    title: 'Incoming deliveries',
+                    child: Column(
+                      children: c.incomingDeliveries
+                          .take(2)
+                          .map(
+                            (d) => Padding(
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: _DeliveryRow(data: d),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (canReadModule('Transactions')) ...[
+                  // ── Recent transactions ──────────────────────────────────
+                  _MobileCard(
+                    title: 'Recent transactions',
+                    child: c.recentTransactions.isEmpty
+                        ? _EmptyLine(text: 'Nothing has moved yet.')
+                        : Column(
+                            children: [
+                              for (var i = 0; i < _recentOnPhone(c); i++)
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: i == _recentOnPhone(c) - 1 ? 0 : 12,
+                                  ),
+                                  child: _TransactionRowTile(
+                                    data: c.recentTransactions[i],
+                                  ),
+                                ),
+                            ],
                           ),
-                        )
-                        .toList(),
                   ),
-                ),
-                const SizedBox(height: 16),
-
-                // ── Charts & Trends (collapsible) ────────────────────────
-                Obx(
-                  () => _ChartsAccordion(
-                    expanded: c.chartsExpanded.value,
-                    onToggle: () =>
-                        c.chartsExpanded.value = !c.chartsExpanded.value,
-                    c: c,
+                  const SizedBox(height: 16),
+                ],
+                if (canSeeSummary('Dashboard')) ...[
+                  // ── Charts & Trends (collapsible) ────────────────────────
+                  Obx(
+                    () => _ChartsAccordion(
+                      expanded: c.chartsExpanded.value,
+                      onToggle: () =>
+                          c.chartsExpanded.value = !c.chartsExpanded.value,
+                      c: c,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                // ── Category breakdown ───────────────────────────────────
+                  // ── Category breakdown ───────────────────────────────────
+                  _MobileCard(
+                    title: 'Category breakdown',
+                    child: CategoryBreakdown(
+                      categories: c.categorySlices.take(2).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (canReadModule('Inventory')) ...[
+                  // ── Low stock alerts ─────────────────────────────────────
+                  _MobileCard(
+                    title: 'Low stock alerts',
+                    child: Column(
+                      children: c.lowStockAlerts
+                          .map(
+                            (item) => Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _LowStockRow(item: item),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                // ── Notes & to-dos ───────────────────────────────────────
+                // The same widget the web dashboard uses, so a note added on
+                // a phone and one added at a desk are the same record.
                 _MobileCard(
-                  title: 'Category breakdown',
-                  child: CategoryBreakdown(
-                    categories: c.categorySlices.take(2).toList(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // ── Low stock alerts ─────────────────────────────────────
-                _MobileCard(
-                  title: 'Low stock alerts',
-                  child: Column(
-                    children: c.lowStockAlerts
-                        .map(
-                          (item) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: _LowStockRow(item: item),
-                          ),
-                        )
-                        .toList(),
+                  title: 'Notes & to-dos',
+                  child: NotesTodo(
+                    notes: c.notes,
+                    onToggle: c.toggleNote,
+                    onAdd: c.addNote,
+                    onDelete: c.deleteNote,
                   ),
                 ),
                 const SizedBox(height: 16),
 
                 // ── Quick actions grid ─────────────────────────────────
-                Text(
-                  'Quick actions',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                // Each link only for someone who may use it.
+                if (_quickLinks(context).isNotEmpty) ...[
+                  Text(
+                    'Quick actions',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: colors.textPrimary,
+                      fontFamily: brandFontFamily,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 2.6,
-                  children: [
-                    _QuickLinkCard(
-                      icon: Icons.shopping_cart_outlined,
-                      label: 'Add Purchase',
-                      iconColor: const Color(0xFF3B82F6),
-                      onTap: () => Get.toNamed(AppRoutes.addPurchase),
-                    ),
-                    _QuickLinkCard(
-                      icon: Icons.sell_outlined,
-                      label: 'New Sale',
-                      iconColor: AppColors.primaryOrange,
-                      onTap: () => Get.toNamed(AppRoutes.addSale),
-                    ),
-                    _QuickLinkCard(
-                      icon: Icons.person_add_alt_outlined,
-                      label: 'Add Client',
-                      iconColor: colors.purple,
-                      onTap: () => Get.toNamed(AppRoutes.addClient),
-                    ),
-                    _QuickLinkCard(
-                      icon: Icons.bar_chart_rounded,
-                      label: 'Reports',
-                      iconColor: colors.success,
-                      onTap: () => Get.toNamed(AppRoutes.reports),
-                    ),
-                  ],
-                ),
+                  const SizedBox(height: 12),
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 2.6,
+                    children: _quickLinks(context),
+                  ),
+                ],
               ],
             ],
           ),
         );
       }),
     );
+  }
+
+  List<Widget> _quickLinks(BuildContext context) {
+    final colors = context.appColors;
+    return [
+      if (canWriteModule('Purchase'))
+        _QuickLinkCard(
+          icon: Icons.shopping_cart_outlined,
+          label: 'Add Purchase',
+          iconColor: const Color(0xFF3B82F6),
+          onTap: () => Get.toNamed(AppRoutes.addPurchase),
+        ),
+      if (canWriteModule('Sales'))
+        _QuickLinkCard(
+          icon: Icons.sell_outlined,
+          label: 'New Sale',
+          iconColor: AppColors.primaryOrange,
+          onTap: () => Get.toNamed(AppRoutes.addSale),
+        ),
+      if (canWriteModule('Clients'))
+        _QuickLinkCard(
+          icon: Icons.person_add_alt_outlined,
+          label: 'Add Client',
+          iconColor: colors.purple,
+          onTap: () => Get.toNamed(AppRoutes.addClient),
+        ),
+      if (canReadModule('Reports'))
+        _QuickLinkCard(
+          icon: Icons.bar_chart_rounded,
+          label: 'Reports',
+          iconColor: colors.success,
+          onTap: () => Get.toNamed(AppRoutes.reports),
+        ),
+    ];
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
@@ -249,7 +303,7 @@ class _TopSellingBanner extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: data.iconColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(appColors.radius),
             ),
             child: Icon(data.icon, color: data.iconColor, size: 20),
           ),
@@ -270,7 +324,7 @@ class _TopSellingBanner extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: data.iconColor,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -282,7 +336,7 @@ class _TopSellingBanner extends StatelessWidget {
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ],
@@ -297,6 +351,129 @@ class _TopSellingBanner extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Generic white bordered card with a bold title
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Recent transactions, in one column.
+//
+// The web dashboard shows this as a five-column table (Item / Type / Warehouse
+// / Date / Status). None of that fits a handset, so the same row becomes two
+// lines: what moved and where, then when and how it stands.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// How many rows a phone shows before the card gets longer than a thumb.
+int _recentOnPhone(DashboardController c) =>
+    c.recentTransactions.length < 4 ? c.recentTransactions.length : 4;
+
+class _TransactionRowTile extends StatelessWidget {
+  final TransactionRow data;
+  const _TransactionRowTile({required this.data});
+
+  /// Inbound moves stock in, outbound moves it out — the arrow says which
+  /// without spending a column on the word.
+  bool get _inbound => data.type.toLowerCase().startsWith('in');
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final tint = _inbound ? colors.success : AppColors.primaryOrange;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: tint.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(appColors.radiusSm),
+          ),
+          child: Icon(
+            _inbound ? Icons.south_west_rounded : Icons.north_east_rounded,
+            size: 15,
+            color: tint,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                data.item,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                  fontFamily: brandFontFamily,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                [
+                  data.type,
+                  data.warehouse,
+                ].where((v) => v.trim().isNotEmpty).join(' · '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  color: colors.textHint,
+                  fontFamily: brandFontFamily,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              data.status,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: tint,
+                fontFamily: brandFontFamily,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              data.date,
+              style: TextStyle(
+                fontSize: 11,
+                color: colors.textHint,
+                fontFamily: brandFontFamily,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// What a card says when its list is empty, rather than collapsing to a title
+/// with nothing under it.
+class _EmptyLine extends StatelessWidget {
+  final String text;
+  const _EmptyLine({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 12.5,
+        color: colors.textHint,
+        fontFamily: brandFontFamily,
+      ),
+    );
+  }
+}
+
 class _MobileCard extends StatelessWidget {
   final String title;
   final Widget child;
@@ -329,7 +506,7 @@ class _MobileCard extends StatelessWidget {
               fontSize: 15,
               fontWeight: FontWeight.w700,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           const SizedBox(height: 14),
@@ -375,7 +552,7 @@ class _DeliveryRow extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -384,7 +561,7 @@ class _DeliveryRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color: colors.textSecondary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ],
@@ -423,7 +600,7 @@ class _LowStockRow extends StatelessWidget {
                   fontSize: 13.5,
                   fontWeight: FontWeight.w600,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -434,7 +611,7 @@ class _LowStockRow extends StatelessWidget {
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: colors.error,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],
@@ -474,7 +651,7 @@ class _ChartsAccordion extends StatelessWidget {
       fontSize: 13,
       fontWeight: FontWeight.w600,
       color: colors.textPrimary,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
     );
     return Container(
       width: double.infinity,
@@ -512,7 +689,7 @@ class _ChartsAccordion extends StatelessWidget {
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: colors.textPrimary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -622,7 +799,7 @@ class _QuickLinkCard extends StatelessWidget {
                   fontSize: 13.5,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

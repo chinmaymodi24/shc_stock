@@ -245,7 +245,7 @@ class _LegendItem extends StatelessWidget {
                 height: 1.3,
                 fontWeight: highlighted ? FontWeight.w600 : FontWeight.w500,
                 color: dimmed ? colors.textSecondary : colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
               overflow: TextOverflow.ellipsis,
             ),

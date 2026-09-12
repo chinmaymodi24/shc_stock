@@ -64,7 +64,7 @@ class MobileAddClientLayout extends GetView<AddClientController> {
           fontSize: 17,
           fontWeight: FontWeight.w700,
           color: colors.textPrimary,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
       bottom: PreferredSize(
@@ -138,11 +138,11 @@ class MobileAddClientLayout extends GetView<AddClientController> {
                 ],
                 Text(
                   saving ? 'Saving…' : 'Save Client',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ],
@@ -297,7 +297,7 @@ class MobileAddClientLayout extends GetView<AddClientController> {
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: colors.textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                   letterSpacing: 0.4,
                 ),
               ),
@@ -705,7 +705,7 @@ class MobileAddClientLayout extends GetView<AddClientController> {
             style: TextStyle(
               fontSize: 12.5,
               color: colors.textSecondary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ],

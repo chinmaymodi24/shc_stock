@@ -19,7 +19,11 @@ class AppAsyncButton extends StatefulWidget {
   final Future<void> Function() onPressed;
 
   final IconData? icon;
-  final Color background;
+
+  /// Defaults to the brand primary. Nullable for the same reason as
+  /// [SalesChart.lineColor]: the brand is resolved at runtime, so it cannot
+  /// be a constant default.
+  final Color? background;
   final Color foreground;
 
   /// Fills the available width — used inside dialogs and mobile forms.
@@ -34,7 +38,7 @@ class AppAsyncButton extends StatefulWidget {
     required this.label,
     required this.onPressed,
     this.icon,
-    this.background = AppColors.primaryOrange,
+    this.background,
     this.foreground = Colors.white,
     this.expand = false,
     this.padding = const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
@@ -86,8 +90,11 @@ class _AppAsyncButtonState extends State<AppAsyncButton> {
       final button = ElevatedButton(
         onPressed: busy ? null : _run,
         style: ElevatedButton.styleFrom(
-          backgroundColor: widget.background,
-          disabledBackgroundColor: widget.background.withValues(alpha: 0.75),
+          backgroundColor: widget.background ?? AppColors.primaryOrange,
+          disabledBackgroundColor:
+              (widget.background ?? AppColors.primaryOrange).withValues(
+                alpha: 0.75,
+              ),
           elevation: 0,
           padding: widget.padding,
           // Material's default 48dp tap-target padding makes this button
@@ -129,7 +136,7 @@ class _AppAsyncButtonState extends State<AppAsyncButton> {
                         fontSize: widget.fontSize,
                         fontWeight: FontWeight.w600,
                         color: widget.foreground,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),

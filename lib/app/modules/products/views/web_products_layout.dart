@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
@@ -48,10 +49,11 @@ class WebProductsLayout extends StatelessWidget {
                       children: [
                         _buildHeader(context),
                         const SizedBox(height: 20),
-                        _buildStatCards(c),
-                        const SizedBox(height: 20),
+                        if (canSeeSummary('Products')) ...[
+                          _buildStatCards(c),
+                          const SizedBox(height: 20),
+                        ],
                         _buildFiltersRow(context, c),
-                        const SizedBox(height: 12),
                         _buildScopeBar(c),
                         const SizedBox(height: 12),
                         _buildTableSection(context, c),
@@ -84,7 +86,7 @@ class WebProductsLayout extends StatelessWidget {
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               const SizedBox(height: 3),
@@ -93,33 +95,34 @@ class WebProductsLayout extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   color: colors.textSecondary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ],
           ),
         ),
-        ElevatedButton.icon(
-          onPressed: () => Get.dialog(const AddProductDialog()),
-          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 18),
-          label: const Text(
-            'Add Product',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-              fontFamily: 'Poppins',
+        if (canWriteModule('Products'))
+          ElevatedButton.icon(
+            onPressed: () => Get.dialog(const AddProductDialog()),
+            icon: const Icon(Icons.add_rounded, color: Colors.white, size: 18),
+            label: Text(
+              'Add Product',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                fontFamily: brandFontFamily,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryOrange,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(appColors.radius),
+              ),
             ),
           ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryOrange,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -193,7 +196,7 @@ class WebProductsLayout extends StatelessWidget {
                     'No products found.',
                     style: TextStyle(
                       color: colors.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -203,7 +206,7 @@ class WebProductsLayout extends StatelessWidget {
               children: products.asMap().entries.map((e) {
                 return _ProductRow(
                   product: e.value,
-                  isEven: e.key.isEven,
+                  isLast: e.key == products.length - 1,
                   controller: c,
                 );
               }).toList(),
@@ -300,9 +303,6 @@ class WebProductsLayout extends StatelessWidget {
           ),
       ];
       return ListScopeBar(
-        shown: c.filteredProducts.length,
-        total: c.products.length,
-        noun: 'products',
         chips: chips,
         selectedCount: c.selectedIds.length,
         onClearSelection: c.clearSelection,
@@ -317,7 +317,7 @@ class WebProductsLayout extends StatelessWidget {
       fontSize: 12.5,
       fontWeight: FontWeight.w600,
       color: colors.textSecondary,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
     );
     Widget sortIcon() =>
         Icon(Icons.unfold_more_rounded, size: 14, color: colors.textHint);
@@ -389,7 +389,7 @@ class WebProductsLayout extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 color: colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
             const Spacer(),
@@ -400,7 +400,7 @@ class WebProductsLayout extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12.5,
                     color: colors.textSecondary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 Container(
@@ -420,7 +420,7 @@ class WebProductsLayout extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12.5,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     items: [5, 10, 20, 50]
                         .map(
@@ -478,7 +478,7 @@ class WebProductsLayout extends StatelessWidget {
                             ? FontWeight.w600
                             : FontWeight.w400,
                         color: isActive ? Colors.white : colors.textPrimary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -504,7 +504,7 @@ class WebProductsLayout extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12.5,
                         color: colors.textPrimary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -531,19 +531,37 @@ class WebProductsLayout extends StatelessWidget {
 }
 
 // ── Product Table Row ─────────────────────────────────────────────────────────
-class _ProductRow extends StatelessWidget {
+class _ProductRow extends StatefulWidget {
   final ProductModel product;
-  final bool isEven;
+  final bool isLast;
   final ProductsController controller;
 
   const _ProductRow({
     required this.product,
-    required this.isEven,
+    required this.isLast,
     required this.controller,
   });
 
   @override
+  State<_ProductRow> createState() => _ProductRowState();
+}
+
+class _ProductRowState extends State<_ProductRow> {
+  // Same row surface as every other list table (Inventory, Sales, ...): plain
+  // rows, no zebra stripes, and rowEven only while hovered. Kept as an Rx on
+  // the persistent State (not setState) so only the background repaints.
+  final _hovered = false.obs;
+
+  @override
+  void dispose() {
+    _hovered.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final product = widget.product;
+    final controller = widget.controller;
     final fmt = NumberFormat('#,##,##0', 'en_IN');
     final colors = context.appColors;
 
@@ -556,190 +574,201 @@ class _ProductRow extends StatelessWidget {
       stockColor = colors.success;
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isEven ? colors.rowEven : colors.surface,
-        border: Border(bottom: BorderSide(color: colors.divider)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 34,
-              child: Obx(
-                () => _SelectBox(
-                  checked: controller.selectedIds.contains(product.id),
-                  onTap: () => controller.toggleSelected(product.id),
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 4,
-              child: Row(
-                children: [
-                  ProductThumbnail(
-                    imageUrl: product.imageUrl,
-                    fallbackLabel: product.name,
-                    size: 38,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product.name,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: colors.textPrimary,
-                            fontFamily: 'Poppins',
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          product.sku,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            color: colors.textHint,
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                      ],
+    return MouseRegion(
+      onEnter: (_) => _hovered.value = true,
+      onExit: (_) => _hovered.value = false,
+      child: Obx(
+        () => AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          decoration: BoxDecoration(
+            color: _hovered.value ? colors.rowEven : colors.surface,
+            border: widget.isLast
+                ? null
+                : Border(bottom: BorderSide(color: colors.divider, width: 0.8)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 34,
+                  child: Obx(
+                    () => _SelectBox(
+                      checked: controller.selectedIds.contains(product.id),
+                      onTap: () => controller.toggleSelected(product.id),
                     ),
                   ),
-                ],
-              ),
-            ),
-            Expanded(
-              flex: 3,
-              child: Text(
-                product.categoryName.replaceFirst(RegExp(r'^\d+\.\s'), ''),
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: colors.textSecondary,
-                  fontFamily: 'Poppins',
                 ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Expanded(
-              flex: 3,
-              child: Text(
-                product.subCategory,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: colors.textSecondary,
-                  fontFamily: 'Poppins',
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Text(
-                '₹${fmt.format(product.sellingPrice)}',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: colors.textPrimary,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  constraints: const BoxConstraints(minWidth: 52),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 5,
+                Expanded(
+                  flex: 4,
+                  child: Row(
+                    children: [
+                      ProductThumbnail(
+                        imageUrl: product.imageUrl,
+                        fallbackLabel: product.name,
+                        size: 38,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              product.name,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: colors.textPrimary,
+                                fontFamily: brandFontFamily,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              product.sku,
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: colors.textHint,
+                                fontFamily: brandFontFamily,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  decoration: BoxDecoration(
-                    color: stockColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
+                ),
+                Expanded(
+                  flex: 3,
                   child: Text(
-                    '${product.currentStock}',
-                    textAlign: TextAlign.center,
+                    product.categoryName.replaceFirst(RegExp(r'^\d+\.\s'), ''),
                     style: TextStyle(
                       fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: stockColor,
-                      fontFamily: 'Poppins',
+                      color: colors.textSecondary,
+                      fontFamily: brandFontFamily,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    product.subCategory,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: colors.textSecondary,
+                      fontFamily: brandFontFamily,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    '₹${fmt.format(product.sellingPrice)}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: colors.textPrimary,
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
-              ),
+                Expanded(
+                  flex: 2,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      constraints: const BoxConstraints(minWidth: 52),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: stockColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '${product.currentStock}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: stockColor,
+                          fontFamily: brandFontFamily,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Builder(
+                    builder: (_) {
+                      final mod = resolveModifiedBy(
+                        storedName: product.modifiedBy,
+                        storedDate: product.modifiedAt,
+                      );
+                      if (mod == null) {
+                        return ModifiedByEmpty(textHint: colors.textHint);
+                      }
+                      return ModifiedByCell(
+                        name: mod.name,
+                        date: mod.date,
+                        textPrimary: colors.textPrimary,
+                        textHint: colors.textHint,
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(
+                  width: 140,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      RowActionButton(
+                        icon: Icons.remove_red_eye_outlined,
+                        color: colors.success,
+                        bg: colors.success.withValues(alpha: 0.10),
+                        tooltip: 'View',
+                        onTap: () => ProductActions.view(product),
+                      ),
+                      if (canWriteModule('Products')) ...[
+                        const SizedBox(width: 6),
+                        RowActionButton(
+                          icon: Icons.edit_outlined,
+                          color: AppColors.primaryOrange,
+                          bg: AppColors.primaryOrange.withValues(alpha: 0.10),
+                          tooltip: 'Edit',
+                          onTap: () => ProductActions.edit(product),
+                        ),
+                        const SizedBox(width: 6),
+                        RowActionButton(
+                          icon: Icons.copy_outlined,
+                          color: const Color(0xFF3B82F6),
+                          bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                          tooltip: 'Duplicate',
+                          onTap: () => ProductActions.duplicate(product),
+                        ),
+                        const SizedBox(width: 6),
+                        RowActionButton(
+                          icon: Icons.delete_outline_rounded,
+                          iconSize: 18,
+                          color: colors.error,
+                          // Neutral, not red-tinted — only the icon carries the
+                          // warning color.
+                          bg: colors.tagBg,
+                          tooltip: 'Delete',
+                          onTap: () => ProductActions.delete(context, product),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              flex: 3,
-              child: Builder(
-                builder: (_) {
-                  final mod = resolveModifiedBy(
-                    storedName: product.modifiedBy,
-                    storedDate: product.modifiedAt,
-                  );
-                  if (mod == null) {
-                    return ModifiedByEmpty(textHint: colors.textHint);
-                  }
-                  return ModifiedByCell(
-                    name: mod.name,
-                    date: mod.date,
-                    textPrimary: colors.textPrimary,
-                    textHint: colors.textHint,
-                  );
-                },
-              ),
-            ),
-            SizedBox(
-              width: 140,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  RowActionButton(
-                    icon: Icons.remove_red_eye_outlined,
-                    color: colors.success,
-                    bg: colors.success.withValues(alpha: 0.10),
-                    tooltip: 'View',
-                    onTap: () => ProductActions.view(product),
-                  ),
-                  const SizedBox(width: 6),
-                  RowActionButton(
-                    icon: Icons.edit_outlined,
-                    color: AppColors.primaryOrange,
-                    bg: AppColors.primaryOrange.withValues(alpha: 0.10),
-                    tooltip: 'Edit',
-                    onTap: () => ProductActions.edit(product),
-                  ),
-                  const SizedBox(width: 6),
-                  RowActionButton(
-                    icon: Icons.copy_outlined,
-                    color: const Color(0xFF3B82F6),
-                    bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
-                    tooltip: 'Duplicate',
-                    onTap: () => ProductActions.duplicate(product),
-                  ),
-                  const SizedBox(width: 6),
-                  RowActionButton(
-                    icon: Icons.delete_outline_rounded,
-                    iconSize: 18,
-                    color: colors.error,
-                    // Neutral, not red-tinted — only the icon carries the
-                    // warning color.
-                    bg: colors.tagBg,
-                    tooltip: 'Delete',
-                    onTap: () => ProductActions.delete(context, product),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -28,11 +28,16 @@ class ExportMenuButton extends StatefulWidget {
   /// one scope, so the dialog would have nothing to offer.
   final bool showMoreOptions;
 
+  /// A bare download icon instead of the labelled pill — what fits in a
+  /// mobile AppBar's action slot. The menu it opens is the same one.
+  final bool iconOnly;
+
   const ExportMenuButton({
     super.key,
     required this.source,
     this.filled = false,
     this.showMoreOptions = true,
+    this.iconOnly = false,
   });
 
   @override
@@ -120,6 +125,24 @@ class _ExportMenuButtonState extends State<ExportMenuButton> {
     final label = selected > 0 ? 'Export $selected selected' : 'Export';
     final isOpen = _open.value;
 
+    if (widget.iconOnly) {
+      return Tooltip(
+        message: label,
+        child: InkWell(
+          onTap: _toggle,
+          borderRadius: BorderRadius.circular(100),
+          child: Padding(
+            padding: const EdgeInsets.all(9),
+            child: Icon(
+              Icons.download_rounded,
+              size: 22,
+              color: isOpen ? AppColors.primaryOrange : colors.textPrimary,
+            ),
+          ),
+        ),
+      );
+    }
+
     if (widget.filled) {
       return _Shell(
         height: _height,
@@ -171,7 +194,7 @@ class _ExportMenuButtonState extends State<ExportMenuButton> {
     fontSize: 12.5,
     fontWeight: FontWeight.w600,
     color: color,
-    fontFamily: 'Poppins',
+    fontFamily: brandFontFamily,
   );
 }
 
@@ -300,7 +323,7 @@ class _ExportMenu extends StatelessWidget {
           fontWeight: FontWeight.w700,
           letterSpacing: 0.05 * 9.5,
           color: colors.textHint,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
     );
@@ -339,7 +362,7 @@ class _MenuRow extends StatelessWidget {
                   fontSize: 12.5,
                   fontWeight: FontWeight.w500,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ),

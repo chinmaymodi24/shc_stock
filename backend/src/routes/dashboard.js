@@ -174,25 +174,35 @@ router.get('/', async (req, res, next) => {
         unit: p.unit,
       }));
 
+    // Each block goes out only to someone allowed to see it: the business
+    // figures need the Dashboard summary right, and the lists need read on
+    // the module they come from. A withheld block is sent empty, so the app
+    // has one shape to parse and simply shows nothing there.
+    const can = req.auth.can;
+    const showSummary = can('Dashboard', 'summary');
     res.json({
-      summary: {
-        totalStockItems,
-        outOfStock,
-        lowStock,
-        duesFromClients: round2(duesFromClients),
-        topSellingProduct: saleItems[0] ? saleItems[0].product : null,
-        todaysSales: round2(todaysSales),
-        monthSales: round2(monthSales),
-      },
-      charts: {
-        purchases: { series: purchasesSeries, changePct: seriesChange(purchasesSeries) },
-        sales: { series: salesSeries, changePct: seriesChange(salesSeries) },
-        newClients: { series: clientsSeries, changePct: seriesChange(clientsSeries) },
-      },
-      categorySlices,
-      recentTransactions: transactions,
-      incomingDeliveries,
-      lowStockAlerts,
+      summary: showSummary
+        ? {
+          totalStockItems,
+          outOfStock,
+          lowStock,
+          duesFromClients: round2(duesFromClients),
+          topSellingProduct: saleItems[0] ? saleItems[0].product : null,
+          todaysSales: round2(todaysSales),
+          monthSales: round2(monthSales),
+        }
+        : {},
+      charts: showSummary
+        ? {
+          purchases: { series: purchasesSeries, changePct: seriesChange(purchasesSeries) },
+          sales: { series: salesSeries, changePct: seriesChange(salesSeries) },
+          newClients: { series: clientsSeries, changePct: seriesChange(clientsSeries) },
+        }
+        : {},
+      categorySlices: showSummary ? categorySlices : [],
+      recentTransactions: can('Transactions', 'read') ? transactions : [],
+      incomingDeliveries: can('Purchase', 'read') ? incomingDeliveries : [],
+      lowStockAlerts: can('Inventory', 'read') ? lowStockAlerts : [],
     });
   } catch (err) {
     next(err);
@@ -201,12 +211,16 @@ router.get('/', async (req, res, next) => {
 
 // ── Notes / to-do ───────────────────────────────────────────────────────────
 
-// GET /api/dashboard/notes?userId=
+/// Notes are each employee's own. Notes saved before they were tied to a
+/// person (userId null) stay visible to a Super Admin only.
+const ownNotes = (auth) =>
+  auth.isSuperAdmin ? { OR: [{ userId: auth.id }, { userId: null }] } : { userId: auth.id };
+
+// GET /api/dashboard/notes — the signed-in employee's notes.
 router.get('/notes', async (req, res, next) => {
   try {
-    const userId = Number(req.query.userId);
     const notes = await prisma.dashboardNote.findMany({
-      where: Number.isInteger(userId) && userId > 0 ? { userId } : {},
+      where: ownNotes(req.auth),
       orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
     });
     res.json(notes);
@@ -215,18 +229,17 @@ router.get('/notes', async (req, res, next) => {
   }
 });
 
-// POST /api/dashboard/notes  { text, userId? }
+// POST /api/dashboard/notes  { text }
 router.post('/notes', async (req, res, next) => {
   try {
     const text = String(req.body.text || '').trim();
     if (!text) return res.status(400).json({ error: 'text is required' });
-    const userId = Number(req.body.userId);
     const max = await prisma.dashboardNote.aggregate({ _max: { sortOrder: true } });
     const note = await prisma.dashboardNote.create({
       data: {
         text,
         done: req.body.done === true,
-        userId: Number.isInteger(userId) && userId > 0 ? userId : null,
+        userId: req.auth.id,
         sortOrder: (max._max.sortOrder ?? -1) + 1,
       },
     });
@@ -247,8 +260,12 @@ router.put('/notes/:id', async (req, res, next) => {
       data.text = text;
     }
     if (req.body.done !== undefined) data.done = req.body.done === true;
-    const note = await prisma.dashboardNote.update({ where: { id }, data });
-    res.json(note);
+    const { count } = await prisma.dashboardNote.updateMany({
+      where: { id, ...ownNotes(req.auth) },
+      data,
+    });
+    if (!count) return res.status(404).json({ error: 'Note not found' });
+    res.json(await prisma.dashboardNote.findUnique({ where: { id } }));
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'Note not found' });
     next(err);
@@ -259,7 +276,10 @@ router.put('/notes/:id', async (req, res, next) => {
 router.delete('/notes/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    await prisma.dashboardNote.delete({ where: { id } });
+    const { count } = await prisma.dashboardNote.deleteMany({
+      where: { id, ...ownNotes(req.auth) },
+    });
+    if (!count) return res.status(404).json({ error: 'Note not found' });
     res.status(204).send();
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'Note not found' });

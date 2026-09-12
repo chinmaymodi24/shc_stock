@@ -112,7 +112,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             color: colors.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -121,7 +121,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                           style: TextStyle(
                             fontSize: 12,
                             color: colors.textSecondary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                       ],
@@ -378,7 +378,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: colors.rowEven,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(appColors.radius),
                     ),
                     child: Column(
                       children: [
@@ -412,16 +412,16 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: colors.textPrimary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                             Text(
                               '₹${controller.grandTotal.toStringAsFixed(0)}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.primaryOrange,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ],
@@ -458,7 +458,7 @@ class MobileAddSalesLayout extends GetView<MobileAddSaleController> {
                     'Cancel',
                     style: TextStyle(
                       fontSize: 14,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                       color: colors.textSecondary,
                     ),
                   ),
@@ -524,7 +524,7 @@ class _MobileItemCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(appColors.radius),
         border: Border.all(color: colors.border),
       ),
       child: Column(
@@ -540,7 +540,7 @@ class _MobileItemCard extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.4,
                   color: colors.textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               if (canDelete)
@@ -643,7 +643,7 @@ class _MobileItemCard extends StatelessWidget {
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),

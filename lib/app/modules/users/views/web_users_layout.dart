@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
@@ -106,7 +107,7 @@ class WebUsersLayout extends GetView<UsersController> {
                                       fontSize: 22,
                                       fontWeight: FontWeight.w700,
                                       color: colors.textPrimary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                   const SizedBox(height: 3),
@@ -115,88 +116,97 @@ class WebUsersLayout extends GetView<UsersController> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: colors.textSecondary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                 ],
                               ),
-                              ElevatedButton.icon(
-                                onPressed: () =>
-                                    Get.toNamed(AppRoutes.addEmployee),
-                                icon: const Icon(
-                                  Icons.person_add_outlined,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                                label: const Text(
-                                  'Add New Employee',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                              if (canWriteModule('Employee'))
+                                ElevatedButton.icon(
+                                  onPressed: () =>
+                                      Get.toNamed(AppRoutes.addEmployee),
+                                  icon: const Icon(
+                                    Icons.person_add_outlined,
                                     color: Colors.white,
-                                    fontFamily: 'Poppins',
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    'Add New Employee',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      fontFamily: brandFontFamily,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryOrange,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        appColors.radius,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryOrange,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 20),
 
                           // ── Stat Cards ─────────────────────────────────────────────
-                          AppStatCardRow(
-                            cards: [
-                              AppStatCard(
-                                label: 'Total Employees',
-                                value: '${c.totalUsers}',
-                                icon: Icons.group_outlined,
-                                iconColor: AppColors.primaryOrange,
-                                trend: c.stats.value.trendLabel('totalUsers'),
-                                trendUp: c.stats.value.trendUp('totalUsers'),
-                                showCaption: false,
-                              ),
-                              AppStatCard(
-                                label: 'Active Employees',
-                                value: '${c.activeUsers}',
-                                icon: Icons.person_outline_rounded,
-                                iconColor: const Color(0xFF22C55E),
-                                trend: c.stats.value.trendLabel('activeUsers'),
-                                trendUp: c.stats.value.trendUp('activeUsers'),
-                                showCaption: false,
-                              ),
-                              AppStatCard(
-                                label: 'Admins',
-                                value: '${c.adminCount}',
-                                icon: Icons.admin_panel_settings_outlined,
-                                iconColor: context.appColors.accent,
-                                trend: c.stats.value.trendLabel('adminCount'),
-                                trendUp: c.stats.value.trendUp('adminCount'),
-                                showCaption: false,
-                              ),
-                              AppStatCard(
-                                label: 'Inactive Employees',
-                                value: '${c.inactiveUsers}',
-                                icon: Icons.person_off_outlined,
-                                iconColor: const Color(0xFFEF4444),
-                                trend: c.stats.value.trendLabel(
-                                  'inactiveUsers',
+                          if (canSeeSummary('Employee')) ...[
+                            AppStatCardRow(
+                              cards: [
+                                AppStatCard(
+                                  label: 'Total Employees',
+                                  value: '${c.totalUsers}',
+                                  icon: Icons.group_outlined,
+                                  iconColor: AppColors.primaryOrange,
+                                  trend: c.stats.value.trendLabel('totalUsers'),
+                                  trendUp: c.stats.value.trendUp('totalUsers'),
+                                  showCaption: false,
                                 ),
-                                trendUp: c.stats.value.trendUp('inactiveUsers'),
-                                showCaption: false,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
+                                AppStatCard(
+                                  label: 'Active Employees',
+                                  value: '${c.activeUsers}',
+                                  icon: Icons.person_outline_rounded,
+                                  iconColor: const Color(0xFF22C55E),
+                                  trend: c.stats.value.trendLabel(
+                                    'activeUsers',
+                                  ),
+                                  trendUp: c.stats.value.trendUp('activeUsers'),
+                                  showCaption: false,
+                                ),
+                                AppStatCard(
+                                  label: 'Admins',
+                                  value: '${c.adminCount}',
+                                  icon: Icons.admin_panel_settings_outlined,
+                                  iconColor: context.appColors.accent,
+                                  trend: c.stats.value.trendLabel('adminCount'),
+                                  trendUp: c.stats.value.trendUp('adminCount'),
+                                  showCaption: false,
+                                ),
+                                AppStatCard(
+                                  label: 'Inactive Employees',
+                                  value: '${c.inactiveUsers}',
+                                  icon: Icons.person_off_outlined,
+                                  iconColor: const Color(0xFFEF4444),
+                                  trend: c.stats.value.trendLabel(
+                                    'inactiveUsers',
+                                  ),
+                                  trendUp: c.stats.value.trendUp(
+                                    'inactiveUsers',
+                                  ),
+                                  showCaption: false,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                          ],
 
                           // ── Body: Table + Right Panel ──────────────────────────────
                           Row(
@@ -270,7 +280,7 @@ class WebUsersLayout extends GetView<UsersController> {
                                                   style: TextStyle(
                                                     fontSize: 14,
                                                     color: colors.textHint,
-                                                    fontFamily: 'Poppins',
+                                                    fontFamily: brandFontFamily,
                                                   ),
                                                 ),
                                               ],
@@ -309,17 +319,20 @@ class WebUsersLayout extends GetView<UsersController> {
                                 ),
                               ),
 
-                              const SizedBox(width: 16),
-
                               // ── RIGHT: Panel ─────────────────────────────────────
+                              // Summary cards need the Employee summary right;
+                              // Quick Actions shows only what this person may do.
+                              const SizedBox(width: 16),
                               SizedBox(
                                 width: 272,
                                 child: Column(
                                   children: [
-                                    _UserSummaryCard(colors: colors, c: c),
-                                    const SizedBox(height: 14),
-                                    _RoleBreakdownCard(colors: colors, c: c),
-                                    const SizedBox(height: 14),
+                                    if (canSeeSummary('Employee')) ...[
+                                      _UserSummaryCard(colors: colors, c: c),
+                                      const SizedBox(height: 14),
+                                      _RoleBreakdownCard(colors: colors, c: c),
+                                      const SizedBox(height: 14),
+                                    ],
                                     _QuickActionsCard(
                                       colors: colors,
                                       onAddUser: () =>
@@ -377,7 +390,7 @@ class _Toolbar extends StatelessWidget {
         pills: [
           SingleSelectFilterPill(
             value: filterRole,
-            items: ['All Roles', ...UserRole.values.map((r) => r.label)],
+            items: ['All Roles', ...Get.find<UsersController>().roleNames],
             onChanged: onRoleChanged,
           ),
           SingleSelectFilterPill(
@@ -405,7 +418,7 @@ class _Toolbar extends StatelessWidget {
                 'Export',
                 style: TextStyle(
                   fontSize: 13,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                   color: colors.textSecondary,
                 ),
               ),
@@ -438,7 +451,7 @@ class _ColumnHeader extends StatelessWidget {
     fontSize: 12.5,
     fontWeight: FontWeight.w600,
     color: colors.textSecondary,
-    fontFamily: 'Poppins',
+    fontFamily: brandFontFamily,
     letterSpacing: 0.1,
   );
 
@@ -557,11 +570,11 @@ class _UserRowState extends State<_UserRow> {
                   child: Center(
                     child: Text(
                       '${widget.displayIndex}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: AppColors.primaryOrange,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -577,7 +590,7 @@ class _UserRowState extends State<_UserRow> {
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: context.appColors.accent,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -602,7 +615,7 @@ class _UserRowState extends State<_UserRow> {
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                               color: u.badgeColor,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ),
@@ -615,7 +628,7 @@ class _UserRowState extends State<_UserRow> {
                             fontSize: 13.5,
                             fontWeight: FontWeight.w500,
                             color: c.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -632,7 +645,7 @@ class _UserRowState extends State<_UserRow> {
                     style: TextStyle(
                       fontSize: 12.5,
                       color: c.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -646,7 +659,7 @@ class _UserRowState extends State<_UserRow> {
                     style: TextStyle(
                       fontSize: 12.5,
                       color: c.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -679,7 +692,7 @@ class _UserRowState extends State<_UserRow> {
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: u.role.color,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                               ),
@@ -699,7 +712,7 @@ class _UserRowState extends State<_UserRow> {
                     style: TextStyle(
                       fontSize: 12,
                       color: c.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -715,10 +728,12 @@ class _UserRowState extends State<_UserRow> {
                           : 'Activate employee',
                       child: InkWell(
                         borderRadius: BorderRadius.circular(999),
-                        onTap: () => Get.find<UsersController>().setActive(
-                          u.id,
-                          !u.isActive,
-                        ),
+                        onTap: canWriteModule('Employee')
+                            ? () => Get.find<UsersController>().setActive(
+                                u.id,
+                                !u.isActive,
+                              )
+                            : null,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -740,7 +755,7 @@ class _UserRowState extends State<_UserRow> {
                               color: u.isActive
                                   ? const Color(0xFF22C55E)
                                   : c.textSecondary,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ),
@@ -784,33 +799,35 @@ class _UserRowState extends State<_UserRow> {
                         tooltip: 'View',
                         onTap: () => EmployeeActions.view(context, u),
                       ),
-                      const SizedBox(width: 4),
-                      RowActionButton(
-                        icon: Icons.edit_outlined,
-                        color: AppColors.primaryOrange,
-                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
-                        tooltip: 'Edit',
-                        onTap: () => EmployeeActions.edit(u),
-                      ),
-                      const SizedBox(width: 4),
-                      RowActionButton(
-                        icon: Icons.copy_outlined,
-                        color: const Color(0xFF3B82F6),
-                        bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
-                        tooltip: 'Duplicate',
-                        onTap: () => EmployeeActions.duplicate(u),
-                      ),
-                      const SizedBox(width: 4),
-                      RowActionButton(
-                        icon: Icons.delete_outline_rounded,
-                        iconSize: 18,
-                        color: context.appColors.error,
-                        // Neutral, not red-tinted — only the icon carries
-                        // the warning color.
-                        bg: context.appColors.tagBg,
-                        tooltip: 'Delete',
-                        onTap: () => EmployeeActions.delete(context, u),
-                      ),
+                      if (canWriteModule('Employee')) ...[
+                        const SizedBox(width: 4),
+                        RowActionButton(
+                          icon: Icons.edit_outlined,
+                          color: AppColors.primaryOrange,
+                          bg: AppColors.primaryOrange.withValues(alpha: 0.10),
+                          tooltip: 'Edit',
+                          onTap: () => EmployeeActions.edit(u),
+                        ),
+                        const SizedBox(width: 4),
+                        RowActionButton(
+                          icon: Icons.copy_outlined,
+                          color: const Color(0xFF3B82F6),
+                          bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                          tooltip: 'Duplicate',
+                          onTap: () => EmployeeActions.duplicate(u),
+                        ),
+                        const SizedBox(width: 4),
+                        RowActionButton(
+                          icon: Icons.delete_outline_rounded,
+                          iconSize: 18,
+                          color: context.appColors.error,
+                          // Neutral, not red-tinted — only the icon carries
+                          // the warning color.
+                          bg: context.appColors.tagBg,
+                          tooltip: 'Delete',
+                          onTap: () => EmployeeActions.delete(context, u),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -857,7 +874,7 @@ class _UserSummaryCard extends StatelessWidget {
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -924,7 +941,7 @@ class _SumRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 color: colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -934,7 +951,7 @@ class _SumRow extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w700,
               color: valueColor ?? colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ],
@@ -954,7 +971,8 @@ class _RoleBreakdownCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final breakdown = c.roleBreakdown;
-    final total = c.totalUsers;
+    final roles = breakdown.keys.toList();
+    final total = breakdown.values.fold<int>(0, (a, b) => a + b);
 
     return Container(
       decoration: BoxDecoration(
@@ -980,16 +998,16 @@ class _RoleBreakdownCard extends StatelessWidget {
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
           Divider(height: 1, color: colors.divider),
-          ...UserRole.values.asMap().entries.map((e) {
+          ...roles.asMap().entries.map((e) {
             final role = e.value;
             final count = breakdown[role] ?? 0;
             final pct = total == 0 ? 0.0 : count / total;
-            final isLast = e.key == UserRole.values.length - 1;
+            final isLast = e.key == roles.length - 1;
 
             return Container(
               decoration: isLast
@@ -1016,11 +1034,11 @@ class _RoleBreakdownCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          role.label,
+                          role.name,
                           style: TextStyle(
                             fontSize: 12.5,
                             color: colors.textSecondary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                       ),
@@ -1030,7 +1048,7 @@ class _RoleBreakdownCard extends StatelessWidget {
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: colors.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ],
@@ -1089,18 +1107,21 @@ class _QuickActionsCard extends StatelessWidget {
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
-          Divider(height: 1, color: colors.divider),
-          _QAction(
-            icon: Icons.person_add_outlined,
-            label: 'Add New Employee',
-            iconColor: AppColors.primaryOrange,
-            colors: colors,
-            onTap: onAddUser,
-          ),
+          // Adding and resetting change data — write access only.
+          if (canWriteModule('Employee')) ...[
+            Divider(height: 1, color: colors.divider),
+            _QAction(
+              icon: Icons.person_add_outlined,
+              label: 'Add New Employee',
+              iconColor: AppColors.primaryOrange,
+              colors: colors,
+              onTap: onAddUser,
+            ),
+          ],
           Divider(height: 1, color: colors.divider),
           _QAction(
             icon: Icons.upload_outlined,
@@ -1108,16 +1129,19 @@ class _QuickActionsCard extends StatelessWidget {
             iconColor: context.appColors.accent,
             colors: colors,
             onTap: () {},
+            isLast: !canWriteModule('Employee'),
           ),
-          Divider(height: 1, color: colors.divider),
-          _QAction(
-            icon: Icons.lock_reset_outlined,
-            label: 'Reset Permissions',
-            iconColor: const Color(0xFFF59E0B),
-            colors: colors,
-            onTap: () {},
-            isLast: true,
-          ),
+          if (canWriteModule('Employee')) ...[
+            Divider(height: 1, color: colors.divider),
+            _QAction(
+              icon: Icons.lock_reset_outlined,
+              label: 'Reset Permissions',
+              iconColor: const Color(0xFFF59E0B),
+              colors: colors,
+              onTap: () {},
+              isLast: true,
+            ),
+          ],
         ],
       ),
     );
@@ -1187,7 +1211,7 @@ class _QActionState extends State<_QAction> {
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: c.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),

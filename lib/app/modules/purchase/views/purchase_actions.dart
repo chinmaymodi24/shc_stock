@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
@@ -17,36 +18,47 @@ class PurchaseActions {
     Get.dialog(
       PurchaseDetailsDialog(
         order: order,
-        onDelete: () {
-          Get.back();
-          delete(context, order);
-        },
+        onDelete: canWriteModule('Purchase')
+            ? () {
+                Get.back();
+                delete(context, order);
+              }
+            : null,
       ),
     );
   }
 
   /// Opens the same form Add Purchase uses, pre-filled from this order;
   /// saving updates it in place.
-  static void edit(PurchaseOrder order) =>
-      Get.toNamed(AppRoutes.addPurchase, arguments: order);
+  static void edit(PurchaseOrder order) {
+    if (!requireWrite('Purchase')) return;
+    Get.toNamed(AppRoutes.addPurchase, arguments: order);
+  }
 
   /// Opens Add Purchase pre-filled from this order but as a new draft —
   /// saving creates a new record and never touches the one duplicated from.
-  static void duplicate(PurchaseOrder order) => Get.toNamed(
-    AppRoutes.addPurchase,
-    arguments: DuplicatePurchaseOrder(order),
-  );
+  static void duplicate(PurchaseOrder order) {
+    if (!requireWrite('Purchase')) return;
+    Get.toNamed(
+      AppRoutes.addPurchase,
+      arguments: DuplicatePurchaseOrder(order),
+    );
+  }
 
   /// Mobile-only shortcut the web table has no room for — the status flow is
   /// otherwise reachable only through Edit.
-  static void updateStatus(PurchaseOrder order) =>
-      Get.dialog(UpdatePurchaseStatusDialog(order: order));
+  static void updateStatus(PurchaseOrder order) {
+    if (!requireWrite('Purchase')) return;
+    Get.dialog(UpdatePurchaseStatusDialog(order: order));
+  }
 
-  static void delete(BuildContext context, PurchaseOrder order) =>
-      confirmDelete(
-        context,
-        itemName: order.poNumber,
-        itemLabel: 'Purchase Order',
-        onConfirm: () => Get.find<PurchaseController>().deleteOrder(order.id),
-      );
+  static void delete(BuildContext context, PurchaseOrder order) {
+    if (!requireWrite('Purchase')) return;
+    confirmDelete(
+      context,
+      itemName: order.poNumber,
+      itemLabel: 'Purchase Order',
+      onConfirm: () => Get.find<PurchaseController>().deleteOrder(order.id),
+    );
+  }
 }

@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/categories/controllers/categories_controller.dart';
@@ -103,7 +104,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                                       fontSize: 22,
                                       fontWeight: FontWeight.w700,
                                       color: colors.textPrimary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                   const SizedBox(height: 3),
@@ -112,70 +113,75 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: colors.textSecondary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                 ],
                               ),
-                              ElevatedButton.icon(
-                                onPressed: () => _showAddCategoryDialog(c),
-                                icon: const Icon(
-                                  Icons.add_rounded,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                                label: const Text(
-                                  'Add Category',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                              if (canWriteModule('Categories'))
+                                ElevatedButton.icon(
+                                  onPressed: () => _showAddCategoryDialog(c),
+                                  icon: const Icon(
+                                    Icons.add_rounded,
                                     color: Colors.white,
-                                    fontFamily: 'Poppins',
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    'Add Category',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      fontFamily: brandFontFamily,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryOrange,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        appColors.radius,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryOrange,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 20),
 
                           // ── Stat Cards ───────────────────────────────────────────
-                          AppStatCardRow(
-                            cards: [
-                              AppStatCard(
-                                label: 'Categories',
-                                value:
-                                    '${c.stats.value.intOf('totalCategories')}',
-                                icon: Icons.category_outlined,
-                                iconColor: AppColors.primaryOrange,
-                              ),
-                              AppStatCard(
-                                label: 'Subcategories',
-                                value:
-                                    '${c.stats.value.intOf('totalSubCategories')}',
-                                icon: Icons.account_tree_outlined,
-                                iconColor: context.appColors.accent,
-                              ),
-                              AppStatCard(
-                                label: 'Largest',
-                                value: largest?.name ?? '—',
-                                icon: Icons.star_border_rounded,
-                                iconColor: colors.textSecondary,
-                                smallValue: true,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
+                          if (canSeeSummary('Categories')) ...[
+                            AppStatCardRow(
+                              cards: [
+                                AppStatCard(
+                                  label: 'Categories',
+                                  value:
+                                      '${c.stats.value.intOf('totalCategories')}',
+                                  icon: Icons.category_outlined,
+                                  iconColor: AppColors.primaryOrange,
+                                ),
+                                AppStatCard(
+                                  label: 'Subcategories',
+                                  value:
+                                      '${c.stats.value.intOf('totalSubCategories')}',
+                                  icon: Icons.account_tree_outlined,
+                                  iconColor: context.appColors.accent,
+                                ),
+                                AppStatCard(
+                                  label: 'Largest',
+                                  value: largest?.name ?? '—',
+                                  icon: Icons.star_border_rounded,
+                                  iconColor: colors.textSecondary,
+                                  smallValue: true,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                          ],
 
                           // ── Search ────────────────────────────────────────────────
                           if (!loading && all.isNotEmpty) ...[
@@ -192,11 +198,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                                 source: categoriesExportConfig(c),
                               ),
                             ),
-                            const SizedBox(height: 12),
                             ListScopeBar(
-                              shown: c.visibleCategories.length,
-                              total: all.length,
-                              noun: 'categories',
                               chips: [
                                 if (c.searchQuery.value.isNotEmpty)
                                   ListScopeChip(
@@ -257,44 +259,47 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                                                     fontSize: 11,
                                                     fontWeight: FontWeight.w700,
                                                     color: colors.textHint,
-                                                    fontFamily: 'Poppins',
+                                                    fontFamily: brandFontFamily,
                                                     letterSpacing: 0.6,
                                                   ),
                                                 ),
-                                                Tooltip(
-                                                  message: 'Add Category',
-                                                  child: InkWell(
-                                                    onTap: () =>
-                                                        _showAddCategoryDialog(
-                                                          c,
+                                                if (canWriteModule(
+                                                  'Categories',
+                                                ))
+                                                  Tooltip(
+                                                    message: 'Add Category',
+                                                    child: InkWell(
+                                                      onTap: () =>
+                                                          _showAddCategoryDialog(
+                                                            c,
+                                                          ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            7,
+                                                          ),
+                                                      child: Container(
+                                                        width: 22,
+                                                        height: 22,
+                                                        decoration: BoxDecoration(
+                                                          color: AppColors
+                                                              .primaryOrange
+                                                              .withValues(
+                                                                alpha: 0.12,
+                                                              ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                7,
+                                                              ),
                                                         ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          7,
+                                                        child: Icon(
+                                                          Icons.add_rounded,
+                                                          size: 15,
+                                                          color: AppColors
+                                                              .primaryOrange,
                                                         ),
-                                                    child: Container(
-                                                      width: 22,
-                                                      height: 22,
-                                                      decoration: BoxDecoration(
-                                                        color: AppColors
-                                                            .primaryOrange
-                                                            .withValues(
-                                                              alpha: 0.12,
-                                                            ),
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              7,
-                                                            ),
-                                                      ),
-                                                      child: const Icon(
-                                                        Icons.add_rounded,
-                                                        size: 15,
-                                                        color: AppColors
-                                                            .primaryOrange,
                                                       ),
                                                     ),
                                                   ),
-                                                ),
                                               ],
                                             ),
                                           ),
@@ -376,6 +381,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
 
   // ── Dialogs ───────────────────────────────────────────────────────────────
   void _showAddCategoryDialog(CategoriesController c) {
+    if (!requireWrite('Categories')) return;
     Get.dialog(
       _SimpleFormDialog(
         title: 'Add Category',
@@ -388,6 +394,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
   }
 
   void _showEditDialog(CategoriesController c, CategoryModel cat) {
+    if (!requireWrite('Categories')) return;
     Get.dialog(
       _SimpleFormDialog(
         title: 'Edit Category',
@@ -407,6 +414,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
     CategoryModel cat,
     int subIdx,
   ) {
+    if (!requireWrite('Categories')) return;
     final currentDesc = subIdx < cat.subDescriptions.length
         ? cat.subDescriptions[subIdx]
         : '';
@@ -423,6 +431,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
   }
 
   void _showAddSubDialog(CategoriesController c, String catId, String catName) {
+    if (!requireWrite('Categories')) return;
     Get.dialog(
       _SimpleFormDialog(
         title: 'Add Subcategory',
@@ -439,6 +448,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
     CategoriesController c,
     CategoryModel cat,
   ) {
+    if (!requireWrite('Categories')) return;
     _confirmDelete(
       context,
       title: 'Delete Category?',
@@ -459,6 +469,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
     CategoryModel cat,
     int subIdx,
   ) {
+    if (!requireWrite('Categories')) return;
     final subName = cat.subProducts[subIdx];
     _confirmDelete(
       context,
@@ -507,7 +518,9 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                           height: 40,
                           decoration: BoxDecoration(
                             color: colors.error.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              appColors.radius,
+                            ),
                           ),
                           child: Icon(
                             Icons.delete_outline_rounded,
@@ -523,7 +536,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                               fontSize: 17,
                               fontWeight: FontWeight.w700,
                               color: colors.textPrimary,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ),
@@ -558,7 +571,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                       style: TextStyle(
                         fontSize: 13.5,
                         color: colors.textSecondary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                         height: 1.5,
                       ),
                     ),
@@ -583,7 +596,7 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                           child: Text(
                             'Cancel',
                             style: TextStyle(
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                               color: colors.textSecondary,
                               fontSize: 14,
                             ),
@@ -606,10 +619,10 @@ class WebCategoriesLayout extends GetView<CategoriesController> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Delete',
                             style: TextStyle(
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
@@ -657,20 +670,20 @@ class _EmptyState extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           const SizedBox(height: 14),
           ElevatedButton.icon(
             onPressed: onAdd,
             icon: const Icon(Icons.add_rounded, color: Colors.white, size: 16),
-            label: const Text(
+            label: Text(
               'Add Category',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
             style: ElevatedButton.styleFrom(
@@ -734,7 +747,7 @@ class _SidebarCategoryItem extends StatelessWidget {
                   color: selected
                       ? AppColors.primaryOrange
                       : colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -745,7 +758,7 @@ class _SidebarCategoryItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 color: selected ? AppColors.primaryOrange : colors.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],
@@ -807,7 +820,7 @@ class _CategoryDetailPanel extends StatelessWidget {
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
                           color: colors.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -816,29 +829,31 @@ class _CategoryDetailPanel extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12.5,
                           color: colors.textSecondary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ],
                   ),
                 ),
-                _HeaderActionBtn(
-                  icon: Icons.edit_rounded,
-                  label: 'Edit',
-                  bgColor: colors.background.computeLuminance() > 0.5
-                      ? const Color(0xFFF3F1EC)
-                      : colors.inputFill,
-                  fgColor: colors.textPrimary,
-                  onTap: onEditCategory,
-                ),
-                const SizedBox(width: 8),
-                _HeaderActionBtn(
-                  icon: Icons.delete_rounded,
-                  label: 'Delete',
-                  bgColor: colors.error.withValues(alpha: 0.12),
-                  fgColor: colors.error,
-                  onTap: onDeleteCategory,
-                ),
+                if (canWriteModule('Categories')) ...[
+                  _HeaderActionBtn(
+                    icon: Icons.edit_rounded,
+                    label: 'Edit',
+                    bgColor: colors.background.computeLuminance() > 0.5
+                        ? const Color(0xFFF3F1EC)
+                        : colors.inputFill,
+                    fgColor: colors.textPrimary,
+                    onTap: onEditCategory,
+                  ),
+                  const SizedBox(width: 8),
+                  _HeaderActionBtn(
+                    icon: Icons.delete_rounded,
+                    label: 'Delete',
+                    bgColor: colors.error.withValues(alpha: 0.12),
+                    fgColor: colors.error,
+                    onTap: onDeleteCategory,
+                  ),
+                ],
               ],
             ),
           ),
@@ -853,7 +868,7 @@ class _CategoryDetailPanel extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: colors.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
                 letterSpacing: 0.6,
               ),
             ),
@@ -868,7 +883,7 @@ class _CategoryDetailPanel extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     color: colors.textHint,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -887,7 +902,7 @@ class _CategoryDetailPanel extends StatelessWidget {
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: colors.textSecondary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -899,7 +914,7 @@ class _CategoryDetailPanel extends StatelessWidget {
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: colors.textSecondary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -911,7 +926,7 @@ class _CategoryDetailPanel extends StatelessWidget {
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: colors.textSecondary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -951,7 +966,7 @@ class _CategoryDetailPanel extends StatelessWidget {
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.primaryOrange,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ],
@@ -1013,7 +1028,7 @@ class _SubCategoryTableRowState extends State<_SubCategoryTableRow> {
                     fontSize: 13.5,
                     fontWeight: FontWeight.w600,
                     color: c.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1025,7 +1040,7 @@ class _SubCategoryTableRowState extends State<_SubCategoryTableRow> {
                   style: TextStyle(
                     fontSize: 13.5,
                     color: c.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -1033,24 +1048,26 @@ class _SubCategoryTableRowState extends State<_SubCategoryTableRow> {
                 width: 70,
                 child: Row(
                   children: [
-                    RowActionButton(
-                      icon: Icons.edit_outlined,
-                      color: AppColors.primaryOrange,
-                      bg: AppColors.primaryOrange.withValues(alpha: 0.10),
-                      tooltip: 'Edit',
-                      onTap: widget.onEdit,
-                    ),
-                    const SizedBox(width: 6),
-                    RowActionButton(
-                      icon: Icons.delete_outline_rounded,
-                      iconSize: 18,
-                      color: c.error,
-                      // Neutral, not red-tinted — only the icon carries the
-                      // warning color.
-                      bg: c.tagBg,
-                      tooltip: 'Delete',
-                      onTap: widget.onDelete,
-                    ),
+                    if (canWriteModule('Categories')) ...[
+                      RowActionButton(
+                        icon: Icons.edit_outlined,
+                        color: AppColors.primaryOrange,
+                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
+                        tooltip: 'Edit',
+                        onTap: widget.onEdit,
+                      ),
+                      const SizedBox(width: 6),
+                      RowActionButton(
+                        icon: Icons.delete_outline_rounded,
+                        iconSize: 18,
+                        color: c.error,
+                        // Neutral, not red-tinted — only the icon carries the
+                        // warning color.
+                        bg: c.tagBg,
+                        tooltip: 'Delete',
+                        onTap: widget.onDelete,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1082,12 +1099,12 @@ class _HeaderActionBtn extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(appColors.radius),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1099,7 +1116,7 @@ class _HeaderActionBtn extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
                 color: fgColor,
               ),
             ),
@@ -1183,7 +1200,7 @@ class _SimpleFormDialogState extends State<_SimpleFormDialog> {
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               const SizedBox(height: 16),
@@ -1193,13 +1210,13 @@ class _SimpleFormDialogState extends State<_SimpleFormDialog> {
                 style: TextStyle(
                   fontSize: 13,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Name…',
                   hintStyle: TextStyle(
                     color: colors.textHint,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                     fontSize: 13,
                   ),
                   filled: true,
@@ -1218,7 +1235,7 @@ class _SimpleFormDialogState extends State<_SimpleFormDialog> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
+                    borderSide: BorderSide(
                       color: AppColors.primaryOrange,
                       width: 1.5,
                     ),
@@ -1240,7 +1257,7 @@ class _SimpleFormDialogState extends State<_SimpleFormDialog> {
                     Expanded(
                       child: InkWell(
                         onTap: Get.back,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(appColors.radius),
                         child: Container(
                           alignment: Alignment.center,
                           padding: const EdgeInsets.symmetric(vertical: 13),
@@ -1248,7 +1265,9 @@ class _SimpleFormDialogState extends State<_SimpleFormDialog> {
                             color: colors.background.computeLuminance() > 0.5
                                 ? const Color(0xFFF3F1EC)
                                 : colors.inputFill,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              appColors.radius,
+                            ),
                           ),
                           child: Text(
                             'Cancel',
@@ -1257,7 +1276,7 @@ class _SimpleFormDialogState extends State<_SimpleFormDialog> {
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: colors.textPrimary,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ),

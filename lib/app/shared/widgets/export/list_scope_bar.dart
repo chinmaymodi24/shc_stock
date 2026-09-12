@@ -9,19 +9,20 @@ class ListScopeChip {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// "Showing 248 of 611 products" + the filters that got it there.
+// The active filters that narrowed the list, plus the current selection.
 //
-// This line is the export contract: whatever it states is exactly what the
-// Export button will produce. It sits directly under the filter row on every
-// list page, so the scope is never something the user has to infer from the
-// table.
+// This is the export contract: whatever it states is exactly what the Export
+// button will produce. It sits directly under the filter row on every list
+// page. It carries no "Showing N of M" count — the table footer already prints
+// one ("Showing 1 to 10 of 29 entries"), and two counts on one screen only
+// invited the reader to reconcile them.
+//
+// With nothing filtered and nothing selected there is nothing to say, so the
+// bar takes no space at all rather than sitting there as an empty box. It
+// carries its own leading gap for the same reason: a sibling SizedBox at the
+// call site would survive the collapse and leave a hole where the bar was.
 // ─────────────────────────────────────────────────────────────────────────────
 class ListScopeBar extends StatelessWidget {
-  final int shown;
-  final int total;
-
-  /// Plural noun — "products", "clients", "purchase orders".
-  final String noun;
   final List<ListScopeChip> chips;
 
   /// Rows ticked in the table, if the page supports selection.
@@ -30,9 +31,6 @@ class ListScopeBar extends StatelessWidget {
 
   const ListScopeBar({
     super.key,
-    required this.shown,
-    required this.total,
-    required this.noun,
     this.chips = const [],
     this.selectedCount = 0,
     this.onClearSelection,
@@ -41,12 +39,12 @@ class ListScopeBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    if (chips.isEmpty && selectedCount == 0) return const SizedBox.shrink();
     return Container(
+      margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       decoration: BoxDecoration(
-        color: colors.background.computeLuminance() > 0.5
-            ? const Color(0xFFFAF9F7)
-            : colors.inputFill,
+        color: colors.tableHeaderBg,
         borderRadius: BorderRadius.circular(9),
         border: Border.all(color: colors.divider),
       ),
@@ -55,26 +53,6 @@ class ListScopeBar extends StatelessWidget {
         runSpacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          RichText(
-            text: TextSpan(
-              style: TextStyle(
-                fontSize: 12,
-                color: colors.textSecondary,
-                fontFamily: 'Poppins',
-              ),
-              children: [
-                const TextSpan(text: 'Showing '),
-                TextSpan(
-                  text: '$shown of $total',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: colors.textPrimary,
-                  ),
-                ),
-                TextSpan(text: ' $noun'),
-              ],
-            ),
-          ),
           for (final chip in chips) _Chip(chip: chip),
           if (selectedCount > 0)
             _SelectionPill(count: selectedCount, onClear: onClearSelection),
@@ -107,7 +85,7 @@ class _Chip extends StatelessWidget {
               fontSize: 11.5,
               fontWeight: FontWeight.w500,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           const SizedBox(width: 2),
@@ -148,18 +126,18 @@ class _SelectionPill extends StatelessWidget {
         children: [
           Text(
             '$count selected',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
               color: AppColors.primaryOrange,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           const SizedBox(width: 2),
           InkWell(
             onTap: onClear,
             borderRadius: BorderRadius.circular(100),
-            child: const Padding(
+            child: Padding(
               padding: EdgeInsets.all(3),
               child: Icon(
                 Icons.close_rounded,

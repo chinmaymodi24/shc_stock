@@ -19,14 +19,75 @@ class ApiException implements Exception {
   String toString() => 'ApiException($statusCode): $message';
 }
 
+/// Turns an insufficient-stock 409 into something a person can act on.
+///
+/// The backend answers with the shortfall list — which product, how much was
+/// asked for, how much is actually there. Showing only its bare "Insufficient
+/// stock" message left the user to guess which line was the problem.
+///
+/// Returns null for any other failure, so callers can fall back to the
+/// exception's own message.
+String? shortfallMessage(ApiException e) {
+  final details = e.details;
+  if (details is! List || details.isEmpty) return null;
+
+  String one(Map<String, dynamic> row) {
+    final name = row['product'] ?? 'Item';
+    final want = row['requested'];
+    final have = row['available'];
+    return '$name: only $have in stock, requested $want';
+  }
+
+  final rows = details
+      .whereType<Map>()
+      .map((r) => one(Map<String, dynamic>.from(r)))
+      .toList();
+  if (rows.isEmpty) return null;
+  // Keeps the wording Sales already used, so the message a user sees on an
+  // over-sell doesn't change out from under them.
+  return 'Not enough stock —\n${rows.join('\n')}';
+}
+
 /// Thin wrapper around [Dio] that talks to the SHC Stock backend and turns
 /// non-2xx responses into [ApiException].
 ///
 /// Project convention: all API calls go through Dio — never `http` — so any
 /// new module wiring up a backend call should use this client.
 class ApiClient {
-  ApiClient._() : _dio = Dio(BaseOptions(baseUrl: ApiConfig.apiUrl));
+  ApiClient._() : _dio = Dio(BaseOptions(baseUrl: ApiConfig.apiUrl)) {
+    // Every request carries the signed-in employee's token — the backend
+    // checks each one against that employee's permissions.
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final token = tokenProvider?.call();
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          handler.next(options);
+        },
+      ),
+    );
+  }
   static final ApiClient instance = ApiClient._();
+
+  /// Supplies the session token. Set by SessionController so this client
+  /// stays free of any GetX / session dependency.
+  String? Function()? tokenProvider;
+
+  /// Called when the backend rejects the session (401) on anything but the
+  /// sign-in request itself — the token expired or the account was
+  /// deactivated, so the app should return to the login page.
+  void Function()? onUnauthorized;
+
+  /// Set false by `test/flutter_test_config.dart`.
+  ///
+  /// Widget tests run against whatever backend happens to be up on this
+  /// machine, and once the Appearance screen started PUT-ing the brand, a
+  /// test run was writing its fixtures into the real database. Tests get a
+  /// hard refusal instead — which is the same "backend unreachable" path they
+  /// already tolerate.
+  static bool networkEnabled = true;
 
   final Dio _dio;
 
@@ -55,6 +116,9 @@ class ApiClient {
   /// call failed with a generic "Something went wrong" whenever the assumption
   /// broke. Costs one short request at startup and nothing after that.
   Future<void> _ensureHost() {
+    if (!networkEnabled) {
+      throw ApiException(0, 'Network is disabled (test run)');
+    }
     return _hostProbe ??= _probeHost();
   }
 
@@ -92,6 +156,9 @@ class ApiClient {
 
   Never _throwFrom(DioException e) {
     final res = e.response;
+    if (res?.statusCode == 401 && e.requestOptions.path != '/auth/login') {
+      onUnauthorized?.call();
+    }
     String message = 'Request failed';
     dynamic details;
     final data = res?.data;

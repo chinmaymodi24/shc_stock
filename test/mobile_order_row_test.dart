@@ -28,7 +28,8 @@ class _StubSession extends SessionController {
     id: 1,
     name: 'Chinmay Modi',
     email: 'shc@gmail.com',
-    role: 'Admin',
+    role: 'Super Admin',
+    isSuperAdmin: true,
   );
 }
 
@@ -115,7 +116,7 @@ Future<void> _pumpMobile(WidgetTester tester, Widget page) async {
 
   await tester.pumpWidget(
     GetMaterialApp(
-      theme: ThemeData(extensions: const [AppThemeColors.light]),
+      theme: ThemeData(extensions: [AppThemeColors.light]),
       home: page,
     ),
   );
@@ -259,8 +260,22 @@ void main() {
       expect(find.text('Copper Pipe 15mm'), findsOneWidget);
       expect(find.text('Suresh Patel · Qty 120'), findsOneWidget);
       // Sales rows badge by the client, matching the rest of the module.
-      expect(find.text('SP'), findsOneWidget);
-      expect(find.text('₹40,800'), findsOneWidget);
+      // Scoped to the rows: the page's Top Clients card badges by client too,
+      // so an unscoped finder would match that as well.
+      expect(
+        find.descendant(
+          of: find.byType(MobileOrderRow),
+          matching: find.text('SP'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(MobileOrderRow),
+          matching: find.text('₹40,800'),
+        ),
+        findsOneWidget,
+      );
       // Scoped to the rows: "Received" is also one of the page's KPI card
       // labels, so an unscoped finder would match that too.
       expect(

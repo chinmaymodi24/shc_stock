@@ -1,4 +1,5 @@
 import 'package:shc_stock/app/core/api/api_client.dart';
+import 'package:shc_stock/app/core/session/app_modules.dart';
 
 /// The summary-card payload from `/api/stats/<module>`.
 ///
@@ -22,9 +23,25 @@ class StatsSnapshot {
     ),
   );
 
+  /// `/stats/<name>` → the module whose Summary permission guards it.
+  static const _moduleOf = {
+    'categories': 'Categories',
+    'products': 'Products',
+    'purchase': 'Purchase',
+    'sales': 'Sales',
+    'inventory': 'Inventory',
+    'clients': 'Clients',
+    'transactions': 'Transactions',
+    'users': 'Employee',
+  };
+
   /// Fetches and parses `/stats/<module>`; returns [empty] on failure so the
-  /// cards render zeros instead of throwing.
+  /// cards render zeros instead of throwing. Someone without the module's
+  /// Summary permission gets [empty] without asking — the cards are hidden
+  /// for them and the backend would refuse anyway.
   static Future<StatsSnapshot> fetch(String module) async {
+    final gate = _moduleOf[module];
+    if (gate != null && !canSeeSummary(gate)) return empty;
     final json = await ApiClient.instance.get('/stats/$module');
     return StatsSnapshot.fromJson(json as Map<String, dynamic>);
   }

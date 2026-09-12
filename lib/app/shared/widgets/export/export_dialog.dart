@@ -203,7 +203,7 @@ class _ExportDialogState extends State<ExportDialog> {
               fontSize: 15,
               fontWeight: FontWeight.w700,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ),
@@ -224,7 +224,7 @@ class _ExportDialogState extends State<ExportDialog> {
       fontWeight: FontWeight.w700,
       letterSpacing: 0.05 * 9.5,
       color: colors.textHint,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
     ),
   );
 
@@ -342,11 +342,11 @@ class _ExportDialogState extends State<ExportDialog> {
                 },
                 child: Text(
                   all ? 'Reset' : 'Select all',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primaryOrange,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               );
@@ -429,7 +429,7 @@ class _ExportDialogState extends State<ExportDialog> {
               style: TextStyle(
                 fontSize: 12.5,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -440,9 +440,7 @@ class _ExportDialogState extends State<ExportDialog> {
 
   // ── Footer ────────────────────────────────────────────────────────────────
   Widget _footer(AppThemeColors colors) {
-    final footerBg = colors.background.computeLuminance() > 0.5
-        ? const Color(0xFFFAF9F7)
-        : colors.inputFill;
+    final footerBg = colors.tableHeaderBg;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
       decoration: BoxDecoration(
@@ -459,7 +457,7 @@ class _ExportDialogState extends State<ExportDialog> {
                 style: TextStyle(
                   fontSize: 11.5,
                   color: colors.textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ),
@@ -475,7 +473,7 @@ class _ExportDialogState extends State<ExportDialog> {
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
                   color: colors.textSecondary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ),
@@ -496,7 +494,7 @@ class _ExportDialogState extends State<ExportDialog> {
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
+                  children: [
                     Icon(Icons.download_rounded, size: 15, color: Colors.white),
                     SizedBox(width: 6),
                     Text(
@@ -505,7 +503,7 @@ class _ExportDialogState extends State<ExportDialog> {
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ],
@@ -568,7 +566,7 @@ class _RecordCard extends StatelessWidget {
                   fontSize: 12.5,
                   fontWeight: active ? FontWeight.w600 : FontWeight.w500,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ),
@@ -578,7 +576,7 @@ class _RecordCard extends StatelessWidget {
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: active ? AppColors.primaryOrange : colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],
@@ -617,7 +615,7 @@ class _ColumnChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (selected) ...[
-              const Icon(
+              Icon(
                 Icons.check_rounded,
                 size: 13,
                 color: AppColors.primaryOrange,
@@ -630,7 +628,7 @@ class _ColumnChip extends StatelessWidget {
                 fontSize: 11.5,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 color: selected ? AppColors.primaryOrange : colors.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],
@@ -675,7 +673,7 @@ class _SegmentButton extends StatelessWidget {
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
             color: active ? AppColors.primaryOrange : colors.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ),
@@ -739,7 +737,7 @@ class _Dropdown<T> extends StatelessWidget {
                         fontSize: 12.5,
                         fontWeight: FontWeight.w500,
                         color: colors.textPrimary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -794,7 +792,7 @@ class _SavePresetDialog extends StatelessWidget {
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               const SizedBox(height: 4),
@@ -804,7 +802,7 @@ class _SavePresetDialog extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   color: colors.textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               const SizedBox(height: 14),
@@ -815,7 +813,7 @@ class _SavePresetDialog extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
                 decoration: InputDecoration(
                   hintText: 'e.g. Monthly review',
@@ -848,7 +846,7 @@ class _SavePresetDialog extends StatelessWidget {
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
                           color: colors.textSecondary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -866,13 +864,13 @@ class _SavePresetDialog extends StatelessWidget {
                         color: AppColors.primaryOrange,
                         borderRadius: BorderRadius.circular(7),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Save',
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),

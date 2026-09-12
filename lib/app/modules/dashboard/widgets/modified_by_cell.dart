@@ -25,7 +25,11 @@ class ModifiedByEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
     '—',
-    style: TextStyle(fontSize: 12.5, color: textHint, fontFamily: 'Poppins'),
+    style: TextStyle(
+      fontSize: 12.5,
+      color: textHint,
+      fontFamily: brandFontFamily,
+    ),
   );
 }
 
@@ -64,11 +68,11 @@ class ModifiedByCell extends StatelessWidget {
           backgroundColor: context.appColors.accent,
           child: Text(
             initials,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
               color: Colors.white,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ),
@@ -83,7 +87,7 @@ class ModifiedByCell extends StatelessWidget {
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
                   color: textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -92,7 +96,7 @@ class ModifiedByCell extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   color: textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),

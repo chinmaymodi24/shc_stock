@@ -10,6 +10,7 @@ import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
 import 'package:shc_stock/app/modules/sales/views/web_sales_layout.dart';
 import 'package:shc_stock/app/modules/stock/controllers/stock_controller.dart';
 import 'package:shc_stock/app/modules/stock/views/web_stock_layout.dart';
+import 'support/session.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Proves the summary cards actually RENDER the API's numbers — not just that
@@ -68,7 +69,7 @@ Future<void> _pump(WidgetTester tester, Widget page) async {
 
   await tester.pumpWidget(
     GetMaterialApp(
-      theme: ThemeData(extensions: const [AppThemeColors.light]),
+      theme: ThemeData(extensions: [AppThemeColors.light]),
       home: page,
     ),
   );
@@ -77,6 +78,8 @@ Future<void> _pump(WidgetTester tester, Widget page) async {
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+  // Cards and actions only render for someone allowed to see them.
+  setUp(signInSuperAdmin);
   tearDown(Get.reset);
 
   testWidgets(

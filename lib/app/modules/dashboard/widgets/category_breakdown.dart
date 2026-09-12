@@ -92,7 +92,7 @@ class _CategoryRowState extends State<_CategoryRow> {
                                 ? FontWeight.w600
                                 : FontWeight.w500,
                             color: hovered ? slice.color : colors.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -104,7 +104,7 @@ class _CategoryRowState extends State<_CategoryRow> {
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: hovered ? slice.color : colors.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ],

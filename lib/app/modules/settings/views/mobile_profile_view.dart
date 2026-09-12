@@ -56,7 +56,7 @@ class MobileProfileView extends StatelessWidget {
             fontSize: 17,
             fontWeight: FontWeight.w700,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         centerTitle: true,
@@ -79,18 +79,18 @@ class MobileProfileView extends StatelessWidget {
                   Container(
                     width: 60,
                     height: 60,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.primaryPurple,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
                       child: Text(
                         _user?.initials ?? '—',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -150,7 +150,7 @@ class MobileProfileView extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         const SizedBox(height: 7),
@@ -160,14 +160,14 @@ class MobileProfileView extends StatelessWidget {
           style: TextStyle(
             fontSize: 13.5,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
               fontSize: 13.5,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(
@@ -190,7 +190,7 @@ class MobileProfileView extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
+              borderSide: BorderSide(
                 color: AppColors.primaryOrange,
                 width: 1.5,
               ),
@@ -232,7 +232,7 @@ class MobileProfileView extends StatelessWidget {
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],

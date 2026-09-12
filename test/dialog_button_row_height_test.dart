@@ -14,6 +14,7 @@ import 'package:shc_stock/app/modules/products/controllers/products_controller.d
 import 'package:shc_stock/app/shared/widgets/async_button.dart';
 import 'package:shc_stock/app/shared/widgets/status_update_dialog_shell.dart';
 import 'package:get/get.dart';
+import 'support/session.dart';
 
 // Offline stand-ins so pumping StockAdjustmentDialog doesn't fire real Dio
 // requests (products/categories/stock all fetch on onInit) — those leave a
@@ -31,6 +32,13 @@ class _OfflineCategoriesController extends CategoriesController {
   Future<void> fetchStats() async {}
   @override
   Future<void> fetchCategories() async {}
+}
+
+/// Settings for the signed-in test user without the load, which would try the
+/// (disabled) network and raise an error toast mid-test.
+class _OfflineSettingsController extends SettingsController {
+  @override
+  Future<void> fetchSettings() async {}
 }
 
 class _OfflineStockController extends StockController {
@@ -57,7 +65,7 @@ class _OfflineStockController extends StockController {
 // ─────────────────────────────────────────────────────────────────────────────
 
 Widget _host(Widget child) => MaterialApp(
-  theme: ThemeData(extensions: const [AppThemeColors.light]),
+  theme: ThemeData(extensions: [AppThemeColors.light]),
   home: child,
 );
 
@@ -75,7 +83,7 @@ Future<void> _pumpWebPage(WidgetTester tester, Widget page) async {
 
   await tester.pumpWidget(
     GetMaterialApp(
-      theme: ThemeData(extensions: const [AppThemeColors.light]),
+      theme: ThemeData(extensions: [AppThemeColors.light]),
       home: page,
     ),
   );
@@ -88,6 +96,8 @@ Rect _rectOf(WidgetTester tester, Finder finder) => tester.getRect(finder);
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+  // Cards and actions only render for someone allowed to see them.
+  setUp(signInSuperAdmin);
   tearDown(Get.reset);
 
   group('StatusUpdateDialogShell (Purchase/Sale "Update Status")', () {
@@ -136,7 +146,10 @@ void main() {
     testWidgets('mobile: Reset and Apply render at the same height', (
       tester,
     ) async {
-      Get.put(SettingsController(), permanent: true);
+      Get.put<SettingsController>(
+        _OfflineSettingsController(),
+        permanent: true,
+      );
       Get.put(ThemeController(), permanent: true);
       Get.put(ThemeRippleController(), permanent: true);
       await tester.pumpWidget(_host(const MobileSettingsView()));
@@ -153,7 +166,10 @@ void main() {
     testWidgets('web: Reset and Apply render at the same height', (
       tester,
     ) async {
-      final settings = Get.put(SettingsController(), permanent: true);
+      final settings = Get.put<SettingsController>(
+        _OfflineSettingsController(),
+        permanent: true,
+      );
       settings.tab.value = 3; // Preferences — where Reset/Apply live
 
       await _pumpWebPage(tester, const WebSettingsLayout());

@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
@@ -14,6 +15,10 @@ import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 
 class MobileListScaffold extends StatelessWidget {
   final List<MobileStatCardData> statCards;
+
+  /// The module whose Summary permission guards [statCards]. Without that
+  /// right the KPI grid is left out entirely and the search bar leads.
+  final String? summaryModule;
 
   /// The search field (a [FilterSearchField]); the 16/12/16 padding around it
   /// is added here so callers just pass the field.
@@ -32,14 +37,21 @@ class MobileListScaffold extends StatelessWidget {
   /// The list itself — a `SliverList`, `SliverPadding`, `SliverFillRemaining`…
   final Widget sliver;
 
+  /// Anything that belongs under the list — the summary cards a desktop page
+  /// keeps in its right rail. A phone has no rail, so they go to the bottom
+  /// of the same scroll view rather than being dropped.
+  final Widget? footer;
+
   const MobileListScaffold({
     super.key,
     required this.statCards,
+    this.summaryModule,
     required this.search,
     required this.sliver,
     this.pinnedExtra,
     this.pinnedExtraHeight = 0,
     this.countLabel,
+    this.footer,
   });
 
   // Search field (~40) + 12 top / 10 bottom padding.
@@ -51,14 +63,19 @@ class MobileListScaffold extends StatelessWidget {
     final hasExtra = pinnedExtra != null;
     final pinnedHeight = _searchRow + (hasExtra ? pinnedExtraHeight + 10 : 0);
 
+    final showStats =
+        statCards.isNotEmpty &&
+        (summaryModule == null || canSeeSummary(summaryModule!));
+
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(
-          child: MobileStatGrid(
-            cards: statCards,
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        if (showStats)
+          SliverToBoxAdapter(
+            child: MobileStatGrid(
+              cards: statCards,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            ),
           ),
-        ),
         SliverPersistentHeader(
           pinned: true,
           delegate: _PinnedBar(
@@ -88,12 +105,13 @@ class MobileListScaffold extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12.5,
                   color: colors.textSecondary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ),
           ),
         sliver,
+        if (footer != null) footer!,
       ],
     );
   }
@@ -148,7 +166,7 @@ class MobileListEmpty extends StatelessWidget {
               style: TextStyle(
                 color: colors.textHint,
                 fontSize: 14,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],

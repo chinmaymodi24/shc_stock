@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 /// The floating readout every dashboard chart shows on hover — one widget so
@@ -36,7 +37,7 @@ class ChartTooltip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
         decoration: BoxDecoration(
           color: const Color(0xFF221F3D),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           border: Border.all(color: accent.withValues(alpha: 0.45)),
           boxShadow: [
             BoxShadow(
@@ -66,12 +67,12 @@ class ChartTooltip extends StatelessWidget {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10.5,
                       height: 1.2,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFFB6B3D6),
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -82,12 +83,12 @@ class ChartTooltip extends StatelessWidget {
               value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 height: 1.2,
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],

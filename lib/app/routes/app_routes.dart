@@ -11,6 +11,10 @@ abstract class AppRoutes {
   static const addPurchase = '/purchase/add';
   static const sales = '/sales';
   static const addSale = '/sales/add';
+
+  /// The bill raised against one sale. The sale travels as the route
+  /// argument.
+  static const saleBill = '/sales/bill';
   static const clients = '/clients';
   static const addClient = '/clients/add';
   static const reports = '/reports';

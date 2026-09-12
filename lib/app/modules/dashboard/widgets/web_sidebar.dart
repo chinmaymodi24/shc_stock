@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/core/session/app_modules.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
 import 'package:shc_stock/app/shared/widgets/logo_plate.dart';
@@ -84,9 +86,22 @@ class WebSidebar extends StatelessWidget {
     AppRoutes.settings,
   };
 
+  /// The nav entries this user may actually open. An Admin gets all of them;
+  /// an employee gets what the wizard's Permissions step granted, plus the
+  /// never-gated ones. Hiding the entry is only half of it — [routeGuard]
+  /// blocks the same routes when they're reached by URL or by code.
+  static List<_NavItem> _visibleItems() {
+    final session = Get.isRegistered<SessionController>()
+        ? Get.find<SessionController>()
+        : null;
+    if (session == null || session.isSuperAdmin) return _navItems;
+    return _navItems.where((item) => canOpenRoute(item.route)).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentRoute = Get.currentRoute;
+    final navItems = _visibleItems();
 
     final colors = context.appColors;
     return Container(
@@ -116,9 +131,9 @@ class WebSidebar extends StatelessWidget {
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-              itemCount: _navItems.length,
+              itemCount: navItems.length,
               itemBuilder: (context, index) {
-                final item = _navItems[index];
+                final item = navItems[index];
                 final isActive = currentRoute.startsWith(item.route);
                 final isEnabled = _enabled.contains(item.route);
                 return _SidebarNavItem(
@@ -212,7 +227,7 @@ class _SidebarNavItem extends StatelessWidget {
                       // Active: semibold; inactive: medium
                       fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                       color: isActive ? Colors.white : navColor,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),

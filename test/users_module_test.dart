@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shc_stock/app/core/api/stats_snapshot.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/theme/theme_controller.dart';
 import 'package:shc_stock/app/core/theme/theme_ripple_controller.dart';
@@ -37,6 +38,9 @@ class _OfflineUsersController extends UsersController {
   }
 
   @override
+  Future<void> fetchRoles() async {}
+
+  @override
   Future<void> fetchStats() async {
     stats.value = StatsSnapshot.fromJson(const {
       'totalUsers': 15,
@@ -65,7 +69,7 @@ void main() {
       expect(u.name, 'Chinmay Modi');
       expect(u.initials, 'CM');
       expect(u.email, 'shc@gmail.com');
-      expect(u.role, UserRole.admin);
+      expect(u.role.label, 'Admin');
       expect(u.isActive, isTrue);
       expect(u.department, 'Management');
       expect(u.createdAt, '01 Jan 2026');
@@ -79,19 +83,40 @@ void main() {
       },
     );
 
-    test('maps the multi-word "Stock Manager" role label', () {
-      expect(_parse(_inactiveRow).role, UserRole.stockManager);
+    test('keeps a legacy "Stock Manager" label with no linked role', () {
+      expect(_parse(_inactiveRow).role.label, 'Stock Manager');
+      expect(_parse(_inactiveRow).role.id, isNull);
       expect(_parse(_inactiveRow).isActive, isFalse);
     });
 
-    test('an unknown role falls back instead of throwing', () {
+    test('a custom role label is shown as-is instead of throwing', () {
       final u = UserModel.fromJson({
         'id': 9,
         'code': 'USR-0009',
         'name': 'Future Role',
         'role': 'Chief Vibes Officer',
       });
-      expect(u.role, UserRole.salesman);
+      expect(u.role.label, 'Chief Vibes Officer');
+    });
+
+    test('reads the linked role when the API sends one', () {
+      final u = UserModel.fromJson({
+        'id': 10,
+        'name': 'Store Person',
+        'role': 'Store Staff',
+        'roleId': 5,
+        'roleRef': {
+          'id': 5,
+          'key': 'store_staff',
+          'name': 'Store Staff',
+          'icon': 'store',
+          'isSuperAdmin': false,
+        },
+      });
+      expect(u.role.id, 5);
+      expect(u.role.key, 'store_staff');
+      expect(u.role.isSuperAdmin, isFalse);
+      expect(u.toJson()['roleId'], 5);
     });
 
     test('toJson sends the role label and never a password', () {
@@ -111,11 +136,22 @@ void main() {
 
     Get.put(ThemeController(), permanent: true);
     Get.put(ThemeRippleController(), permanent: true);
+    // Summary cards are their own right — sign in someone who holds it.
+    Get.put(
+      SessionController(),
+      permanent: true,
+    ).user.value = const SessionUser(
+      id: 1,
+      name: 'Administrator',
+      email: 'admin@admin.com',
+      isSuperAdmin: true,
+      token: 't',
+    );
     Get.put<UsersController>(_OfflineUsersController());
 
     await tester.pumpWidget(
       GetMaterialApp(
-        theme: ThemeData(extensions: const [AppThemeColors.light]),
+        theme: ThemeData(extensions: [AppThemeColors.light]),
         home: const WebUsersLayout(),
       ),
     );

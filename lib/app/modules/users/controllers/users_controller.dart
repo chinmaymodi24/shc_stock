@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
 import 'package:shc_stock/app/core/api/stats_snapshot.dart';
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/modules/users/models/role_model.dart';
 import 'package:shc_stock/app/modules/users/models/user_model.dart';
 
 class UsersController extends GetxController {
@@ -14,6 +16,11 @@ class UsersController extends GetxController {
   /// Summary cards — values and trends from GET /api/stats/users.
   final stats = StatsSnapshot.empty.obs;
   final RxList<RoleCount> roleCounts = <RoleCount>[].obs;
+
+  /// Ready-made and custom roles from GET /api/roles — the wizard's role
+  /// picker, the role filter and the role breakdown all read this list.
+  final RxList<RoleModel> roles = <RoleModel>[].obs;
+  final RxBool isLoadingRoles = false.obs;
   final searchCtrl = TextEditingController();
   final RxString searchQuery = ''.obs;
   final RxString filterRole = 'All Roles'.obs;
@@ -46,6 +53,7 @@ class UsersController extends GetxController {
     // reuses the loaded list instead of refetching.
     fetchUsers();
     fetchStats();
+    fetchRoles();
   }
 
   void _showError(String message) {
@@ -74,6 +82,9 @@ class UsersController extends GetxController {
   }
 
   Future<void> fetchStats() async {
+    // Summary figures are their own permission; without it the backend would
+    // refuse anyway, so don't ask.
+    if (!canSeeSummary('Employee')) return;
     try {
       final json = await _api.get('/stats/users') as Map<String, dynamic>;
       stats.value = StatsSnapshot.fromJson(json);
@@ -87,6 +98,58 @@ class UsersController extends GetxController {
     }
   }
 
+  Future<void> fetchRoles() async {
+    isLoadingRoles.value = true;
+    try {
+      final data = await _api.get('/roles') as List<dynamic>;
+      roles.assignAll(
+        data.map((e) => RoleModel.fromJson(e as Map<String, dynamic>)),
+      );
+    } catch (e) {
+      // The wizard shows an empty role list with its own message.
+    } finally {
+      isLoadingRoles.value = false;
+    }
+  }
+
+  /// Saves a new custom role. Returns it, or null after showing the error.
+  Future<RoleModel?> createRole(Map<String, dynamic> body) async {
+    try {
+      final json = await _api.post('/roles', body);
+      final created = RoleModel.fromJson(json as Map<String, dynamic>);
+      await fetchRoles();
+      return created;
+    } catch (e) {
+      _showError(e is ApiException ? e.message : 'Failed to save the role.');
+      return null;
+    }
+  }
+
+  Future<RoleModel?> updateRole(int id, Map<String, dynamic> body) async {
+    try {
+      final json = await _api.put('/roles/$id', body);
+      final updated = RoleModel.fromJson(json as Map<String, dynamic>);
+      await fetchRoles();
+      // Employees on this role show its name — pick up a rename.
+      await fetchUsers();
+      return updated;
+    } catch (e) {
+      _showError(e is ApiException ? e.message : 'Failed to update the role.');
+      return null;
+    }
+  }
+
+  Future<bool> deleteRole(int id) async {
+    try {
+      await _api.delete('/roles/$id');
+      await fetchRoles();
+      return true;
+    } catch (e) {
+      _showError(e is ApiException ? e.message : 'Failed to delete the role.');
+      return false;
+    }
+  }
+
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
   /// Creates an employee. The backend assigns the USR-#### code and hashes a
@@ -97,6 +160,7 @@ class UsersController extends GetxController {
       final created = UserModel.fromJson(json as Map<String, dynamic>);
       users.add(created);
       await fetchStats();
+      await fetchRoles();
       return created;
     } catch (e) {
       _showError(e is ApiException ? e.message : 'Failed to add employee.');
@@ -115,6 +179,7 @@ class UsersController extends GetxController {
         users.insert(0, updated);
       }
       await fetchStats();
+      await fetchRoles();
       return updated;
     } catch (e) {
       _showError(e is ApiException ? e.message : 'Failed to update employee.');
@@ -124,6 +189,7 @@ class UsersController extends GetxController {
 
   /// Activate / deactivate without touching anything else.
   Future<void> setActive(String id, bool isActive) async {
+    if (!requireWrite('Employee')) return;
     try {
       final json = await _api.patch('/users/$id/status', {
         'isActive': isActive,
@@ -147,6 +213,7 @@ class UsersController extends GetxController {
       users.removeWhere((u) => u.id == id);
       _clampPage();
       await fetchStats();
+      await fetchRoles();
     } catch (e) {
       // e.g. refusing to delete the last Admin comes back as a 409.
       _showError(e is ApiException ? e.message : 'Failed to delete employee.');
@@ -164,14 +231,13 @@ class UsersController extends GetxController {
   int get inactiveUsers => stats.value.intOf('inactiveUsers');
   int get adminCount => stats.value.intOf('adminCount');
 
-  /// Count of users per role, from the API.
-  Map<UserRole, int> get roleBreakdown {
-    final map = {for (final r in UserRole.values) r: 0};
-    for (final rc in roleCounts) {
-      map[userRoleFromLabel(rc.role)] = rc.count;
-    }
-    return map;
-  }
+  /// Count of users per role — every role in [roles], in the same order.
+  Map<RoleModel, int> get roleBreakdown => {
+    for (final r in roles) r: r.userCount,
+  };
+
+  /// Role names for the list's role filter.
+  List<String> get roleNames => roles.map((r) => r.name).toList();
 
   /// 5 most recently active users
   List<UserModel> get recentlyActive {

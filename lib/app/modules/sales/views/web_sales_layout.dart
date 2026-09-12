@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
@@ -8,6 +9,8 @@ import 'package:shc_stock/app/modules/sales/views/sales_actions.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/modules/billing/controllers/billing_summary_controller.dart';
 import 'package:shc_stock/app/modules/sales/export/sales_export.dart';
 import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
 import 'package:shc_stock/app/shared/widgets/export/list_scope_bar.dart';
@@ -39,12 +42,14 @@ const int _kPayFlex = 17; // Payment badge (center)
 const int _kModFlex = 20; // Modified By
 const int _kActFlex = 20; // Actions (center) — View + Edit + Duplicate + Delete
 
-// ── KPI palette, straight from the design's tokens ──────────────────────────
+// ── KPI palette — the brand's tokens, not fixed hexes ───────────────────────
 // The card tints itself from these: background at 10%, icon chip at 18%.
-const Color kKpiBlue = Color(0xFF2D1B8C);
-const Color kKpiPurple = Color(0xFF6B5CBF);
-const Color kKpiAmber = Color(0xFFA05A00);
-const Color kKpiGreen = Color(0xFF1E8449);
+// Getters rather than consts so a rebrand recolours the cards with everything
+// else; these used to be the design's literal hexes.
+Color get kKpiBlue => appColors.purple;
+Color get kKpiPurple => appColors.accent;
+Color get kKpiAmber => appColors.warning;
+Color get kKpiGreen => appColors.success;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sales List Page
@@ -106,7 +111,7 @@ class WebSalesLayout extends GetView<SalesController> {
                                         fontSize: 22,
                                         fontWeight: FontWeight.w700,
                                         color: colors.textPrimary,
-                                        fontFamily: 'Poppins',
+                                        fontFamily: brandFontFamily,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
@@ -119,72 +124,80 @@ class WebSalesLayout extends GetView<SalesController> {
                                       style: TextStyle(
                                         fontSize: 13,
                                         color: colors.textSecondary,
-                                        fontFamily: 'Poppins',
+                                        fontFamily: brandFontFamily,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              _PrimaryBtn(
-                                label: 'Add Sale',
-                                icon: Icons.add_rounded,
-                                onTap: () => Get.toNamed(AppRoutes.addSale),
-                              ),
+                              if (canWriteModule('Sales'))
+                                _PrimaryBtn(
+                                  label: 'Add Sale',
+                                  icon: Icons.add_rounded,
+                                  onTap: () => Get.toNamed(AppRoutes.addSale),
+                                ),
                             ],
                           ),
                           const SizedBox(height: 20),
 
                           // ── Stat Cards row ──────────────────────────────
-                          AppStatCardRow(
-                            cards: [
-                              AppStatCard(
-                                label: 'Total Sales (MTD)',
-                                value: formatRupees(
-                                  c.stats.value.doubleOf('salesMTD'),
+                          if (canSeeSummary('Sales')) ...[
+                            AppStatCardRow(
+                              cards: [
+                                AppStatCard(
+                                  label: 'Total Sales (MTD)',
+                                  value: formatRupees(
+                                    c.stats.value.doubleOf('salesMTD'),
+                                  ),
+                                  icon: Icons.shopping_cart_outlined,
+                                  iconColor: kKpiBlue,
+                                  trend: c.stats.value.trendLabel('salesMTD'),
+                                  trendUp: c.stats.value.trendUp('salesMTD'),
+                                  showCaption: false,
+                                  smallValue: true,
                                 ),
-                                icon: Icons.shopping_cart_outlined,
-                                iconColor: kKpiBlue,
-                                trend: c.stats.value.trendLabel('salesMTD'),
-                                trendUp: c.stats.value.trendUp('salesMTD'),
-                                showCaption: false,
-                                smallValue: true,
-                              ),
-                              AppStatCard(
-                                label: 'Orders',
-                                value: '${c.stats.value.intOf('totalOrders')}',
-                                icon: Icons.receipt_long_outlined,
-                                iconColor: context.appColors.accent,
-                                trend: c.stats.value.trendLabel('totalOrders'),
-                                trendUp: c.stats.value.trendUp('totalOrders'),
-                                showCaption: false,
-                              ),
-                              AppStatCard(
-                                label: 'Total Amount Due',
-                                value: formatRupees(
-                                  c.stats.value.doubleOf('amountDue'),
+                                AppStatCard(
+                                  label: 'Orders',
+                                  value:
+                                      '${c.stats.value.intOf('totalOrders')}',
+                                  icon: Icons.receipt_long_outlined,
+                                  iconColor: context.appColors.accent,
+                                  trend: c.stats.value.trendLabel(
+                                    'totalOrders',
+                                  ),
+                                  trendUp: c.stats.value.trendUp('totalOrders'),
+                                  showCaption: false,
                                 ),
-                                icon: Icons.warning_amber_rounded,
-                                iconColor: kKpiAmber,
-                                trend: c.stats.value.trendLabel('amountDue'),
-                                trendUp: c.stats.value.trendUp('amountDue'),
-                                showCaption: false,
-                                smallValue: true,
-                              ),
-                              AppStatCard(
-                                label: 'Total Received (MTD)',
-                                value: formatRupees(
-                                  c.stats.value.doubleOf('receivedMTD'),
+                                AppStatCard(
+                                  label: 'Total Amount Due',
+                                  value: formatRupees(
+                                    c.stats.value.doubleOf('amountDue'),
+                                  ),
+                                  icon: Icons.warning_amber_rounded,
+                                  iconColor: kKpiAmber,
+                                  trend: c.stats.value.trendLabel('amountDue'),
+                                  trendUp: c.stats.value.trendUp('amountDue'),
+                                  showCaption: false,
+                                  smallValue: true,
                                 ),
-                                icon: Icons.check_circle_outline_rounded,
-                                iconColor: kKpiGreen,
-                                trend: c.stats.value.trendLabel('receivedMTD'),
-                                trendUp: c.stats.value.trendUp('receivedMTD'),
-                                showCaption: false,
-                                smallValue: true,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
+                                AppStatCard(
+                                  label: 'Total Received (MTD)',
+                                  value: formatRupees(
+                                    c.stats.value.doubleOf('receivedMTD'),
+                                  ),
+                                  icon: Icons.check_circle_outline_rounded,
+                                  iconColor: kKpiGreen,
+                                  trend: c.stats.value.trendLabel(
+                                    'receivedMTD',
+                                  ),
+                                  trendUp: c.stats.value.trendUp('receivedMTD'),
+                                  showCaption: false,
+                                  smallValue: true,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                          ],
 
                           // ── Body row: table + right panel ───────────────
                           Row(
@@ -210,11 +223,7 @@ class WebSalesLayout extends GetView<SalesController> {
                                               .toList()
                                             ..sort(),
                                     ),
-                                    const SizedBox(height: 12),
                                     ListScopeBar(
-                                      shown: filtered.length,
-                                      total: c.orders.length,
-                                      noun: 'sales orders',
                                       chips: [
                                         if (c.searchQuery.value.isNotEmpty)
                                           ListScopeChip(
@@ -269,25 +278,31 @@ class WebSalesLayout extends GetView<SalesController> {
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 16),
-
                               // ── RIGHT: Panel ─────────────────────────────
-                              SizedBox(
-                                width: 272,
-                                child: Column(
-                                  children: [
-                                    _SalesSummaryCard(
-                                      colors: colors,
-                                      controller: c,
-                                    ),
-                                    const SizedBox(height: 14),
-                                    _TopClientsCard(
-                                      colors: colors,
-                                      controller: c,
-                                    ),
-                                  ],
+                              // All three cards are business figures — the Sales
+                              // summary right. Without it the table takes the
+                              // full width.
+                              if (canSeeSummary('Sales')) ...[
+                                const SizedBox(width: 16),
+                                SizedBox(
+                                  width: 272,
+                                  child: Column(
+                                    children: [
+                                      _SalesSummaryCard(
+                                        colors: colors,
+                                        controller: c,
+                                      ),
+                                      const SizedBox(height: 14),
+                                      _BillingCard(colors: colors),
+                                      const SizedBox(height: 14),
+                                      _TopClientsCard(
+                                        colors: colors,
+                                        controller: c,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ],
@@ -466,7 +481,7 @@ class _TableHeader extends StatelessWidget {
     fontSize: 12.5,
     fontWeight: FontWeight.w600,
     color: colors.textSecondary,
-    fontFamily: 'Poppins',
+    fontFamily: brandFontFamily,
     letterSpacing: 0.1,
   );
 
@@ -634,11 +649,11 @@ class _SalesRowState extends State<_SalesRow> {
                     child: Center(
                       child: Text(
                         '${widget.displayIndex}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: AppColors.primaryOrange,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -656,7 +671,7 @@ class _SalesRowState extends State<_SalesRow> {
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.primaryOrange,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -681,7 +696,7 @@ class _SalesRowState extends State<_SalesRow> {
                               fontSize: o.clientBadge.length > 2 ? 9.5 : 11,
                               fontWeight: FontWeight.w700,
                               color: o.clientColor,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ),
@@ -694,7 +709,7 @@ class _SalesRowState extends State<_SalesRow> {
                             fontSize: 13.5,
                             fontWeight: FontWeight.w500,
                             color: c.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -711,7 +726,7 @@ class _SalesRowState extends State<_SalesRow> {
                     style: TextStyle(
                       fontSize: 13,
                       color: c.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -731,7 +746,7 @@ class _SalesRowState extends State<_SalesRow> {
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,
                           color: c.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -747,7 +762,7 @@ class _SalesRowState extends State<_SalesRow> {
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                       color: c.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -812,39 +827,50 @@ class _SalesRowState extends State<_SalesRow> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       RowActionButton(
+                        icon: Icons.receipt_long_outlined,
+                        color: AppColors.primaryOrange,
+                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
+                        tooltip: 'Bill',
+                        onTap: () => SalesActions.bill(widget.order),
+                      ),
+                      const SizedBox(width: 6),
+                      RowActionButton(
                         icon: Icons.remove_red_eye_outlined,
                         color: context.appColors.success,
                         bg: context.appColors.success.withValues(alpha: 0.10),
                         tooltip: 'View',
                         onTap: () => SalesActions.view(context, widget.order),
                       ),
-                      const SizedBox(width: 6),
-                      RowActionButton(
-                        icon: Icons.edit_outlined,
-                        color: AppColors.primaryOrange,
-                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
-                        tooltip: 'Edit',
-                        onTap: () => SalesActions.edit(widget.order),
-                      ),
-                      const SizedBox(width: 6),
-                      RowActionButton(
-                        icon: Icons.copy_outlined,
-                        color: const Color(0xFF3B82F6),
-                        bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
-                        tooltip: 'Duplicate',
-                        onTap: () => SalesActions.duplicate(widget.order),
-                      ),
-                      const SizedBox(width: 6),
-                      RowActionButton(
-                        icon: Icons.delete_outline_rounded,
-                        iconSize: 18,
-                        color: context.appColors.error,
-                        // Neutral, not red-tinted — only the icon carries
-                        // the warning color.
-                        bg: context.appColors.tagBg,
-                        tooltip: 'Delete',
-                        onTap: () => SalesActions.delete(context, widget.order),
-                      ),
+                      if (canWriteModule('Sales')) ...[
+                        const SizedBox(width: 6),
+                        RowActionButton(
+                          icon: Icons.edit_outlined,
+                          color: AppColors.primaryOrange,
+                          bg: AppColors.primaryOrange.withValues(alpha: 0.10),
+                          tooltip: 'Edit',
+                          onTap: () => SalesActions.edit(widget.order),
+                        ),
+                        const SizedBox(width: 6),
+                        RowActionButton(
+                          icon: Icons.copy_outlined,
+                          color: const Color(0xFF3B82F6),
+                          bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                          tooltip: 'Duplicate',
+                          onTap: () => SalesActions.duplicate(widget.order),
+                        ),
+                        const SizedBox(width: 6),
+                        RowActionButton(
+                          icon: Icons.delete_outline_rounded,
+                          iconSize: 18,
+                          color: context.appColors.error,
+                          // Neutral, not red-tinted — only the icon carries
+                          // the warning color.
+                          bg: context.appColors.tagBg,
+                          tooltip: 'Delete',
+                          onTap: () =>
+                              SalesActions.delete(context, widget.order),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -876,7 +902,7 @@ class _Badge extends StatelessWidget {
           fontSize: 12.5,
           fontWeight: FontWeight.w600,
           color: color,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
     );
@@ -906,7 +932,7 @@ class _EmptyState extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 color: colors.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],
@@ -990,7 +1016,7 @@ class _SummaryRow extends StatelessWidget {
             style: TextStyle(
               fontSize: 12.5,
               color: colors.textSecondary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -1002,10 +1028,92 @@ class _SummaryRow extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w700,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RIGHT PANEL — Billing
+//
+// How much of the sales list has actually been billed, and a way straight to
+// the most recent invoice.
+// ─────────────────────────────────────────────────────────────────────────────
+class _BillingCard extends StatelessWidget {
+  final AppThemeColors colors;
+  const _BillingCard({required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Get.isRegistered<BillingSummaryController>()) {
+      Get.put(BillingSummaryController(), permanent: true);
+    }
+    final billing = BillingSummaryController.to;
+    return _PanelCard(
+      colors: colors,
+      title: 'Billing',
+      child: Obx(() {
+        final s = billing.summary.value;
+        return Column(
+          children: [
+            _SummaryRow(
+              label: 'Bills generated',
+              value: '${s.generated}',
+              colors: colors,
+            ),
+            const SizedBox(height: 10),
+            _SummaryRow(
+              label: 'Pending billing',
+              value: '${s.pending}',
+              colors: colors,
+            ),
+            const SizedBox(height: 10),
+            _SummaryRow(
+              label: 'e-Invoice IRN',
+              value: '${s.irnRegistered} of ${s.irnTotal}',
+              colors: colors,
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: _PrimaryBtn(
+                label: 'Open latest bill',
+                icon: Icons.receipt_long_rounded,
+                onTap: () {
+                  final id = s.latestSalesOrderId;
+                  if (id == null) {
+                    showAppToast(
+                      'Billing',
+                      'No bill has been generated yet.',
+                      backgroundColor: AppColors.primaryPurple,
+                      colorText: Colors.white,
+                      duration: const Duration(seconds: 2),
+                    );
+                    return;
+                  }
+                  Get.toNamed(AppRoutes.saleBill, arguments: id.toString());
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+            InkWell(
+              onTap: () => Get.toNamed(AppRoutes.settings),
+              child: Text(
+                'Bill format settings',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryOrange,
+                  fontFamily: brandFontFamily,
+                ),
+              ),
+            ),
+          ],
+        );
+      }),
     );
   }
 }
@@ -1029,13 +1137,13 @@ class _TopClientsCard extends StatelessWidget {
       title: 'Top Clients',
       action: InkWell(
         onTap: () {},
-        child: const Text(
+        child: Text(
           'View All',
           style: TextStyle(
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
             color: AppColors.primaryOrange,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ),
@@ -1061,7 +1169,7 @@ class _TopClientsCard extends StatelessWidget {
                             fontSize: tc.badge.length > 2 ? 9 : 11,
                             fontWeight: FontWeight.w800,
                             color: tc.color,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                       ),
@@ -1078,7 +1186,7 @@ class _TopClientsCard extends StatelessWidget {
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: colors.textPrimary,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1087,7 +1195,7 @@ class _TopClientsCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               color: colors.textSecondary,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                             ),
                           ),
                         ],
@@ -1101,7 +1209,7 @@ class _TopClientsCard extends StatelessWidget {
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
                         color: colors.textPrimary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ],
@@ -1159,7 +1267,7 @@ class _PanelCard extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1197,18 +1305,20 @@ class _PrimaryBtn extends StatelessWidget {
       icon: Icon(icon, color: Colors.white, size: 18),
       label: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
           color: Colors.white,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primaryOrange,
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(appColors.radius),
+        ),
       ),
     );
   }

@@ -48,14 +48,14 @@ class ProductAutocompleteField extends StatelessWidget {
       textStyle: TextStyle(
         fontSize: 13,
         color: colors.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
       decoration: InputDecoration(
         hintText: 'Type e.g. Ceramic Fiber Blanket 1260...',
         hintStyle: TextStyle(
           fontSize: 12.5,
           color: colors.textHint,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(
@@ -83,10 +83,7 @@ class ProductAutocompleteField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: AppColors.primaryOrange,
-            width: 1.2,
-          ),
+          borderSide: BorderSide(color: AppColors.primaryOrange, width: 1.2),
         ),
       ),
       optionBuilder: (context, p, highlighted) => Container(
@@ -107,7 +104,7 @@ class ProductAutocompleteField extends StatelessWidget {
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -116,7 +113,7 @@ class ProductAutocompleteField extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       color: colors.textHint,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ],
@@ -128,7 +125,7 @@ class ProductAutocompleteField extends StatelessWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: colors.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],

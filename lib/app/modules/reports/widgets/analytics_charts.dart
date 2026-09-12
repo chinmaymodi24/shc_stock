@@ -251,7 +251,7 @@ class _DualLinePainter extends CustomPainter {
     final baseStyle = TextStyle(
       fontSize: 11,
       color: labelColor,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
     );
     for (var i = 0; i < data.length; i++) {
       final tp = TextPainter(
@@ -444,7 +444,7 @@ class _GroupedBarChartState extends State<GroupedBarChart> {
             color: hovered ~/ 2 == i
                 ? colors.textPrimary
                 : colors.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ],
@@ -551,7 +551,7 @@ class _RankedBarListState extends State<RankedBarList> {
           style: TextStyle(
             fontSize: 12.5,
             color: colors.textHint,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       );
@@ -612,7 +612,7 @@ class _RankedBarListState extends State<RankedBarList> {
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: dimmed ? colors.textSecondary : colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -623,7 +623,7 @@ class _RankedBarListState extends State<RankedBarList> {
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: dimmed ? colors.textSecondary : colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ],
@@ -697,7 +697,7 @@ class HalfGauge extends StatelessWidget {
                 fontSize: 26,
                 fontWeight: FontWeight.w700,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -791,7 +791,7 @@ class _StackedShareBarState extends State<StackedShareBar> {
           style: TextStyle(
             fontSize: 11.5,
             color: colors.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       );
@@ -851,11 +851,11 @@ class _StackedShareBarState extends State<StackedShareBar> {
             '${share.toStringAsFixed(0)}%',
             maxLines: 1,
             overflow: TextOverflow.clip,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
               color: Colors.white,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ),
@@ -912,7 +912,7 @@ class _RevenueTreemapState extends State<RevenueTreemap> {
           style: TextStyle(
             fontSize: 12.5,
             color: colors.textHint,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       );
@@ -999,12 +999,12 @@ class _RevenueTreemapState extends State<RevenueTreemap> {
                         row.category,
                         maxLines: detail == _TileDetail.full ? 2 : 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
                           height: 1.25,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -1012,12 +1012,12 @@ class _RevenueTreemapState extends State<RevenueTreemap> {
                         formatRupeesCompact(row.amount),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           height: 1.25,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                       if (detail == _TileDetail.full)
@@ -1028,7 +1028,7 @@ class _RevenueTreemapState extends State<RevenueTreemap> {
                             height: 1.25,
                             fontWeight: FontWeight.w500,
                             color: Colors.white.withValues(alpha: 0.85),
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                     ],

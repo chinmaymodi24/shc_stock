@@ -338,7 +338,12 @@ router.get('/users', async (req, res, next) => {
     const { startOfThis } = monthWindows();
     const [users, createdThisMonth] = await Promise.all([
       prisma.user.findMany({
-        select: { role: true, isActive: true, lastLoginAt: true },
+        select: {
+          role: true,
+          isActive: true,
+          lastLoginAt: true,
+          roleRef: { select: { key: true } },
+        },
       }),
       prisma.user.count({ where: { createdAt: { gte: startOfThis } } }),
     ]);
@@ -353,7 +358,10 @@ router.get('/users', async (req, res, next) => {
       totalUsers: total,
       activeUsers: active,
       inactiveUsers: total - active,
-      adminCount: users.filter((u) => u.role === 'Admin').length,
+      // Super Admins and Admins — the two ready-made roles that run the portal.
+      adminCount: users.filter(
+        (u) => u.roleRef && ['super_admin', 'admin'].includes(u.roleRef.key),
+      ).length,
       roleBreakdown: Object.entries(byRole)
         .map(([role, count]) => ({ role, count }))
         .sort((a, b) => b.count - a.count),

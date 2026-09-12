@@ -130,7 +130,7 @@ class _Placeholder extends StatelessWidget {
             fontSize: size * 0.26,
             fontWeight: FontWeight.w700,
             color: colors.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ),

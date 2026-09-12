@@ -29,7 +29,8 @@ const _signedIn = SessionUser(
   id: 1,
   name: 'Chinmay Modi',
   email: 'shc@gmail.com',
-  role: 'Admin',
+  role: 'Super Admin',
+  isSuperAdmin: true,
 );
 
 class _StubSession extends SessionController {
@@ -81,7 +82,7 @@ class _StubDashboard extends DashboardController {
         iconColor: AppColors.primaryPurple,
       ),
     ]);
-    const series = [
+    final series = [
       ChartPoint(label: 'Mar', value: 10),
       ChartPoint(label: 'Apr', value: 25),
       ChartPoint(label: 'May', value: 18),
@@ -96,7 +97,7 @@ class _StubDashboard extends DashboardController {
     salesChange.value = '';
     newClientsChange.value = '↑ 47 new this month';
 
-    categorySlices.assignAll(const [
+    categorySlices.assignAll([
       CategorySlice(
         label: 'Ceramic Fiber Products',
         percent: 55.8,
@@ -117,7 +118,7 @@ class _StubDashboard extends DashboardController {
         status: 'Received',
       ),
     ]);
-    incomingDeliveries.assignAll(const [
+    incomingDeliveries.assignAll([
       DeliveryItem(
         item: 'Brass Valve',
         poRef: 'PO-2024-10001',
@@ -236,7 +237,7 @@ Future<void> _pump(WidgetTester tester, Widget page, {Size? size}) async {
 
   await tester.pumpWidget(
     GetMaterialApp(
-      theme: ThemeData(extensions: const [AppThemeColors.light]),
+      theme: ThemeData(extensions: [AppThemeColors.light]),
       home: page,
     ),
   );

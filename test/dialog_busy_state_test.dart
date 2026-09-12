@@ -36,7 +36,7 @@ Future<void> _pumpDialog(WidgetTester tester, Widget dialog) async {
 
   await tester.pumpWidget(
     GetMaterialApp(
-      theme: ThemeData(extensions: const [AppThemeColors.light]),
+      theme: ThemeData(extensions: [AppThemeColors.light]),
       home: Scaffold(body: Builder(builder: (context) => dialog)),
     ),
   );

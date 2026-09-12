@@ -25,7 +25,7 @@ class _AppLoadingIndicatorState extends State<AppLoadingIndicator>
     duration: const Duration(milliseconds: 900),
   )..repeat();
 
-  static const _dotColors = [
+  static final _dotColors = [
     Color(0xFFFFCC99), // light peach
     AppColors.primaryOrange,
     Color(0xFFE5650A), // deep orange
@@ -93,7 +93,7 @@ class _AppLoadingIndicatorState extends State<AppLoadingIndicator>
                 style: TextStyle(
                   fontSize: 13,
                   color: colors.textSecondary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ],

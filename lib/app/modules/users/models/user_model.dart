@@ -1,65 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Roles
-// ─────────────────────────────────────────────────────────────────────────────
-enum UserRole { admin, manager, salesman, stockManager, accountant }
-
-/// Maps the API's role label back onto the enum. Unknown labels fall back to
-/// salesman rather than throwing, so a role added server-side can't blank the
-/// Employee list.
-UserRole userRoleFromLabel(String label) => UserRole.values.firstWhere(
-  (r) => r.label.toLowerCase() == label.trim().toLowerCase(),
-  orElse: () => UserRole.salesman,
-);
-
-extension UserRoleX on UserRole {
-  String get label {
-    switch (this) {
-      case UserRole.admin:
-        return 'Admin';
-      case UserRole.manager:
-        return 'Manager';
-      case UserRole.salesman:
-        return 'Salesman';
-      case UserRole.stockManager:
-        return 'Stock Manager';
-      case UserRole.accountant:
-        return 'Accountant';
-    }
-  }
-
-  Color get color {
-    switch (this) {
-      case UserRole.admin:
-        return const Color(0xFFF47B20); // orange
-      case UserRole.manager:
-        return appColors.accent; // purple
-      case UserRole.salesman:
-        return const Color(0xFF22C55E); // green
-      case UserRole.stockManager:
-        return const Color(0xFF0EA5E9); // sky blue
-      case UserRole.accountant:
-        return const Color(0xFFF59E0B); // amber
-    }
-  }
-
-  IconData get icon {
-    switch (this) {
-      case UserRole.admin:
-        return Icons.admin_panel_settings_outlined;
-      case UserRole.manager:
-        return Icons.manage_accounts_outlined;
-      case UserRole.salesman:
-        return Icons.storefront_outlined;
-      case UserRole.stockManager:
-        return Icons.inventory_2_outlined;
-      case UserRole.accountant:
-        return Icons.account_balance_outlined;
-    }
-  }
-}
+import 'package:shc_stock/app/modules/users/models/role_model.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // User Model
@@ -72,13 +14,20 @@ class UserModel {
   final Color badgeColor;
   final String email;
   final String phone;
-  final UserRole role;
+
+  /// The assigned role as the list shows it — name, colour and icon.
+  final RoleBadge role;
   final bool isActive;
   final String lastLogin; // formatted string
   final String createdAt; // formatted string
   final String department;
   final String modifiedBy;
   final DateTime? modifiedAt;
+
+  /// Module name → {read, write}, straight off the API. Carried so re-opening
+  /// an employee in the wizard shows the access they actually have; without
+  /// it, editing anyone silently reset their permissions to the defaults.
+  final Map<String, ModuleAccess> permissions;
 
   const UserModel({
     required this.id,
@@ -95,6 +44,7 @@ class UserModel {
     this.department = '',
     this.modifiedBy = 'Admin',
     this.modifiedAt,
+    this.permissions = const {},
   });
 
   /// Maps a row from GET /api/users. `passwordHash` is never sent by the API.
@@ -113,13 +63,14 @@ class UserModel {
       badgeColor: _badgeColorOf(name),
       email: json['email'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
-      role: userRoleFromLabel(json['role'] as String? ?? ''),
+      role: _roleOf(json),
       isActive: json['isActive'] as bool? ?? true,
       lastLogin: _formatDateTime(date('lastLoginAt')),
       createdAt: _formatDate(date('createdAt')),
       department: json['department'] as String? ?? '',
       modifiedBy: json['modifiedBy'] as String? ?? 'Admin',
       modifiedAt: date('modifiedAt'),
+      permissions: _permissionsOf(json['permissions']),
     );
   }
 
@@ -129,10 +80,43 @@ class UserModel {
     'email': email,
     'phone': phone,
     'role': role.label,
+    'roleId': role.id,
     'department': department,
     'isActive': isActive,
     'modifiedBy': modifiedBy,
   };
+}
+
+/// The role badge for an API row — from the linked role when there is one,
+/// otherwise just the stored label (a role since deleted).
+RoleBadge _roleOf(Map<String, dynamic> json) {
+  final ref = json['roleRef'];
+  if (ref is Map) {
+    return RoleBadge(
+      id: (ref['id'] as num?)?.toInt(),
+      key: ref['key'] as String?,
+      label: ref['name'] as String? ?? '',
+      iconName: ref['icon'] as String? ?? 'custom',
+      isSuperAdmin: ref['isSuperAdmin'] == true,
+    );
+  }
+  return RoleBadge(label: json['role'] as String? ?? 'No role');
+}
+
+/// Reads the API's permissions blob. Anything unexpected (null, a list, a
+/// malformed entry) degrades to "no access recorded" rather than throwing —
+/// an employee row must never fail to parse over its permissions.
+Map<String, ModuleAccess> _permissionsOf(Object? raw) {
+  if (raw is! Map) return const {};
+  final out = <String, ModuleAccess>{};
+  raw.forEach((key, value) {
+    if (value is Map) {
+      out[key.toString()] = ModuleAccess.fromJson(
+        Map<String, dynamic>.from(value),
+      );
+    }
+  });
+  return out;
 }
 
 // ── Display helpers ─────────────────────────────────────────────────────────

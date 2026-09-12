@@ -65,7 +65,7 @@ class AppNumberedSectionCard extends StatelessWidget {
                 Container(
                   width: badge,
                   height: badge,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.primaryOrange,
                     shape: BoxShape.circle,
                   ),
@@ -76,7 +76,7 @@ class AppNumberedSectionCard extends StatelessWidget {
                         fontSize: mobile ? 11 : 12,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -89,7 +89,7 @@ class AppNumberedSectionCard extends StatelessWidget {
                       fontSize: mobile ? 13.5 : 14.5,
                       fontWeight: FontWeight.w700,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -185,7 +185,7 @@ class AppAddRowPill extends StatelessWidget {
                 style: TextStyle(
                   fontSize: mobile ? 12.5 : 13,
                   color: AppColors.primaryOrange,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                   fontWeight: FontWeight.w600,
                 ),
               ),

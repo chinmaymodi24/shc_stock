@@ -9,6 +9,7 @@ import 'package:shc_stock/app/modules/purchase/views/purchase_view.dart';
 import 'package:shc_stock/app/modules/purchase/views/add_purchase_view.dart';
 import 'package:shc_stock/app/modules/sales/views/sales_view.dart';
 import 'package:shc_stock/app/modules/sales/views/add_sales_view.dart';
+import 'package:shc_stock/app/modules/billing/views/bill_view.dart';
 import 'package:shc_stock/app/modules/clients/views/clients_view.dart';
 import 'package:shc_stock/app/modules/clients/views/add_client_view.dart';
 import 'package:shc_stock/app/modules/stock/views/stock_view.dart';
@@ -19,6 +20,7 @@ import 'package:shc_stock/app/modules/settings/views/settings_view.dart';
 import 'package:shc_stock/app/modules/settings/views/mobile_settings_view.dart';
 import 'package:shc_stock/app/modules/settings/views/mobile_profile_view.dart';
 import 'app_routes.dart';
+import 'permission_middleware.dart';
 import 'package:shc_stock/app/modules/reports/views/reports_view.dart';
 import 'package:shc_stock/app/modules/reports/views/reports_catalog_view.dart';
 import 'package:shc_stock/app/modules/reports/views/report_screen.dart';
@@ -32,6 +34,7 @@ import 'stock_binding.dart';
 import 'transactions_binding.dart';
 import 'users_binding.dart';
 import 'settings_binding.dart';
+import 'billing_binding.dart';
 
 class AppPages {
   AppPages._();
@@ -53,41 +56,54 @@ class AppPages {
       name: AppRoutes.dashboard,
       page: () => const DashboardView(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.products,
       page: () => const ProductsView(),
       binding: ProductsBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.addProduct,
       page: () => const AddProductView(),
       binding: ProductsBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.categories,
       page: () => const CategoriesView(),
       binding: CategoriesBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.purchase,
       page: () => const PurchaseView(),
       binding: PurchaseBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.addPurchase,
       page: () => const AddPurchaseView(),
       binding: PurchaseBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.sales,
       page: () => const SalesView(),
       binding: SalesBinding(),
+      transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.saleBill,
+      page: () => const BillView(),
+      binding: BillingBinding(),
       transition: Transition.fadeIn,
     ),
     GetPage(
@@ -95,76 +111,89 @@ class AppPages {
       page: () => const AddSalesView(),
       binding: SalesBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.clients,
       page: () => const ClientsView(),
       binding: ClientsBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.addClient,
       page: () => const AddClientView(),
       binding: ClientsBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.stock,
       page: () => const StockView(),
       binding: StockBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.transactions,
       page: () => const TransactionsView(),
       binding: TransactionsBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.users,
       page: () => const UsersView(),
       binding: UsersBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.addEmployee,
       page: () => const AddEmployeeView(),
       binding: UsersBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.reports,
       page: () => const ReportsCatalogView(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.reportDetail,
       page: () => const ReportScreenView(),
       binding: ReportScreenBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.reportsInsights,
       page: () => const ReportsView(),
       binding: ReportsBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.settings,
       page: () => const SettingsView(),
       binding: SettingsBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.settingsDetail,
       page: () => const MobileSettingsView(),
       binding: SettingsBinding(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
     GetPage(
       name: AppRoutes.profile,
       page: () => const MobileProfileView(),
       transition: Transition.fadeIn,
+      middlewares: [PermissionMiddleware()],
     ),
   ];
 }

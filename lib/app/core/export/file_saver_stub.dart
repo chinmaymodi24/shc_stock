@@ -10,3 +10,7 @@ Future<SavedFile> saveExportFile(
   String mimeType,
 ) async =>
     throw UnsupportedError('File export is not supported on this platform.');
+
+Future<bool> printPdfBytes(String filename, Uint8List bytes) async => false;
+
+Future<bool> openExternalUrl(String url) async => false;

@@ -138,14 +138,14 @@ class LoginController extends GetxController {
             ? 'Invalid email or password.'
             : 'Something went wrong. Please try again.',
         backgroundColor: const Color(0xFFEF4444),
-        colorText: const Color(0xFFFFFFFF),
+        colorText: Colors.white,
       );
     } catch (e) {
       showAppToast(
         'Sign In Failed',
         'Something went wrong. Please try again.',
         backgroundColor: const Color(0xFFEF4444),
-        colorText: const Color(0xFFFFFFFF),
+        colorText: Colors.white,
       );
     } finally {
       isLoading.value = false;

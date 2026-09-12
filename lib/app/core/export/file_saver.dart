@@ -25,3 +25,18 @@ Future<SavedFile> saveExportFile(
   Uint8List bytes,
   String mimeType,
 ) => impl.saveExportFile(filename, bytes, mimeType);
+
+/// Hands [bytes] to the platform's print path.
+///
+/// On the web the PDF is loaded into a hidden frame and the browser's print
+/// dialog is opened on it, so what prints is the generated document rather
+/// than a screenshot of the canvas. Everywhere else there is no print API
+/// without a plugin, so this returns false and the caller falls back to
+/// saving the file for the user to print themselves.
+Future<bool> printPdfBytes(String filename, Uint8List bytes) =>
+    impl.printPdfBytes(filename, bytes);
+
+/// Opens [url] outside the app — a wa.me link, a mailto:, a payment page.
+/// Returns false where the platform offers no way to do it without a plugin;
+/// callers then copy the link to the clipboard instead of failing silently.
+Future<bool> openExternalUrl(String url) => impl.openExternalUrl(url);

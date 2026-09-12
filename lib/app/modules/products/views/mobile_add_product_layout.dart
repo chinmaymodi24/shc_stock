@@ -46,7 +46,7 @@ class MobileAddProductLayout extends StatelessWidget {
                       side: const BorderSide(color: Color(0xFFE0DFF5)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(appColors.radius),
                       ),
                     ),
                     child: Text(
@@ -54,7 +54,7 @@ class MobileAddProductLayout extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         color: colors.textSecondary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -76,13 +76,13 @@ class MobileAddProductLayout extends StatelessWidget {
                       color: Colors.white,
                       size: 18,
                     ),
-                    label: const Text(
+                    label: Text(
                       'Save Product',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -90,7 +90,7 @@ class MobileAddProductLayout extends StatelessWidget {
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(appColors.radius),
                       ),
                     ),
                   ),
@@ -124,7 +124,7 @@ class MobileAddProductLayout extends StatelessWidget {
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: colors.textPrimary,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
       actions: [
@@ -195,7 +195,7 @@ class _MobileSectionCard extends StatelessWidget {
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           const SizedBox(height: 14),
@@ -230,7 +230,7 @@ class _MobileFormField extends StatelessWidget {
               fontSize: 12.5,
               fontWeight: FontWeight.w500,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             children: [
               TextSpan(text: label),
@@ -273,14 +273,14 @@ class _MobileTextField extends StatelessWidget {
       style: TextStyle(
         fontSize: 13,
         color: colors.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
           fontSize: 13,
           color: colors.textHint,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(
@@ -288,19 +288,16 @@ class _MobileTextField extends StatelessWidget {
           vertical: 14,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           borderSide: BorderSide(color: colors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           borderSide: BorderSide(color: colors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: AppColors.primaryOrange,
-            width: 1.5,
-          ),
+          borderRadius: BorderRadius.circular(appColors.radius),
+          borderSide: BorderSide(color: AppColors.primaryOrange, width: 1.5),
         ),
         filled: true,
         fillColor: colors.inputFill,
@@ -334,7 +331,7 @@ class _MobileDropdown extends StatelessWidget {
       style: TextStyle(
         fontSize: 13,
         color: colors.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
       hint: hint != null
           ? Text(
@@ -342,7 +339,7 @@ class _MobileDropdown extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 color: colors.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             )
           : null,
@@ -353,19 +350,16 @@ class _MobileDropdown extends StatelessWidget {
           vertical: 14,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           borderSide: BorderSide(color: colors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           borderSide: BorderSide(color: colors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: AppColors.primaryOrange,
-            width: 1.5,
-          ),
+          borderRadius: BorderRadius.circular(appColors.radius),
+          borderSide: BorderSide(color: AppColors.primaryOrange, width: 1.5),
         ),
         filled: true,
         fillColor: colors.inputFill,
@@ -599,7 +593,7 @@ class _MobileVariantToggle extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: colors.comingSoonBadge,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           border: Border.all(color: colors.border),
         ),
         child: Column(
@@ -615,7 +609,7 @@ class _MobileVariantToggle extends StatelessWidget {
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -657,7 +651,7 @@ class _MobileVariantToggle extends StatelessWidget {
                         opt,
                         style: TextStyle(
                           fontSize: 12,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                           fontWeight: isSelected
                               ? FontWeight.w600
                               : FontWeight.w400,
@@ -907,7 +901,7 @@ class _MobileImageSectionState extends State<_MobileImageSection> {
                       color: Color(0xFFEEECFF),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.cloud_upload_outlined,
                       color: AppColors.primaryPurple,
                       size: 26,
@@ -919,7 +913,7 @@ class _MobileImageSectionState extends State<_MobileImageSection> {
                     style: TextStyle(
                       fontSize: 13,
                       color: colors.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -936,12 +930,12 @@ class _MobileImageSectionState extends State<_MobileImageSection> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Browse Image',
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.white,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ),
@@ -971,7 +965,9 @@ class _MobileImageSectionState extends State<_MobileImageSection> {
                               width: 80,
                               height: 80,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(
+                                  appColors.radius,
+                                ),
                                 border: Border.all(
                                   color: const Color(0xFFE0DFF5),
                                 ),
@@ -1018,7 +1014,7 @@ class _MobileImageSectionState extends State<_MobileImageSection> {
             style: TextStyle(
               fontSize: 11.5,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ],
@@ -1068,7 +1064,7 @@ class _MobileStatusSectionState extends State<_MobileStatusSection> {
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               Obx(

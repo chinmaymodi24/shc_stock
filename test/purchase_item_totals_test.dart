@@ -10,7 +10,7 @@ import 'package:shc_stock/app/shared/widgets/form_fields.dart';
 // AppSmallNumber cells that mutate the row then call notifyItemsChanged(),
 // plus a second Obx reading the derived totals.
 Widget _harness(AddPurchaseController c) {
-  const colors = AppThemeColors.light;
+  final colors = AppThemeColors.light;
   return MaterialApp(
     home: Scaffold(
       body: Column(

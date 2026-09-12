@@ -38,7 +38,7 @@ class AppField extends StatelessWidget {
       fontSize: mobile ? 12 : 12.5,
       fontWeight: FontWeight.w500,
       color: colors.textPrimary,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,7 +48,7 @@ class AppField extends StatelessWidget {
             text: TextSpan(
               text: label,
               style: labelStyle,
-              children: const [
+              children: [
                 TextSpan(
                   text: ' *',
                   style: TextStyle(color: AppColors.primaryOrange),
@@ -85,14 +85,14 @@ class AppTextBox extends StatelessWidget {
       style: TextStyle(
         fontSize: 13,
         color: colors.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
           fontSize: 13,
           color: colors.textHint,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(
@@ -148,7 +148,7 @@ class AppDropBox extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           isDense: true,
@@ -162,7 +162,7 @@ class AppDropBox extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
           items: items
               .map((v) => DropdownMenuItem(value: v, child: Text(v)))
@@ -244,7 +244,7 @@ class _AppDateBoxState extends State<AppDateBox> {
                     style: TextStyle(
                       fontSize: 13,
                       color: d == null ? colors.textHint : colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -288,7 +288,7 @@ class AppTotalRow extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               color: colors.textSecondary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -300,7 +300,7 @@ class AppTotalRow extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ],
@@ -336,7 +336,7 @@ class AppSmallInput extends StatelessWidget {
       style: TextStyle(
         fontSize: 12,
         color: colors.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
       decoration: _smallDecoration(
         colors: colors,
@@ -388,7 +388,7 @@ class AppSmallNumber extends StatelessWidget {
       style: TextStyle(
         fontSize: 12,
         color: colors.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
       decoration: _smallDecoration(
         colors: colors,
@@ -436,7 +436,7 @@ class AppSmallDrop extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -451,7 +451,7 @@ class AppSmallDrop extends StatelessWidget {
           style: TextStyle(
             fontSize: 11.5,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
           items: items
               .map((v) => DropdownMenuItem(value: v, child: Text(v)))
@@ -481,7 +481,7 @@ InputDecoration _smallDecoration({
   hintStyle: TextStyle(
     fontSize: mobile ? 11.5 : 12,
     color: colors.textHint,
-    fontFamily: 'Poppins',
+    fontFamily: brandFontFamily,
   ),
   isDense: true,
   contentPadding: EdgeInsets.symmetric(
@@ -624,14 +624,14 @@ class _AppSmallStepperState extends State<AppSmallStepper> {
               style: TextStyle(
                 fontSize: widget.mobile ? 11.5 : 12,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
               decoration: InputDecoration(
                 hintText: widget.hint.isEmpty ? null : widget.hint,
                 hintStyle: TextStyle(
                   fontSize: widget.mobile ? 11.5 : 12,
                   color: colors.textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
                 isDense: true,
                 border: InputBorder.none,

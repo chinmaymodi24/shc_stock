@@ -1,3 +1,5 @@
+import 'package:shc_stock/app/modules/settings/views/settings_tab_gate.dart';
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -8,6 +10,8 @@ import 'package:shc_stock/app/core/theme/theme_switch_helper.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
+import 'package:shc_stock/app/modules/settings/views/appearance/appearance_tab.dart';
+import 'package:shc_stock/app/modules/settings/views/billing/billing_tab.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Settings — left tab nav (Profile / Notifications / Security / Preferences)
@@ -17,7 +21,14 @@ import 'package:shc_stock/app/modules/settings/controllers/settings_controller.d
 class WebSettingsLayout extends GetView<SettingsController> {
   const WebSettingsLayout({super.key});
 
-  static const _tabs = ['Profile', 'Notifications', 'Security', 'Preferences'];
+  static const _tabs = [
+    'Profile',
+    'Notifications',
+    'Security',
+    'Preferences',
+    'Billing',
+    'Appearance',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +57,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
                           color: colors.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -55,7 +66,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
                         style: TextStyle(
                           fontSize: 13,
                           color: colors.textSecondary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ],
@@ -82,12 +93,13 @@ class WebSettingsLayout extends GetView<SettingsController> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               for (int i = 0; i < _tabs.length; i++)
-                                _NavTab(
-                                  label: _tabs[i],
-                                  selected: controller.tab.value == i,
-                                  colors: colors,
-                                  onTap: () => controller.tab.value = i,
-                                ),
+                                if (canOpenSettingsTab(_tabs[i]))
+                                  _NavTab(
+                                    label: _tabs[i],
+                                    selected: controller.tab.value == i,
+                                    colors: colors,
+                                    onTap: () => controller.tab.value = i,
+                                  ),
                             ],
                           ),
                         ),
@@ -111,16 +123,24 @@ class WebSettingsLayout extends GetView<SettingsController> {
   }
 
   Widget _buildContent(BuildContext context, AppThemeColors colors) {
-    switch (controller.tab.value) {
+    final i = controller.tab.value;
+    final tab = i >= 0 && i < _tabs.length ? _tabs[i] : 'Profile';
+    final Widget content;
+    switch (i) {
       case 1:
-        return _notificationsTab(colors);
+        content = _notificationsTab(colors);
       case 2:
-        return _securityTab(colors);
+        content = _securityTab(colors);
       case 3:
-        return _preferencesTab(context, colors);
+        content = _preferencesTab(context, colors);
+      case 4:
+        content = const BillingTab();
+      case 5:
+        content = const AppearanceTab();
       default:
-        return _profileTab(colors);
+        content = _profileTab(colors);
     }
+    return SettingsTabGate(tab: tab, child: content);
   }
 
   // ── Profile ─────────────────────────────────────────────────────
@@ -135,18 +155,18 @@ class WebSettingsLayout extends GetView<SettingsController> {
             Container(
               width: 60,
               height: 60,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.primaryPurple,
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Text(
                   _sessionUser?.initials ?? '—',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -288,7 +308,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         const SizedBox(height: 2),
@@ -297,7 +317,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
           style: TextStyle(
             fontSize: 12,
             color: colors.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         const SizedBox(height: 12),
@@ -337,7 +357,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         const SizedBox(height: 8),
@@ -356,7 +376,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         const SizedBox(height: 8),
@@ -393,7 +413,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         const SizedBox(height: 2),
@@ -404,7 +424,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
           style: TextStyle(
             fontSize: 12,
             color: colors.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         const SizedBox(height: 8),
@@ -465,7 +485,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
       fontSize: 16,
       fontWeight: FontWeight.w700,
       color: colors.textPrimary,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
     ),
   );
 
@@ -488,7 +508,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           const SizedBox(height: 7),
@@ -499,14 +519,14 @@ class WebSettingsLayout extends GetView<SettingsController> {
             style: TextStyle(
               fontSize: 13.5,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(
                 fontSize: 13.5,
                 color: colors.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(
@@ -529,7 +549,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(
+                borderSide: BorderSide(
                   color: AppColors.primaryOrange,
                   width: 1.5,
                 ),
@@ -565,7 +585,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -574,7 +594,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
                     style: TextStyle(
                       fontSize: 12.5,
                       color: colors.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ],
@@ -612,7 +632,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
           color: selected
               ? AppColors.primaryOrange.withValues(alpha: 0.08)
               : colors.surface,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           border: Border.all(
             color: selected ? AppColors.primaryOrange : colors.border,
             width: selected ? 1.5 : 1,
@@ -629,7 +649,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
                 fontSize: 13.5,
                 fontWeight: FontWeight.w600,
                 color: selected ? AppColors.primaryOrange : colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],
@@ -669,7 +689,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
           style: TextStyle(
             fontSize: 13,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
           items: items
               .map(
@@ -745,7 +765,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
                 fontSize: 13.5,
                 fontWeight: FontWeight.w600,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],
@@ -789,7 +809,7 @@ class _NavTab extends StatelessWidget {
               fontSize: 13.5,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               color: selected ? colors.purple : colors.textSecondary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ),

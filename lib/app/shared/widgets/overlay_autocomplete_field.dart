@@ -251,12 +251,12 @@ class _OverlayAutocompleteFieldState<T extends Object>
             groupId: _tapRegionGroupId,
             child: Material(
               elevation: 4,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(appColors.radius),
               color: colors.surface,
               child: Container(
                 constraints: BoxConstraints(maxHeight: dropdownHeight),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(appColors.radius),
                   border: Border.all(color: colors.border),
                 ),
                 child: ValueListenableBuilder<int>(

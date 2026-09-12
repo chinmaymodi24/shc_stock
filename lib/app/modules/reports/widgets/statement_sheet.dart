@@ -36,7 +36,7 @@ class StatementSheet extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
           decoration: BoxDecoration(
             color: colors.surface,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(appColors.radius),
             border: Border.all(color: colors.divider),
           ),
           child: Column(
@@ -67,7 +67,7 @@ class StatementSheet extends StatelessWidget {
           fontSize: 16,
           fontWeight: FontWeight.w800,
           color: colors.textPrimary,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
       const SizedBox(height: 3),
@@ -78,7 +78,7 @@ class StatementSheet extends StatelessWidget {
           fontSize: 12.5,
           fontWeight: FontWeight.w600,
           color: colors.textPrimary,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
       const SizedBox(height: 2),
@@ -88,7 +88,7 @@ class StatementSheet extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           color: colors.textHint,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
       const SizedBox(height: 12),
@@ -102,7 +102,7 @@ class StatementSheet extends StatelessWidget {
       fontWeight: FontWeight.w700,
       letterSpacing: 0.05 * 10,
       color: colors.textHint,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
     );
     return Padding(
       padding: const EdgeInsets.only(top: 10, bottom: 8),
@@ -119,7 +119,7 @@ class StatementSheet extends StatelessWidget {
     final style = TextStyle(
       fontSize: 10.5,
       color: colors.textHint,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
     );
     return Row(
       children: [
@@ -145,7 +145,7 @@ class StatementSheet extends StatelessWidget {
               fontWeight: FontWeight.w700,
               letterSpacing: 0.04 * 11,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         );
@@ -159,7 +159,7 @@ class StatementSheet extends StatelessWidget {
               fontSize: 11,
               height: 1.5,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         );
@@ -181,7 +181,7 @@ class StatementSheet extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12.5,
                       color: colors.textSecondary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -190,7 +190,7 @@ class StatementSheet extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12.5,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ],
@@ -229,7 +229,7 @@ class StatementSheet extends StatelessWidget {
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -239,7 +239,7 @@ class StatementSheet extends StatelessWidget {
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ],
@@ -250,9 +250,7 @@ class StatementSheet extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
           decoration: BoxDecoration(
-            color: colors.background.computeLuminance() > 0.5
-                ? const Color(0xFFFAF9F7)
-                : colors.inputFill,
+            color: colors.tableHeaderBg,
             borderRadius: BorderRadius.circular(7),
           ),
           child: Row(
@@ -264,7 +262,7 @@ class StatementSheet extends StatelessWidget {
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -274,7 +272,7 @@ class StatementSheet extends StatelessWidget {
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ],
@@ -297,7 +295,7 @@ class StatementSheet extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                     color: colors.success,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -307,7 +305,7 @@ class StatementSheet extends StatelessWidget {
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                   color: colors.success,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ],

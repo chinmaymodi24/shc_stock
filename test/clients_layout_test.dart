@@ -9,6 +9,7 @@ import 'package:shc_stock/app/core/theme/theme_ripple_controller.dart';
 import 'package:shc_stock/app/modules/clients/controllers/clients_controller.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
 import 'package:shc_stock/app/modules/clients/views/web_clients_layout.dart';
+import 'support/session.dart';
 
 /// The real controller fetches /api/clients and /api/stats/clients on init.
 /// This is a layout test, so it stands in fixed data instead of hitting the
@@ -58,6 +59,8 @@ class _OfflineClientsController extends ClientsController {
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+  // Cards and actions only render for someone allowed to see them.
+  setUp(signInSuperAdmin);
   tearDown(Get.reset);
 
   testWidgets('right panel runs alongside the header and summary cards', (
@@ -73,7 +76,7 @@ void main() {
 
     await tester.pumpWidget(
       GetMaterialApp(
-        theme: ThemeData(extensions: const [AppThemeColors.light]),
+        theme: ThemeData(extensions: [AppThemeColors.light]),
         home: const WebClientsLayout(),
       ),
     );
@@ -116,7 +119,7 @@ void main() {
 
     await tester.pumpWidget(
       GetMaterialApp(
-        theme: ThemeData(extensions: const [AppThemeColors.light]),
+        theme: ThemeData(extensions: [AppThemeColors.light]),
         home: const WebClientsLayout(),
       ),
     );

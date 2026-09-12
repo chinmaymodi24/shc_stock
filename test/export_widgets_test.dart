@@ -182,31 +182,39 @@ void main() {
   });
 
   group('ListScopeBar', () {
-    testWidgets('spells out the scope and renders removable chips', (
+    testWidgets('renders removable chips and the selection pill', (
       tester,
     ) async {
       var removed = false;
       await tester.pumpWidget(
         _host(
           ListScopeBar(
-            shown: 248,
-            total: 611,
-            noun: 'products',
             chips: [ListScopeChip('In stock', () => removed = true)],
             selectedCount: 12,
           ),
         ),
-      );
-      // The count is emphasised inside a RichText, not a plain Text.
-      expect(
-        find.text('Showing 248 of 611 products', findRichText: true),
-        findsOneWidget,
       );
       expect(find.text('In stock'), findsOneWidget);
       expect(find.text('12 selected'), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.close_rounded).first);
       expect(removed, isTrue);
+    });
+
+    testWidgets('states no count — the table footer already prints one', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(const ListScopeBar(chips: [], selectedCount: 3)),
+      );
+      expect(find.textContaining('Showing', findRichText: true), findsNothing);
+    });
+
+    testWidgets('takes no space with nothing filtered or selected', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_host(const ListScopeBar()));
+      expect(tester.getSize(find.byType(ListScopeBar)), Size.zero);
     });
   });
 

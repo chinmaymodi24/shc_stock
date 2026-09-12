@@ -121,7 +121,7 @@ class MobileReportsLayout extends GetView<ReportsController> {
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: colors.textPrimary,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
       centerTitle: true,
@@ -148,7 +148,7 @@ class MobileReportsLayout extends GetView<ReportsController> {
             style: TextStyle(
               fontSize: 13,
               color: colors.textSecondary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -172,7 +172,7 @@ class MobileReportsLayout extends GetView<ReportsController> {
                 'Clear',
                 style: TextStyle(
                   fontSize: 12.5,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                   color: colors.textSecondary,
                 ),
               ),
@@ -185,13 +185,13 @@ class MobileReportsLayout extends GetView<ReportsController> {
             color: Colors.white,
             size: 16,
           ),
-          label: const Text(
+          label: Text(
             'Range',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: Colors.white,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           style: ElevatedButton.styleFrom(

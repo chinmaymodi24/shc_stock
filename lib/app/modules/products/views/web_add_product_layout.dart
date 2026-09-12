@@ -129,7 +129,7 @@ class WebAddProductLayout extends GetView<AddProductFormController> {
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: AppColors.primaryOrange,
-                                  fontFamily: 'Poppins',
+                                  fontFamily: brandFontFamily,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -149,7 +149,7 @@ class WebAddProductLayout extends GetView<AddProductFormController> {
                               style: TextStyle(
                                 fontSize: 13,
                                 color: colors.textSecondary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ],
@@ -169,7 +169,7 @@ class WebAddProductLayout extends GetView<AddProductFormController> {
                                     fontSize: 22,
                                     fontWeight: FontWeight.w700,
                                     color: colors.textPrimary,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                                 const SizedBox(height: 3),
@@ -178,7 +178,7 @@ class WebAddProductLayout extends GetView<AddProductFormController> {
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: colors.textSecondary,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                               ],
@@ -204,13 +204,13 @@ class WebAddProductLayout extends GetView<AddProductFormController> {
                                 color: Colors.white,
                                 size: 17,
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Save Item',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
-                                  fontFamily: 'Poppins',
+                                  fontFamily: brandFontFamily,
                                 ),
                               ),
                               style: ElevatedButton.styleFrom(
@@ -698,7 +698,7 @@ class WebAddProductLayout extends GetView<AddProductFormController> {
                                             fontSize: 13.5,
                                             fontWeight: FontWeight.w600,
                                             color: colors.textPrimary,
-                                            fontFamily: 'Poppins',
+                                            fontFamily: brandFontFamily,
                                           ),
                                         ),
                                         Text(
@@ -706,7 +706,7 @@ class WebAddProductLayout extends GetView<AddProductFormController> {
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: colors.textSecondary,
-                                            fontFamily: 'Poppins',
+                                            fontFamily: brandFontFamily,
                                           ),
                                         ),
                                       ],
@@ -790,7 +790,7 @@ class _ItemTypeField extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -810,7 +810,7 @@ class _ItemTypeField extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -867,14 +867,14 @@ class _DescFieldState extends State<_DescField> {
             style: TextStyle(
               fontSize: 13,
               color: c.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             decoration: InputDecoration(
               hintText: 'Enter item description (optional)',
               hintStyle: TextStyle(
                 fontSize: 13,
                 color: c.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
               filled: true,
               fillColor: c.inputFill,
@@ -882,7 +882,7 @@ class _DescFieldState extends State<_DescField> {
               counterStyle: TextStyle(
                 fontSize: 11,
                 color: c.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
               contentPadding: const EdgeInsets.all(12),
               border: OutlineInputBorder(
@@ -895,7 +895,7 @@ class _DescFieldState extends State<_DescField> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(
+                borderSide: BorderSide(
                   color: AppColors.primaryOrange,
                   width: 1.5,
                 ),
@@ -967,7 +967,7 @@ class _ImageUpload extends StatelessWidget {
                       height: 46,
                       decoration: BoxDecoration(
                         color: AppColors.primaryOrange.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(appColors.radius),
                       ),
                       child: Icon(
                         isDragging
@@ -988,7 +988,7 @@ class _ImageUpload extends StatelessWidget {
                         color: isDragging
                             ? AppColors.primaryOrange
                             : colors.textSecondary,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                     if (!isDragging) ...[
@@ -1001,16 +1001,16 @@ class _ImageUpload extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12,
                                 color: colors.textHint,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
-                            const TextSpan(
+                            TextSpan(
                               text: 'browse',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppColors.primaryOrange,
                                 fontWeight: FontWeight.w600,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ],
@@ -1023,7 +1023,7 @@ class _ImageUpload extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         color: colors.textHint,
-                        fontFamily: 'Poppins',
+                        fontFamily: brandFontFamily,
                       ),
                     ),
                   ],
@@ -1146,7 +1146,7 @@ class _OBtn extends StatelessWidget {
           fontSize: 14,
           fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
           color: colors.textPrimary,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
     );
@@ -1187,7 +1187,7 @@ class _Card extends StatelessWidget {
               fontSize: 15,
               fontWeight: FontWeight.w700,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           const SizedBox(height: 16),
@@ -1235,14 +1235,14 @@ class _F extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
               fontSize: 13,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             filled: true,
             fillColor: colors.inputFill,
@@ -1250,7 +1250,7 @@ class _F extends StatelessWidget {
             suffixStyle: TextStyle(
               fontSize: 13,
               color: colors.textSecondary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             suffixIcon: suffixIcon,
             contentPadding: const EdgeInsets.symmetric(
@@ -1267,7 +1267,7 @@ class _F extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
+              borderSide: BorderSide(
                 color: AppColors.primaryOrange,
                 width: 1.5,
               ),
@@ -1328,13 +1328,13 @@ class _DD extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   color: colors.textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               style: TextStyle(
                 fontSize: 13,
                 color: colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
               dropdownColor: colors.surface,
               icon: Icon(
@@ -1373,7 +1373,7 @@ class _LabelText extends StatelessWidget {
               fontSize: 12.5,
               fontWeight: FontWeight.w500,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           if (required)

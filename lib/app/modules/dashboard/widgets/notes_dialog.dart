@@ -57,7 +57,7 @@ class NotesDialog extends StatelessWidget {
                           ),
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.checklist_rounded,
                           color: AppColors.primaryOrange,
                           size: 24,
@@ -74,7 +74,7 @@ class NotesDialog extends StatelessWidget {
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
                                 color: colors.textPrimary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -84,7 +84,7 @@ class NotesDialog extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 12.5,
                                   color: colors.textSecondary,
-                                  fontFamily: 'Poppins',
+                                  fontFamily: brandFontFamily,
                                 ),
                               ),
                             ),

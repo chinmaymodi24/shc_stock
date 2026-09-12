@@ -70,12 +70,12 @@ class MobileFilterButton extends StatelessWidget {
                 child: Center(
                   child: Text(
                     '$activeCount',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 9.5,
                       height: 1,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),
@@ -121,7 +121,7 @@ Future<void> showMobileFilterSheet(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: colors.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                   const Spacer(),
@@ -166,7 +166,7 @@ Future<void> showMobileFilterSheet(
                         side: BorderSide(color: colors.border),
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(appColors.radius),
                         ),
                       ),
                       child: Text(
@@ -175,7 +175,7 @@ Future<void> showMobileFilterSheet(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: colors.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -189,16 +189,16 @@ Future<void> showMobileFilterSheet(
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(appColors.radius),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Apply',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -242,7 +242,7 @@ class MobileFilterChipGroup extends StatelessWidget {
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
             color: colors.textHint,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
             letterSpacing: 0.3,
           ),
         ),
@@ -253,7 +253,7 @@ class MobileFilterChipGroup extends StatelessWidget {
             style: TextStyle(
               fontSize: 12.5,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           )
         else
@@ -306,7 +306,7 @@ class MobileFilterChoiceGroup extends StatelessWidget {
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
             color: colors.textHint,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
             letterSpacing: 0.3,
           ),
         ),
@@ -372,7 +372,7 @@ class _Chip extends StatelessWidget {
                 // change the chip's width and reflow the row.
                 fontWeight: FontWeight.w600,
                 color: active ? AppColors.primaryOrange : colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],

@@ -206,7 +206,7 @@ class EmployeeDetailsStep extends GetView<AddEmployeeWizardController> {
                         style: TextStyle(
                           fontSize: 13.5,
                           color: c.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                           fontWeight: FontWeight.w500,
                         ),
                       ),

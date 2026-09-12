@@ -53,7 +53,7 @@ class AnalyticsPanel extends StatelessWidget {
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           if (subtitle != null) ...[
@@ -63,7 +63,7 @@ class AnalyticsPanel extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11.5,
                 color: colors.textHint,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],
@@ -104,7 +104,7 @@ class AnalyticsLegend extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11.5,
                   color: colors.textSecondary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ],
@@ -133,7 +133,7 @@ class IndicatorTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(appColors.radius),
         border: Border.all(color: colors.divider),
       ),
       child: Column(
@@ -147,7 +147,7 @@ class IndicatorTile extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           const SizedBox(height: 2),
@@ -159,7 +159,7 @@ class IndicatorTile extends StatelessWidget {
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           const SizedBox(height: 2),
@@ -180,7 +180,7 @@ class IndicatorTile extends StatelessWidget {
                     fontSize: 10.5,
                     fontWeight: FontWeight.w600,
                     color: trendColor,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -193,7 +193,7 @@ class IndicatorTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10.5,
                     color: colors.textHint,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -225,7 +225,7 @@ class TintedFigureTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(appColors.radius),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -238,7 +238,7 @@ class TintedFigureTile extends StatelessWidget {
               fontSize: 19,
               fontWeight: FontWeight.w700,
               color: color,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           const SizedBox(height: 2),
@@ -247,7 +247,7 @@ class TintedFigureTile extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               color: colors.textSecondary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ],
@@ -292,7 +292,7 @@ class LabelledAmount extends StatelessWidget {
             style: TextStyle(
               fontSize: 11.5,
               color: colors.textSecondary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ),
@@ -303,7 +303,7 @@ class LabelledAmount extends StatelessWidget {
             fontSize: 12,
             fontWeight: FontWeight.w700,
             color: amountColor ?? colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ],

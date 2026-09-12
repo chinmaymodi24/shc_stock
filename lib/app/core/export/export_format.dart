@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 
 /// The three things a list page can be turned into.
 enum ExportFormat { excel, pdf, csv }
@@ -44,12 +45,15 @@ extension ExportFormatX on ExportFormat {
   Color color(Brightness brightness) {
     final dark = brightness == Brightness.dark;
     return switch (this) {
+      // Excel-green and PDF-red are format conventions, but they resolve
+      // through the theme so a rebrand carries them and no brand hex stays
+      // compiled in. Dark mode's lightening is handled by the palette itself.
       ExportFormat.excel =>
-        dark ? const Color(0xFF4ADE80) : const Color(0xFF1E8449),
+        dark ? AppThemeColors.dark.success : AppThemeColors.light.success,
       ExportFormat.pdf =>
-        dark ? const Color(0xFFF87171) : const Color(0xFFC0392B),
+        dark ? AppThemeColors.dark.error : AppThemeColors.light.error,
       ExportFormat.csv =>
-        dark ? const Color(0xFF9B9BB4) : const Color(0xFF8A8797),
+        dark ? AppThemeColors.dark.textHint : AppThemeColors.light.textHint,
     };
   }
 

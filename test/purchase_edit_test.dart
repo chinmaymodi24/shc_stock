@@ -173,7 +173,7 @@ void main() {
     Future<void> pumpStepper(WidgetTester tester, ValueNotifier<double> qty) {
       return tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(extensions: const [AppThemeColors.light]),
+          theme: ThemeData(extensions: [AppThemeColors.light]),
           home: Scaffold(
             body: Center(
               child: SizedBox(

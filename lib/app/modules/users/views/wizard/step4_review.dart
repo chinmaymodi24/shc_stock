@@ -19,8 +19,8 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
     return Obx(() {
       final status = controller.status.value;
       final welcome = controller.welcome.value;
-      final customTab = controller.customTab.value;
       final selRole = controller.selRole;
+      final editor = controller.editor;
 
       return wizCard(
         c,
@@ -91,7 +91,7 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
                               style: TextStyle(
                                 fontSize: 12,
                                 color: c.textSecondary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ),
@@ -115,7 +115,7 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                               color: status == 'Active'
                                   ? const Color(0xFF22C55E)
                                   : const Color(0xFFEF4444),
@@ -146,7 +146,13 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
                           : controller.userCtrl.text,
                       c,
                     ),
-                    wizRevRow('Password', '●' * 12, c),
+                    _PasswordReviewRow(
+                      password: controller.passCtrl.text,
+                      // On an edit a blank field keeps the current password.
+                      emptyLabel: controller.isEdit ? 'Unchanged' : '-',
+                      show: controller.showReviewPass.value,
+                      onToggle: () => controller.showReviewPass.toggle(),
+                    ),
                   ],
                 ),
                 Column(
@@ -162,7 +168,7 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
                               style: TextStyle(
                                 fontSize: 12,
                                 color: c.textSecondary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ),
@@ -186,7 +192,7 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
-                              fontFamily: 'Poppins',
+                              fontFamily: brandFontFamily,
                               color: welcome
                                   ? const Color(0xFF22C55E)
                                   : c.textSecondary,
@@ -210,16 +216,12 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
               child: wizRow2(wide, [
                 Column(
                   children: [
-                    wizRevRow(
-                      'Role Name',
-                      customTab ? 'Custom Role' : (selRole?.name ?? '-'),
-                      c,
-                    ),
+                    wizRevRow('Role Name', selRole?.name ?? '-', c),
                     wizRevRow(
                       'Role Description',
-                      customTab
-                          ? 'Custom role with specific permissions'
-                          : (selRole?.desc ?? '-'),
+                      selRole == null || selRole.description.isEmpty
+                          ? '-'
+                          : selRole.description,
                       c,
                     ),
                   ],
@@ -227,8 +229,17 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
                 Column(
                   children: [
                     wizRevRow(
+                      'Role Type',
+                      selRole == null
+                          ? '-'
+                          : selRole.isSystem
+                          ? 'Ready-made'
+                          : 'Custom',
+                      c,
+                    ),
+                    wizRevRow(
                       'Users with this role',
-                      '${selRole != null ? roleOptUserCount(selRole.id) : 0}',
+                      '${selRole?.userCount ?? 0}',
                       c,
                     ),
                   ],
@@ -248,28 +259,43 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
                   c,
                   icon: Icons.visibility_outlined,
                   label: 'Modules with Read Access',
-                  value: '${controller.readCnt}',
+                  value: '${editor.readCnt}',
                   color: const Color(0xFF0EA5E9),
                 ),
                 wizPermStat(
                   c,
                   icon: Icons.edit_outlined,
                   label: 'Modules with Write Access',
-                  value: '${controller.writeCnt}',
+                  value: '${editor.writeCnt}',
                   color: AppColors.primaryOrange,
+                ),
+                wizPermStat(
+                  c,
+                  icon: Icons.insights_outlined,
+                  label: 'Modules with Summary Access',
+                  value: '${editor.summaryCnt}',
+                  color: const Color(0xFF22C55E),
                 ),
                 wizPermStat(
                   c,
                   icon: Icons.visibility_off_outlined,
                   label: 'Modules with No Access',
-                  value: '${controller.noCnt}',
+                  value: '${editor.noCnt}',
                   color: const Color(0xFFEF4444),
+                ),
+                wizPermStat(
+                  c,
+                  icon: Icons.settings_outlined,
+                  label:
+                      'Settings Tabs Allowed (${editor.settingsWriteCnt} can save)',
+                  value: '${editor.settingsReadCnt} / ${editor.settingsCnt}',
+                  color: const Color(0xFF8B5CF6),
                 ),
                 wizPermStat(
                   c,
                   icon: Icons.apps_rounded,
                   label: 'Total Modules',
-                  value: '${controller.perms.length}',
+                  value: '${editor.moduleCnt}',
                   color: context.appColors.accent,
                 ),
               ]),
@@ -285,5 +311,85 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
         ),
       );
     });
+  }
+}
+
+/// Review row for the password: masked with `*` (one per character) by
+/// default, with an eye icon beside it that reveals the typed password.
+class _PasswordReviewRow extends StatelessWidget {
+  final String password;
+  final String emptyLabel;
+  final bool show;
+  final VoidCallback onToggle;
+
+  const _PasswordReviewRow({
+    required this.password,
+    required this.emptyLabel,
+    required this.show,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    final hasPassword = password.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              'Password',
+              style: TextStyle(
+                fontSize: 12,
+                color: c.textSecondary,
+                fontFamily: brandFontFamily,
+              ),
+            ),
+          ),
+          const Text(
+            ' :  ',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+          Flexible(
+            child: Text(
+              !hasPassword
+                  ? emptyLabel
+                  : show
+                  ? password
+                  : '*' * password.length,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                color: c.textPrimary,
+                fontFamily: brandFontFamily,
+              ),
+            ),
+          ),
+          if (hasPassword) ...[
+            const SizedBox(width: 8),
+            Tooltip(
+              message: show ? 'Hide password' : 'Show password',
+              child: InkWell(
+                onTap: onToggle,
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.all(2),
+                  child: Icon(
+                    show
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    size: 16,
+                    color: c.textHint,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }

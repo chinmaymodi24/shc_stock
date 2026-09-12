@@ -411,17 +411,17 @@ class _TaglineBlock extends StatelessWidget {
           height: 3,
           decoration: BoxDecoration(
             color: AppColors.primaryOrange,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(appColors.radius),
           ),
         ),
         const SizedBox(height: 14),
-        const Text(
+        Text(
           'Smart Solutions for Inventory,\nSales, Purchase & Reports',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Color(0xFFAAAAAA),
             fontSize: 13.5,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
             height: 1.75,
           ),
         ),

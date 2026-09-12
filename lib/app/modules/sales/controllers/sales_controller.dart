@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
@@ -207,15 +208,9 @@ class SalesController extends GetxController {
   /// back to [fallback] for any other failure.
   String _stockAwareMessage(Object e, String fallback) {
     if (e is! ApiException || e.statusCode != 409) return fallback;
-    final details = e.details;
-    if (details is! List || details.isEmpty) return e.message;
-    final lines = details.map((d) {
-      final product = d['product'] ?? 'Item';
-      final requested = d['requested'];
-      final available = d['available'];
-      return '$product: only $available in stock, requested $requested';
-    });
-    return 'Not enough stock —\n${lines.join('\n')}';
+    // Shared with the Inventory adjustment path — the same 409 shape reaches
+    // both, and they used to word it differently.
+    return shortfallMessage(e) ?? e.message;
   }
 
   /// Replaces an existing order — the whole record, not just its status.
@@ -260,6 +255,7 @@ class SalesController extends GetxController {
     SalesStatus? status,
     PaymentStatus? paymentStatus,
   }) async {
+    if (!requireWrite('Sales')) return;
     final idx = orders.indexWhere((o) => o.id == id);
     if (idx == -1) return;
     try {

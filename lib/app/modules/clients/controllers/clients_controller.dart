@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
@@ -168,6 +169,8 @@ class ClientsController extends GetxController {
 
   // ── Summary cards — all served by GET /api/stats/clients ──────────────────
   Future<void> fetchStats() async {
+    // Summary figures are their own permission — skip the call without it.
+    if (!canSeeSummary('Clients')) return;
     try {
       final json = await _api.get('/stats/clients') as Map<String, dynamic>;
       stats.value = StatsSnapshot.fromJson(json);

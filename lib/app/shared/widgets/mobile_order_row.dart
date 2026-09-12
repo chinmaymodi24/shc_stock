@@ -75,7 +75,7 @@ class MobileRowMenu extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ],
@@ -127,7 +127,7 @@ class MobileOrderRow extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(appColors.radius),
         border: Border.all(color: colors.divider),
       ),
       child: ClipRRect(
@@ -159,7 +159,7 @@ class MobileOrderRow extends StatelessWidget {
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w600,
                                   color: colors.textPrimary,
-                                  fontFamily: 'Poppins',
+                                  fontFamily: brandFontFamily,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -170,7 +170,7 @@ class MobileOrderRow extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   color: colors.textHint,
-                                  fontFamily: 'Poppins',
+                                  fontFamily: brandFontFamily,
                                 ),
                               ),
                             ],
@@ -187,7 +187,7 @@ class MobileOrderRow extends StatelessWidget {
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w700,
                                 color: colors.textPrimary,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -197,7 +197,7 @@ class MobileOrderRow extends StatelessWidget {
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: statusColor,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           ],
@@ -229,7 +229,7 @@ class MobileOrderRow extends StatelessWidget {
         fontSize: 12,
         fontWeight: FontWeight.w700,
         color: colors.textSecondary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
     ),
   );

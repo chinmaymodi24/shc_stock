@@ -64,8 +64,11 @@ class DashboardController extends GetxController {
     appColors.purple,
     AppColors.primaryOrange,
     appColors.accent,
-    const Color(0xFF0EA5E9),
-    const Color(0xFF22C55E),
+    // The last two were a fixed sky-blue and green; the whole series now comes
+    // off the brand (secondary / primary / accent / info / success) so a
+    // rebranded deployment gets a matching chart instead of two stray hues.
+    appColors.info,
+    appColors.success,
   ];
 
   @override

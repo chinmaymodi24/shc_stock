@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/theme/brand_controller.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/theme/app_text_styles.dart';
@@ -378,7 +379,7 @@ class _LoginThemeToggle extends StatelessWidget {
       height: 36,
       decoration: BoxDecoration(
         color: colors.iconBgPurple,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(appColors.radius),
         border: Border.all(color: colors.border),
       ),
       child: Row(
@@ -405,7 +406,7 @@ class _TBtn extends StatelessWidget {
     return Tooltip(
       message: label,
       preferBelow: true,
-      textStyle: const TextStyle(fontSize: 11, fontFamily: 'Poppins', color: Colors.white),
+      textStyle: const TextStyle(fontSize: 11, fontFamily: brandFontFamily, color: Colors.white),
       decoration: BoxDecoration(color: const Color(0xFF1A1240), borderRadius: BorderRadius.circular(6)),
       child: InkWell(
         onTap: onTap,
@@ -466,8 +467,14 @@ class LoginForm extends GetView<LoginController> {
             const SizedBox(height: 16),
           ],
 
-          /// TITLE
-          Text('Welcome back', style: headingStyle),
+          /// COMPANY NAME — the buyer's brand, not ours. Obx so applying a
+          /// theme renames the login screen without a reload.
+          Obx(
+            () => Text(
+              Get.find<BrandController>().applied.value.companyName,
+              style: headingStyle,
+            ),
+          ),
 
           const SizedBox(height: 4),
 
@@ -534,23 +541,23 @@ class LoginForm extends GetView<LoginController> {
           vertical: 16,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           borderSide: BorderSide(color: colors.border, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           borderSide: BorderSide(color: colors.border, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           borderSide: BorderSide(color: context.appColors.accent, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           borderSide: const BorderSide(color: Colors.red, width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
       ),
@@ -587,23 +594,23 @@ class LoginForm extends GetView<LoginController> {
             vertical: 16,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(appColors.radius),
             borderSide: BorderSide(color: colors.border, width: 1),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(appColors.radius),
             borderSide: BorderSide(color: colors.border, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(appColors.radius),
             borderSide: BorderSide(color: context.appColors.accent, width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(appColors.radius),
             borderSide: const BorderSide(color: Colors.red, width: 1),
           ),
           focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(appColors.radius),
             borderSide: const BorderSide(color: Colors.red, width: 1.5),
           ),
         ),

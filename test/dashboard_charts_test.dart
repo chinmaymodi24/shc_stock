@@ -25,19 +25,19 @@ import 'package:shc_stock/app/modules/dashboard/widgets/sales_chart.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 final _slices = <CategorySlice>[
-  const CategorySlice(
+  CategorySlice(
     label: 'Ceramic Fiber Products',
     percent: 56,
     color: AppColors.primaryPurple,
     value: 1250000,
   ),
-  const CategorySlice(
+  CategorySlice(
     label: 'Fire & Welding Protection',
     percent: 12,
     color: AppColors.primaryOrange,
     value: 268000,
   ),
-  const CategorySlice(
+  CategorySlice(
     label: 'Mortars & Castables',
     percent: 9,
     color: AppColors.accentPurple,
@@ -74,7 +74,7 @@ const _months = <ChartPoint>[
 
 Widget _host(Widget child, {double width = 380}) {
   return MaterialApp(
-    theme: ThemeData(extensions: const [AppThemeColors.light]),
+    theme: ThemeData(extensions: [AppThemeColors.light]),
     home: Scaffold(
       body: Center(
         child: SizedBox(width: width, child: child),
@@ -101,7 +101,8 @@ class _StubSession extends SessionController {
     id: 1,
     name: 'Chinmay Modi',
     email: 'shc@gmail.com',
-    role: 'Admin',
+    role: 'Super Admin',
+    isSuperAdmin: true,
   );
 }
 
@@ -140,7 +141,7 @@ void main() {
 
       await tester.pumpWidget(
         GetMaterialApp(
-          theme: ThemeData(extensions: const [AppThemeColors.light]),
+          theme: ThemeData(extensions: [AppThemeColors.light]),
           home: const WebDashboardLayout(),
         ),
       );
@@ -220,7 +221,7 @@ void main() {
     testWidgets('line chart reports the nearest point', (tester) async {
       await tester.pumpWidget(
         _host(
-          const SizedBox(
+          SizedBox(
             height: 150,
             child: SalesLineChart(
               data: _months,

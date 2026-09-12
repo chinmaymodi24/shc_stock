@@ -39,7 +39,7 @@ class StatCard extends StatelessWidget {
                     fontSize: compact ? 12 : 13,
                     fontWeight: FontWeight.w500,
                     color: colors.textSecondary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),
@@ -53,7 +53,7 @@ class StatCard extends StatelessWidget {
               fontSize: compact ? 20 : 24,
               fontWeight: FontWeight.w700,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           if (data.change != null) ...[
@@ -66,7 +66,7 @@ class StatCard extends StatelessWidget {
                 color: (data.isPositive ?? true)
                     ? const Color(0xFF22C55E)
                     : const Color(0xFFEF4444),
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],
@@ -92,7 +92,7 @@ class StatCard extends StatelessWidget {
       height: 44,
       decoration: BoxDecoration(
         color: AppColors.primaryOrange.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(appColors.radius),
       ),
       child: Icon(icon, color: AppColors.primaryOrange, size: 22),
     );

@@ -41,7 +41,7 @@ Widget wizSecHeader(
       height: 40,
       decoration: BoxDecoration(
         color: AppColors.primaryOrange.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(appColors.radius),
       ),
       child: Icon(icon, color: AppColors.primaryOrange, size: 20),
     ),
@@ -56,7 +56,7 @@ Widget wizSecHeader(
               fontSize: 15,
               fontWeight: FontWeight.w700,
               color: c.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
           Text(
@@ -64,7 +64,7 @@ Widget wizSecHeader(
             style: TextStyle(
               fontSize: 12,
               color: c.textSecondary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ],
@@ -172,7 +172,7 @@ Widget wizTextField(
             fontSize: 13,
             fontWeight: FontWeight.w500,
             color: c.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         if (req)
@@ -196,13 +196,13 @@ Widget wizTextField(
       style: TextStyle(
         fontSize: 13,
         color: c.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
           color: c.textHint,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
           fontSize: 13,
         ),
         prefixIcon: icon != null
@@ -216,7 +216,7 @@ Widget wizTextField(
         filled: true,
         fillColor: c.inputFill,
         errorText: error,
-        errorStyle: const TextStyle(fontSize: 11, fontFamily: 'Poppins'),
+        errorStyle: TextStyle(fontSize: 11, fontFamily: brandFontFamily),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
@@ -231,10 +231,7 @@ Widget wizTextField(
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: AppColors.primaryOrange,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: AppColors.primaryOrange, width: 1.5),
         ),
       ),
     ),
@@ -262,7 +259,7 @@ Widget wizPwdField(
             fontSize: 13,
             fontWeight: FontWeight.w500,
             color: c.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         if (req)
@@ -283,13 +280,13 @@ Widget wizPwdField(
       style: TextStyle(
         fontSize: 13,
         color: c.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
       decoration: InputDecoration(
         // No dot-string placeholder — an empty field showing "●●●●●●●●" reads
         // as a saved password. Plain wording, whether or not it's masked.
         hintText: hint ?? 'Enter password',
-        hintStyle: TextStyle(color: c.textHint, fontFamily: 'Poppins'),
+        hintStyle: TextStyle(color: c.textHint, fontFamily: brandFontFamily),
         prefixIcon: Icon(
           Icons.lock_outline_rounded,
           size: 17,
@@ -311,7 +308,7 @@ Widget wizPwdField(
         filled: true,
         fillColor: c.inputFill,
         errorText: error,
-        errorStyle: const TextStyle(fontSize: 11, fontFamily: 'Poppins'),
+        errorStyle: TextStyle(fontSize: 11, fontFamily: brandFontFamily),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
@@ -326,10 +323,7 @@ Widget wizPwdField(
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: AppColors.primaryOrange,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: AppColors.primaryOrange, width: 1.5),
         ),
       ),
     ),
@@ -348,7 +342,7 @@ Widget wizDeptDropdown(
         fontSize: 13,
         fontWeight: FontWeight.w500,
         color: c.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
     ),
     const SizedBox(height: 6),
@@ -371,7 +365,7 @@ Widget wizDeptDropdown(
                 'Select department',
                 style: TextStyle(
                   color: c.textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                   fontSize: 13,
                 ),
               ),
@@ -382,7 +376,7 @@ Widget wizDeptDropdown(
           style: TextStyle(
             fontSize: 13,
             color: c.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
           icon: Icon(Icons.keyboard_arrow_down_rounded, color: c.textHint),
           items: kDepts
@@ -413,7 +407,7 @@ Widget wizDatePickerField(
         fontSize: 13,
         fontWeight: FontWeight.w500,
         color: c.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
     ),
     const SizedBox(height: 6),
@@ -428,7 +422,7 @@ Widget wizDatePickerField(
             lastDate: DateTime(2100),
             builder: (ctx, child) => Theme(
               data: Theme.of(ctx).copyWith(
-                colorScheme: const ColorScheme.light(
+                colorScheme: ColorScheme.light(
                   primary: AppColors.primaryOrange,
                   onPrimary: Colors.white,
                 ),
@@ -457,7 +451,7 @@ Widget wizStatusDropdown(
         fontSize: 13,
         fontWeight: FontWeight.w500,
         color: c.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
     ),
     const SizedBox(height: 6),
@@ -477,7 +471,7 @@ Widget wizStatusDropdown(
           style: TextStyle(
             fontSize: 13,
             color: c.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
           icon: Icon(Icons.keyboard_arrow_down_rounded, color: c.textHint),
           items: ['Active', 'Inactive']
@@ -528,7 +522,7 @@ Widget wizSimpleDropdown(
         fontSize: 13,
         fontWeight: FontWeight.w500,
         color: c.textPrimary,
-        fontFamily: 'Poppins',
+        fontFamily: brandFontFamily,
       ),
     ),
     const SizedBox(height: 6),
@@ -548,7 +542,7 @@ Widget wizSimpleDropdown(
           style: TextStyle(
             fontSize: 13,
             color: c.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
           icon: Icon(Icons.keyboard_arrow_down_rounded, color: c.textHint),
           items: items
@@ -590,7 +584,7 @@ Widget wizRoleTab(
         color: active ? AppColors.primaryOrange : c.border,
         width: active ? 1.5 : 1,
       ),
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(appColors.radius),
       color: active
           ? AppColors.primaryOrange.withValues(alpha: 0.04)
           : c.inputFill,
@@ -611,7 +605,7 @@ Widget wizRoleTab(
               fontSize: 13,
               fontWeight: active ? FontWeight.w600 : FontWeight.w400,
               color: active ? AppColors.primaryOrange : c.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -649,7 +643,7 @@ Widget wizInfoBox(
           style: TextStyle(
             fontSize: 12,
             color: isError ? const Color(0xFFEF4444) : c.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ),
@@ -687,7 +681,7 @@ Widget wizRevSection(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: c.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ),
@@ -699,7 +693,7 @@ Widget wizRevSection(
               style: TextStyle(
                 fontSize: 12.5,
                 color: c.textSecondary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
             style: TextButton.styleFrom(
@@ -726,7 +720,7 @@ Widget wizRevRow(String label, String value, AppThemeColors c) => Padding(
           style: TextStyle(
             fontSize: 12,
             color: c.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ),
@@ -738,7 +732,7 @@ Widget wizRevRow(String label, String value, AppThemeColors c) => Padding(
             fontSize: 12.5,
             fontWeight: FontWeight.w500,
             color: c.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ),
@@ -757,7 +751,7 @@ Widget wizPermStat(
   margin: const EdgeInsets.only(bottom: 10),
   decoration: BoxDecoration(
     color: color.withValues(alpha: 0.06),
-    borderRadius: BorderRadius.circular(10),
+    borderRadius: BorderRadius.circular(appColors.radius),
   ),
   child: Row(
     children: [
@@ -769,7 +763,7 @@ Widget wizPermStat(
           style: TextStyle(
             fontSize: 12,
             color: c.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
       ),
@@ -779,7 +773,7 @@ Widget wizPermStat(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: color,
-          fontFamily: 'Poppins',
+          fontFamily: brandFontFamily,
         ),
       ),
     ],
@@ -857,7 +851,7 @@ class _DojFieldState extends State<_DojField> {
                     style: TextStyle(
                       fontSize: 13,
                       color: widget.isEmpty ? c.textHint : c.textPrimary,
-                      fontFamily: 'Poppins',
+                      fontFamily: brandFontFamily,
                     ),
                   ),
                 ),

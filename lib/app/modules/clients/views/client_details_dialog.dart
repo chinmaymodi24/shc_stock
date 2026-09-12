@@ -214,7 +214,7 @@ class ClientDetailsDialog extends StatelessWidget {
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
                           color: colors.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -246,7 +246,9 @@ class ClientDetailsDialog extends StatelessWidget {
                             height: 46,
                             decoration: BoxDecoration(
                               color: client.badgeColor.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(
+                                appColors.radius,
+                              ),
                             ),
                             child: Center(
                               child: Text(
@@ -255,7 +257,7 @@ class ClientDetailsDialog extends StatelessWidget {
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
                                   color: client.badgeColor,
-                                  fontFamily: 'Poppins',
+                                  fontFamily: brandFontFamily,
                                 ),
                               ),
                             ),
@@ -271,7 +273,7 @@ class ClientDetailsDialog extends StatelessWidget {
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
                                     color: colors.textPrimary,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                                 Text(
@@ -280,7 +282,7 @@ class ClientDetailsDialog extends StatelessWidget {
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.primaryOrange,
-                                    fontFamily: 'Poppins',
+                                    fontFamily: brandFontFamily,
                                   ),
                                 ),
                               ],
@@ -359,7 +361,7 @@ class ClientDetailsDialog extends StatelessWidget {
                                       color: isRegistered
                                           ? const Color(0xFF22C55E)
                                           : colors.textSecondary,
-                                      fontFamily: 'Poppins',
+                                      fontFamily: brandFontFamily,
                                     ),
                                   ),
                                 ),
@@ -445,7 +447,7 @@ class ClientDetailsDialog extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12.5,
                                 color: colors.textHint,
-                                fontFamily: 'Poppins',
+                                fontFamily: brandFontFamily,
                               ),
                             ),
                           );
@@ -470,7 +472,7 @@ class ClientDetailsDialog extends StatelessWidget {
                       ),
                       _quickLink(
                         Icons.receipt_long_rounded,
-                        const Color(0xFF6B5CBF),
+                        context.appColors.accent,
                         'Ledger Statement',
                         colors,
                       ),
@@ -499,16 +501,18 @@ class ClientDetailsDialog extends StatelessWidget {
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              appColors.radius,
+                            ),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Edit',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                       ),
@@ -522,7 +526,9 @@ class ClientDetailsDialog extends StatelessWidget {
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 13),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              appColors.radius,
+                            ),
                           ),
                         ),
                         child: Text(
@@ -531,7 +537,7 @@ class ClientDetailsDialog extends StatelessWidget {
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: colors.textPrimary,
-                            fontFamily: 'Poppins',
+                            fontFamily: brandFontFamily,
                           ),
                         ),
                       ),
@@ -552,7 +558,7 @@ class ClientDetailsDialog extends StatelessWidget {
       fontSize: 10.5,
       fontWeight: FontWeight.w700,
       color: colors.textHint,
-      fontFamily: 'Poppins',
+      fontFamily: brandFontFamily,
       letterSpacing: 0.5,
     ),
   );
@@ -574,7 +580,7 @@ class ClientDetailsDialog extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         if (sub != null && sub.isNotEmpty) ...[
@@ -584,7 +590,7 @@ class ClientDetailsDialog extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               color: colors.textSecondary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ],
@@ -656,7 +662,7 @@ class ClientDetailsDialog extends StatelessWidget {
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
                           color: color,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -669,7 +675,7 @@ class ClientDetailsDialog extends StatelessWidget {
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           color: colors.textPrimary,
-                          fontFamily: 'Poppins',
+                          fontFamily: brandFontFamily,
                         ),
                       ),
                     ),
@@ -681,7 +687,7 @@ class ClientDetailsDialog extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11.5,
                     color: colors.textSecondary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ],
@@ -697,7 +703,7 @@ class ClientDetailsDialog extends StatelessWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
               const SizedBox(height: 2),
@@ -706,7 +712,7 @@ class ClientDetailsDialog extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   color: colors.textHint,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ],
@@ -738,7 +744,7 @@ class ClientDetailsDialog extends StatelessWidget {
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
                   color: colors.textPrimary,
-                  fontFamily: 'Poppins',
+                  fontFamily: brandFontFamily,
                 ),
               ),
             ),

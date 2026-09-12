@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
@@ -91,6 +92,7 @@ class StockController extends GetxController {
     String note = '',
     double? rate,
   }) async {
+    if (!requireWrite('Inventory')) return false;
     try {
       final json = await _api.post('/inventory/adjust', {
         'productId': productId,
@@ -107,7 +109,11 @@ class StockController extends GetxController {
       );
       return true;
     } catch (e) {
-      _showError(e is ApiException ? e.message : 'Failed to adjust stock.');
+      _showError(
+        e is ApiException
+            ? shortfallMessage(e) ?? e.message
+            : 'Failed to adjust stock.',
+      );
       return false;
     }
   }
@@ -119,6 +125,7 @@ class StockController extends GetxController {
     String? stockLocation,
     bool? isActive,
   }) async {
+    if (!requireWrite('Inventory')) return false;
     try {
       final json = await _api.put('/inventory/$productId', {
         if (minimumStock != null) 'minimumStock': minimumStock,
@@ -137,6 +144,7 @@ class StockController extends GetxController {
   /// Deletes (undoes) a manual stock adjustment. Purchase/sale movements are
   /// owned by their order — delete the order to reverse those.
   Future<bool> deleteAdjustment(int movementId) async {
+    if (!requireWrite('Inventory')) return false;
     try {
       final json = await _api.deleteJson('/inventory/movements/$movementId');
       _replaceItem(StockItemModel.fromJson(json as Map<String, dynamic>));
@@ -151,6 +159,9 @@ class StockController extends GetxController {
 
   /// Recent stock movements, newest first — the audit trail behind a row.
   Future<List<StockMovement>> fetchMovements({int? productId}) async {
+    // The ledger is Inventory data. Someone opening a product from the
+    // Products page without Inventory access simply sees no adjustments.
+    if (!canReadModule('Inventory')) return [];
     try {
       final q = productId == null ? '' : '?productId=$productId';
       final data = await _api.get('/inventory/movements$q') as List<dynamic>;

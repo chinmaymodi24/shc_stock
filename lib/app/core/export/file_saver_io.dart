@@ -48,3 +48,11 @@ Future<Directory> _ensure(Directory directory) async {
   if (!await directory.exists()) await directory.create(recursive: true);
   return directory;
 }
+
+/// No print API on desktop or mobile without a plugin, and adding one would
+/// force a native rebuild. The caller saves the PDF and says where it went.
+Future<bool> printPdfBytes(String filename, Uint8List bytes) async => false;
+
+/// Likewise for launching a URL — `url_launcher` is a plugin. The caller
+/// copies the link to the clipboard instead.
+Future<bool> openExternalUrl(String url) async => false;

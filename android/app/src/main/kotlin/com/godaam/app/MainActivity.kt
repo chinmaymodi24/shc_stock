@@ -1,4 +1,4 @@
-package com.example.shc_stock
+package com.godaam.app
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
@@ -171,6 +172,7 @@ class TransactionsController extends GetxController {
   }
 
   Future<void> setStatus(String id, TransactionStatus status) async {
+    if (!requireWrite('Transactions')) return;
     try {
       final labels = {
         TransactionStatus.received: 'Received',

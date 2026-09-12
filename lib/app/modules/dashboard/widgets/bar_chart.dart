@@ -143,7 +143,7 @@ class _SimpleBarChartState extends State<SimpleBarChart> {
                     color: isHovered
                         ? colors.textPrimary
                         : colors.textSecondary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ),

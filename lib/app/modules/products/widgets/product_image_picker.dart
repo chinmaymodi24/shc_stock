@@ -138,7 +138,7 @@ class ProductImagePicker extends StatelessWidget {
             style: TextStyle(
               fontSize: 10.5,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ],

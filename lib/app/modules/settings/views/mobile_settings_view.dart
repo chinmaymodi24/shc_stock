@@ -1,3 +1,5 @@
+import 'package:shc_stock/app/modules/settings/views/settings_tab_gate.dart';
+import 'package:shc_stock/app/modules/settings/views/billing/billing_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -5,6 +7,7 @@ import 'package:shc_stock/app/core/theme/theme_controller.dart';
 import 'package:shc_stock/app/core/theme/theme_switch_helper.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
+import 'package:shc_stock/app/modules/settings/views/appearance/appearance_tab.dart';
 import 'package:shc_stock/app/shared/widgets/async_button.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 
@@ -18,7 +21,13 @@ import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 class MobileSettingsView extends GetView<SettingsController> {
   const MobileSettingsView({super.key});
 
-  static const _titles = ['Preferences', 'Security', 'Notifications'];
+  static const _titles = [
+    'Preferences',
+    'Security',
+    'Notifications',
+    'Appearance',
+    'Billing',
+  ];
 
   String get _title {
     final i = controller.mobileTab.value;
@@ -54,7 +63,7 @@ class MobileSettingsView extends GetView<SettingsController> {
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ),
@@ -77,14 +86,20 @@ class MobileSettingsView extends GetView<SettingsController> {
   }
 
   Widget _buildContent(BuildContext context, AppThemeColors colors) {
+    final Widget content;
     switch (controller.mobileTab.value) {
       case 1:
-        return _securityTab(colors);
+        content = _securityTab(colors);
+      case 3:
+        content = const AppearanceTab();
+      case 4:
+        content = const BillingTab();
       case 2:
-        return _notificationsTab(colors);
+        content = _notificationsTab(colors);
       default:
-        return _preferencesTab(context, colors);
+        content = _preferencesTab(context, colors);
     }
+    return SettingsTabGate(tab: _title, child: content);
   }
 
   // ── Preferences ─────────────────────────────────────────────────
@@ -99,7 +114,7 @@ class MobileSettingsView extends GetView<SettingsController> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         const SizedBox(height: 2),
@@ -108,7 +123,7 @@ class MobileSettingsView extends GetView<SettingsController> {
           style: TextStyle(
             fontSize: 12,
             color: colors.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         const SizedBox(height: 12),
@@ -156,7 +171,7 @@ class MobileSettingsView extends GetView<SettingsController> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         const SizedBox(height: 8),
@@ -193,7 +208,7 @@ class MobileSettingsView extends GetView<SettingsController> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         const SizedBox(height: 2),
@@ -203,7 +218,7 @@ class MobileSettingsView extends GetView<SettingsController> {
           style: TextStyle(
             fontSize: 12,
             color: colors.textSecondary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         const SizedBox(height: 8),
@@ -379,7 +394,7 @@ class MobileSettingsView extends GetView<SettingsController> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
         ),
         const SizedBox(height: 7),
@@ -390,14 +405,14 @@ class MobileSettingsView extends GetView<SettingsController> {
           style: TextStyle(
             fontSize: 13.5,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
               fontSize: 13.5,
               color: colors.textHint,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(
@@ -420,7 +435,7 @@ class MobileSettingsView extends GetView<SettingsController> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
+              borderSide: BorderSide(
                 color: AppColors.primaryOrange,
                 width: 1.5,
               ),
@@ -452,7 +467,7 @@ class MobileSettingsView extends GetView<SettingsController> {
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: colors.textPrimary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -461,7 +476,7 @@ class MobileSettingsView extends GetView<SettingsController> {
                   style: TextStyle(
                     fontSize: 12.5,
                     color: colors.textSecondary,
-                    fontFamily: 'Poppins',
+                    fontFamily: brandFontFamily,
                   ),
                 ),
               ],
@@ -492,14 +507,14 @@ class MobileSettingsView extends GetView<SettingsController> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(appColors.radius),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         decoration: BoxDecoration(
           color: selected
               ? AppColors.primaryOrange.withValues(alpha: 0.08)
               : colors.surface,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
           border: Border.all(
             color: selected ? AppColors.primaryOrange : colors.border,
             width: selected ? 1.5 : 1,
@@ -517,7 +532,7 @@ class MobileSettingsView extends GetView<SettingsController> {
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: selected ? AppColors.primaryOrange : colors.textPrimary,
-                fontFamily: 'Poppins',
+                fontFamily: brandFontFamily,
               ),
             ),
           ],
@@ -557,7 +572,7 @@ class MobileSettingsView extends GetView<SettingsController> {
           style: TextStyle(
             fontSize: 13,
             color: colors.textPrimary,
-            fontFamily: 'Poppins',
+            fontFamily: brandFontFamily,
           ),
           items: items
               .map(
@@ -582,12 +597,12 @@ class MobileSettingsView extends GetView<SettingsController> {
         : colors.inputFill;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(appColors.radius),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(appColors.radius),
         ),
         child: Center(
           child: Text(
@@ -596,7 +611,7 @@ class MobileSettingsView extends GetView<SettingsController> {
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: colors.textPrimary,
-              fontFamily: 'Poppins',
+              fontFamily: brandFontFamily,
             ),
           ),
         ),
