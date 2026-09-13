@@ -304,7 +304,8 @@ void main() {
   testWidgets('Reports renders every section with formatted money', (
     tester,
   ) async {
-    Get.put<ReportsController>(_StubReports());
+    // The page opens on Analytics; this test is about the snapshot tab.
+    Get.put<ReportsController>(_StubReports()).tab.value = 0;
     await _pump(tester, const ReportsView());
 
     expect(find.text('Reports'), findsWidgets);

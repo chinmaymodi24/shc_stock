@@ -9,8 +9,10 @@ ExportEntityConfig<ClientModel> clientsExportConfig(ClientsController c) {
     entityKey: 'clients',
     entityLabel: 'Clients',
     rowNoun: 'clients',
-    filteredRows: () => c.filteredClients,
-    allRows: () => c.clients.toList(),
+    // Filled by ClientsController.loadExportRows before the menu opens; the
+    // table itself only ever holds the page on screen.
+    filteredRows: () => c.exportRows.toList(),
+    allRows: () => c.exportAllRows.toList(),
     defaultColumnKeys: const ['name', 'code', 'phone', 'state', 'gstin'],
     presets: const [
       ExportColumnPreset('Contact sheet', [

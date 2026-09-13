@@ -2,6 +2,8 @@ const express = require('express');
 const prisma = require('../prismaClient');
 const { stockStatus } = require('../stockService');
 const { getAppSettings } = require('../appSettings');
+const { actorName } = require('../auth/middleware');
+const { listResponse } = require('../pagination');
 
 const router = express.Router();
 
@@ -17,7 +19,7 @@ const productInclude = {
   subCategory: true,
 };
 
-function toWriteData(body) {
+function toWriteData(body, actor) {
   const {
     name,
     sku,
@@ -35,7 +37,6 @@ function toWriteData(body) {
     description,
     taxPercent,
     stockLocation,
-    modifiedBy,
     densityVariants,
     boardVariants,
     thicknessVariants,
@@ -60,7 +61,7 @@ function toWriteData(body) {
     description: description || null,
     taxPercent: taxPercent != null ? Number(taxPercent) : 18.0,
     stockLocation: stockLocation || 'Main Warehouse',
-    modifiedBy: modifiedBy || 'Admin',
+    modifiedBy: actor,
     modifiedAt: new Date(),
     densityVariants: densityVariants || [],
     boardVariants: boardVariants || [],
@@ -74,14 +75,17 @@ function toWriteData(body) {
 router.get('/', async (req, res, next) => {
   try {
     // Last added / modified first (updatedAt covers both).
-    const [{ lowStockThreshold }, products] = await Promise.all([
-      getAppSettings(),
-      prisma.product.findMany({
+    const { lowStockThreshold } = await getAppSettings();
+    res.json(await listResponse({
+      query: req.query,
+      findMany: (page) => prisma.product.findMany({
         orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
         include: productInclude,
+        ...page,
       }),
-    ]);
-    res.json(products.map((p) => withStockStatus(p, lowStockThreshold)));
+      count: () => prisma.product.count(),
+      transform: (rows) => rows.map((p) => withStockStatus(p, lowStockThreshold)),
+    }));
   } catch (err) {
     next(err);
   }
@@ -99,7 +103,7 @@ router.post('/', async (req, res, next) => {
     if (!unit) return res.status(400).json({ error: 'unit is required' });
 
     const product = await prisma.product.create({
-      data: toWriteData(req.body),
+      data: toWriteData(req.body, actorName(req)),
       include: productInclude,
     });
     const { lowStockThreshold } = await getAppSettings();
@@ -117,7 +121,7 @@ router.put('/:id', async (req, res, next) => {
     const id = Number(req.params.id);
     const product = await prisma.product.update({
       where: { id },
-      data: toWriteData(req.body),
+      data: toWriteData(req.body, actorName(req)),
       include: productInclude,
     });
     const { lowStockThreshold } = await getAppSettings();

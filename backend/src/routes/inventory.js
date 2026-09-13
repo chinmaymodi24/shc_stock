@@ -7,6 +7,8 @@ const {
   stockStatus,
 } = require('../stockService');
 const { getAppSettings } = require('../appSettings');
+const { actorName } = require('../auth/middleware');
+const { listResponse } = require('../pagination');
 
 const router = express.Router();
 
@@ -45,14 +47,17 @@ router.get('/', async (req, res, next) => {
     // Newest activity first: whatever was last added or modified (a manual
     // adjustment, a purchase/sale movement, a reorder-setting edit) tops the
     // list. Rows that never carried a modifiedAt fall back to id order.
-    const [{ lowStockThreshold }, products] = await Promise.all([
-      getAppSettings(),
-      prisma.product.findMany({
+    const { lowStockThreshold } = await getAppSettings();
+    res.json(await listResponse({
+      query: req.query,
+      findMany: (page) => prisma.product.findMany({
         orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
         include: productInclude,
+        ...page,
       }),
-    ]);
-    res.json(products.map((p) => toInventoryRow(p, lowStockThreshold)));
+      count: () => prisma.product.count(),
+      transform: (rows) => rows.map((p) => toInventoryRow(p, lowStockThreshold)),
+    }));
   } catch (err) {
     next(err);
   }
@@ -118,7 +123,7 @@ router.post('/adjust', async (req, res, next) => {
         refId: null,
         reference: req.body.reference || 'Manual adjustment',
         note: req.body.note || '',
-        createdBy: req.body.createdBy || 'Admin',
+        createdBy: actorName(req),
         rate,
       });
       // ADJUST loses the direction, so keep it on the row for the ledger view.
@@ -153,7 +158,7 @@ router.put('/:productId', async (req, res, next) => {
       data.stockLocation = String(req.body.stockLocation).trim();
     }
     if (req.body.isActive !== undefined) data.isActive = req.body.isActive === true;
-    if (req.body.modifiedBy) data.modifiedBy = String(req.body.modifiedBy);
+    data.modifiedBy = actorName(req);
 
     const product = await prisma.product.update({
       where: { id },

@@ -34,17 +34,6 @@ Widget _harness(AddPurchaseController c) {
                         ),
                         Expanded(
                           child: AppSmallNumber(
-                            key: const Key('avgCont'),
-                            value: row.avgContPerPkg,
-                            colors: colors,
-                            onChanged: (v) {
-                              row.avgContPerPkg = v;
-                              c.notifyItemsChanged();
-                            },
-                          ),
-                        ),
-                        Expanded(
-                          child: AppSmallNumber(
                             key: ValueKey('netPrice_${row.version}'),
                             value: row.netPrice,
                             colors: colors,
@@ -96,13 +85,11 @@ void main() {
     await tester.pump();
 
     // Net price alone must already move the amount: a new row defaults to
-    // 1 pkg x 1 per pkg, so the price is never swallowed by a zero quantity.
+    // one unit, so the price is never swallowed by a zero quantity.
     expect(tester.widget<Text>(find.byKey(const Key('amount'))).data, 'AMT:48');
     expect(tester.widget<Text>(find.byKey(const Key('sub'))).data, 'SUB:48');
 
-    await tester.enterText(find.byKey(const Key('noPkg')), '2');
-    await tester.pump();
-    await tester.enterText(find.byKey(const Key('avgCont')), '3');
+    await tester.enterText(find.byKey(const Key('noPkg')), '6');
     await tester.pump();
 
     expect(c.items.first.totalQty, 6);
@@ -127,7 +114,7 @@ void main() {
     await tester.pump();
 
     final field = tester.widget<TextFormField>(
-      find.byType(TextFormField).at(2),
+      find.byType(TextFormField).at(1),
     );
     expect(field.initialValue, '38.00');
     expect(

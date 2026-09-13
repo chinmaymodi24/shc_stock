@@ -32,6 +32,8 @@ class _OfflineClientsController extends ClientsController {
 
   @override
   Future<void> fetchClients() async {
+    // The real fetch fills both: the page, and how many rows match overall.
+    totalFiltered.value = 2;
     clients.assignAll(const [
       ClientModel(
         id: '1',

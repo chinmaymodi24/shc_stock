@@ -20,6 +20,21 @@ class _StubClients extends ClientsController {
   Future<void> fetchClients() async {}
   @override
   Future<void> fetchStats() async {}
+  @override
+  Future<void> fetchDirectory() async {}
+  @override
+  Future<void> fetchFilterOptions() async {}
+
+  /// The field suggests from the directory and then asks for the full record.
+  /// Offline, that lookup is answered from the same sample rows.
+  @override
+  Future<ClientModel?> findByName(String name) async {
+    final wanted = name.trim().toLowerCase();
+    for (final c in _sampleClients) {
+      if (c.name.trim().toLowerCase() == wanted) return c;
+    }
+    return null;
+  }
 }
 
 ClientModel _client(
@@ -57,7 +72,19 @@ void main() {
   setUp(() {
     final clients = _StubClients();
     Get.put<ClientsController>(clients, permanent: true);
-    clients.clients.assignAll(_sampleClients);
+    // The field reads the directory now — the Clients list itself only ever
+    // holds the page the server returned.
+    clients.directory.assignAll(
+      _sampleClients.map(
+        (c) => ClientRef(
+          id: c.id,
+          code: c.code,
+          name: c.name,
+          state: c.state,
+          gstin: c.gstin,
+        ),
+      ),
+    );
   });
 
   tearDown(Get.reset);

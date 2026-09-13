@@ -1,5 +1,7 @@
 const express = require('express');
 const prisma = require('../prismaClient');
+const { actorName } = require('../auth/middleware');
+const { listResponse } = require('../pagination');
 const {
   InsufficientStockError,
   toStockLines,
@@ -27,14 +29,14 @@ function toItemsData(items) {
   }));
 }
 
-function orderFields(body) {
+function orderFields(body, actor) {
   return {
     supplier: String(body.supplier || '').trim(),
     supplierIcon: body.supplierIcon || '',
     date: new Date(body.date),
     amount: Number(body.amount) || 0,
     status: body.status || 'Pending',
-    modifiedBy: body.modifiedBy || 'Admin',
+    modifiedBy: actor,
     modifiedAt: new Date(),
     supplierAddress: body.supplierAddress || '',
     buyerGst: body.buyerGst || '',
@@ -66,11 +68,15 @@ router.get('/', async (req, res, next) => {
   try {
     // Last added / modified first — not the order date, so a freshly entered
     // or edited PO tops the list even if it is back-dated.
-    const orders = await prisma.purchaseOrder.findMany({
-      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-      include: orderInclude,
-    });
-    res.json(orders);
+    res.json(await listResponse({
+      query: req.query,
+      findMany: (page) => prisma.purchaseOrder.findMany({
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        include: orderInclude,
+        ...page,
+      }),
+      count: () => prisma.purchaseOrder.count(),
+    }));
   } catch (err) {
     next(err);
   }
@@ -88,7 +94,7 @@ router.post('/', async (req, res, next) => {
     const order = await prisma.$transaction(async (tx) => {
       const created = await tx.purchaseOrder.create({
         data: {
-          ...orderFields(req.body),
+          ...orderFields(req.body, actorName(req)),
           poNumber: String(req.body.poNumber).trim(),
           items: { create: items },
         },
@@ -132,7 +138,7 @@ router.put('/:id', async (req, res, next) => {
       await reverseStockFor(tx, REF_TYPE, id);
       await tx.purchaseItem.deleteMany({ where: { purchaseOrderId: id } });
 
-      const data = orderFields(req.body);
+      const data = orderFields(req.body, actorName(req));
       const poNumber = String(req.body.poNumber || '').trim();
       if (poNumber) data.poNumber = poNumber;
 

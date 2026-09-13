@@ -62,6 +62,15 @@ class WebSidebar extends StatelessWidget {
       label: 'Reports',
       route: AppRoutes.reports,
     ),
+    // Sits under Reports because it reads the same figures from the other
+    // end: Reports lists statements to open one at a time, Analytics is the
+    // dashboard over all of them. Hidden from anyone without summary rights
+    // on Reports - see canOpenRoute.
+    _NavItem(
+      icon: Icons.insights_rounded,
+      label: 'Analytics',
+      route: AppRoutes.reportsInsights,
+    ),
     _NavItem(
       icon: Icons.settings_outlined,
       label: 'Settings',
@@ -82,6 +91,7 @@ class WebSidebar extends StatelessWidget {
     // fully wired to /api/stats/reports (see ReportsController) so it
     // belongs here same as every other finished module.
     AppRoutes.reports,
+    AppRoutes.reportsInsights,
     AppRoutes.users,
     AppRoutes.settings,
   };
@@ -98,10 +108,30 @@ class WebSidebar extends StatelessWidget {
     return _navItems.where((item) => canOpenRoute(item.route)).toList();
   }
 
+  /// The entry [current] belongs to: the longest nav route that prefixes it.
+  /// A plain `startsWith` lit up two entries at once once Analytics arrived,
+  /// because `/reports` prefixes `/reports/insights`.
+  ///
+  /// Sub-routes still light their parent - `/products/add` is Products - so
+  /// the nav does not go blank on an add or edit screen.
+  @visibleForTesting
+  static String? activeNavRoute(String current, List<String> routes) {
+    String? best;
+    for (final route in routes) {
+      final owns = current == route || current.startsWith('$route/');
+      if (owns && (best == null || route.length > best.length)) best = route;
+    }
+    return best;
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentRoute = Get.currentRoute;
     final navItems = _visibleItems();
+    final activeRoute = activeNavRoute(
+      currentRoute,
+      navItems.map((i) => i.route).toList(),
+    );
 
     final colors = context.appColors;
     return Container(
@@ -134,7 +164,7 @@ class WebSidebar extends StatelessWidget {
               itemCount: navItems.length,
               itemBuilder: (context, index) {
                 final item = navItems[index];
-                final isActive = currentRoute.startsWith(item.route);
+                final isActive = item.route == activeRoute;
                 final isEnabled = _enabled.contains(item.route);
                 return _SidebarNavItem(
                   item: item,

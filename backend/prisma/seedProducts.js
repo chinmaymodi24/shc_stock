@@ -23,8 +23,6 @@ const products = [
       'Standard grade ceramic fiber blanket for high temperature insulation up to 1260°C.',
     taxPercent: 18,
     densityVariants: ['64 kg/m³'],
-    modifiedBy: 'Chinmay Modi',
-    modifiedAt: new Date(2026, 6, 10, 14, 40),
   },
   {
     name: 'CF Blanket 1260°C (96 kg/m³)',
@@ -40,8 +38,6 @@ const products = [
     hsnCode: '68061000',
     taxPercent: 18,
     densityVariants: ['96 kg/m³'],
-    modifiedBy: 'Riya Patel',
-    modifiedAt: new Date(2026, 5, 30, 9, 2),
   },
   {
     name: 'CF Blanket 1260°C (128 kg/m³)',
@@ -410,7 +406,10 @@ async function main() {
         description: p.description || null,
         taxPercent: p.taxPercent ?? 18,
         modifiedBy: p.modifiedBy || 'Admin',
-        modifiedAt: p.modifiedAt || null,
+        // Stamp the seed run itself. Leaving this null made every seeded row
+        // render an empty "Modified By" cell, even though the row plainly was
+        // put there by the admin doing the setup.
+        modifiedAt: p.modifiedAt || new Date(),
         densityVariants: p.densityVariants || [],
         boardVariants: p.boardVariants || [],
         thicknessVariants: p.thicknessVariants || [],

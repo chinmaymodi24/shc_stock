@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const prisma = require('../prismaClient');
 const { sign } = require('../auth/token');
+const { retryAfterMs, recordFailure, recordSuccess } = require('../auth/rateLimit');
 
 const router = express.Router();
 
@@ -50,16 +51,26 @@ router.post('/login', async (req, res, next) => {
       return res.status(400).json({ error: 'password is required' });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: email.trim().toLowerCase() },
-      select: { ...sessionSelect, passwordHash: true },
-    });
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+    // Counted per caller and per account - see auth/rateLimit.js.
+    const identity = email.trim().toLowerCase();
+    const keys = [`ip:${req.ip}`, `account:${identity}`];
+    const wait = retryAfterMs(keys);
+    if (wait > 0) {
+      const minutes = Math.max(1, Math.ceil(wait / 60000));
+      res.setHeader('Retry-After', Math.ceil(wait / 1000));
+      return res.status(429).json({
+        error: `Too many sign-in attempts. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`,
+      });
     }
 
-    const matches = await bcrypt.compare(password, user.passwordHash);
-    if (!matches) {
+    const user = await prisma.user.findUnique({
+      where: { email: identity },
+      select: { ...sessionSelect, passwordHash: true },
+    });
+    // A missing account and a wrong password fail the same way, so the
+    // response never reveals which addresses are registered.
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+      recordFailure(keys);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -69,6 +80,7 @@ router.post('/login', async (req, res, next) => {
       });
     }
 
+    recordSuccess(keys);
     await prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },

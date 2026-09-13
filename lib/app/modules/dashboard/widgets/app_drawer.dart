@@ -68,6 +68,11 @@ class AppDrawer extends StatelessWidget {
       route: AppRoutes.reports,
     ),
     _DrawerItem(
+      icon: Icons.insights_rounded,
+      label: 'Analytics',
+      route: AppRoutes.reportsInsights,
+    ),
+    _DrawerItem(
       icon: Icons.person_outline_rounded,
       label: 'Profile',
       route: AppRoutes.settings,
@@ -84,6 +89,7 @@ class AppDrawer extends StatelessWidget {
     AppRoutes.sales,
     AppRoutes.clients,
     AppRoutes.reports,
+    AppRoutes.reportsInsights,
     AppRoutes.users,
     AppRoutes.settings,
   };

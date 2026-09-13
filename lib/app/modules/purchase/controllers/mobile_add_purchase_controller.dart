@@ -24,27 +24,19 @@ class MobilePurchaseItemRow {
   String grade = '';
   String density = '';
 
-  // Default to a single unit per row. Amount is (noPkg * avgContPerPkg) *
-  // netPrice, so starting these at 0 pinned every row's amount — and the
-  // whole invoice total — to ₹0 until the user filled in both boxes, which
-  // read as "the price isn't updating". 1 x 1 makes the selected product's
-  // price show up immediately and still scales once real packing is entered.
+  // Defaults to one, not zero: amount is totalQty * netPrice, so a zero here
+  // pinned every row's amount — and the whole invoice total — to ₹0 until the
+  // box was filled in, which read as "the price isn't updating".
   double noPkg = 1;
-  double avgContPerPkg = 1;
 
   String uom = '';
   double netPrice = 0;
 
-  double get totalQty => noPkg * avgContPerPkg;
-
-  /// Same as the web form: the total is editable and steppable, keeping the
-  /// per-pack figure and back-solving the pack count so the three boxes
-  /// never contradict each other.
-  set totalQty(double v) {
-    final per = avgContPerPkg <= 0 ? 1.0 : avgContPerPkg;
-    avgContPerPkg = per;
-    noPkg = (v < 0 ? 0 : v) / per;
-  }
+  /// Same as the web form: what the API stores as the line's `qty`. The
+  /// average contents-per-pack multiplier that used to sit between the two
+  /// was dropped — it never round-tripped, so the total is the pack count.
+  double get totalQty => noPkg;
+  set totalQty(double v) => noPkg = v < 0 ? 0 : v;
 
   double get amount => totalQty * netPrice;
 }

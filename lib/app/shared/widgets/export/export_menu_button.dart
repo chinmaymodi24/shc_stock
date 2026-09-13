@@ -32,12 +32,19 @@ class ExportMenuButton extends StatefulWidget {
   /// mobile AppBar's action slot. The menu it opens is the same one.
   final bool iconOnly;
 
+  /// Awaited before the menu opens, for a list whose rows are not all in
+  /// memory. [ExportSource] reads its rows synchronously, so a server-paged
+  /// page uses this to pull everything matching the current query first -
+  /// otherwise an export would silently cover only the page on screen.
+  final Future<void> Function()? onBeforeOpen;
+
   const ExportMenuButton({
     super.key,
     required this.source,
     this.filled = false,
     this.showMoreOptions = true,
     this.iconOnly = false,
+    this.onBeforeOpen,
   });
 
   @override
@@ -58,9 +65,28 @@ class _ExportMenuButtonState extends State<ExportMenuButton> {
     super.dispose();
   }
 
-  void _toggle() {
-    _open.value = !_open.value;
-    _overlay.toggle();
+  /// True only while [ExportMenuButton.onBeforeOpen] is in flight, so the
+  /// button can show it is busy instead of looking dead.
+  final _preparing = false.obs;
+
+  Future<void> _toggle() async {
+    if (_open.value) {
+      _close();
+      return;
+    }
+    final prepare = widget.onBeforeOpen;
+    if (prepare != null) {
+      if (_preparing.value) return;
+      _preparing.value = true;
+      try {
+        await prepare();
+      } finally {
+        _preparing.value = false;
+      }
+      if (!mounted) return;
+    }
+    _open.value = true;
+    _overlay.show();
   }
 
   void _close() {

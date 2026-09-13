@@ -15,7 +15,7 @@ const transactions = [
     poNumber: '#4421',
     date: new Date(2026, 6, 10),
     status: 'Received',
-    modifiedBy: 'Chinmay Modi',
+    modifiedBy: 'Admin',
     modifiedAt: new Date(2026, 6, 10, 14, 40),
   },
   {
@@ -25,7 +25,7 @@ const transactions = [
     poNumber: '#4419',
     date: new Date(2026, 6, 10),
     status: 'Shipped',
-    modifiedBy: 'Riya Patel',
+    modifiedBy: 'Admin',
     modifiedAt: new Date(2026, 6, 10, 11, 5),
   },
   {
@@ -35,7 +35,7 @@ const transactions = [
     poNumber: '#4425',
     date: new Date(2026, 6, 9),
     status: 'Pending',
-    modifiedBy: 'Chinmay Modi',
+    modifiedBy: 'Admin',
     modifiedAt: new Date(2026, 6, 9, 9, 30),
   },
   {
@@ -45,7 +45,7 @@ const transactions = [
     poNumber: '#4408',
     date: new Date(2026, 6, 8),
     status: 'Delivered',
-    modifiedBy: 'Riya Patel',
+    modifiedBy: 'Admin',
     modifiedAt: new Date(2026, 6, 8, 16, 12),
   },
   {
@@ -55,7 +55,7 @@ const transactions = [
     poNumber: '#4402',
     date: new Date(2026, 6, 6),
     status: 'Received',
-    modifiedBy: 'Chinmay Modi',
+    modifiedBy: 'Admin',
     modifiedAt: new Date(2026, 6, 6, 13, 47),
   },
   {
@@ -65,7 +65,7 @@ const transactions = [
     poNumber: '#4396',
     date: new Date(2026, 6, 4),
     status: 'Delivered',
-    modifiedBy: 'Riya Patel',
+    modifiedBy: 'Admin',
     modifiedAt: new Date(2026, 6, 4, 10, 58),
   },
 ];

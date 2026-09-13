@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/modules/reports/models/report_catalog.dart';
@@ -73,10 +74,23 @@ class _ReportsCatalogViewState extends State<ReportsCatalogView> {
         if (!wide) {
           return Scaffold(
             backgroundColor: colors.background,
+            // This page had no drawer, so a phone that reached the catalog
+            // could only go back - every other module is a hamburger away.
+            drawer: const AppDrawer(activeRoute: AppRoutes.reports),
             appBar: AppBar(
               backgroundColor: colors.surface,
               elevation: 0,
               centerTitle: true,
+              leading: Builder(
+                builder: (ctx) => IconButton(
+                  icon: Icon(
+                    Icons.menu_rounded,
+                    color: colors.textPrimary,
+                    size: 24,
+                  ),
+                  onPressed: () => Scaffold.of(ctx).openDrawer(),
+                ),
+              ),
               title: Text(
                 'Reports',
                 style: TextStyle(

@@ -45,7 +45,6 @@ class _AddProductDialogState extends State<AddProductDialog> {
   late final TextEditingController _hsnCtrl;
   late final TextEditingController _costPriceCtrl;
   late final TextEditingController _sellPriceCtrl;
-  late final TextEditingController _stockCtrl;
   // Dialog-local reactive selects — kept as Rx on the persistent State
   // object (not setState) so only the dependent dropdowns repaint.
   final _category = ''.obs;
@@ -80,9 +79,6 @@ class _AddProductDialogState extends State<AddProductDialog> {
     _sellPriceCtrl = TextEditingController(
       text: p == null ? '' : p.sellingPrice.toStringAsFixed(0),
     );
-    _stockCtrl = TextEditingController(
-      text: p == null ? '' : p.currentStock.toString(),
-    );
     _category.value = p?.categoryName ?? '';
     _subCategory.value = p?.subCategory ?? '';
     _unit.value = p?.unit ?? '';
@@ -102,7 +98,6 @@ class _AddProductDialogState extends State<AddProductDialog> {
     _hsnCtrl.dispose();
     _costPriceCtrl.dispose();
     _sellPriceCtrl.dispose();
-    _stockCtrl.dispose();
     _category.close();
     _subCategory.close();
     _unit.close();
@@ -186,7 +181,11 @@ class _AddProductDialogState extends State<AddProductDialog> {
     }
 
     final c = Get.find<ProductsController>();
-    final stock = int.tryParse(_stockCtrl.text.trim()) ?? 0;
+    // Stock is not edited here. A new product starts at zero and fills up
+    // through purchases - the stock_movements ledger owns currentStock, and
+    // nothing writes it directly. On edit the product's own stock figures go
+    // straight back out, because /products rewrites every field it is given:
+    // leaving them out zeroes them rather than keeping them.
     final ok = _isEdit
         ? await c.updateProduct(
             id: widget.product!.id,
@@ -198,7 +197,8 @@ class _AddProductDialogState extends State<AddProductDialog> {
             imageUrl: imageUrl,
             sellingPrice: sellPrice,
             costPrice: costPrice,
-            currentStock: stock,
+            currentStock: widget.product!.currentStock,
+            minimumStock: widget.product!.minimumStock,
             hsnCode: _hsnCtrl.text.trim(),
           )
         : await c.addProduct(
@@ -210,7 +210,6 @@ class _AddProductDialogState extends State<AddProductDialog> {
             imageUrl: imageUrl,
             sellingPrice: sellPrice,
             costPrice: costPrice,
-            currentStock: stock,
             hsnCode: _hsnCtrl.text.trim(),
           );
     _saving.value = false;
@@ -442,16 +441,6 @@ class _AddProductDialogState extends State<AddProductDialog> {
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  _Label(text: 'Stock Qty', colors: colors),
-                  const SizedBox(height: 6),
-                  _TextBox(
-                    controller: _stockCtrl,
-                    hint: '0',
-                    colors: colors,
-                    numeric: true,
                   ),
                   const SizedBox(height: 20),
 

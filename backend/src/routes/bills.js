@@ -1,5 +1,6 @@
 const express = require('express');
 const prisma = require('../prismaClient');
+const { actorName } = require('../auth/middleware');
 
 const router = express.Router();
 
@@ -147,7 +148,7 @@ router.post('/', async (req, res, next) => {
     if (existing) return res.json(shape(existing));
 
     const prefix = str(req.body.prefix, 'INV').toUpperCase() || 'INV';
-    const actor = str(req.body.actor, 'Admin') || 'Admin';
+    const actor = actorName(req);
     const issuedOn = order.invoiceDate ?? new Date();
 
     // The sale may already carry an invoice number typed into the Add Sale
@@ -247,7 +248,7 @@ router.post('/:id/events', async (req, res, next) => {
         billId: id,
         type,
         note: str(req.body.note),
-        actor: str(req.body.actor, 'Admin') || 'Admin',
+        actor: actorName(req),
       },
     });
     const bill = await prisma.bill.findUnique({

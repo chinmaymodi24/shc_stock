@@ -92,7 +92,6 @@ void main() {
     expect(first.hsn, '6806');
     expect(first.uom, 'ROLL');
     expect(first.netPrice, 40);
-    // qty is stored as one number and split back into packs x per-pack.
     expect(first.totalQty, 6);
     expect(first.amount, 240);
 
@@ -101,18 +100,17 @@ void main() {
   });
 
   group('total qty is editable', () {
-    test('setting a total back-solves the pack count', () {
+    // Avg Cont/Pkg is gone, so the two boxes are one number: whichever is
+    // typed, the other follows and the amount uses it.
+    test('the total and the pack count stay one figure', () {
       final row = PurchaseItemRow()
         ..noPkg = 2
-        ..avgContPerPkg = 5
         ..netPrice = 10;
-      expect(row.totalQty, 10);
+      expect(row.totalQty, 2);
 
       row.totalQty = 25;
 
-      // Per-pack is kept and packs are re-derived, so the three boxes agree.
-      expect(row.avgContPerPkg, 5);
-      expect(row.noPkg, 5);
+      expect(row.noPkg, 25);
       expect(row.totalQty, 25);
       expect(row.amount, 250);
     });
@@ -121,22 +119,18 @@ void main() {
       final row = PurchaseItemRow()..netPrice = 40;
       row.totalQty = 7;
       expect(row.totalQty, 7);
-      expect(row.noPkg, 7, reason: 'per-pack is 1, so packs carry the total');
       expect(row.amount, 280);
     });
 
-    test(
-      'negatives floor at zero and a zero per-pack cannot divide by zero',
-      () {
-        final row = PurchaseItemRow()..avgContPerPkg = 0;
-        row.totalQty = 4;
-        expect(row.avgContPerPkg, 1);
-        expect(row.totalQty, 4);
+    test('negatives floor at zero', () {
+      final row = PurchaseItemRow();
+      row.totalQty = 4;
+      expect(row.totalQty, 4);
 
-        row.totalQty = -3;
-        expect(row.totalQty, 0);
-      },
-    );
+      row.totalQty = -3;
+      expect(row.totalQty, 0);
+      expect(row.noPkg, 0);
+    });
   });
 
   test('a new purchase is not in edit mode', () {
@@ -163,9 +157,8 @@ void main() {
 
     expect(c.items.length, 1);
     expect(c.items.single.product, '');
-    // The row defaults still hold, so a freshly picked product prices itself.
+    // The row default still holds, so a freshly picked product prices itself.
     expect(c.items.single.noPkg, 1);
-    expect(c.items.single.avgContPerPkg, 1);
   });
 
   group('the quantity stepper widget', () {
@@ -238,11 +231,9 @@ void main() {
   });
 
   test('the mobile row shares the same editable total', () {
-    final row = MobilePurchaseItemRow()
-      ..avgContPerPkg = 4
-      ..netPrice = 25;
+    final row = MobilePurchaseItemRow()..netPrice = 25;
     row.totalQty = 12;
-    expect(row.noPkg, 3);
+    expect(row.noPkg, 12);
     expect(row.totalQty, 12);
     expect(row.amount, 300);
   });

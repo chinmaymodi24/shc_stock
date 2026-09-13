@@ -606,7 +606,9 @@ void main() {
   });
 
   testWidgets('Reports', (tester) async {
-    Get.put<ReportsController>(_LateReports());
+    // The page opens on Analytics; the late-data values below are the
+    // snapshot tab's.
+    Get.put<ReportsController>(_LateReports()).tab.value = 0;
     await _expectsLateData(
       tester,
       const ReportsView(),

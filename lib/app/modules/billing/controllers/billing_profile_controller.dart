@@ -1,14 +1,16 @@
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
 import 'package:shc_stock/app/core/export/writers/pdf_logo.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/modules/billing/models/billing_profile.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The portal-wide billing profile.
 //
-// Registered permanent and fetched once: the seller's GSTIN does not change
-// between page visits, and every bill screen would otherwise re-request it.
-// Settings › Billing writes through [save], which refreshes this in place.
+// Registered permanent and fetched once per signed-in user: the seller's
+// GSTIN does not change between page visits, and every bill screen would
+// otherwise re-request it. Settings › Billing writes through [save], which
+// refreshes this in place.
 // ─────────────────────────────────────────────────────────────────────────────
 class BillingProfileController extends GetxService {
   static BillingProfileController get to =>
@@ -24,9 +26,45 @@ class BillingProfileController extends GetxService {
   /// screen waits for this before deciding the profile is unconfigured.
   final RxBool isLoaded = false.obs;
 
+  /// Which user the profile in hand was fetched for, so the session's own
+  /// restore-then-refresh (two writes, one user) does not fetch twice.
+  int? _loadedFor;
+  Worker? _sessionWorker;
+
   @override
   void onInit() {
     super.onInit();
+    // This endpoint sits behind the token guard, so fetching it from main()
+    // meant a 401 on every cold start — the request went out before anyone
+    // had signed in. Follow the session instead: load on sign-in, drop on
+    // sign-out. Without a session registered (tests, tooling) keep the old
+    // eager fetch.
+    if (!Get.isRegistered<SessionController>()) {
+      fetch();
+      return;
+    }
+    final session = Get.find<SessionController>();
+    _followSession(session.user.value);
+    _sessionWorker = ever(session.user, _followSession);
+  }
+
+  @override
+  void onClose() {
+    _sessionWorker?.dispose();
+    super.onClose();
+  }
+
+  void _followSession(SessionUser? user) {
+    if (user == null) {
+      // Signed out: forget the seller identity along with the session, so the
+      // next user does not inherit it.
+      _loadedFor = null;
+      profile.value = BillingProfile.empty;
+      isLoaded.value = false;
+      return;
+    }
+    if (_loadedFor == user.id) return;
+    _loadedFor = user.id;
     fetch();
   }
 

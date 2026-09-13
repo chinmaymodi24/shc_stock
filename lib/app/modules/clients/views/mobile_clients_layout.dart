@@ -75,7 +75,11 @@ class MobileClientsLayout extends StatelessWidget {
         ),
         // Export reaches the phone too: the same menu the web toolbar
         // opens, as an AppBar icon.
-        ExportMenuButton(source: clientsExportConfig(c), iconOnly: true),
+        ExportMenuButton(
+          source: clientsExportConfig(c),
+          iconOnly: true,
+          onBeforeOpen: c.loadExportRows,
+        ),
         const MobileAppBarAvatar(),
       ],
       bottom: PreferredSize(
@@ -100,22 +104,27 @@ class MobileClientsLayout extends StatelessWidget {
   // mobile_filter_sheet.dart for why).
   List<Widget> _buildFilters(ClientsController c) {
     return [
-      Obx(
-        () => MobileFilterChipGroup(
+      Obx(() {
+        final options = c.stateOptions.toList();
+        // Touch the set so this Obx rebuilds when a chip is toggled; the
+        // widget itself wants the live RxSet.
+        c.stateFilters.length;
+        return MobileFilterChipGroup(
           label: 'State',
           selected: c.stateFilters,
-          items: c.stateOptions,
+          items: options,
           onToggle: (v) {
             if (c.stateFilters.contains(v)) {
               c.stateFilters.remove(v);
             } else {
               c.stateFilters.add(v);
             }
-            c.cityFilters.removeWhere((city) => !c.cityOptions.contains(city));
-            c.currentPage.value = 1;
+            // Re-asks the server for this state set's cities, drops any that
+            // no longer apply, and reloads page one.
+            c.onStateFiltersChanged();
           },
-        ),
-      ),
+        );
+      }),
     ];
   }
 
@@ -155,33 +164,17 @@ class MobileClientsLayout extends StatelessWidget {
     return Obx(() {
       final loading = c.isLoading.value && c.clients.isEmpty;
 
-      // Same filter logic as WebClientsLayout — search, state, city.
-      final query = c.searchQuery.value.toLowerCase();
-      final stateFilters = c.stateFilters;
-      final cityFilters = c.cityFilters;
-      final filtered = c.clients.where((cl) {
-        if (query.isNotEmpty) {
-          final matches =
-              cl.name.toLowerCase().contains(query) ||
-              cl.code.toLowerCase().contains(query) ||
-              cl.address.toLowerCase().contains(query) ||
-              cl.gstin.toLowerCase().contains(query);
-          if (!matches) return false;
-        }
-        if (stateFilters.isNotEmpty && !stateFilters.contains(cl.state)) {
-          return false;
-        }
-        if (cityFilters.isNotEmpty && !cityFilters.contains(cl.city)) {
-          return false;
-        }
-        return true;
-      }).toList();
+      // The server applies the search and the state/city filters, so these
+      // rows are already the answer - and the count is its total, not the
+      // length of the page in hand.
+      final filtered = c.clients.toList();
+      final matchCount = c.totalFiltered.value;
 
       return MobileListScaffold(
         summaryModule: 'Clients',
         statCards: _statCards(context, c),
         search: _searchField(c),
-        countLabel: loading ? null : 'Showing ${filtered.length} clients',
+        countLabel: loading ? null : 'Showing $matchCount clients',
         sliver: loading
             ? const SliverFillRemaining(
                 hasScrollBody: false,
@@ -194,11 +187,55 @@ class MobileClientsLayout extends StatelessWidget {
               )
             : SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
+                // One extra item when more rows exist: this list scrolls
+                // rather than paging, so it grows a page at a time instead of
+                // carrying the desktop table's pager.
                 sliver: SliverList.builder(
-                  itemCount: filtered.length,
-                  itemBuilder: (_, i) => _MobileClientCard(client: filtered[i]),
+                  itemCount: filtered.length + (c.hasMore ? 1 : 0),
+                  itemBuilder: (_, i) {
+                    if (i < filtered.length) {
+                      return _MobileClientCard(client: filtered[i]);
+                    }
+                    return _LoadMoreTile(controller: c);
+                  },
                 ),
               ),
+      );
+    });
+  }
+}
+
+/// Sits at the end of the phone list and pulls the next page into view.
+class _LoadMoreTile extends StatelessWidget {
+  final ClientsController controller;
+  const _LoadMoreTile({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final busy = controller.isLoadingMore.value;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Center(
+          child: busy
+              ? const SizedBox(
+                  height: 22,
+                  width: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : TextButton(
+                  onPressed: controller.loadMore,
+                  child: Text(
+                    'Load more',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryOrange,
+                      fontFamily: brandFontFamily,
+                    ),
+                  ),
+                ),
+        ),
       );
     });
   }

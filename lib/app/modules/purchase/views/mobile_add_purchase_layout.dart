@@ -636,21 +636,6 @@ class _MobileItemCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: AppSmallNumber(
-                  mobile: true,
-                  hint: 'Cont/Pkg',
-                  value: row.avgContPerPkg,
-                  colors: colors,
-                  onChanged: (v) {
-                    row.avgContPerPkg = v;
-                    onChanged();
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                // Editable with ± steppers, same as the web form — this used
-                // to be a read-only readout of packs x per-pack.
                 child: AppSmallStepper(
                   mobile: true,
                   hint: 'Total Qty',

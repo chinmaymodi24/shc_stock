@@ -1,5 +1,7 @@
 const express = require('express');
 const prisma = require('../prismaClient');
+const { actorName } = require('../auth/middleware');
+const { listResponse } = require('../pagination');
 
 const router = express.Router();
 
@@ -9,7 +11,7 @@ const STATUSES = ['Received', 'Shipped', 'Pending', 'Delivered'];
 const str = (v, fallback = '') =>
   v === undefined || v === null ? fallback : String(v).trim();
 
-function txnData(body) {
+function txnData(body, actor) {
   const type = str(body.type);
   const status = str(body.status);
   return {
@@ -20,7 +22,7 @@ function txnData(body) {
     date: body.date ? new Date(body.date) : new Date(),
     status: STATUSES.includes(status) ? status : 'Pending',
     notes: str(body.notes),
-    modifiedBy: str(body.modifiedBy, 'Admin') || 'Admin',
+    modifiedBy: actor,
     modifiedAt: new Date(),
   };
 }
@@ -41,10 +43,14 @@ function validate(body) {
 router.get('/', async (req, res, next) => {
   try {
     // Last added / modified first (updatedAt covers both).
-    const transactions = await prisma.transaction.findMany({
-      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-    });
-    res.json(transactions);
+    res.json(await listResponse({
+      query: req.query,
+      findMany: (page) => prisma.transaction.findMany({
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        ...page,
+      }),
+      count: () => prisma.transaction.count(),
+    }));
   } catch (err) {
     next(err);
   }
@@ -55,7 +61,7 @@ router.post('/', async (req, res, next) => {
   try {
     const invalid = validate(req.body);
     if (invalid) return res.status(400).json({ error: invalid });
-    const txn = await prisma.transaction.create({ data: txnData(req.body) });
+    const txn = await prisma.transaction.create({ data: txnData(req.body, actorName(req)) });
     res.status(201).json(txn);
   } catch (err) {
     next(err);
@@ -70,7 +76,7 @@ router.put('/:id', async (req, res, next) => {
     if (invalid) return res.status(400).json({ error: invalid });
     const txn = await prisma.transaction.update({
       where: { id },
-      data: txnData(req.body),
+      data: txnData(req.body, actorName(req)),
     });
     res.json(txn);
   } catch (err) {

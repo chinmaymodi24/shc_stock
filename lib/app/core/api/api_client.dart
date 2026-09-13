@@ -1,6 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 import 'package:shc_stock/app/core/api/api_config.dart';
 
 class ApiException implements Exception {
@@ -80,6 +81,28 @@ class ApiClient {
   /// deactivated, so the app should return to the login page.
   void Function()? onUnauthorized;
 
+  /// Answers requests from `handler` instead of the network, so a test can
+  /// exercise the real path - the URL this client builds, the parsing of what
+  /// comes back - rather than stubbing the controller method that does both.
+  /// The host probe is skipped, since there is no host.
+  @visibleForTesting
+  static void useFakeBackend(
+    Future<Response<dynamic>> Function(RequestOptions options) handler,
+  ) {
+    networkEnabled = true;
+    instance._hostProbe = Future.value();
+    instance._dio.options.baseUrl = 'http://fake/api';
+    instance._dio.httpClientAdapter = _FakeAdapter(handler);
+  }
+
+  /// Puts the client back the way `flutter_test_config.dart` leaves it.
+  @visibleForTesting
+  static void clearFakeBackend() {
+    networkEnabled = false;
+    instance._hostProbe = null;
+    instance._dio.httpClientAdapter = HttpClientAdapter();
+  }
+
   /// Set false by `test/flutter_test_config.dart`.
   ///
   /// Widget tests run against whatever backend happens to be up on this
@@ -94,9 +117,16 @@ class ApiClient {
   /// Artificial delay added to every request so loading states/animations
   /// are actually visible during development. Project convention — keep
   /// this on for every API call, current and future.
+  ///
+  /// The one exception is a request the user is waiting on keystroke by
+  /// keystroke: search-as-you-type and the filter/paging calls behind it. A
+  /// spinner there is not a thing to show off, it is a stutter, and a second
+  /// per keystroke turned an instant list into a sluggish one. Those callers
+  /// pass `instant: true`; everything else keeps the delay.
   static const Duration artificialDelay = Duration(seconds: 1);
 
-  Future<void> _delay() => Future.delayed(artificialDelay);
+  Future<void> _delay({bool instant = false}) =>
+      instant ? Future.value() : Future.delayed(artificialDelay);
 
   /// Runs once, on the first request, and never again.
   Future<void>? _hostProbe;
@@ -171,14 +201,14 @@ class ApiClient {
     throw ApiException(res?.statusCode ?? -1, message, details: details);
   }
 
-  Future<dynamic> get(String path) async {
+  Future<dynamic> get(String path, {bool instant = false}) async {
     try {
       await _ensureHost();
       final res = await _dio.get(path);
-      await _delay();
+      await _delay(instant: instant);
       return _unwrap(res);
     } on DioException catch (e) {
-      await _delay();
+      await _delay(instant: instant);
       _throwFrom(e);
     }
   }
@@ -262,4 +292,30 @@ class ApiClient {
       _throwFrom(e);
     }
   }
+}
+
+/// Bridges [ApiClient.useFakeBackend]'s handler into Dio's adapter interface.
+class _FakeAdapter implements HttpClientAdapter {
+  final Future<Response<dynamic>> Function(RequestOptions options) handler;
+
+  _FakeAdapter(this.handler);
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final res = await handler(options);
+    return ResponseBody.fromString(
+      jsonEncode(res.data),
+      res.statusCode ?? 200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
 }

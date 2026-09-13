@@ -6,9 +6,15 @@ import 'package:shc_stock/app/modules/clients/models/client_model.dart';
 import 'package:shc_stock/app/shared/widgets/overlay_autocomplete_field.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Client typeahead — typing filters the universal client list by name;
-// selecting an option hands the full ClientModel back via onSelected so the
-// caller can fill address/state/GSTIN/PAN from it.
+// Client typeahead — typing filters every client by name; selecting an option
+// hands the full ClientModel back via onSelected so the caller can fill
+// address/state/GSTIN/PAN from it.
+//
+// The suggestions come from ClientsController.directory, which carries three
+// columns for each client rather than all forty-six: the Clients list itself
+// is paged by the server now, so the full rows are no longer sitting in
+// memory to search. The chosen client is then fetched in full, because that
+// is what the caller fills its form from.
 //
 // Built on [OverlayAutocompleteField] rather than the framework's
 // `Autocomplete`: that one always drops its list below the field, which put it
@@ -33,20 +39,23 @@ class ClientAutocompleteField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final clients = Get.find<ClientsController>().clients;
-    return OverlayAutocompleteField<ClientModel>(
+    final controller = Get.find<ClientsController>();
+    return OverlayAutocompleteField<ClientRef>(
       initialValue: initialValue,
       colors: colors,
       maxDropdownHeight: 280,
       optionsFor: (query) {
         final q = query.toLowerCase();
-        return clients
+        return controller.directory
             .where((c) => c.name.toLowerCase().contains(q))
             .take(30)
             .toList();
       },
       displayStringFor: (c) => c.name,
-      onSelected: onSelected,
+      onSelected: (ref) async {
+        final full = await controller.findByName(ref.name);
+        if (full != null) onSelected(full);
+      },
       textStyle: TextStyle(
         fontSize: 13,
         color: colors.textPrimary,

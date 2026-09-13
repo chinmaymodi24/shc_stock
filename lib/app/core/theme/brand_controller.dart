@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
@@ -91,7 +92,11 @@ class BrandController extends GetxController {
     try {
       await ApiClient.instance.put('/settings/brand', applied.value.toJson());
       return true;
-    } catch (_) {
+    } catch (e) {
+      // The caller only needs the yes/no, but swallowing the reason outright
+      // made a rejected save indistinguishable from an offline one — a 413 on
+      // an oversized logo looked exactly like a dead backend.
+      debugPrint('Brand save failed: $e');
       return false;
     }
   }

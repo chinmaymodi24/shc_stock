@@ -26,28 +26,20 @@ class PurchaseItemRow {
   String grade = '';
   String density = '';
 
-  // Default to a single unit per row. Amount is (noPkg * avgContPerPkg) *
-  // netPrice, so starting these at 0 pinned every row's amount — and the
-  // whole invoice total — to ₹0 until the user filled in both boxes, which
-  // read as "the price isn't updating". 1 x 1 makes the selected product's
-  // price show up immediately and still scales once real packing is entered.
+  // Defaults to one, not zero: amount is totalQty * netPrice, so a zero here
+  // pinned every row's amount — and the whole invoice total — to ₹0 until the
+  // box was filled in, which read as "the price isn't updating".
   double noPkg = 1;
-  double avgContPerPkg = 1;
 
   String uom = 'BOX';
   double netPrice = 0;
 
-  double get totalQty => noPkg * avgContPerPkg;
-
-  /// Total quantity is normally packs x per-pack, but it is also editable
-  /// directly (and steppable) — entering a total keeps the per-pack figure
-  /// and back-solves the pack count, so the three fields never contradict
-  /// each other.
-  set totalQty(double v) {
-    final per = avgContPerPkg <= 0 ? 1.0 : avgContPerPkg;
-    avgContPerPkg = per;
-    noPkg = (v < 0 ? 0 : v) / per;
-  }
+  /// What the API stores as the line's `qty`. There used to be an average
+  /// contents-per-pack multiplier between the two; it was dropped because it
+  /// never round-tripped (a saved order always came back with it at 1), so
+  /// the total is simply the pack count.
+  double get totalQty => noPkg;
+  set totalQty(double v) => noPkg = v < 0 ? 0 : v;
 
   double get amount => totalQty * netPrice;
 }
@@ -171,11 +163,7 @@ class AddPurchaseController extends GetxController {
                 ..hsn = i.hsn
                 ..grade = i.grade
                 ..density = i.density
-                // The API stores a single total quantity; the form splits it
-                // into packs x per-pack, so the whole amount goes in the pack
-                // count and the multiplier stays at 1.
                 ..noPkg = i.qty
-                ..avgContPerPkg = 1
                 ..uom = i.unit.isEmpty ? 'BOX' : i.unit
                 ..netPrice = i.rate;
               return row;

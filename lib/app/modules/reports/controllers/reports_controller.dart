@@ -36,7 +36,12 @@ class ReportsController extends GetxController {
 
   /// Which of the three tabs is showing: 0 Reports, 1 Analytics, 2 Profit &
   /// Loss. Lives here so the web and mobile layouts share one selection.
-  final RxInt tab = 0.obs;
+  ///
+  /// Opens on Analytics because the nav entry that leads here is called
+  /// Analytics - the page has one way in, and landing on a different tab
+  /// than the one clicked would be a surprise. Tab 0 is the older
+  /// consolidated snapshot, still reachable from the strip.
+  final RxInt tab = 1.obs;
 
   final RxBool isLoading = false.obs;
   final Rx<DateTime?> from = Rx<DateTime?>(null);

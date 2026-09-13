@@ -1,5 +1,7 @@
 const express = require('express');
 const prisma = require('../prismaClient');
+const { actorName } = require('../auth/middleware');
+const { listResponse } = require('../pagination');
 const {
   InsufficientStockError,
   toStockLines,
@@ -25,7 +27,7 @@ function toItemsData(items) {
   }));
 }
 
-function orderFields(body) {
+function orderFields(body, actor) {
   return {
     client: String(body.client || '').trim(),
     clientBadge: body.clientBadge || '',
@@ -33,7 +35,7 @@ function orderFields(body) {
     amount: Number(body.amount) || 0,
     status: body.status || 'Confirmed',
     paymentStatus: body.paymentStatus || 'Pending',
-    modifiedBy: body.modifiedBy || 'Admin',
+    modifiedBy: actor,
     modifiedAt: new Date(),
     clientAddress: body.clientAddress || '',
     buyerGstin: body.buyerGstin || '',
@@ -60,11 +62,15 @@ router.get('/', async (req, res, next) => {
   try {
     // Last added / modified first — not the order date, so a freshly entered
     // or edited order tops the list even if it is back-dated.
-    const orders = await prisma.salesOrder.findMany({
-      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-      include: orderInclude,
-    });
-    res.json(orders);
+    res.json(await listResponse({
+      query: req.query,
+      findMany: (page) => prisma.salesOrder.findMany({
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        include: orderInclude,
+        ...page,
+      }),
+      count: () => prisma.salesOrder.count(),
+    }));
   } catch (err) {
     next(err);
   }
@@ -83,7 +89,7 @@ router.post('/', async (req, res, next) => {
     const order = await prisma.$transaction(async (tx) => {
       const created = await tx.salesOrder.create({
         data: {
-          ...orderFields(req.body),
+          ...orderFields(req.body, actorName(req)),
           soNumber: String(req.body.soNumber).trim(),
           items: { create: items },
         },
@@ -127,7 +133,7 @@ router.put('/:id', async (req, res, next) => {
       await reverseStockFor(tx, REF_TYPE, id);
       await tx.saleItem.deleteMany({ where: { salesOrderId: id } });
 
-      const data = orderFields(req.body);
+      const data = orderFields(req.body, actorName(req));
       const soNumber = String(req.body.soNumber || '').trim();
       if (soNumber) data.soNumber = soNumber;
 

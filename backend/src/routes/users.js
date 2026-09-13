@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const prisma = require('../prismaClient');
 const { sanitizePermissions, clampToGranter } = require('../permissions');
 const { invalidatePrincipal } = require('../auth/middleware');
+const { listResponse } = require('../pagination');
 
 const router = express.Router();
 
@@ -54,7 +55,7 @@ async function userData(body, auth) {
     email: str(body.email).toLowerCase(),
     phone: str(body.phone),
     department: str(body.department),
-    modifiedBy: auth.name || str(body.modifiedBy, 'Admin') || 'Admin',
+    modifiedBy: auth.name || 'Admin',
     modifiedAt: new Date(),
   };
   if (body.isActive !== undefined) data.isActive = body.isActive === true;
@@ -112,11 +113,15 @@ async function nextUserCode() {
 router.get('/', async (req, res, next) => {
   try {
     // Last added / modified first (updatedAt covers both).
-    const users = await prisma.user.findMany({
-      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-      select: publicFields,
-    });
-    res.json(users);
+    res.json(await listResponse({
+      query: req.query,
+      findMany: (page) => prisma.user.findMany({
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        select: publicFields,
+        ...page,
+      }),
+      count: () => prisma.user.count(),
+    }));
   } catch (err) {
     next(err);
   }

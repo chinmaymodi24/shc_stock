@@ -130,15 +130,15 @@ model Product {
   /// as returned by POST /api/upload. Null when the product has no photo —
   /// the list/detail views fall back to a placeholder icon.
   imageUrl           String?
-  sellingPrice       Float
-  costPrice          Float
+  sellingPrice       Decimal      @db.Decimal(14, 2)
+  costPrice          Decimal      @db.Decimal(14, 2)
   currentStock       Int          @default(0)
   minimumStock       Int          @default(0)
   isActive           Boolean      @default(true)
   brand              String?
   hsnCode            String?
   description        String?
-  taxPercent         Float        @default(18.0)
+  taxPercent         Decimal      @default(18.0) @db.Decimal(5, 2)
   stockLocation      String       @default("Main Warehouse")
   modifiedBy         String       @default("Admin")
   modifiedAt         DateTime?
@@ -163,7 +163,7 @@ model PurchaseOrder {
   supplier         String
   supplierIcon     String         @default("")
   date             DateTime
-  amount           Float          @default(0)
+  amount           Decimal        @default(0) @db.Decimal(14, 2)
   status           String         @default("Pending") // Received | Partial | Pending | Cancelled
   modifiedBy       String         @default("Admin")
   modifiedAt       DateTime?
@@ -176,7 +176,7 @@ model PurchaseOrder {
   lrNo             String         @default("")
   lrDate           DateTime?
   vehicleNo        String         @default("")
-  freight          Float          @default(0)
+  freight          Decimal        @default(0) @db.Decimal(14, 2)
   placeOfSupply    String         @default("")
   dueDate          DateTime?
   /// Optional. When set, a background sweep flips the order to "Received" on
@@ -186,7 +186,7 @@ model PurchaseOrder {
   /// "" | Full Payment | Half Payment | Other — how much of this order has
   /// been paid to the supplier, with [paidAmount] holding the figure.
   paymentType      String         @default("")
-  paidAmount       Float          @default(0)
+  paidAmount       Decimal        @default(0) @db.Decimal(14, 2)
   items            PurchaseItem[]
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -206,9 +206,9 @@ model PurchaseItem {
   hsn             String        @default("")
   grade           String        @default("")
   density         String        @default("")
-  qty             Float
+  qty             Decimal       @db.Decimal(14, 3)
   unit            String        @default("")
-  rate            Float
+  rate            Decimal       @db.Decimal(14, 2)
 
   @@map("purchase_items")
 }
@@ -219,7 +219,7 @@ model SalesOrder {
   client            String
   clientBadge       String     @default("")
   date              DateTime
-  amount            Float      @default(0)
+  amount            Decimal    @default(0) @db.Decimal(14, 2)
   status            String     @default("Confirmed") // Confirmed | Processing | Shipped | Delivered | Cancelled
   paymentStatus     String     @default("Pending") // Paid | Partial | Refunded | Pending
   modifiedBy        String     @default("Admin")
@@ -238,7 +238,7 @@ model SalesOrder {
   /// "" | Full Payment | Half Payment | Other, with [paidAmount] holding the
   /// figure the client has actually paid.
   paymentType       String     @default("")
-  paidAmount        Float      @default(0)
+  paidAmount        Decimal    @default(0) @db.Decimal(14, 2)
   items             SaleItem[]
   bill              Bill?
   createdAt         DateTime   @default(now())
@@ -255,9 +255,9 @@ model SaleItem {
   productRef   Product?   @relation(fields: [productId], references: [id], onDelete: SetNull)
   product      String
   hsn          String     @default("")
-  qty          Float
+  qty          Decimal    @db.Decimal(14, 3)
   unit         String     @default("")
-  rate         Float
+  rate         Decimal    @db.Decimal(14, 2)
 
   @@map("sale_items")
 }
@@ -304,11 +304,11 @@ model Client {
   billPin     String @default("")
   billCountry String @default("India")
 
-  paymentTerms   String @default("")
-  priceList      String @default("")
-  openingBalance Float  @default(0)
-  creditLimit    Float  @default(0)
-  creditDays     Int    @default(0)
+  paymentTerms   String  @default("")
+  priceList      String  @default("")
+  openingBalance Decimal @default(0) @db.Decimal(14, 2)
+  creditLimit    Decimal @default(0) @db.Decimal(14, 2)
+  creditDays     Int     @default(0)
 
   contactPerson      String @default("")
   contactDesignation String @default("")
@@ -335,13 +335,13 @@ model StockMovement {
   type String
 
   /// Always positive; `type` carries the direction.
-  qty Float
+  qty Decimal @db.Decimal(14, 3)
 
   /// Optional per-unit price — only ever set on a manual adjustment where the
   /// user chose to record one (e.g. an opening-balance entry). Purchase/sale
   /// movements leave this null; their price lives on the order's line items
   /// instead, which the Item Details ledger reads directly.
-  rate Float?
+  rate Decimal? @db.Decimal(14, 2)
 
   /// purchase | sale | manual
   refType String @default("manual")

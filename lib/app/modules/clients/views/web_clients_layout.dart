@@ -1,7 +1,6 @@
 import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'dart:math' as math;
 import 'package:shc_stock/app/modules/clients/controllers/clients_controller.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
@@ -53,21 +52,15 @@ class WebClientsLayout extends GetView<ClientsController> {
                   child: Obx(() {
                     final rowsPerPage = c.rowsPerPage.value;
                     final currentPage = c.currentPage.value;
-                    // One source of truth: the table, the scope line and
-                    // the Export menu all read the controller's query.
-                    final filtered = c.filteredClients;
-
-                    final totalPages = filtered.isEmpty
-                        ? 1
-                        : (filtered.length / rowsPerPage).ceil();
+                    // The server searches, filters and pages this list, so the
+                    // rows it returned are already the page - no slicing here,
+                    // and the counts come from its total rather than from the
+                    // handful of rows in hand.
+                    final pageItems = c.clients.toList();
+                    final totalPages = c.totalPages;
+                    // The row number is the client's place in the whole result,
+                    // not its index on this page.
                     final startIdx = (currentPage - 1) * rowsPerPage;
-                    final endIdx = math.min(
-                      startIdx + rowsPerPage,
-                      filtered.length,
-                    );
-                    final pageItems = filtered.isEmpty
-                        ? <ClientModel>[]
-                        : filtered.sublist(startIdx, endIdx);
 
                     return SingleChildScrollView(
                       padding: const EdgeInsets.all(24),
@@ -220,10 +213,10 @@ class WebClientsLayout extends GetView<ClientsController> {
                                 // both sitting on the page background.
                                 _Toolbar(
                                   colors: colors,
-                                  onSearch: (v) {
-                                    c.searchQuery.value = v;
-                                    c.currentPage.value = 1;
-                                  },
+                                  // The controller debounces this and
+                                  // refetches page one; setting the query is
+                                  // all this has to do.
+                                  onSearch: (v) => c.searchQuery.value = v,
                                 ),
                                 ListScopeBar(
                                   chips: [
@@ -238,12 +231,18 @@ class WebClientsLayout extends GetView<ClientsController> {
                                     for (final state in c.stateFilters)
                                       ListScopeChip(
                                         state,
-                                        () => c.stateFilters.remove(state),
+                                        () {
+                                          c.stateFilters.remove(state);
+                                          c.onStateFiltersChanged();
+                                        },
                                       ),
                                     for (final city in c.cityFilters)
                                       ListScopeChip(
                                         city,
-                                        () => c.cityFilters.remove(city),
+                                        () {
+                                          c.cityFilters.remove(city);
+                                          c.onCityFiltersChanged();
+                                        },
                                       ),
                                   ],
                                 ),
@@ -319,11 +318,8 @@ class WebClientsLayout extends GetView<ClientsController> {
                                   totalPages: totalPages,
                                   rowsPerPage: rowsPerPage,
                                   colors: colors,
-                                  onPageChanged: (p) => c.currentPage.value = p,
-                                  onRowsChanged: (r) {
-                                    c.rowsPerPage.value = r;
-                                    c.currentPage.value = 1;
-                                  },
+                                  onPageChanged: c.goToPage,
+                                  onRowsChanged: c.setRowsPerPage,
                                 ),
                               ],
                             ),
@@ -386,32 +382,40 @@ class _Toolbar extends StatelessWidget {
         onChanged: onSearch,
       ),
       pills: [
-        Obx(
-          () => MultiSelectFilterPill(
+        Obx(() {
+          // Read both lists here so this Obx actually tracks them: the options
+          // now come from the server rather than being derived from the rows.
+          final options = c.stateOptions.toList();
+          // Touch the set so this Obx rebuilds when a pill is toggled; the
+          // widget itself wants the live RxSet.
+          c.stateFilters.length;
+          return MultiSelectFilterPill(
             label: 'State',
             selected: c.stateFilters,
-            items: c.stateOptions,
+            items: options,
             onToggle: (v) {
               if (c.stateFilters.contains(v)) {
                 c.stateFilters.remove(v);
               } else {
                 c.stateFilters.add(v);
               }
-              // Selected cities may no longer belong to the narrowed
-              // state set — matches the design's cascading behaviour.
-              c.cityFilters.removeWhere(
-                (city) => !c.cityOptions.contains(city),
-              );
-              c.currentPage.value = 1;
+              // Re-asks the server for the city options this state set
+              // allows, drops any city that is no longer among them, and
+              // reloads page one - the cascading behaviour the design calls
+              // for, now that neither list is held in memory.
+              c.onStateFiltersChanged();
             },
-          ),
-        ),
+          );
+        }),
       ],
       clearAll: Obx(() {
         if (!c.hasActiveFilters) return const SizedBox.shrink();
         return ClearAllButton(onTap: c.resetFilters);
       }),
-      trailing: ExportMenuButton(source: clientsExportConfig(c)),
+      trailing: ExportMenuButton(
+        source: clientsExportConfig(c),
+        onBeforeOpen: c.loadExportRows,
+      ),
     );
   }
 }

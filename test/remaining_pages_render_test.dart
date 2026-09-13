@@ -259,11 +259,10 @@ void main() {
     expect(find.text('Item Details'), findsWidgets);
     expect(find.text('Grand Total'), findsWidgets);
 
-    // The row defaults to 1 pkg x 1 per pkg so a selected product's price
-    // shows up immediately instead of being pinned to ₹0.
+    // The row defaults to one unit so a selected product's price shows up
+    // immediately instead of being pinned to ₹0.
     final c = Get.find<AddPurchaseController>();
     expect(c.items.single.noPkg, 1);
-    expect(c.items.single.avgContPerPkg, 1);
     c.items.single.netPrice = 250;
     expect(c.subTotal, 250);
   });
@@ -276,8 +275,8 @@ void main() {
     Get.put<ClientsController>(_StubClients());
     Get.put<PurchaseController>(_StubPurchase());
     Get.put(MobileAddPurchaseController());
-    // A real phone viewport: the item row packs No. Pkg, Cont/Pkg and the
-    // Total Qty stepper across one line, so this is where it would overflow.
+    // A real phone viewport: the item row packs No. Pkg and the Total Qty
+    // stepper across one line, so this is where it would overflow.
     await _pump(
       tester,
       const MobileAddPurchaseLayout(),

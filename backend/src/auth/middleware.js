@@ -83,4 +83,14 @@ async function guard(req, res, next) {
   }
 }
 
-module.exports = { guard, invalidatePrincipal, toPrincipal };
+/// The employee a write should be credited to.
+///
+/// Always the signed-in account. It used to come off `body.modifiedBy`, which
+/// meant the audit trail was whatever the caller typed - every module except
+/// Employees and Roles simply fell back to "Admin", so a signed-in employee's
+/// work was filed under someone else.
+function actorName(req) {
+  return (req.auth && req.auth.name) || 'Admin';
+}
+
+module.exports = { guard, invalidatePrincipal, toPrincipal, actorName };

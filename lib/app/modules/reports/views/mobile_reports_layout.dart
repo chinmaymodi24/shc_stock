@@ -22,7 +22,7 @@ class MobileReportsLayout extends GetView<ReportsController> {
     final colors = context.appColors;
     return Scaffold(
       backgroundColor: colors.background,
-      drawer: const AppDrawer(activeRoute: AppRoutes.reports),
+      drawer: const AppDrawer(activeRoute: AppRoutes.reportsInsights),
       appBar: _buildAppBar(context),
       body: Column(
         children: [
@@ -116,7 +116,7 @@ class MobileReportsLayout extends GetView<ReportsController> {
         ),
       ),
       title: Text(
-        'Reports & Analytics',
+        'Analytics',
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w700,

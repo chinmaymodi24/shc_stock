@@ -32,7 +32,8 @@ Future<void> main() async {
   // Saved column sets, restored from disk — see the dialog's COLUMN PRESET.
   Get.put(ExportPresetStore(), permanent: true);
   // Seller identity, bank details and the invoice defaults. Portal-wide and
-  // fetched once — every bill screen reads the same profile.
+  // fetched once per signed-in user — every bill screen reads the same
+  // profile. It follows SessionController, so it must be registered after it.
   Get.put(BillingProfileController(), permanent: true);
   runApp(
     SecureHeatCareApp(

@@ -80,6 +80,9 @@ class BillController extends GetxController {
         return;
       }
       order.value = resolved;
+      // Not awaited: the document renders from the sale straight away and
+      // fills in the client's address when the lookup answers.
+      _resolveClient(resolved.client);
 
       final json = await _api.get('/bills/sale/${resolved.id}');
       if (json is Map<String, dynamic>) {
@@ -154,14 +157,19 @@ class BillController extends GetxController {
   InvoiceTotals get totals =>
       computeInvoiceTotals(invoiceLines, tax: profile.tax);
 
-  /// The client record behind the sale, when the Clients list is loaded — it
-  /// carries the shipping address and contact details the sale itself does not.
-  ClientModel? get client {
-    final sale = order.value;
-    if (sale == null || !Get.isRegistered<ClientsController>()) return null;
-    return Get.find<ClientsController>().clients.firstWhereOrNull(
-      (c) => c.name.trim().toLowerCase() == sale.client.trim().toLowerCase(),
-    );
+  /// The client record behind the sale — it carries the shipping address and
+  /// contact details the sale itself does not.
+  ///
+  /// Resolved once, when the sale loads, rather than read straight out of the
+  /// Clients list: that list is paged by the server now, so the client this
+  /// invoice is for is usually not among the rows in memory. Null until the
+  /// lookup answers, and null for a client that no longer exists - the
+  /// document then falls back to the fields the sale carries itself.
+  final Rxn<ClientModel> client = Rxn<ClientModel>();
+
+  Future<void> _resolveClient(String name) async {
+    if (!Get.isRegistered<ClientsController>()) return;
+    client.value = await Get.find<ClientsController>().findByName(name);
   }
 
   /// Invoice number to print: the issued one, or a preview of what the series
@@ -191,7 +199,6 @@ class BillController extends GetxController {
       final json = await _api.post('/bills', {
         'salesOrderId': int.tryParse(sale.id) ?? sale.id,
         'prefix': profile.invoicePrefix,
-        'actor': currentActorName,
       });
       if (json is Map<String, dynamic>) _adopt(BillModel.fromJson(json));
       // The sales list shows the invoice number; refresh so it appears there
@@ -238,7 +245,6 @@ class BillController extends GetxController {
       final json = await _api.post('/bills/${current.id}/events', {
         'type': type,
         'note': note,
-        'actor': currentActorName,
       });
       if (json is Map<String, dynamic>) bill.value = BillModel.fromJson(json);
     } catch (e) {
@@ -257,7 +263,7 @@ class BillController extends GetxController {
       profile: profile,
       sellerName: sellerName,
       order: order.value!,
-      client: client,
+      client: client.value,
       bill: bill.value,
       totals: totals,
       options: options.value,
@@ -267,7 +273,7 @@ class BillController extends GetxController {
       profile: profile,
       sellerName: sellerName,
       order: order.value!,
-      client: client,
+      client: client.value,
       totals: totals,
       options: options.value,
       invoiceNo: invoiceNo,
@@ -350,15 +356,17 @@ class BillController extends GetxController {
 
   // ── Share ─────────────────────────────────────────────────────────────────
   String get buyerPhone {
-    final fromClient = (client?.phone ?? '').trim();
+    final c = client.value;
+    final fromClient = (c?.phone ?? '').trim();
     if (fromClient.isNotEmpty) return fromClient;
-    return (client?.contactPhone ?? '').trim();
+    return (c?.contactPhone ?? '').trim();
   }
 
   String get buyerEmail {
-    final fromClient = (client?.email ?? '').trim();
+    final c = client.value;
+    final fromClient = (c?.email ?? '').trim();
     if (fromClient.isNotEmpty) return fromClient;
-    return (client?.contactEmail ?? '').trim();
+    return (c?.contactEmail ?? '').trim();
   }
 
   String get shareMessage {

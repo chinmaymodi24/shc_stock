@@ -640,9 +640,8 @@ const int _cItem = 31;
 const int _cHsn = 10;
 const int _cGrade = 8;
 const int _cDensity = 9;
-const int _cNoPkg = 8;
-const int _cAvgCont = 10;
-const int _cTotalQty = 13;
+const int _cNoPkg = 10;
+const int _cTotalQty = 16;
 const int _cUom = 9;
 const int _cNetPrice = 11;
 const int _cAmount = 14;
@@ -699,15 +698,6 @@ class _ItemDetailsTable extends StatelessWidget {
               Expanded(
                 flex: _cNoPkg,
                 child: Text('No. Pkg', style: _h, textAlign: TextAlign.center),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                flex: _cAvgCont,
-                child: Text(
-                  'Avg Cont/Pkg',
-                  style: _h,
-                  textAlign: TextAlign.center,
-                ),
               ),
               const SizedBox(width: 6),
               Expanded(
@@ -864,22 +854,7 @@ class _ItemDetailsRow extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Expanded(
-            flex: _cAvgCont,
-            child: AppSmallNumber(
-              value: row.avgContPerPkg,
-              colors: colors,
-              onChanged: (v) {
-                row.avgContPerPkg = v;
-                onChanged();
-              },
-            ),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
             flex: _cTotalQty,
-            // Editable, with ± steppers — the total used to be a read-only
-            // readout of packs x per-pack, so a plain quantity could only be
-            // entered through those two boxes.
             child: AppSmallStepper(
               value: row.totalQty,
               colors: colors,
