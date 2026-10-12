@@ -128,6 +128,16 @@ app.use((err, req, res, next) => {
 // Production hygiene: say so loudly (once, at start-up) when the two settings
 // that matter behind a real host are left at their dev defaults.
 if (process.env.NODE_ENV === 'production') {
+  // Without it the token key is derived from DATABASE_URL, so anyone who
+  // learns the connection string could mint a session for any account. That
+  // is not a warning-level problem: refuse to start.
+  if (!process.env.AUTH_SECRET) {
+    console.error(
+      '[config] AUTH_SECRET is not set. Set it to a long random string ' +
+        '(see .env.example) - the server will not start without it in production.',
+    );
+    process.exit(1);
+  }
   if (corsOrigins.includes('*')) {
     console.warn(
       '[config] CORS_ORIGINS is "*": any website may call this API from a browser. ' +

@@ -208,6 +208,8 @@ router.patch('/:id/status', async (req, res, next) => {
         where: { id },
         data: {
           status,
+          // Credited to whoever changed it, like every other write.
+          modifiedBy: actorName(req),
           modifiedAt: new Date(),
           receivedAt: stampDone('Received', status, before.status, before.receivedAt),
         },

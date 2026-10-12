@@ -208,6 +208,9 @@ model PurchaseOrder {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
+  @@index([status])
+  @@index([updatedAt])
+  @@index([expectedDelivery])
   @@map("purchase_orders")
 }
 
@@ -230,6 +233,8 @@ model PurchaseItem {
   /// GST rate (percent) charged on this line.
   taxPercent      Decimal       @default(18) @db.Decimal(5, 2)
 
+  @@index([purchaseOrderId])
+  @@index([productId])
   @@map("purchase_items")
 }
 
@@ -271,6 +276,9 @@ model SalesOrder {
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
+  @@index([status])
+  @@index([updatedAt])
+  @@index([expectedDelivery])
   @@map("sales_orders")
 }
 
@@ -288,6 +296,8 @@ model SaleItem {
   /// GST rate (percent) charged on this line.
   taxPercent   Decimal    @default(18) @db.Decimal(5, 2)
 
+  @@index([salesOrderId])
+  @@index([productId])
   @@map("sale_items")
 }
 

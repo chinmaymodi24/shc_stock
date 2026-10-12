@@ -14,19 +14,12 @@ const crypto = require('crypto');
 /// fresh token each time the app starts.
 const TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-/// AUTH_SECRET should be set in production. The fallback is derived from the
-/// database URL so a dev machine gets a stable secret (tokens survive a
-/// nodemon restart) without committing one to the repo.
-let warned = false;
+/// AUTH_SECRET must be set in production — server.js refuses to start
+/// without it. The fallback is for dev only: derived from the database URL so
+/// a dev machine gets a stable secret (tokens survive a nodemon restart)
+/// without committing one to the repo.
 function secret() {
   if (process.env.AUTH_SECRET) return process.env.AUTH_SECRET;
-  if (!warned && process.env.NODE_ENV === 'production') {
-    warned = true;
-    console.warn(
-      '[auth] AUTH_SECRET is not set: session tokens are signed with a key derived from DATABASE_URL. ' +
-        'Set AUTH_SECRET to a long random string.',
-    );
-  }
   return crypto
     .createHash('sha256')
     .update(`shc-stock:${process.env.DATABASE_URL || 'local'}`)
