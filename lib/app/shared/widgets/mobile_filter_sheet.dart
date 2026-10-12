@@ -28,15 +28,22 @@ class MobileFilterButton extends StatelessWidget {
   /// collapsed AppBar to say the list was filtered.
   final int activeCount;
 
+  /// False hides the icon — pages pass "does this list have any records at
+  /// all", since an empty list has nothing to filter. Mirrors the web
+  /// FilterBar's `pillsVisible`.
+  final bool visible;
+
   const MobileFilterButton({
     super.key,
     required this.filters,
     this.onClear,
     this.activeCount = 0,
+    this.visible = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (!visible) return const SizedBox.shrink();
     final colors = context.appColors;
     final active = activeCount > 0;
     return IconButton(

@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shc_stock/app/shared/models/order_payment.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/modules/purchase/controllers/add_purchase_controller.dart';
-import 'package:shc_stock/app/modules/purchase/controllers/mobile_add_purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
 import 'package:shc_stock/app/shared/widgets/form_fields.dart';
 
@@ -133,6 +133,40 @@ void main() {
     });
   });
 
+  test('a new purchase starts as Full Payment and the amount follows the total', () {
+    final c = AddPurchaseController()..onInit();
+    expect(c.paymentType.value, OrderPaymentType.full);
+    expect(c.paidAmountCtrl.text, '', reason: 'nothing to pay yet');
+
+    c.items.first
+      ..totalQty = 10
+      ..netPrice = 100;
+    c.notifyItemsChanged();
+    expect(c.paidAmountCtrl.text, c.grandTotal.toStringAsFixed(0));
+
+    c.items.first.netPrice = 200;
+    c.notifyItemsChanged();
+    expect(c.paidAmountCtrl.text, c.grandTotal.toStringAsFixed(0));
+
+    // Once typed over, it stops following.
+    c.paidAmountCtrl.text = '500';
+    c.paidAmountTyped();
+    c.items.first.netPrice = 300;
+    c.notifyItemsChanged();
+    expect(c.paidAmountCtrl.text, '500');
+
+    // Picking an option again re-derives it.
+    c.setPaymentType(OrderPaymentType.half);
+    expect(c.paidAmountCtrl.text, (c.grandTotal / 2).toStringAsFixed(0));
+  });
+
+  test('an edited order keeps its saved amount when lines change', () {
+    final c = AddPurchaseController()..loadFrom(_order);
+    final saved = c.paidAmountCtrl.text;
+    c.notifyItemsChanged();
+    expect(c.paidAmountCtrl.text, saved);
+  });
+
   test('a new purchase is not in edit mode', () {
     final c = AddPurchaseController();
     expect(c.isEditing, isFalse);
@@ -231,7 +265,7 @@ void main() {
   });
 
   test('the mobile row shares the same editable total', () {
-    final row = MobilePurchaseItemRow()..netPrice = 25;
+    final row = PurchaseItemRow()..netPrice = 25;
     row.totalQty = 12;
     expect(row.noPkg, 12);
     expect(row.totalQty, 12);

@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -43,7 +44,8 @@ class TransactionsController extends GetxController {
     final result = transactions.where((t) {
       if (q.isNotEmpty &&
           !t.item.toLowerCase().contains(q) &&
-          !t.poNumber.toLowerCase().contains(q)) {
+          !t.poNumber.toLowerCase().contains(q) &&
+          !t.party.toLowerCase().contains(q)) {
         return false;
       }
       if (types.isNotEmpty && !types.contains(t.typeLabel)) {
@@ -105,7 +107,7 @@ class TransactionsController extends GetxController {
     showAppToast(
       'Error',
       message,
-      backgroundColor: const Color(0xFFEF4444),
+      backgroundColor: AppColors.danger,
       colorText: Colors.white,
     );
   }

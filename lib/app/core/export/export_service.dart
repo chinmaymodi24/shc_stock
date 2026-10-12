@@ -1,4 +1,5 @@
 import 'package:shc_stock/app/core/export/writers/pdf_logo.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:shc_stock/app/core/theme/brand_controller.dart';
 import 'dart:typed_data';
 
@@ -187,25 +188,7 @@ class ExportService extends GetxService {
   /// business rather than the app it was built from.
   String generatedLine() {
     final now = DateTime.now();
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final hour12 = now.hour % 12 == 0 ? 12 : now.hour % 12;
-    final stamp =
-        '${now.day.toString().padLeft(2, '0')} ${months[now.month - 1]} '
-        '${now.year}, $hour12:${now.minute.toString().padLeft(2, '0')} '
-        '${now.hour < 12 ? 'AM' : 'PM'}';
+    final stamp = fmtDateTime(now);
     return '${brand.companyName} · Generated $stamp · $currentActorName';
   }
 

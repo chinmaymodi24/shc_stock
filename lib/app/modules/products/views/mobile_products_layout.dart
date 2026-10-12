@@ -3,6 +3,7 @@ import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
 import 'package:shc_stock/app/modules/products/export/products_export.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/utils/qty_format.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
@@ -74,6 +75,7 @@ class MobileProductsLayout extends StatelessWidget {
       actions: [
         Obx(
           () => MobileFilterButton(
+            visible: c.products.isNotEmpty,
             filters: _buildFilters(context, c),
             onClear: c.resetFilters,
             activeCount:
@@ -328,13 +330,13 @@ class _ProductRow extends StatelessWidget {
                   ),
                   MobileRowMenuItem(
                     icon: Icons.copy_outlined,
-                    color: const Color(0xFF3B82F6),
+                    color: AppColors.info,
                     label: 'Duplicate',
                     onSelected: () => ProductActions.duplicate(product),
                   ),
                   MobileRowMenuItem(
                     icon: Icons.delete_outline_rounded,
-                    color: const Color(0xFFEF4444),
+                    color: AppColors.danger,
                     label: 'Delete',
                     onSelected: () => ProductActions.delete(context, product),
                   ),
@@ -354,18 +356,20 @@ class _ProductRow extends StatelessWidget {
     final group = p.subCategory.isNotEmpty ? p.subCategory : p.categoryName;
     final stock = p.currentStock == 0
         ? 'Out of stock'
-        : '${p.currentStock} ${p.unit}';
+        : '${fmtStockQty(p.currentStock)} ${p.unit}';
     return '₹${p.sellingPrice.toStringAsFixed(0)} · $group · $stock';
   }
 
   static _RowStatus _statusOf(ProductModel p) {
     switch (p.stockStatus) {
       case 'Out of Stock':
-        return const _RowStatus('Out of Stock', Color(0xFFEF4444));
+        return _RowStatus('Out of Stock', AppColors.danger);
       case 'Low Stock':
-        return const _RowStatus('Low Stock', Color(0xFFF59E0B));
+        return _RowStatus('Low Stock', AppColors.warning);
+      case 'Inactive':
+        return const _RowStatus('Inactive', Color(0xFF94A3B8));
       default:
-        return const _RowStatus('Active', Color(0xFF22C55E));
+        return _RowStatus('Active', AppColors.success);
     }
   }
 }

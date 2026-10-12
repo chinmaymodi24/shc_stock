@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/brand_controller.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/theme/app_text_styles.dart';
 import 'package:shc_stock/app/modules/auth/controllers/login_controller.dart';
@@ -620,47 +619,27 @@ class LoginForm extends GetView<LoginController> {
 
   Widget _buildRememberMeRow(BuildContext context) {
     final colors = context.appColors;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Obx(
-          () => Row(
-            children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: Checkbox(
-                  value: controller.rememberMe.value,
-                  onChanged: controller.toggleRememberMe,
-                  activeColor: AppColors.primaryOrange,
-                  checkColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  side: BorderSide(color: colors.textSecondary, width: 1.5),
-                ),
+    return Obx(
+      () => Row(
+        children: [
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: Checkbox(
+              value: controller.rememberMe.value,
+              onChanged: controller.toggleRememberMe,
+              activeColor: AppColors.primaryOrange,
+              checkColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
               ),
-              const SizedBox(width: 8),
-              Text('Remember me', style: AppTextStyles.rememberMeCtx(context)),
-            ],
-          ),
-        ),
-        InkWell(
-          onTap: controller.forgotPassword,
-          borderRadius: BorderRadius.circular(4),
-          hoverColor: Colors.transparent,
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          child: Text(
-            'Forgot password?',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: colors.purple,
+              side: BorderSide(color: colors.textSecondary, width: 1.5),
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          Text('Remember me', style: AppTextStyles.rememberMeCtx(context)),
+        ],
+      ),
     );
   }
 

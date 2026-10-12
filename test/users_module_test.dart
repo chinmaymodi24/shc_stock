@@ -72,13 +72,13 @@ void main() {
       expect(u.role.label, 'Admin');
       expect(u.isActive, isTrue);
       expect(u.department, 'Management');
-      expect(u.createdAt, '01 Jan 2026');
+      expect(u.createdAt, 'Jan 1, 2026');
     });
 
     test(
       'formats lastLogin, and shows Never when the user never logged in',
       () {
-        expect(_parse(_adminRow).lastLogin, contains('09 Aug 2026'));
+        expect(_parse(_adminRow).lastLogin, contains('Aug 9, 2026'));
         expect(_parse(_inactiveRow).lastLogin, 'Never');
       },
     );

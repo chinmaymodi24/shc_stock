@@ -147,6 +147,21 @@ router.post('/', async (req, res, next) => {
     });
     if (existing) return res.json(shape(existing));
 
+    // A cancelled sale never happened, so it must not carry an invoice.
+    if (order.status === 'Cancelled') {
+      return res.status(409).json({ error: 'A cancelled sale cannot be invoiced' });
+    }
+    // An invoice number typed on the sale may already be in use by another bill.
+    const typedNo = str(order.invoiceNo);
+    if (typedNo) {
+      const taken = await prisma.bill.findUnique({ where: { invoiceNo: typedNo }, select: { id: true } });
+      if (taken) {
+        return res.status(409).json({
+          error: `Invoice number ${typedNo} is already used by another bill. Change the sale's invoice number first.`,
+        });
+      }
+    }
+
     const prefix = str(req.body.prefix, 'INV').toUpperCase() || 'INV';
     const actor = actorName(req);
     const issuedOn = order.invoiceDate ?? new Date();

@@ -68,12 +68,6 @@ class AppTextStyles {
     letterSpacing: 0.3,
   );
 
-  static TextStyle get forgotPassword => GoogleFonts.poppins(
-    fontSize: 13,
-    fontWeight: FontWeight.w600,
-    color: appColors.purple,
-  );
-
   static TextStyle get rememberMe => GoogleFonts.poppins(
     fontSize: 13,
     fontWeight: FontWeight.w400,

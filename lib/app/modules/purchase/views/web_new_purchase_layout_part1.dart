@@ -1,0 +1,458 @@
+part of 'web_new_purchase_layout.dart';
+
+class _ItemDetailsTable extends StatelessWidget {
+  final List<PurchaseItemRow> items;
+  final AppThemeColors colors;
+  final VoidCallback onChanged;
+  final void Function(int) onDelete;
+
+  const _ItemDetailsTable({
+    required this.items,
+    required this.colors,
+    required this.onChanged,
+    required this.onDelete,
+  });
+
+  TextStyle get _h => TextStyle(
+    fontSize: 11.5,
+    fontWeight: FontWeight.w600,
+    color: colors.textSecondary,
+    fontFamily: brandFontFamily,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          color: colors.rowEven,
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          child: Row(
+            children: [
+              Expanded(
+                flex: _cItem,
+                child: Text('Item (type to search)', style: _h),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                flex: _cHsn,
+                child: Text('HSN', style: _h, textAlign: TextAlign.center),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                flex: _cGrade,
+                child: Text('Grade', style: _h, textAlign: TextAlign.center),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                flex: _cDensity,
+                child: Text('Density', style: _h, textAlign: TextAlign.center),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                flex: _cNoPkg,
+                child: Text('No. Pkg', style: _h, textAlign: TextAlign.center),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                flex: _cTotalQty,
+                child: Text(
+                  'Total Qty',
+                  style: _h,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                flex: _cUom,
+                child: Text('UoM', style: _h, textAlign: TextAlign.center),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                flex: _cNetPrice,
+                child: Text('Net Price', style: _h, textAlign: TextAlign.right),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                flex: _cAmount,
+                child: Text('Amount', style: _h, textAlign: TextAlign.right),
+              ),
+              const SizedBox(width: 28),
+            ],
+          ),
+        ),
+        Divider(height: 1, color: colors.divider),
+        ...items.asMap().entries.map(
+          (e) => _ItemDetailsRow(
+            key: ValueKey(e.value.id),
+            row: e.value,
+            colors: colors,
+            onChanged: onChanged,
+            onDelete: () => onDelete(e.key),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ItemDetailsRow extends StatelessWidget {
+  static final _densityNum = RegExp(r'(\d+(?:\.\d+)?)\s*kg/m');
+  static final _gradeNum = RegExp(r'(\d+)\s*°?C');
+
+  final PurchaseItemRow row;
+  final AppThemeColors colors;
+  final VoidCallback onChanged;
+  final VoidCallback onDelete;
+
+  const _ItemDetailsRow({
+    super.key,
+    required this.row,
+    required this.colors,
+    required this.onChanged,
+    required this.onDelete,
+  });
+
+  /// A name typed over (or instead of) a picked product: the line is now a
+  /// hand-typed one, so it is no longer tied to a product.
+  void _typeName(String text) {
+    row.product = text;
+    row.productId = null;
+    // A typed line is not a product: the usual 18% applies.
+    row.taxPercent = kDefaultGstRate;
+    onChanged();
+  }
+
+  void _applyProduct(ProductModel p) {
+    row.productId = int.tryParse(p.id);
+    row.product = p.name;
+    row.taxPercent = p.taxPercent;
+    row.hsn = p.hsnCode ?? '';
+    row.uom = p.unit;
+    row.netPrice = p.costPrice;
+    if (p.densityVariants.isNotEmpty) {
+      row.density = p.densityVariants.first;
+    } else {
+      final m = _densityNum.firstMatch(p.name);
+      if (m != null) row.density = '${m.group(1)} kg/m³';
+    }
+    final g = _gradeNum.firstMatch(p.name);
+    if (g != null) row.grade = g.group(1)!;
+    row.version++;
+    onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colors.divider, width: 0.8)),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            flex: _cItem,
+            child: _ProductAutocomplete(
+              initialValue: row.product,
+              colors: colors,
+              onSelected: _applyProduct,
+              onTyped: _typeName,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            flex: _cHsn,
+            child: AppSmallInput(
+              key: ValueKey('${row.id}_hsn_${row.version}'),
+              hint: '—',
+              value: row.hsn,
+              colors: colors,
+              center: true,
+              onChanged: (v) {
+                row.hsn = v;
+                onChanged();
+              },
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            flex: _cGrade,
+            child: AppSmallInput(
+              key: ValueKey('${row.id}_grade_${row.version}'),
+              hint: '—',
+              value: row.grade,
+              colors: colors,
+              center: true,
+              onChanged: (v) {
+                row.grade = v;
+                onChanged();
+              },
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            flex: _cDensity,
+            child: AppSmallInput(
+              key: ValueKey('${row.id}_density_${row.version}'),
+              hint: '—',
+              value: row.density,
+              colors: colors,
+              center: true,
+              onChanged: (v) {
+                row.density = v;
+                onChanged();
+              },
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            flex: _cNoPkg,
+            child: AppSmallNumber(
+              value: row.noPkg,
+              colors: colors,
+              onChanged: (v) {
+                row.noPkg = v;
+                onChanged();
+              },
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            flex: _cTotalQty,
+            child: AppSmallStepper(
+              value: row.totalQty,
+              colors: colors,
+              onChanged: (v) {
+                row.totalQty = v;
+                onChanged();
+              },
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            flex: _cUom,
+            child: AppSmallDrop(
+              hint: 'UoM',
+              items: const ['BOX', 'KG', 'PCS', 'MTR', 'LTR', 'SET'],
+              value: row.uom.isEmpty ? null : row.uom,
+              colors: colors,
+              onChanged: (v) {
+                row.uom = v ?? 'BOX';
+                onChanged();
+              },
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            flex: _cNetPrice,
+            child: AppSmallNumber(
+              key: ValueKey('${row.id}_netPrice_${row.version}'),
+              value: row.netPrice,
+              colors: colors,
+              decimal: true,
+              onChanged: (v) {
+                row.netPrice = v;
+                onChanged();
+              },
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            flex: _cAmount,
+            child: Text(
+              '₹${row.amount.toStringAsFixed(0)}',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: colors.textPrimary,
+                fontFamily: brandFontFamily,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
+          SizedBox(
+            width: 28,
+            child: IconButton(
+              onPressed: onDelete,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+              icon: Icon(
+                Icons.close_rounded,
+                color: AppColors.danger,
+                size: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Product autocomplete — typing filters ProductsController by name; selecting
+// an option fetches its HSN, density/grade (parsed from the name), UoM and
+// cost price into the row.
+// ─────────────────────────────────────────────────────────────────────────────
+class _ProductAutocomplete extends StatelessWidget {
+  final String initialValue;
+  final AppThemeColors colors;
+  final ValueChanged<ProductModel> onSelected;
+  final ValueChanged<String>? onTyped;
+
+  const _ProductAutocomplete({
+    required this.initialValue,
+    required this.colors,
+    required this.onSelected,
+    this.onTyped,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final products = Get.find<ProductsController>().products;
+    return Autocomplete<ProductModel>(
+      displayStringForOption: (p) => p.name,
+      optionsBuilder: (textEditingValue) {
+        final q = textEditingValue.text.trim().toLowerCase();
+        if (q.isEmpty) return const Iterable<ProductModel>.empty();
+        return products
+            .where((p) => p.isActive && p.name.toLowerCase().contains(q))
+            .take(30);
+      },
+      onSelected: onSelected,
+      fieldViewBuilder: (context, controller, focusNode, onSubmit) {
+        if (controller.text.isEmpty && initialValue.isNotEmpty) {
+          controller.text = initialValue;
+        }
+        return TextField(
+          controller: controller,
+          focusNode: focusNode,
+          onChanged: onTyped,
+          onSubmitted: (_) => onSubmit(),
+          style: TextStyle(
+            fontSize: 12,
+            color: colors.textPrimary,
+            fontFamily: brandFontFamily,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Type e.g. Ceramic Fiber Blanket 1260...',
+            hintStyle: TextStyle(
+              fontSize: 12,
+              color: colors.textHint,
+              fontFamily: brandFontFamily,
+            ),
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 8,
+            ),
+            filled: true,
+            fillColor: colors.surface,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: BorderSide(color: colors.border),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: BorderSide(color: colors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: BorderSide(
+                color: AppColors.primaryOrange,
+                width: 1.2,
+              ),
+            ),
+          ),
+        );
+      },
+      optionsViewBuilder: (context, onSelect, options) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(appColors.radius),
+            color: colors.surface,
+            child: Container(
+              width: 380,
+              constraints: const BoxConstraints(maxHeight: 260),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(appColors.radius),
+                border: Border.all(color: colors.border),
+              ),
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                shrinkWrap: true,
+                itemCount: options.length,
+                itemBuilder: (context, index) {
+                  final p = options.elementAt(index);
+                  final highlighted =
+                      AutocompleteHighlightedOption.of(context) == index;
+                  if (highlighted) {
+                    SchedulerBinding.instance.addPostFrameCallback((_) {
+                      Scrollable.ensureVisible(context, alignment: 0.5);
+                    });
+                  }
+                  return Container(
+                    color: highlighted
+                        ? AppColors.primaryOrange.withValues(alpha: 0.1)
+                        : null,
+                    child: InkWell(
+                      onTap: () => onSelect(p),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    p.name,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: colors.textPrimary,
+                                      fontFamily: brandFontFamily,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'HSN ${p.hsnCode ?? '—'} · ${p.unit}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: colors.textHint,
+                                      fontFamily: brandFontFamily,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              '₹${p.costPrice.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: colors.textSecondary,
+                                fontFamily: brandFontFamily,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

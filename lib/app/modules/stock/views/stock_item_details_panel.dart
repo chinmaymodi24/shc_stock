@@ -1,10 +1,12 @@
 import 'package:shc_stock/app/core/session/app_modules.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
+import 'package:shc_stock/app/core/utils/qty_format.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/modified_by_cell.dart';
+import 'package:shc_stock/app/modules/products/widgets/product_thumbnail.dart';
 import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
 import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
@@ -317,32 +319,51 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _sectionLabel('Item Name', colors),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.name,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: colors.textPrimary,
-                            fontFamily: brandFontFamily,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'SKU: ${item.sku}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: colors.textSecondary,
-                            fontFamily: brandFontFamily,
-                          ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ProductThumbnail(
+                              imageUrl: item.imageUrl,
+                              fallbackLabel: item.name,
+                              size: 72,
+                              radius: 12,
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _sectionLabel('Item Name', colors),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    item.name,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: colors.textPrimary,
+                                      fontFamily: brandFontFamily,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'SKU: ${item.sku}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: colors.textSecondary,
+                                      fontFamily: brandFontFamily,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 18),
                         _pairField(
                           'Quantity on Hand',
-                          '${item.stockInHand} ${item.unit}',
+                          '${fmtStockQty(item.stockInHand)} ${item.unit}',
                           'Reorder Point',
-                          '${item.minimumStock} ${item.unit}',
+                          '${fmtStockQty(item.minimumStock)} ${item.unit}',
                           colors,
                         ),
                         const SizedBox(height: 14),
@@ -382,9 +403,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
                           'Last Restocked',
                           latestPurchase?.date == null
                               ? '—'
-                              : DateFormat(
-                                  'MMM d, yyyy',
-                                ).format(latestPurchase!.date!),
+                              : fmtDate(latestPurchase!.date!),
                           colors,
                         ),
                         const SizedBox(height: 18),
@@ -648,7 +667,6 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
     VoidCallback? onDelete,
   }) {
     final color = e.isIn ? colors.success : colors.warning;
-    final dateFmt = DateFormat('MMM d, yyyy');
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
@@ -709,7 +727,7 @@ class _StockItemDetailsPanelState extends State<StockItemDetailsPanel> {
               ),
               const SizedBox(height: 2),
               Text(
-                e.date == null ? '—' : dateFmt.format(e.date!),
+                e.date == null ? '—' : fmtDate(e.date!),
                 style: TextStyle(
                   fontSize: 11,
                   color: colors.textHint,

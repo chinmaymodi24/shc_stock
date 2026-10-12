@@ -1,11 +1,22 @@
+import 'package:shc_stock/app/core/utils/dispose_later.dart';
+import 'package:shc_stock/app/shared/widgets/app_date_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/modules/billing/controllers/billing_profile_controller.dart';
+import 'package:shc_stock/app/core/utils/gst.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/core/utils/order_checks.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/shared/models/order_payment.dart';
 import 'package:shc_stock/app/core/utils/doc_number.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
-import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
 import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
+import 'package:shc_stock/app/modules/sales/models/sale_payment.dart';
+import 'package:shc_stock/app/modules/sales/utils/sale_stock_guard.dart';
 import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
 
 class SaleItemRow {
@@ -27,7 +38,57 @@ class SaleItemRow {
   String unit = '';
   double rate = 0;
 
+  /// GST rate (percent) — the picked product's own, 18% for a typed line.
+  double taxPercent = kDefaultGstRate;
+
   double get amount => qty * rate;
+}
+
+/// One payment line of the form's "Payments" section. Its text boxes own
+/// their controllers, so the row keeps what was typed as rows are added or
+/// removed around it; date and mode are reactive.
+class SalePaymentRow {
+  static int _seq = 0;
+  final int id = _seq++;
+
+  final amountCtrl = TextEditingController();
+  final notesCtrl = TextEditingController();
+  final date = Rx<DateTime>(DateTime.now());
+  final mode = 'Cash'.obs;
+
+  /// While true the amount follows the sale's balance (see
+  /// [AddSaleController._followGrandTotal]); typing an amount stops that.
+  bool followsTotal = false;
+
+  SalePaymentRow({
+    double? amount,
+    DateTime? date,
+    String? mode,
+    String? notes,
+  }) {
+    if (amount != null && amount > 0) amountCtrl.text = trimAmount(amount);
+    if (date != null) this.date.value = date;
+    if (mode != null) this.mode.value = mode;
+    if (notes != null) notesCtrl.text = notes;
+  }
+
+  double get amount => double.tryParse(amountCtrl.text.trim()) ?? 0;
+
+  /// Nothing typed: the row is not sent.
+  bool get isBlank =>
+      amountCtrl.text.trim().isEmpty && notesCtrl.text.trim().isEmpty;
+
+  SalePayment toPayment() => SalePayment(
+    date: date.value,
+    amount: amount,
+    mode: mode.value,
+    notes: notesCtrl.text.trim(),
+  );
+
+  void dispose() {
+    amountCtrl.dispose();
+    notesCtrl.dispose();
+  }
 }
 
 /// Marks a "Duplicate" navigation: the form loads from [order] but never
@@ -39,10 +100,16 @@ class DuplicateSalesOrder {
 }
 
 class AddSaleController extends GetxController {
+  /// Keeps the quantities within what inventory holds — see [SaleStockGuard].
+  late final SaleStockGuard stock = SaleStockGuard(
+    lines: () => [for (final r in items) (productId: r.productId, qty: r.qty)],
+  );
+
   final client = ''.obs;
   final addressCtrl = TextEditingController();
   final cityCtrl = TextEditingController();
-  final statePinCtrl = TextEditingController();
+  final pinCtrl = TextEditingController();
+  final stateCtrl = TextEditingController();
   final buyerGstCtrl = TextEditingController();
   final panCtrl = TextEditingController();
   final invoiceNoCtrl = TextEditingController();
@@ -62,9 +129,10 @@ class AddSaleController extends GetxController {
   /// the stock out then.
   final expectedDelivery = Rx<DateTime?>(null);
 
-  /// "Order Paid" — the dropdown choice and the amount behind it.
-  final paymentType = OrderPaymentType.none.obs;
-  final paidAmountCtrl = TextEditingController();
+  /// The payments received on this sale — as many as were made, like item
+  /// rows. Each becomes a row of the Transactions list under the sale's SO
+  /// number; together they are what the sale counts as paid.
+  final payments = <SalePaymentRow>[].obs;
 
   final items = <SaleItemRow>[SaleItemRow()].obs;
 
@@ -78,6 +146,12 @@ class AddSaleController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // The party's state decides CGST + SGST vs IGST; the totals redraw off
+    // `items`, so poke it whenever one of the boxes that names the state
+    // changes.
+    for (final c in [buyerGstCtrl, placeOfSupplyCtrl, stateCtrl, addressCtrl]) {
+      c.addListener(notifyItemsChanged);
+    }
     final arg = Get.arguments;
     if (arg is DuplicateSalesOrder) {
       loadFrom(arg.order, asDuplicate: true);
@@ -85,41 +159,58 @@ class AddSaleController extends GetxController {
       // would create a byte-for-byte copy — same invoice number, same date.
       // Force a fresh invoice number (regardless of the auto-numbering
       // preference) and today's dates so the new record is distinct.
-      invoiceNoCtrl.text = _nextInvoiceNo();
+      _fillNextNumber();
       final today = DateTime.now();
       invoiceDate.value = today;
       poDate.value = today;
+      // The copy is a new sale: nothing has been paid on it yet.
+      _startWithFullPayment();
     } else if (arg is SalesOrder) {
       loadFrom(arg);
     } else {
       _prefillInvoiceNo();
+      _startWithFullPayment();
     }
   }
 
-  /// The next number in the SO-2024 series, from the loaded orders.
-  String _nextInvoiceNo() {
-    final orders = Get.isRegistered<SalesController>()
-        ? Get.find<SalesController>().orders
-        : const <SalesOrder>[];
-    return nextDocNumber(
-      prefix: 'SO-2024',
-      existing: orders.map((o) => o.soNumber),
-    );
+  /// A new sale starts as paid in full today: one payment whose amount
+  /// follows the grand total until it is typed over or another row is added.
+  void _startWithFullPayment() {
+    _disposeRows(payments);
+    payments.assignAll([SalePaymentRow()..followsTotal = true]);
+    _followGrandTotal();
   }
 
-  /// Fills "Invoice No." with [_nextInvoiceNo], unless the user turned
+  /// Writes the server's next order number into "Invoice No.".
+  Future<void> _fillNextNumber() async {
+    final n = await nextOrderNumber(OrderSeries.sale);
+    if (n.isNotEmpty) invoiceNoCtrl.text = n;
+  }
+
+  /// Fills "Invoice No." with the next number, unless the user turned
   /// auto-numbering off in Settings › Preferences.
   Future<void> _prefillInvoiceNo() async {
     if (isEditing) return;
-    if (!await autoNumberDocsEnabled()) return;
-    invoiceNoCtrl.text = _nextInvoiceNo();
+    if (!await autoNumberSalesEnabled()) return;
+    await _fillNextNumber();
   }
 
   /// Fills the form from an existing order. When [asDuplicate] is true,
   /// `editing` is left null so Save (see WebNewSalesLayout._saveSale) creates
   /// a fresh record instead of updating the one it was copied from.
   void loadFrom(SalesOrder o, {bool asDuplicate = false}) {
-    if (!asDuplicate) editing = o;
+    if (!asDuplicate) {
+      editing = o;
+      // This order's own units are already out of stock; editing it may keep
+      // or lower them without counting as a new draw on inventory.
+      stock.returnable.clear();
+      for (final i in o.items) {
+        final id = i.productId;
+        if (id != null) {
+          stock.returnable[id] = (stock.returnable[id] ?? 0) + i.qty;
+        }
+      }
+    }
     client.value = o.client;
     addressCtrl.text = o.clientAddress;
     buyerGstCtrl.text = o.buyerGstin;
@@ -133,8 +224,28 @@ class AddSaleController extends GetxController {
     }
     placeOfSupplyCtrl.text = o.destination;
     expectedDelivery.value = o.expectedDelivery;
-    paymentType.value = o.paymentType;
-    paidAmountCtrl.text = o.paidAmount == 0 ? '' : trimAmount(o.paidAmount);
+    if (!asDuplicate) {
+      // The saved payments, as they were entered. An order saved before
+      // payments were itemised only has its total: it becomes one payment on
+      // the order date, so re-saving keeps what it said.
+      _disposeRows(payments);
+      payments.assignAll(
+        o.payments.isNotEmpty
+            ? [
+                for (final p in o.payments)
+                  SalePaymentRow(
+                    amount: p.amount,
+                    date: p.date,
+                    mode: p.mode,
+                    notes: p.notes,
+                  ),
+              ]
+            : [
+                if (o.paidAmount > 0)
+                  SalePaymentRow(amount: o.paidAmount, date: o.date, mode: ''),
+              ],
+      );
+    }
 
     items.assignAll(
       o.items.isEmpty
@@ -147,37 +258,127 @@ class AddSaleController extends GetxController {
                     ..hsn = i.hsn
                     ..qty = i.qty
                     ..unit = i.unit
-                    ..rate = i.rate,
+                    ..rate = i.rate
+                    ..taxPercent = i.taxPercent,
                 )
                 .toList(),
     );
   }
 
-  /// Applies a dropdown pick and prefills the amount box: Full Payment fills
-  /// the grand total, Half Payment half of it, Other is left for the user to
-  /// type. The value stays editable in every case.
-  void setPaymentType(OrderPaymentType type) {
-    paymentType.value = type;
-    final suggested = type.suggestedAmount(grandTotal);
-    paidAmountCtrl.text = suggested == null ? '' : trimAmount(suggested);
+  // ── Payments ────────────────────────────────────────────────────────────
+
+  /// Adds a payment for whatever is still due (blank when nothing is), dated
+  /// today. The first row stops following the total once there are two.
+  void addPayment() {
+    for (final p in payments) {
+      p.followsTotal = false;
+    }
+    final due = balanceDue;
+    payments.add(SalePaymentRow(amount: due > 0 ? _round2(due) : null));
   }
 
-  /// The amount actually paid — whatever is in the box, 0 when it is empty or
-  /// no payment type was chosen.
-  double get paidAmount {
-    if (paymentType.value == OrderPaymentType.none) return 0;
-    return double.tryParse(paidAmountCtrl.text.trim()) ?? 0;
+  void removePayment(int index) {
+    if (index < 0 || index >= payments.length) return;
+    final row = payments.removeAt(index);
+    // Its boxes may still be drawn (and focused) this frame.
+    disposeAfterPageExit([row.amountCtrl, row.notesCtrl]);
+  }
+
+  /// The person typed in a payment's amount (or note): it is theirs now, and
+  /// the summary under the rows redraws.
+  void paymentTyped(SalePaymentRow row) {
+    row.followsTotal = false;
+    payments.refresh();
+  }
+
+  void setPaymentMode(SalePaymentRow row, String? mode) {
+    row.mode.value = mode ?? '';
+  }
+
+  Future<void> pickPaymentDate(BuildContext context, SalePaymentRow row) async {
+    final picked = await showAppDatePicker(
+      context: context,
+      initialDate: row.date.value,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2035),
+    );
+    if (picked != null) row.date.value = picked;
+  }
+
+  /// Keeps a new sale's single "paid in full" row in step with the grand
+  /// total as lines change.
+  void _followGrandTotal() {
+    if (payments.length != 1 || !payments.first.followsTotal) return;
+    final total = grandTotal;
+    payments.first.amountCtrl.text = total > 0
+        ? trimAmount(_round2(total))
+        : '';
+    payments.refresh();
+  }
+
+  static double _round2(double v) => (v * 100).roundToDouble() / 100;
+
+  static void _disposeRows(Iterable<SalePaymentRow> rows) {
+    for (final r in rows) {
+      r.dispose();
+    }
+  }
+
+  /// What has been paid: the payment rows added up.
+  double get paidAmount => _round2(payments.fold(0.0, (s, p) => s + p.amount));
+
+  /// What is still owed (never below 0).
+  double get balanceDue {
+    final due = grandTotal - paidAmount;
+    return due > 0.005 ? _round2(due) : 0;
+  }
+
+  /// The payments that get sent — an untouched empty row is not.
+  List<SalePayment> sentPayments() => [
+    for (final p in payments)
+      if (!p.isBlank) p.toPayment(),
+  ];
+
+  /// What the list's Payment column will read once saved — the same rule as
+  /// the server (salePayments.js).
+  PaymentStatus get paymentStatusPreview {
+    final paid = paidAmount;
+    if (editing?.paymentStatus == PaymentStatus.refunded) {
+      return PaymentStatus.refunded;
+    }
+    if (grandTotal > 0 && paid + 1 >= grandTotal) return PaymentStatus.paid;
+    return paid > 0 ? PaymentStatus.partial : PaymentStatus.pending;
   }
 
   double get taxableValue => items.fold(0.0, (s, r) => s + r.amount);
-  double get cgst => taxableValue * 0.09;
-  double get sgst => taxableValue * 0.09;
-  double get grandTotal => taxableValue + cgst + sgst;
+
+  /// The party's GST state: GSTIN first, then place of supply, state, address.
+  String? get partyStateCode => gstStateOf(buyerGstCtrl.text, [
+    placeOfSupplyCtrl.text,
+    stateCtrl.text,
+    addressCtrl.text,
+  ]);
+
+  /// Inter-state supply → IGST; same state (or either side unknown) → CGST +
+  /// SGST. The seller's state comes from Settings › Billing.
+  bool get interState =>
+      isInterState(BillingProfileController.sellerStateCode, partyStateCode);
+
+  /// Tax on the lines, each at its own product's rate.
+  GstBreakup get gst => computeGst([
+    for (final r in items) GstLine(r.amount, r.taxPercent),
+  ], interState: interState);
+  double get cgst => gst.cgst;
+  double get sgst => gst.sgst;
+  double get igst => gst.igst;
+  double get grandTotal => taxableValue + gst.totalTax;
 
   void applyClient(ClientModel c) {
     client.value = c.name;
-    addressCtrl.text = c.address;
-    statePinCtrl.text = c.state;
+    addressCtrl.text = c.addressOnly;
+    cityCtrl.text = c.city;
+    pinCtrl.text = c.pin;
+    stateCtrl.text = c.state;
     buyerGstCtrl.text = c.gstin;
     panCtrl.text = c.pan;
     if (c.state.isNotEmpty) placeOfSupplyCtrl.text = c.state;
@@ -185,12 +386,18 @@ class AddSaleController extends GetxController {
 
   void addItemRow() => items.add(SaleItemRow());
 
-  void removeItemRow(int index) => items.removeAt(index);
+  void removeItemRow(int index) {
+    items.removeAt(index);
+    _followGrandTotal();
+  }
 
-  void notifyItemsChanged() => items.refresh();
+  void notifyItemsChanged() {
+    items.refresh();
+    _followGrandTotal();
+  }
 
   Future<void> pickDate(BuildContext context, Rx<DateTime?> target) async {
-    final picked = await showDatePicker(
+    final picked = await showAppDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2020),
@@ -201,18 +408,164 @@ class AddSaleController extends GetxController {
 
   @override
   void onClose() {
-    addressCtrl.dispose();
-    cityCtrl.dispose();
-    statePinCtrl.dispose();
-    buyerGstCtrl.dispose();
-    panCtrl.dispose();
-    invoiceNoCtrl.dispose();
-    poNoCtrl.dispose();
-    lrNoCtrl.dispose();
-    vehicleNoCtrl.dispose();
-    freightCtrl.dispose();
-    placeOfSupplyCtrl.dispose();
-    paidAmountCtrl.dispose();
+    // Disposed once the page has gone, not while it is still on screen
+    // for its exit transition — see dispose_later.dart.
+    disposeAfterPageExit([
+      addressCtrl,
+      cityCtrl,
+      pinCtrl,
+      stateCtrl,
+      buyerGstCtrl,
+      panCtrl,
+      invoiceNoCtrl,
+      poNoCtrl,
+      lrNoCtrl,
+      vehicleNoCtrl,
+      freightCtrl,
+      placeOfSupplyCtrl,
+      for (final r in payments) ...[r.amountCtrl, r.notesCtrl],
+    ]);
     super.onClose();
+  }
+
+  /// The rows that get sent — the empty one left at the bottom is not.
+  List<SaleItemRow> sentRows() => withoutBlankRows(
+    items,
+    (r) => (name: r.product, productId: r.productId, qty: r.qty, rate: r.rate),
+  );
+
+  /// Validates, saves (create or update), then returns to the list with a
+  /// toast. Shared by the web and the mobile form, so the two can never save
+  /// different things.
+  Future<void> save() async {
+    final c = Get.find<SalesController>();
+    // A sale with no client silently saved as the literal string "New
+    // Client" before — indistinguishable from a real client of that name,
+    // and unmatchable to anyone in the Item Details / client history views.
+    // Block the save instead so every order carries a real client.
+    if (client.value.trim().isEmpty) {
+      showAppToast(
+        'Error',
+        'Please select or enter a client before saving.',
+        backgroundColor: AppColors.danger,
+        colorText: Colors.white,
+      );
+      return;
+    }
+    // The same rules the server applies, so a bad order is stopped here with a
+    // plain message instead of coming back as an error.
+    final problem =
+        checkOrderLines([
+          for (final r in items)
+            (name: r.product, productId: r.productId, qty: r.qty, rate: r.rate),
+        ]) ??
+        checkPaymentRows([
+          for (final p in payments)
+            (amount: p.amountCtrl.text, notes: p.notesCtrl.text),
+        ], total: grandTotal) ??
+        checkDateOrder(
+          later: expectedDelivery.value,
+          earlier: invoiceDate.value,
+          laterName: 'Expected delivery',
+          earlierName: 'the invoice date',
+        );
+    if (problem != null) {
+      showAppToast(
+        'Check the order',
+        problem,
+        backgroundColor: AppColors.danger,
+        colorText: Colors.white,
+      );
+      return;
+    }
+    // Never send a sale the inventory can't cover — the rows already say what
+    // is wrong, this stops the Save button from being a way around them.
+    final stockError = stock.firstError();
+    if (stockError != null) {
+      showAppToast(
+        'Not enough stock',
+        stockError,
+        backgroundColor: AppColors.danger,
+        colorText: Colors.white,
+      );
+      return;
+    }
+    // Editing keeps the record's own id, SO number and statuses — only the
+    // details being edited change.
+    final editing = this.editing;
+    final newId = editing?.id ?? 'so_${DateTime.now().millisecondsSinceEpoch}';
+    // Blank for a new order: the server numbers it (SO/0001/26-27).
+    final newSoNum = editing?.soNumber ?? '';
+    final clientName = client.value.trim();
+    final order = SalesOrder(
+      id: newId,
+      soNumber: newSoNum,
+      client: clientName,
+      clientBadge: clientName
+          .substring(0, clientName.length < 2 ? clientName.length : 2)
+          .toUpperCase(),
+      clientColor: AppColors.primaryOrange,
+      date: invoiceDate.value ?? DateTime.now(),
+      itemCount: sentRows().length,
+      amount: grandTotal,
+      status: editing?.status ?? SalesStatus.confirmed,
+      // The server works these out again from the payments; sent so an
+      // older server still gets a consistent order.
+      paymentStatus: paymentStatusPreview,
+      modifiedBy: currentActorName,
+      modifiedAt: DateTime.now(),
+      clientAddress: addressCtrl.text.trim(),
+      buyerGstin: buyerGstCtrl.text.trim(),
+      pan: panCtrl.text.trim(),
+      invoiceNo: invoiceNoCtrl.text.trim().isEmpty
+          ? newSoNum
+          : invoiceNoCtrl.text.trim(),
+      invoiceDate: invoiceDate.value,
+      despatchedThrough: despatchThrough.value,
+      destination: placeOfSupplyCtrl.text.trim(),
+      expectedDelivery: expectedDelivery.value,
+      paymentType: paymentStatusPreview == PaymentStatus.paid
+          ? OrderPaymentType.full
+          : paidAmount > 0
+          ? OrderPaymentType.other
+          : OrderPaymentType.none,
+      paidAmount: paidAmount,
+      payments: sentPayments(),
+      interState: interState,
+      items: sentRows()
+          .map(
+            (r) => SaleDetailItem(
+              productId: r.productId,
+              product: r.product,
+              hsn: r.hsn,
+              qty: r.qty,
+              unit: r.unit,
+              rate: r.rate,
+              taxPercent: r.taxPercent,
+            ),
+          )
+          .toList(),
+    );
+
+    final ok = editing == null
+        ? await c.addOrder(order)
+        : await c.updateOrder(order);
+    if (!ok) return; // controller already showed the error toast
+    // A new order's number is the one the server gave it (newest first).
+    final number = editing == null && c.orders.isNotEmpty
+        ? c.orders.first.soNumber
+        : newSoNum;
+    Get.offNamed(AppRoutes.sales);
+    final unlinked = unlinkedItemsNote(
+      sentRows().where((r) => r.productId == null).length,
+    );
+    showAppToast(
+      editing == null ? '✅ Sale Saved' : '✅ Sale Updated',
+      editing == null
+          ? '$number has been successfully created.$unlinked'
+          : '$number has been successfully updated.$unlinked',
+      backgroundColor: AppColors.success,
+      colorText: Colors.white,
+    );
   }
 }

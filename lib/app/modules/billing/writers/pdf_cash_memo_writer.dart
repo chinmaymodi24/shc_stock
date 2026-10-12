@@ -386,7 +386,7 @@ class _MemoWriter {
     }
 
     row('Sub Total', totals.taxableTotalText);
-    row('GST ${_ratePercent(totals.tax.gstPercent)}', totals.totalTaxText);
+    row(totals.gstHeader, totals.totalTaxText);
     row('Round Off', totals.roundOffText);
 
     y += 4;
@@ -410,13 +410,6 @@ class _MemoWriter {
       color: _ink,
     );
     y += 26;
-  }
-
-  static String _ratePercent(double percent) {
-    final text = percent == percent.roundToDouble()
-        ? percent.toStringAsFixed(0)
-        : percent.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '');
-    return '$text%';
   }
 
   // ── Words ─────────────────────────────────────────────────────────────────

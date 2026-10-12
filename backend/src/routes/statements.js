@@ -1,6 +1,7 @@
 const express = require('express');
 const prisma = require('../prismaClient');
 
+const M = require('../orderMath');
 const router = express.Router();
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -68,6 +69,7 @@ router.get('/profit-and-loss', async (req, res, next) => {
 
     const [saleItems, purchases, products, movements] = await Promise.all([
       prisma.saleItem.findMany({
+        where: { salesOrder: M.NOT_CANCELLED },
         select: {
           qty: true,
           rate: true,
@@ -76,7 +78,7 @@ router.get('/profit-and-loss', async (req, res, next) => {
         },
       }),
       prisma.purchaseOrder.findMany({
-        where: { date: { gte: from, lte: to } },
+        where: { date: { gte: from, lte: to }, ...M.NOT_CANCELLED },
         select: { amount: true },
       }),
       prisma.product.findMany({
@@ -132,12 +134,12 @@ router.get('/balance-sheet', async (req, res, next) => {
 
     const [sales, purchases, products, movements] = await Promise.all([
       prisma.salesOrder.findMany({
-        where: { date: { lte: asOn } },
-        select: { amount: true, paidAmount: true },
+        where: { date: { lte: asOn }, ...M.NOT_CANCELLED },
+        select: { amount: true, paidAmount: true, paymentStatus: true, status: true },
       }),
       prisma.purchaseOrder.findMany({
-        where: { date: { lte: asOn } },
-        select: { amount: true, paidAmount: true },
+        where: { date: { lte: asOn }, ...M.NOT_CANCELLED },
+        select: { amount: true, paidAmount: true, status: true },
       }),
       prisma.product.findMany({
         select: { id: true, currentStock: true, costPrice: true },
@@ -147,18 +149,17 @@ router.get('/balance-sheet', async (req, res, next) => {
       }),
     ]);
 
-    const outstanding = (rows) =>
-      rows.reduce((s, o) => s + Math.max(o.amount - o.paidAmount, 0), 0);
-
-    const receivables = outstanding(sales);
-    const payables = outstanding(purchases);
+    // Same maths as Reports and Analytics (see orderMath.js), so the three
+    // never disagree about what is owed.
+    const receivables = M.sumBy(sales, M.owedOn);
+    const payables = M.sumBy(purchases, M.payableOn);
     const closingStock = await stockValueAt(asOn, products, movements);
 
     // Cash movement the system can actually see: money collected on sales
     // less money paid out on purchases. It is not a bank balance — there is
     // no opening cash figure anywhere — so the app labels it as such.
-    const collected = sales.reduce((s, o) => s + o.paidAmount, 0);
-    const paidOut = purchases.reduce((s, o) => s + o.paidAmount, 0);
+    const collected = M.sumBy(sales, M.receivedOn);
+    const paidOut = M.sumBy(purchases, M.paidOn);
     const cashMovement = collected - paidOut;
 
     const assets = closingStock + receivables + cashMovement;

@@ -34,8 +34,15 @@ class StatusUpdateDialogShell extends StatefulWidget {
 
 class _StatusUpdateDialogShellState extends State<StatusUpdateDialogShell> {
   Future<void> _save() async {
+    // A refused save (e.g. Delivered with too little stock) shows its reason in
+    // a toast, and a toast is a route: Get.back() after the await would close
+    // THAT instead of this dialog. Remove this dialog's own route instead.
+    final route = ModalRoute.of(context);
+    final navigator = Navigator.of(context);
     await widget.onSave();
-    Get.back();
+    if (route != null && route.isActive && navigator.canPop()) {
+      navigator.removeRoute(route);
+    }
   }
 
   @override

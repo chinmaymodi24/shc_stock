@@ -14,7 +14,10 @@ class ApiException implements Exception {
   /// backend didn't send one.
   final dynamic details;
 
-  ApiException(this.statusCode, this.message, {this.details});
+  /// Machine-readable reason some errors carry (e.g. PASSWORD_CHANGE_REQUIRED).
+  final String? code;
+
+  ApiException(this.statusCode, this.message, {this.details, this.code});
 
   @override
   String toString() => 'ApiException($statusCode): $message';
@@ -36,7 +39,9 @@ String? shortfallMessage(ApiException e) {
     final name = row['product'] ?? 'Item';
     final want = row['requested'];
     final have = row['available'];
-    return '$name: only $have in stock, requested $want';
+    // "available" = free to sell: in the warehouse, less what other open
+    // sales have already promised.
+    return '$name: only $have available, requested $want';
   }
 
   final rows = details
@@ -47,6 +52,22 @@ String? shortfallMessage(ApiException e) {
   // Keeps the wording Sales already used, so the message a user sees on an
   // over-sell doesn't change out from under them.
   return 'Not enough stock —\n${rows.join('\n')}';
+}
+
+/// What to tell the user when a request failed.
+///
+/// A rejected request (400 validation, 403, 404, 409 conflict / not enough
+/// stock) carries the server's own explanation — "amount is less than the items
+/// add up to", "Only 4 available" — and that is what the person needs to read.
+/// Anything else (no network, a 500) gets the generic [fallback]; a 500's text
+/// is never shown.
+String apiErrorMessage(Object e, String fallback) {
+  if (e is! ApiException) return fallback;
+  if (e.statusCode == 409) return shortfallMessage(e) ?? e.message;
+  if (e.statusCode == 400 || e.statusCode == 403 || e.statusCode == 404) {
+    return e.message;
+  }
+  return fallback;
 }
 
 /// Thin wrapper around [Dio] that talks to the SHC Stock backend and turns
@@ -80,6 +101,10 @@ class ApiClient {
   /// sign-in request itself — the token expired or the account was
   /// deactivated, so the app should return to the login page.
   void Function()? onUnauthorized;
+
+  /// Called when the backend answers 403 PASSWORD_CHANGE_REQUIRED: the account
+  /// must choose its own password before anything else works.
+  void Function()? onPasswordChangeRequired;
 
   /// Answers requests from `handler` instead of the network, so a test can
   /// exercise the real path - the URL this client builds, the parsing of what
@@ -186,19 +211,36 @@ class ApiClient {
 
   Never _throwFrom(DioException e) {
     final res = e.response;
-    if (res?.statusCode == 401 && e.requestOptions.path != '/auth/login') {
+    // A 401 normally means the session is over. Two requests answer 401 about
+    // the password just typed, not the session: sign-in, and changing the
+    // password ("current password is incorrect") — those must not sign the
+    // person out.
+    final path = e.requestOptions.path;
+    if (res?.statusCode == 401 &&
+        path != '/auth/login' &&
+        path != '/settings/password') {
       onUnauthorized?.call();
     }
     String message = 'Request failed';
     dynamic details;
+    String? code;
     final data = res?.data;
     if (data is Map && data['error'] != null) {
       message = data['error'].toString();
       details = data['details'];
+      code = data['code']?.toString();
     } else if (e.message != null) {
       message = e.message!;
     }
-    throw ApiException(res?.statusCode ?? -1, message, details: details);
+    if (res?.statusCode == 403 && code == 'PASSWORD_CHANGE_REQUIRED') {
+      onPasswordChangeRequired?.call();
+    }
+    throw ApiException(
+      res?.statusCode ?? -1,
+      message,
+      details: details,
+      code: code,
+    );
   }
 
   Future<dynamic> get(String path, {bool instant = false}) async {

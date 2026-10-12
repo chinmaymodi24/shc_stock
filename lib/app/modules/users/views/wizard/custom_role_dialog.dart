@@ -74,7 +74,7 @@ class _CustomRoleDialogState extends State<CustomRoleDialog> {
       showAppToast(
         'No permissions',
         'Give this role access to at least one module or setting.',
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: AppColors.danger,
         colorText: Colors.white,
       );
       return;

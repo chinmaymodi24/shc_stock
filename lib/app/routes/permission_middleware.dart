@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/session/app_modules.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 
@@ -19,6 +20,11 @@ import 'package:shc_stock/app/routes/app_routes.dart';
 class PermissionMiddleware extends GetMiddleware {
   @override
   RouteSettings? redirect(String? route) {
+    // Nothing else opens until the employee has chosen their own password.
+    if (Get.isRegistered<SessionController>() &&
+        Get.find<SessionController>().user.value?.mustChangePassword == true) {
+      return const RouteSettings(name: AppRoutes.setPassword);
+    }
     if (route == null || canOpenRoute(route)) return null;
 
     // Toast after the frame: redirect() runs mid-navigation, and showing a
@@ -31,6 +37,6 @@ class PermissionMiddleware extends GetMiddleware {
         colorText: Colors.white,
       );
     });
-    return const RouteSettings(name: AppRoutes.dashboard);
+    return RouteSettings(name: firstOpenRoute());
   }
 }

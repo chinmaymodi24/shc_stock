@@ -1,8 +1,9 @@
 import 'package:shc_stock/app/core/session/app_modules.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
-import 'package:intl/intl.dart';
 import 'package:shc_stock/app/modules/transactions/controllers/transactions_controller.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/modules/transactions/models/transaction_model.dart';
@@ -89,7 +90,7 @@ class WebTransactionsLayout extends GetView<TransactionsController> {
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
-                                    'Inbound and outbound stock movement log.',
+                                    'Stock movements and payments received, by order number.',
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: colors.textSecondary,
@@ -169,9 +170,10 @@ class WebTransactionsLayout extends GetView<TransactionsController> {
 
                           // ── Toolbar: search + filters ─────────────────────────────
                           FilterBar(
+                            pillsVisible: () => c.transactions.isNotEmpty,
                             search: FilterSearchField(
                               controller: c.searchCtrl,
-                              hint: 'Search by item or PO #...',
+                              hint: 'Search by item, SO / PO # or party...',
                               width: 320,
                               onChanged: (v) {
                                 c.search.value = v;
@@ -358,10 +360,12 @@ class _ColHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
+          // The order number leads: a sale's payments line up under its SO.
+          Expanded(flex: 3, child: Text('SO / PO #', style: _s)),
           Expanded(flex: 5, child: Text('Item', style: _s)),
           Expanded(flex: 3, child: Text('Type', style: _s)),
           Expanded(flex: 4, child: Text('Party', style: _s)),
-          Expanded(flex: 3, child: Text('PO #', style: _s)),
+          Expanded(flex: 3, child: Text('Amount', style: _s)),
           Expanded(flex: 3, child: Text('Date', style: _s)),
           Expanded(flex: 3, child: Text('Status', style: _s)),
           Expanded(flex: 4, child: Text('Modified By', style: _s)),
@@ -406,7 +410,6 @@ class _TransactionRowState extends State<_TransactionRow> {
   Widget build(BuildContext context) {
     final txn = widget.txn;
     final c = widget.colors;
-    final dateFmt = DateFormat('MMM d, yyyy');
 
     return MouseRegion(
       onEnter: (_) => _hovered.value = true,
@@ -425,6 +428,22 @@ class _TransactionRowState extends State<_TransactionRow> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // SO / PO # — first, so every payment of one sale reads
+                // under its number.
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    txn.poNumber.isEmpty ? '—' : txn.poNumber,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: txn.isLinked ? c.accent : c.textPrimary,
+                      fontFamily: brandFontFamily,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+
                 // Item
                 Expanded(
                   flex: 5,
@@ -481,17 +500,32 @@ class _TransactionRowState extends State<_TransactionRow> {
                   ),
                 ),
 
-                // PO #
+                // Amount, with how it was paid underneath
                 Expanded(
                   flex: 3,
-                  child: Text(
-                    txn.poNumber,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: c.textPrimary,
-                      fontFamily: brandFontFamily,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        txn.amount > 0 ? formatRupees(txn.amount) : '—',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: c.textPrimary,
+                          fontFamily: brandFontFamily,
+                        ),
+                      ),
+                      if (txn.mode.isNotEmpty)
+                        Text(
+                          txn.mode,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: c.textHint,
+                            fontFamily: brandFontFamily,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
 
@@ -499,7 +533,7 @@ class _TransactionRowState extends State<_TransactionRow> {
                 Expanded(
                   flex: 3,
                   child: Text(
-                    dateFmt.format(txn.date),
+                    fmtDate(txn.date),
                     style: TextStyle(
                       fontSize: 12.5,
                       color: c.textSecondary,
@@ -557,7 +591,9 @@ class _TransactionRowState extends State<_TransactionRow> {
                         tooltip: 'View',
                         onTap: () => TransactionActions.view(txn),
                       ),
-                      if (canWriteModule('Transactions')) ...[
+                      // A sale's payment / a paid purchase is changed from
+                      // its order — view only here.
+                      if (canWriteModule('Transactions') && !txn.isLinked) ...[
                         const SizedBox(width: 6),
                         RowActionButton(
                           icon: Icons.edit_outlined,
@@ -569,8 +605,8 @@ class _TransactionRowState extends State<_TransactionRow> {
                         const SizedBox(width: 6),
                         RowActionButton(
                           icon: Icons.copy_outlined,
-                          color: const Color(0xFF3B82F6),
-                          bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                          color: AppColors.info,
+                          bg: AppColors.info.withValues(alpha: 0.10),
                           tooltip: 'Duplicate',
                           onTap: () => TransactionActions.duplicate(txn),
                         ),

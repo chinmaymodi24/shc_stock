@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/utils/phone_input.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/users/controllers/add_employee_wizard_controller.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -69,7 +70,7 @@ class EmployeeDetailsStep extends GetView<AddEmployeeWizardController> {
                     c,
                     ctrl: controller.phoneCtrl,
                     label: 'Phone Number',
-                    hint: 'Enter 10-digit phone number',
+                    hint: kPhoneHint,
                     icon: Icons.phone_outlined,
                     keyboardType: TextInputType.phone,
                     inputFormatters: kPhoneInputFormatters,
@@ -80,7 +81,7 @@ class EmployeeDetailsStep extends GetView<AddEmployeeWizardController> {
                     c,
                     ctrl: controller.altPhoneCtrl,
                     label: 'Alternate Phone',
-                    hint: 'Enter 10-digit phone number',
+                    hint: kPhoneHint,
                     icon: Icons.phone_outlined,
                     keyboardType: TextInputType.phone,
                     inputFormatters: kPhoneInputFormatters,
@@ -158,27 +159,26 @@ class EmployeeDetailsStep extends GetView<AddEmployeeWizardController> {
                   c,
                   icon: Icons.lock_outline_rounded,
                   title: 'Account Settings',
-                  sub: 'Set login credentials for the employee',
+                  sub: controller.isEdit
+                      ? 'Sign-in is by email address — set a new password only '
+                            'to change it'
+                      : 'The employee signs in with the email address above '
+                            'and this password',
                 ),
                 const SizedBox(height: 20),
-                wizTextField(
-                  c,
-                  ctrl: controller.userCtrl,
-                  label: 'Username',
-                  hint: 'Enter username',
-                  icon: Icons.person_outline_rounded,
-                  req: true,
-                  error: controller.eUser.value,
-                  onChange: (_) => controller.eUser.value = null,
-                ),
-                wizVGap(wide),
                 wizRow2(wide, [
                   wizPwdField(
                     c,
                     label: 'Password',
                     ctrl: controller.passCtrl,
                     show: controller.showPass.value,
-                    req: true,
+                    // On an edit the stored password is never sent back to
+                    // the app, so the box starts blank and blank means "leave
+                    // it as it is" - it is not a field the admin has to fill.
+                    req: !controller.isEdit,
+                    hint: controller.isEdit
+                        ? 'Leave blank to keep current'
+                        : null,
                     error: controller.ePass.value,
                     onToggle: () =>
                         controller.showPass.value = !controller.showPass.value,
@@ -189,35 +189,16 @@ class EmployeeDetailsStep extends GetView<AddEmployeeWizardController> {
                     label: 'Confirm Password',
                     ctrl: controller.confCtrl,
                     show: controller.showConf.value,
-                    req: true,
-                    hint: 'Re-enter password',
+                    req: !controller.isEdit,
+                    hint: controller.isEdit
+                        ? 'Leave blank to keep current'
+                        : 'Re-enter password',
                     error: controller.eConf.value,
                     onToggle: () =>
                         controller.showConf.value = !controller.showConf.value,
                     onChange: (_) => controller.eConf.value = null,
                   ),
                 ]),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Send welcome email to employee',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          color: c.textPrimary,
-                          fontFamily: brandFontFamily,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    Switch(
-                      value: controller.welcome.value,
-                      onChanged: (v) => controller.welcome.value = v,
-                      activeColor: AppColors.primaryOrange,
-                    ),
-                  ],
-                ),
               ],
             ),
           ),

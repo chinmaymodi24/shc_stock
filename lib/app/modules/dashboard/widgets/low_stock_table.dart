@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/utils/qty_format.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/modules/dashboard/models/dashboard_models.dart';
 
@@ -67,7 +68,7 @@ class _LowStockRow extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${item.current}/${item.max}',
+                      '${fmtStockQty(item.current)}/${fmtStockQty(item.max)}',
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,

@@ -68,6 +68,7 @@ class MobileClientsLayout extends StatelessWidget {
       actions: [
         Obx(
           () => MobileFilterButton(
+            visible: c.clients.isNotEmpty || c.hasActiveFilters,
             filters: _buildFilters(c),
             onClear: c.resetFilters,
             activeCount: c.stateFilters.length + c.cityFilters.length,
@@ -149,13 +150,13 @@ class MobileClientsLayout extends StatelessWidget {
         label: 'Unregistered',
         value: '${c.unregisteredClients}',
         icon: Icons.block_rounded,
-        color: const Color(0xFFF59E0B),
+        color: AppColors.warning,
       ),
       MobileStatCardData(
         label: 'States Covered',
         value: '${c.statesCovered}',
         icon: Icons.map_outlined,
-        color: const Color(0xFF22C55E),
+        color: AppColors.success,
       ),
     ];
   }
@@ -314,7 +315,7 @@ class _MobileClientCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
                   color: isRegistered
-                      ? const Color(0xFF22C55E).withValues(alpha: 0.10)
+                      ? AppColors.success.withValues(alpha: 0.10)
                       : colors.comingSoonBadge,
                   borderRadius: BorderRadius.circular(999),
                 ),
@@ -324,7 +325,7 @@ class _MobileClientCard extends StatelessWidget {
                     fontSize: 10.5,
                     fontWeight: FontWeight.w600,
                     color: isRegistered
-                        ? const Color(0xFF22C55E)
+                        ? AppColors.success
                         : colors.textSecondary,
                     fontFamily: brandFontFamily,
                   ),

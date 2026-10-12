@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
@@ -58,7 +59,7 @@ class ReportScreenController extends GetxController {
       showAppToast(
         'Error',
         error.value,
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: AppColors.danger,
         colorText: Colors.white,
       );
     } finally {

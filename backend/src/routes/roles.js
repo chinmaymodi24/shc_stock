@@ -4,6 +4,7 @@ const { sanitizePermissions, clampToGranter } = require('../permissions');
 const { invalidatePrincipal } = require('../auth/middleware');
 
 const router = express.Router();
+router.param('id', require('../validate').idParam);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Roles — the ready-made presets plus custom roles built in the Add Employee
@@ -12,6 +13,7 @@ const router = express.Router();
 // they are read-only here.
 // ─────────────────────────────────────────────────────────────────────────────
 
+const V = require('../validate');
 const str = (v) => (v === undefined || v === null ? '' : String(v).trim());
 
 const ICONS = ['stars', 'admin', 'manager', 'sales', 'store', 'custom'];
@@ -55,8 +57,8 @@ function roleData(body, granter) {
   const permissions = clampToGranter(sanitizePermissions(body.permissions) || {}, granter);
   const icon = ICONS.includes(str(body.icon)) ? str(body.icon) : 'custom';
   return {
-    name: str(body.name),
-    description: str(body.description),
+    name: V.text(body.name, 'Role name', { max: 60 }),
+    description: V.text(body.description, 'Description', { max: 300 }),
     icon,
     permissions,
     modifiedBy: granter.name || 'Admin',

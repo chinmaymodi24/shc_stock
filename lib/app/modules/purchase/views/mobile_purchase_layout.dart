@@ -1,4 +1,5 @@
 import 'package:shc_stock/app/core/session/app_modules.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
 import 'package:shc_stock/app/modules/purchase/export/purchase_export.dart';
 import 'package:flutter/material.dart';
@@ -51,6 +52,7 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
         actions: [
           Obx(
             () => MobileFilterButton(
+              visible: c.orders.isNotEmpty,
               filters: _buildFilters(c),
               onClear: c.resetFilters,
               activeCount: c.supplierFilter.value == 'Supplier: All' ? 0 : 1,
@@ -116,13 +118,13 @@ class MobilePurchaseLayout extends GetView<PurchaseController> {
               label: 'Amount Paid',
               value: formatRupees(c.stats.value.doubleOf('amountPaid')),
               icon: Icons.check_circle_outline_rounded,
-              color: const Color(0xFF22C55E),
+              color: AppColors.success,
             ),
             MobileStatCardData(
               label: 'Amount Due',
               value: formatRupees(c.stats.value.doubleOf('amountDue')),
               icon: Icons.warning_amber_rounded,
-              color: const Color(0xFFF59E0B),
+              color: AppColors.warning,
             ),
           ],
           search: FilterSearchField(
@@ -198,7 +200,10 @@ class _MobilePurchaseRow extends StatelessWidget {
   /// internal PO number — which is the fallback when there's no invoice.
   String get _subtitle {
     final ref = order.invoiceNo.isNotEmpty ? order.invoiceNo : order.poNumber;
-    return order.supplier.isEmpty ? ref : '${order.supplier} · $ref';
+    final base = order.supplier.isEmpty ? ref : '${order.supplier} · $ref';
+    final d = order.expectedDelivery;
+    if (d == null) return base;
+    return '$base · Delivery ${fmtDate(d)}';
   }
 
   /// Settlement, not delivery. A Received order is settled; anything else
@@ -209,11 +214,11 @@ class _MobilePurchaseRow extends StatelessWidget {
       return ('Cancelled', const Color(0xFF9CA3AF));
     }
     if (order.status == PurchaseStatus.received) {
-      return ('Paid', const Color(0xFF22C55E));
+      return ('Paid', AppColors.success);
     }
     final due = order.amount - order.paidAmount;
-    if (due <= 0) return ('Paid', const Color(0xFF22C55E));
-    return ('${formatRupees(due)} due', const Color(0xFFF59E0B));
+    if (due <= 0) return ('Paid', AppColors.success);
+    return ('${formatRupees(due)} due', AppColors.warning);
   }
 
   @override
@@ -245,7 +250,7 @@ class _MobilePurchaseRow extends StatelessWidget {
           ),
           MobileRowMenuItem(
             icon: Icons.copy_outlined,
-            color: const Color(0xFF3B82F6),
+            color: AppColors.info,
             label: 'Duplicate',
             onSelected: () => PurchaseActions.duplicate(order),
           ),
@@ -257,7 +262,7 @@ class _MobilePurchaseRow extends StatelessWidget {
           ),
           MobileRowMenuItem(
             icon: Icons.delete_outline_rounded,
-            color: const Color(0xFFEF4444),
+            color: AppColors.danger,
             label: 'Delete',
             onSelected: () => PurchaseActions.delete(context, order),
           ),

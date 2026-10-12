@@ -1,3 +1,5 @@
+const { unitAllowsFraction } = require('./units');
+const { ValidationError } = require('./validate');
 // ─────────────────────────────────────────────────────────────────────────────
 // Stock ledger.
 //
@@ -10,11 +12,34 @@
 // the order write and the stock write into one atomic operation.
 // ─────────────────────────────────────────────────────────────────────────────
 
+const { Prisma } = require('@prisma/client');
+
+/// Takes a row lock on the products involved, for the rest of the transaction.
+///
+/// "Is there enough?" followed by "take it" is two steps. Without a lock, two
+/// requests arriving together both ran the first step against the same numbers
+/// and both passed — four simultaneous sales of 4 against a stock of 5 all
+/// saved. With the lock the second request waits for the first to commit, then
+/// checks against what is really left. Ids are locked in ascending order so two
+/// requests touching the same products can't deadlock.
+async function lockProducts(tx, productIds) {
+  const ids = [...new Set(productIds)].filter((n) => Number.isInteger(n)).sort((a, b) => a - b);
+  if (!ids.length || typeof tx.$queryRaw !== 'function') return;
+  await tx.$queryRaw`SELECT id FROM products WHERE id IN (${Prisma.join(ids)}) ORDER BY id FOR UPDATE`;
+}
+
 class InsufficientStockError extends Error {
   constructor(details) {
-    super('Insufficient stock');
+    // Name the products in the message itself — the apps show err.message as
+    // the toast, and "Insufficient stock" alone never said which product.
+    const first = (details || [])
+      .slice(0, 3)
+      .map((d) => `${d.product}: only ${d.available} available, ${d.requested} requested`)
+      .join('; ');
+    super(first ? `Not enough stock — ${first}` : 'Insufficient stock');
     this.name = 'InsufficientStockError';
     this.details = details;
+    this.status = 409;
   }
 }
 
@@ -49,13 +74,38 @@ function toStockLines(items = []) {
 /// Read-modify-write rather than  because that is the only way to
 /// apply the floor; it is safe here since every caller is already inside a
 /// transaction.
+/// Stock is kept to 3 decimals (grams of a kg, millimetres of a metre); this
+/// strips the binary-float tail before it is stored or compared.
+const round3 = (n) => Math.round(n * 1000) / 1000;
+
+/// Refuses a fractional quantity on a product counted in whole units
+/// (pieces, rolls, bags…) — see units.js. A measured unit (kg, m) may carry
+/// decimals. [lines] are { productId, qty, product? }.
+async function assertUnitQuantities(tx, lines) {
+  const fractional = lines.filter(
+    (l) => l.productId && Number(l.qty) !== Math.round(Number(l.qty))
+  );
+  if (!fractional.length) return;
+  const products = await tx.product.findMany({
+    where: { id: { in: fractional.map((l) => l.productId) } },
+    select: { id: true, name: true, unit: true },
+  });
+  for (const p of products) {
+    if (!unitAllowsFraction(p.unit)) {
+      throw new ValidationError(
+        `"${p.name}" is counted in ${p.unit || 'whole units'} — the quantity must be a whole number`
+      );
+    }
+  }
+}
+
 async function shiftStock(tx, productId, delta) {
   const product = await tx.product.findUnique({
     where: { id: productId },
     select: { currentStock: true },
   });
   if (!product) return; // deleted since the movement was written
-  const next = Math.max(0, product.currentStock + delta);
+  const next = Math.max(0, round3(product.currentStock + delta));
   await tx.product.update({
     where: { id: productId },
     data: { currentStock: next, modifiedAt: new Date() },
@@ -64,6 +114,8 @@ async function shiftStock(tx, productId, delta) {
 
 async function applyStock(tx, { lines, direction, type, refType, refId, reference, note = '', createdBy = 'Admin', rate = null }) {
   if (!lines.length) return [];
+
+  if (direction < 0) await lockProducts(tx, lines.map((l) => l.productId));
 
   const products = await tx.product.findMany({
     where: { id: { in: lines.map((l) => l.productId) } },
@@ -94,7 +146,7 @@ async function applyStock(tx, { lines, direction, type, refType, refId, referenc
     await tx.product.update({
       where: { id: line.productId },
       data: {
-        currentStock: { increment: direction * Math.round(line.qty) },
+        currentStock: { increment: round3(direction * line.qty) },
         modifiedAt: new Date(),
       },
     });
@@ -122,7 +174,7 @@ async function applyStock(tx, { lines, direction, type, refType, refId, referenc
 async function reverseStockFor(tx, refType, refId) {
   const movements = await tx.stockMovement.findMany({ where: { refType, refId } });
   for (const m of movements) {
-    const delta = m.type === 'IN' ? -Math.round(m.qty) : Math.round(m.qty);
+    const delta = m.type === 'IN' ? -m.qty : m.qty;
     // Floored, and a product deleted since the movement was written is
     // skipped rather than failing the whole undo.
     await shiftStock(tx, m.productId, delta);
@@ -181,6 +233,66 @@ async function syncStockForStatus(
   return [];
 }
 
+/// Sale statuses that no longer (or never will) hold stock back: Delivered has
+/// already taken it out, Cancelled never will.
+const SALE_SETTLED = ['Delivered', 'Cancelled'];
+
+/// Units promised to customers but not yet delivered, per product.
+///
+/// A sale only takes stock out when it reaches "Delivered", so between saving
+/// and delivering the goods are still in the warehouse yet already spoken for.
+/// Without counting them, two open orders could each be checked against the
+/// same 5 units and both pass, and the second one would then fail at delivery
+/// (or, via the delivery sweep, fail every 15 minutes with nobody told).
+///
+/// [excludeSalesOrderId] leaves one order out — the one being edited, which
+/// must not count against itself.
+///
+/// Returns Map<productId, quantity>.
+async function committedByProduct(db, { excludeSalesOrderId = null } = {}) {
+  const salesOrder = { status: { notIn: SALE_SETTLED } };
+  if (excludeSalesOrderId != null) salesOrder.id = { not: excludeSalesOrderId };
+  const rows = await db.saleItem.findMany({
+    where: { productId: { not: null }, salesOrder },
+    select: { productId: true, qty: true },
+  });
+  const byProduct = new Map();
+  for (const r of rows) {
+    byProduct.set(r.productId, (byProduct.get(r.productId) || 0) + Number(r.qty));
+  }
+  return byProduct;
+}
+
+/// Throws InsufficientStockError when the lines of an OPEN sale ask for more
+/// than is free: in the warehouse, minus what other open sales already hold.
+/// Delivered / Cancelled sales are not checked here — delivery has its own
+/// check in applyStock, and a cancelled sale takes nothing.
+async function assertSaleCoverable(db, { lines, status, excludeSalesOrderId = null }) {
+  if (!lines.length || SALE_SETTLED.includes(String(status || '').trim())) return;
+  await lockProducts(db, lines.map((l) => l.productId));
+  const committed = await committedByProduct(db, { excludeSalesOrderId });
+  const products = await db.product.findMany({
+    where: { id: { in: lines.map((l) => l.productId) } },
+    select: { id: true, name: true, currentStock: true },
+  });
+  const byId = new Map(products.map((p) => [p.id, p]));
+  const short = [];
+  for (const line of lines) {
+    const p = byId.get(line.productId);
+    if (!p) continue;
+    const free = p.currentStock - (committed.get(p.id) || 0);
+    if (line.qty > free) {
+      short.push({
+        productId: p.id,
+        product: p.name,
+        requested: line.qty,
+        available: Math.max(free, 0),
+      });
+    }
+  }
+  if (short.length) throw new InsufficientStockError(short);
+}
+
 /// Derived status shown in the inventory list.
 ///
 /// [lowStockThreshold] is the business-wide fallback from AppSetting — used
@@ -203,5 +315,11 @@ module.exports = {
   stockStatus,
   movesStock,
   syncStockForStatus,
+  committedByProduct,
+  assertSaleCoverable,
+  lockProducts,
+  assertUnitQuantities,
+  round3,
+  SALE_SETTLED,
   DELIVERED_STATUS,
 };

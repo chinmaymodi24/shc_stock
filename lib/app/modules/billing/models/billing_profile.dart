@@ -1,4 +1,5 @@
 import 'package:shc_stock/app/modules/billing/models/invoice_totals.dart';
+import 'package:shc_stock/app/core/utils/gst.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Everything a tax invoice prints that is not part of the sale.
@@ -130,6 +131,12 @@ class BillingProfile {
   static const empty = BillingProfile();
 
   InvoiceTaxConfig get tax => InvoiceTaxConfig(gstPercent: gstPercent);
+
+  /// The seller's GST state code — from the GSTIN, else the state code or
+  /// name typed in Settings › Billing. Null until one of those is filled in,
+  /// in which case every order is treated as intra-state (CGST + SGST).
+  String? get sellerStateCode =>
+      partyStateCode(gstin: gstin, texts: [stateCode, stateName]);
 
   /// True once someone has filled in the parts a tax invoice legally needs.
   /// The bill screen warns rather than printing a document with no GSTIN.

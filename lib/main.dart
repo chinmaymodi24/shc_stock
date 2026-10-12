@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'app/core/theme/app_theme.dart';
 import 'app/core/theme/brand_controller.dart';
 import 'app/core/theme/theme_controller.dart';
@@ -19,6 +20,8 @@ Future<void> main() async {
   // while the theme loads in.
   final brandController = Get.put(BrandController(), permanent: true);
   await brandController.load();
+  // The chosen date format, before the first date is drawn.
+  await AppDates.restore();
 
   final themeController = Get.put(ThemeController(), permanent: true);
   Get.put(ThemeRippleController(), permanent: true);

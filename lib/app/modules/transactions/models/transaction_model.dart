@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 enum TransactionType { inbound, outbound }
@@ -17,6 +18,17 @@ class TransactionModel {
 
   final String notes;
 
+  /// Money moved by this row — a payment on a sale, or a paid purchase. 0 for
+  /// a row that records goods only.
+  final double amount;
+
+  /// Cash | UPI | Bank Transfer | Cheque | Card | Other, or ''.
+  final String mode;
+
+  /// 'sale' or 'purchase' when the row was generated from that order (its
+  /// number is [poNumber]); null for a hand-entered row.
+  final String? refType;
+
   const TransactionModel({
     required this.id,
     required this.item,
@@ -28,7 +40,16 @@ class TransactionModel {
     required this.modifiedBy,
     required this.modifiedAt,
     this.notes = '',
+    this.amount = 0,
+    this.mode = '',
+    this.refType,
   });
+
+  /// Generated from an order: it is changed from that order, not here.
+  bool get isLinked => refType != null && refType!.isNotEmpty;
+
+  /// "Sale" / "Purchase" for a generated row.
+  String get sourceLabel => refType == 'sale' ? 'Sale' : 'Purchase';
 
   /// Maps a row from GET /api/transactions. Unknown type/status labels fall
   /// back rather than throwing, so a value added server-side can't blank the
@@ -45,7 +66,8 @@ class TransactionModel {
       'Delivered': TransactionStatus.delivered,
     };
     DateTime date(String key) =>
-        DateTime.tryParse(json[key] as String? ?? '') ?? DateTime.now();
+        DateTime.tryParse(json[key] as String? ?? '')?.toLocal() ??
+        DateTime.now();
 
     return TransactionModel(
       id: json['id'].toString(),
@@ -56,6 +78,9 @@ class TransactionModel {
       date: date('date'),
       status: statuses[json['status']] ?? TransactionStatus.pending,
       notes: json['notes'] as String? ?? '',
+      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      mode: json['mode'] as String? ?? '',
+      refType: json['refType'] as String?,
       modifiedBy: json['modifiedBy'] as String? ?? 'Admin',
       modifiedAt: date('modifiedAt'),
     );
@@ -69,6 +94,8 @@ class TransactionModel {
     'date': date.toIso8601String(),
     'status': statusLabel,
     'notes': notes,
+    'amount': amount,
+    'mode': mode,
     'modifiedBy': modifiedBy,
   };
 
@@ -84,9 +111,9 @@ class TransactionModel {
   Color get typeColor {
     switch (type) {
       case TransactionType.inbound:
-        return const Color(0xFF22C55E);
+        return AppColors.success;
       case TransactionType.outbound:
-        return const Color(0xFFF59E0B);
+        return AppColors.warning;
     }
   }
 
@@ -106,13 +133,13 @@ class TransactionModel {
   Color get statusColor {
     switch (status) {
       case TransactionStatus.received:
-        return const Color(0xFF22C55E);
+        return AppColors.success;
       case TransactionStatus.shipped:
-        return const Color(0xFF3B82F6);
+        return AppColors.info;
       case TransactionStatus.pending:
-        return const Color(0xFFF59E0B);
+        return AppColors.warning;
       case TransactionStatus.delivered:
-        return const Color(0xFF22C55E);
+        return AppColors.success;
     }
   }
 }

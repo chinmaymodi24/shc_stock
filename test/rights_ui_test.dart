@@ -17,6 +17,7 @@ import 'package:shc_stock/app/modules/products/models/product_model.dart';
 import 'package:shc_stock/app/modules/products/views/mobile_products_layout.dart';
 import 'package:shc_stock/app/modules/products/views/web_products_layout.dart';
 import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
+import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
 import 'package:shc_stock/app/modules/sales/views/web_sales_layout.dart';
 import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
 import 'package:shc_stock/app/modules/settings/views/web_settings_layout.dart';
@@ -152,9 +153,24 @@ class _Categories extends CategoriesController {
   Future<void> fetchStats() async {}
 }
 
+/// One order on the books. The Sales rail is hidden when there are none, so a
+/// test about the rail has to have something for it to summarise.
+final _oneSale = SalesOrder(
+  id: '1',
+  soNumber: 'SO-2026-00001',
+  client: 'Aavkar Enterprise',
+  clientBadge: 'AE',
+  clientColor: Colors.orange,
+  date: DateTime(2026, 9, 1),
+  itemCount: 1,
+  amount: 1500,
+  status: SalesStatus.delivered,
+  paymentStatus: PaymentStatus.paid,
+);
+
 class _Sales extends SalesController {
   @override
-  Future<void> fetchOrders() async {}
+  Future<void> fetchOrders() async => orders.assignAll([_oneSale]);
   @override
   Future<void> fetchStats() async {
     stats.value = StatsSnapshot.empty;

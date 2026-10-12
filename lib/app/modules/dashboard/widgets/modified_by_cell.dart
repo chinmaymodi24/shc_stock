@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 
 /// Resolves the (name, date) pair a "Modified By" cell should render.
@@ -59,7 +59,6 @@ class ModifiedByCell extends StatelessWidget {
         .take(2)
         .map((w) => w[0].toUpperCase())
         .join();
-    final dateFmt = DateFormat('MMM d, yyyy, h:mm a');
 
     return Row(
       children: [
@@ -92,7 +91,7 @@ class ModifiedByCell extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
-                dateFmt.format(date),
+                fmtDateTime(date),
                 style: TextStyle(
                   fontSize: 11,
                   color: textHint,

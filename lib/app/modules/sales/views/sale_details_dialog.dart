@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -22,9 +24,8 @@ class SaleDetailsDialog extends StatelessWidget {
     this.onDelete,
   });
 
-  String _fmtDate(DateTime? d) =>
-      d == null ? '—' : DateFormat('yyyy-MM-dd').format(d);
-  String _fmtAmt(double v) => '₹${NumberFormat('#,##,##0', 'en_IN').format(v)}';
+  String _fmtDate(DateTime? d) => d == null ? '—' : fmtDate(d);
+  String _fmtAmt(double v) => formatRupees(v);
 
   @override
   Widget build(BuildContext context) {
@@ -154,11 +155,72 @@ class SaleDetailsDialog extends StatelessWidget {
                         order.paymentType.displayLabel,
                         colors,
                       ),
+                      if (order.deliveredAt != null) ...[
+                        const SizedBox(height: 16),
+                        _Label('DELIVERED ON', colors),
+                        const SizedBox(height: 4),
+                        _Value(_fmtDate(order.deliveredAt), colors),
+                      ],
                       if (order.paidAmount > 0) ...[
                         const SizedBox(height: 16),
                         _Label('AMOUNT PAID', colors),
                         const SizedBox(height: 4),
-                        _Value(_fmtAmt(order.paidAmount), colors),
+                        _Value(
+                          order.amount > order.paidAmount
+                              ? '${_fmtAmt(order.paidAmount)}  ·  '
+                                    'due ${_fmtAmt(order.amount - order.paidAmount)}'
+                              : _fmtAmt(order.paidAmount),
+                          colors,
+                        ),
+                      ],
+                      // Each payment as it came in — the same rows the
+                      // Transactions list shows under this SO number.
+                      if (order.payments.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _Label('PAYMENTS (${order.payments.length})', colors),
+                        const SizedBox(height: 8),
+                        for (final p in order.payments)
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colors.inputFill,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: colors.border),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    [
+                                      _fmtDate(p.date),
+                                      if (p.mode.isNotEmpty) p.mode,
+                                      if (p.notes.isNotEmpty) p.notes,
+                                    ].join('  ·  '),
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      color: colors.textSecondary,
+                                      fontFamily: brandFontFamily,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _fmtAmt(p.amount),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: colors.textPrimary,
+                                    fontFamily: brandFontFamily,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                       const SizedBox(height: 20),
 
@@ -242,17 +304,25 @@ class SaleDetailsDialog extends StatelessWidget {
                               colors,
                             ),
                             const SizedBox(height: 8),
-                            _TotalLine(
-                              'CGST (9%)',
-                              _fmtAmt(order.cgst),
-                              colors,
-                            ),
-                            const SizedBox(height: 8),
-                            _TotalLine(
-                              'SGST (9%)',
-                              _fmtAmt(order.sgst),
-                              colors,
-                            ),
+                            if (order.interState)
+                              _TotalLine(
+                                order.gst.igstLabel,
+                                _fmtAmt(order.igst),
+                                colors,
+                              )
+                            else ...[
+                              _TotalLine(
+                                order.gst.cgstLabel,
+                                _fmtAmt(order.cgst),
+                                colors,
+                              ),
+                              const SizedBox(height: 8),
+                              _TotalLine(
+                                order.gst.sgstLabel,
+                                _fmtAmt(order.sgst),
+                                colors,
+                              ),
+                            ],
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               child: Divider(height: 1, color: colors.divider),
@@ -313,9 +383,7 @@ class SaleDetailsDialog extends StatelessWidget {
                                     Text(
                                       order.modifiedAt == null
                                           ? '—'
-                                          : DateFormat(
-                                              'MMM d, yyyy, h:mm a',
-                                            ).format(order.modifiedAt!),
+                                          : fmtDateTime(order.modifiedAt!),
                                       style: TextStyle(
                                         fontSize: 11.5,
                                         color: colors.textHint,

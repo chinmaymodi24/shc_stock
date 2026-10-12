@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
@@ -359,7 +359,7 @@ class ClientDetailsDialog extends StatelessWidget {
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w600,
                                       color: isRegistered
-                                          ? const Color(0xFF22C55E)
+                                          ? AppColors.success
                                           : colors.textSecondary,
                                       fontFamily: brandFontFamily,
                                     ),
@@ -373,9 +373,7 @@ class ClientDetailsDialog extends StatelessWidget {
                               'Client Since',
                               client.clientSince == null
                                   ? '—'
-                                  : DateFormat(
-                                      'MMM d, yyyy',
-                                    ).format(client.clientSince!),
+                                  : fmtDate(client.clientSince!),
                               colors,
                             ),
                           ),
@@ -619,7 +617,6 @@ class ClientDetailsDialog extends StatelessWidget {
   /// every history list across the app reads the same way.
   Widget _historyRow(_ClientHistoryEntry e, AppThemeColors colors) {
     final color = e.isPurchase ? colors.success : colors.warning;
-    final dateFmt = DateFormat('MMM d, yyyy');
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
@@ -708,7 +705,7 @@ class ClientDetailsDialog extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                dateFmt.format(e.date),
+                fmtDate(e.date),
                 style: TextStyle(
                   fontSize: 11,
                   color: colors.textHint,

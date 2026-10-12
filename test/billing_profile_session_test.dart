@@ -96,37 +96,41 @@ void main() {
     expect(_billingCalls, 1);
   });
 
-  test('restore then refresh writes the same user twice, but fetches once',
-      () async {
-    Get.put(BillingProfileController(), permanent: true);
-    await _settle(50);
+  test(
+    'restore then refresh writes the same user twice, but fetches once',
+    () async {
+      Get.put(BillingProfileController(), permanent: true);
+      await _settle(50);
 
-    // What SessionController.restore() does: the saved session, then the
-    // fresher copy /auth/me hands back.
-    session.user.value = _user(7, 'Deepak');
-    session.user.value = _user(7, 'Deepak Shah');
-    await _settle();
+      // What SessionController.restore() does: the saved session, then the
+      // fresher copy /auth/me hands back.
+      session.user.value = _user(7, 'Deepak');
+      session.user.value = _user(7, 'Deepak Shah');
+      await _settle();
 
-    expect(_billingCalls, 1);
-  });
+      expect(_billingCalls, 1);
+    },
+  );
 
-  test('signing out drops the profile, and the next user fetches again',
-      () async {
-    session.user.value = _user(1, 'Deepak');
-    Get.put(BillingProfileController(), permanent: true);
-    await _settle();
-    expect(_billingCalls, 1);
+  test(
+    'signing out drops the profile, and the next user fetches again',
+    () async {
+      session.user.value = _user(1, 'Deepak');
+      Get.put(BillingProfileController(), permanent: true);
+      await _settle();
+      expect(_billingCalls, 1);
 
-    session.user.value = null;
-    await _settle(50);
-    expect(BillingProfileController.to.profile.value.gstin, '');
-    expect(BillingProfileController.to.isLoaded.value, isFalse);
+      session.user.value = null;
+      await _settle(50);
+      expect(BillingProfileController.to.profile.value.gstin, '');
+      expect(BillingProfileController.to.isLoaded.value, isFalse);
 
-    session.user.value = _user(2, 'Riya');
-    await _settle();
-    expect(_billingCalls, 2);
-    expect(BillingProfileController.to.isLoaded.value, isTrue);
-  });
+      session.user.value = _user(2, 'Riya');
+      await _settle();
+      expect(_billingCalls, 2);
+      expect(BillingProfileController.to.isLoaded.value, isTrue);
+    },
+  );
 
   test('without a session registered it still fetches eagerly', () async {
     Get.reset();

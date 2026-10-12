@@ -64,8 +64,8 @@ class StatCard extends StatelessWidget {
                 fontSize: 11.5,
                 fontWeight: FontWeight.w500,
                 color: (data.isPositive ?? true)
-                    ? const Color(0xFF22C55E)
-                    : const Color(0xFFEF4444),
+                    ? AppColors.success
+                    : AppColors.danger,
                 fontFamily: brandFontFamily,
               ),
             ),

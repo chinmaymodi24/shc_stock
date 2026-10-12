@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:shc_stock/app/modules/products/models/product_model.dart';
 
@@ -13,13 +14,18 @@ class StockItemModel {
   final String name;
   final String category;
   final String unit;
-  final int stockInHand;
-  final int availableStock;
-  final int minimumStock;
+
+  /// Decimal: a product measured in kg / m can hold 12.5 of it.
+  final double stockInHand;
+  final double availableStock;
+  final double minimumStock;
   final double costPrice;
   final double sellingPrice;
   final double stockValue;
   final String stockLocation;
+
+  /// Relative `/uploads/...` photo path of the product, if it has one.
+  final String? imageUrl;
   final bool isActive;
   final StockStatus status;
   final String modifiedBy;
@@ -40,6 +46,7 @@ class StockItemModel {
     this.sellingPrice = 0,
     required this.stockValue,
     this.stockLocation = 'Main Warehouse',
+    this.imageUrl,
     this.isActive = true,
     required this.status,
     this.modifiedBy = 'Admin',
@@ -71,6 +78,7 @@ class StockItemModel {
       sellingPrice: p.sellingPrice,
       stockValue: p.currentStock * p.costPrice,
       stockLocation: p.stockLocation,
+      imageUrl: p.imageUrl,
       isActive: p.isActive,
       status:
           statuses[p.serverStockStatus] ??
@@ -102,19 +110,20 @@ class StockItemModel {
       name: json['name'] as String? ?? '',
       category: json['category'] as String? ?? '',
       unit: json['unit'] as String? ?? '',
-      stockInHand: (json['stockInHand'] as num?)?.toInt() ?? 0,
-      availableStock: (json['availableStock'] as num?)?.toInt() ?? 0,
-      minimumStock: (json['minimumStock'] as num?)?.toInt() ?? 0,
+      stockInHand: (json['stockInHand'] as num?)?.toDouble() ?? 0,
+      availableStock: (json['availableStock'] as num?)?.toDouble() ?? 0,
+      minimumStock: (json['minimumStock'] as num?)?.toDouble() ?? 0,
       costPrice: (json['costPrice'] as num?)?.toDouble() ?? 0,
       sellingPrice: (json['sellingPrice'] as num?)?.toDouble() ?? 0,
       stockValue: (json['stockValue'] as num?)?.toDouble() ?? 0,
       stockLocation: json['stockLocation'] as String? ?? 'Main Warehouse',
+      imageUrl: json['imageUrl'] as String?,
       isActive: json['isActive'] as bool? ?? true,
       status: statuses[json['status']] ?? StockStatus.inStock,
       modifiedBy: json['modifiedBy'] as String? ?? 'Admin',
       modifiedAt: json['modifiedAt'] == null
           ? null
-          : DateTime.tryParse(json['modifiedAt'] as String),
+          : DateTime.tryParse(json['modifiedAt'] as String)?.toLocal(),
     );
   }
 
@@ -123,11 +132,11 @@ class StockItemModel {
   Color get statusColor {
     switch (status) {
       case StockStatus.inStock:
-        return const Color(0xFF22C55E);
+        return AppColors.success;
       case StockStatus.lowStock:
-        return const Color(0xFFF59E0B);
+        return AppColors.warning;
       case StockStatus.outOfStock:
-        return const Color(0xFFEF4444);
+        return AppColors.danger;
       case StockStatus.inactive:
         return const Color(0xFF94A3B8);
     }
@@ -212,7 +221,7 @@ class StockMovement {
       createdBy: json['createdBy'] as String? ?? 'Admin',
       createdAt: json['createdAt'] == null
           ? null
-          : DateTime.tryParse(json['createdAt'] as String),
+          : DateTime.tryParse(json['createdAt'] as String)?.toLocal(),
     );
   }
 }

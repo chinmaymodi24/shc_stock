@@ -1,4 +1,5 @@
 import 'package:shc_stock/app/modules/settings/views/settings_tab_gate.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -12,6 +13,8 @@ import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
 import 'package:shc_stock/app/modules/settings/views/appearance/appearance_tab.dart';
 import 'package:shc_stock/app/modules/settings/views/billing/billing_tab.dart';
+
+part 'web_settings_layout_part1.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Settings — left tab nav (Profile / Notifications / Security / Preferences)
@@ -383,11 +386,7 @@ class WebSettingsLayout extends GetView<SettingsController> {
         _dropdown<String>(
           value: controller.dateFormat.value,
           width: 230,
-          items: const [
-            'MMM D, YYYY (Jul 18, 2026)',
-            'DD/MM/YYYY (18/07/2026)',
-            'YYYY-MM-DD (2026-07-18)',
-          ],
+          items: kDateFormatLabels,
           itemLabel: (v) => v,
           onChanged: (v) => controller.dateFormat.value = v,
           colors: colors,
@@ -396,12 +395,24 @@ class WebSettingsLayout extends GetView<SettingsController> {
         Divider(height: 1, color: colors.divider),
         Obx(
           () => _toggleRow(
-            title: 'Auto-generate invoice numbers',
+            title: 'Auto-generate purchase invoice numbers',
             subtitle:
-                'Prefill "Invoice No." on Add Purchase / Add Sale with the next '
-                'number in the series',
-            value: controller.autoNumberDocs.value,
-            onChanged: (v) => controller.autoNumberDocs.value = v,
+                'Prefill "Invoice No." on Add Purchase with the next number in the '
+                'series',
+            value: controller.autoNumberPurchase.value,
+            onChanged: (v) => controller.autoNumberPurchase.value = v,
+            colors: colors,
+          ),
+        ),
+        Divider(height: 1, color: colors.divider),
+        Obx(
+          () => _toggleRow(
+            title: 'Auto-generate sale invoice numbers',
+            subtitle:
+                'Prefill "Invoice No." on Add Sale with the next number in the '
+                'series',
+            value: controller.autoNumberSales.value,
+            onChanged: (v) => controller.autoNumberSales.value = v,
             colors: colors,
           ),
         ),
@@ -464,8 +475,9 @@ class WebSettingsLayout extends GetView<SettingsController> {
                 colors: colors,
                 onTap: () {
                   controller.rowsPerPage.value = 10;
-                  controller.dateFormat.value = 'MMM D, YYYY (Jul 18, 2026)';
-                  controller.autoNumberDocs.value = true;
+                  controller.dateFormat.value = kDefaultDateFormatLabel;
+                  controller.autoNumberPurchase.value = true;
+                  controller.autoNumberSales.value = true;
                   controller.lowStockThreshold.value = 0;
                 },
               ),
@@ -774,51 +786,3 @@ class WebSettingsLayout extends GetView<SettingsController> {
     );
   }
 }
-
-// Left-nav tab item
-class _NavTab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final AppThemeColors colors;
-  final VoidCallback onTap;
-  const _NavTab({
-    required this.label,
-    required this.selected,
-    required this.colors,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-          decoration: BoxDecoration(
-            color: selected
-                ? colors.purple.withValues(alpha: 0.08)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13.5,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              color: selected ? colors.purple : colors.textSecondary,
-              fontFamily: brandFontFamily,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The signed-in user, for the avatar initials and the read-only Role field.
-SessionUser? get _sessionUser => Get.isRegistered<SessionController>()
-    ? Get.find<SessionController>().user.value
-    : null;

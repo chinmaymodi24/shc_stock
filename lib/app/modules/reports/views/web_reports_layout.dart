@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
@@ -26,7 +26,13 @@ String displayReportValue(String label, String raw) {
   return formatRupees(double.tryParse(raw) ?? 0);
 }
 
-final reportDateFmt = DateFormat('dd MMM yyyy');
+/// Report range dates follow Settings › Preferences › Date Format.
+const reportDateFmt = _ReportDateFmt();
+
+class _ReportDateFmt {
+  const _ReportDateFmt();
+  String format(DateTime d) => fmtDate(d);
+}
 
 /// Net Movement card — shared between web and mobile.
 Widget reportNetMovementCard(AppThemeColors colors, ReportsController c) {
@@ -35,8 +41,9 @@ Widget reportNetMovementCard(AppThemeColors colors, ReportsController c) {
   return Container(
     padding: const EdgeInsets.all(18),
     decoration: BoxDecoration(
-      color: (positive ? const Color(0xFF22C55E) : const Color(0xFFEF4444))
-          .withValues(alpha: 0.10),
+      color: (positive ? AppColors.success : AppColors.danger).withValues(
+        alpha: 0.10,
+      ),
       borderRadius: BorderRadius.circular(14),
     ),
     child: Row(
@@ -44,7 +51,7 @@ Widget reportNetMovementCard(AppThemeColors colors, ReportsController c) {
         Icon(
           positive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
           size: 20,
-          color: positive ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
+          color: positive ? AppColors.success : AppColors.danger,
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -78,7 +85,7 @@ Widget reportNetMovementCard(AppThemeColors colors, ReportsController c) {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: positive ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
+            color: positive ? AppColors.success : AppColors.danger,
             fontFamily: brandFontFamily,
           ),
         ),
@@ -150,7 +157,7 @@ class WebReportsLayout extends GetView<ReportsController> {
                           child: ReportSectionCard(
                             title: 'Sales',
                             icon: Icons.trending_up_rounded,
-                            accent: const Color(0xFF22C55E),
+                            accent: AppColors.success,
                             lines: controller.salesLines,
                             display: displayReportValue,
                           ),

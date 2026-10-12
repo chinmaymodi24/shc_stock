@@ -1,3 +1,5 @@
+import 'package:shc_stock/app/core/utils/app_date.dart';
+
 /// The stretch of time (or the single date) a report covers.
 ///
 /// Built here rather than in the view so the toolbar chip, the statement's
@@ -33,8 +35,7 @@ class ReportPeriod {
     'Dec',
   ];
 
-  static String formatDate(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')} ${_months[d.month - 1]} ${d.year}';
+  static String formatDate(DateTime d) => fmtDate(d);
 
   /// "01 Apr 2025 — 31 Mar 2026" — the read-only chip beside the selector.
   String get rangeLabel => '${formatDate(from)} — ${formatDate(to)}';

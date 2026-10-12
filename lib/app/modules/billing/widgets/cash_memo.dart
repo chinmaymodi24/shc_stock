@@ -302,10 +302,7 @@ class CashMemo extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _moneyRow('Sub Total', totals.taxableTotalText),
-            _moneyRow(
-              'GST ${ratePercent(totals.tax.gstPercent)}',
-              totals.totalTaxText,
-            ),
+            _moneyRow(totals.gstHeader, totals.totalTaxText),
             _moneyRow('Round Off', totals.roundOffText),
             const SizedBox(height: 8),
             Container(height: 0.7, color: InvoicePaper.rule),

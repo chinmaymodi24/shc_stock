@@ -25,7 +25,9 @@ class BillEvent {
     type: json['type'] as String? ?? '',
     note: json['note'] as String? ?? '',
     actor: json['actor'] as String? ?? 'Admin',
-    at: DateTime.tryParse(json['at'] as String? ?? '') ?? DateTime.now(),
+    at:
+        DateTime.tryParse(json['at'] as String? ?? '')?.toLocal() ??
+        DateTime.now(),
   );
 
   String get label => switch (type) {
@@ -76,7 +78,7 @@ class EInvoiceInfo {
     ackNo: json['ackNo'] as String?,
     ackDate: json['ackDate'] == null
         ? null
-        : DateTime.tryParse(json['ackDate'] as String),
+        : DateTime.tryParse(json['ackDate'] as String)?.toLocal(),
   );
 }
 
@@ -107,7 +109,8 @@ class BillModel {
     salesOrderId: (json['salesOrderId'] as num?)?.toInt() ?? 0,
     invoiceNo: json['invoiceNo'] as String? ?? '',
     issuedOn:
-        DateTime.tryParse(json['issuedOn'] as String? ?? '') ?? DateTime.now(),
+        DateTime.tryParse(json['issuedOn'] as String? ?? '')?.toLocal() ??
+        DateTime.now(),
     options: json['options'] is Map<String, dynamic>
         ? BillOptions.fromJson(json['options'] as Map<String, dynamic>)
         : const BillOptions(),

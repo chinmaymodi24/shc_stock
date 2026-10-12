@@ -147,8 +147,10 @@ class DeliveryItem {
 
 class LowStockAlertItem {
   final String product;
-  final int current;
-  final int max;
+
+  /// Stock levels — decimal for a product measured in kg / m.
+  final double current;
+  final double max;
 
   const LowStockAlertItem({
     required this.product,

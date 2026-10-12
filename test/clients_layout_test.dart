@@ -33,7 +33,7 @@ class _OfflineClientsController extends ClientsController {
   @override
   Future<void> fetchClients() async {
     // The real fetch fills both: the page, and how many rows match overall.
-    totalFiltered.value = 2;
+    totalFiltered.value = 3;
     clients.assignAll(const [
       ClientModel(
         id: '1',
@@ -54,6 +54,15 @@ class _OfflineClientsController extends ClientsController {
         gstin: '27ATXPM3307L1Z2',
         // Phone but no name — 173 imported clients look like this.
         contactPhone: '9923908368',
+      ),
+      ClientModel(
+        id: '3',
+        code: 'CLT-0071',
+        name: 'OM Logistics Ltd.',
+        address: 'Ahmedabad',
+        regState: 'Gujarat',
+        gstin: '88AAACO4716C1ZV',
+        // Neither a name nor a number on file.
       ),
     ]);
   }
@@ -133,8 +142,18 @@ void main() {
     expect(find.text('SS'), findsWidgets);
     expect(find.text('9428421959'), findsOneWidget);
 
-    // A client with only a number still shows it, under a dash.
+    // A client with only a number shows the number itself on that line —
+    // not a dash with the number tucked underneath it.
     expect(find.text('9923908368'), findsOneWidget);
+
+    // A client with neither a name nor a number gets exactly one dash, not
+    // a dash on its own line plus a second one from the (empty) phone slot.
+    expect(find.text('—'), findsOneWidget);
+
+    // A phone-only row keeps an avatar (a call icon); an empty row gets no
+    // avatar at all — a dash icon beside the dash text read as "— —".
+    expect(find.byIcon(Icons.call_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.remove_rounded), findsNothing);
 
     // …and the addresses no longer carry either of them.
     expect(find.textContaining('Shri Shreyashbhai -'), findsNothing);

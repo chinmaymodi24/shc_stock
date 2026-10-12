@@ -44,6 +44,8 @@ ClientModel _parse(String raw) =>
     ClientModel.fromJson(jsonDecode(raw) as Map<String, dynamic>);
 
 void main() {
+  _pinCityGroup();
+  _addressOnlyGroup();
   test('maps a legacy seeded row, keeping the list columns working', () {
     final c = _parse(_legacyRow);
 
@@ -104,5 +106,101 @@ void main() {
     expect(c.openingBalance, 0);
     expect(c.creditDays, 0);
     expect(c.city, '');
+  });
+}
+
+void _pinCityGroup() {
+  group('ClientModel city / pin for the order forms', () {
+    test('legacy address: city and PIN come out of "City - PIN"', () {
+      const c = ClientModel(
+        id: '1',
+        code: 'CLT-1',
+        name: 'Aavkar',
+        address:
+            '2nd Floor, Modi Nivas, Ramnagar, Sabarmati, Ahmedabad - 380005',
+      );
+      expect(c.city, 'Ahmedabad');
+      expect(c.pin, '380005');
+    });
+
+    test('structured fields win over the address', () {
+      const c = ClientModel(
+        id: '2',
+        code: 'CLT-2',
+        name: 'X',
+        address: 'Somewhere - 111111',
+        regCity: 'Rajkot',
+        regPin: '360001',
+      );
+      expect(c.city, 'Rajkot');
+      expect(c.pin, '360001');
+    });
+
+    test('no PIN anywhere gives an empty string', () {
+      const c = ClientModel(
+        id: '3',
+        code: 'CLT-3',
+        name: 'Y',
+        address: 'Morbi.',
+      );
+      expect(c.pin, '');
+    });
+
+    test('a longer number is not mistaken for a PIN', () {
+      const c = ClientModel(
+        id: '4',
+        code: 'CLT-4',
+        name: 'Z',
+        address: 'Plot 12345678, Surat',
+      );
+      expect(c.pin, '');
+    });
+  });
+}
+
+void _addressOnlyGroup() {
+  group('ClientModel.addressOnly', () {
+    String only(String a, {String regCity = '', String regPin = ''}) =>
+        ClientModel(
+          id: '1',
+          code: 'C',
+          name: 'N',
+          address: a,
+          regCity: regCity,
+          regPin: regPin,
+        ).addressOnly;
+
+    test('drops "City - PIN"', () {
+      expect(
+        only('2nd Floor, Modi Nivas, Ramnagar, Sabarmati, Ahmedabad - 380005'),
+        '2nd Floor, Modi Nivas, Ramnagar, Sabarmati',
+      );
+    });
+    test(
+      'drops a "Dist." prefix with the city, and the state after the PIN',
+      () {
+        expect(
+          only(
+            'Plot 687, Village Vanod, Th. Dasada, Dist. Surendranagar - 382750',
+          ),
+          'Plot 687, Village Vanod, Th. Dasada',
+        );
+        expect(
+          only(
+            'Room 31, Transport Nagar, Mango, Jamshedpur - 831012 Jharkhand',
+          ),
+          'Room 31, Transport Nagar, Mango',
+        );
+      },
+    );
+    test('no PIN: address untouched', () {
+      expect(
+        only('Samrajya Tower, Memnagar, Ahmedabad'),
+        'Samrajya Tower, Memnagar, Ahmedabad',
+      );
+    });
+    test('never returns an empty address', () {
+      expect(only('Ahmedabad - 380005'), 'Ahmedabad - 380005');
+    });
   });
 }

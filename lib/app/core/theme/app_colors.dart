@@ -33,6 +33,13 @@ class AppColors {
   static Color get inputIcon => brand.accent;
   static Color get dividerPurple => brand.accent;
 
+  // Status colours for places with no BuildContext (snackbars from controllers)
+  // and for const-free widgets: they follow the buyer's palette too.
+  static Color get danger => brand.danger;
+  static Color get success => brand.success;
+  static Color get warning => brand.warning;
+  static Color get info => brand.info;
+
   static Color get cardShadow => brand.accent.withValues(alpha: 0.10);
 }
 

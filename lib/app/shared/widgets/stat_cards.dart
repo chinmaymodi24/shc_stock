@@ -77,8 +77,8 @@ class AppStatCard extends StatelessWidget {
     final colors = context.appColors;
 
     final trendColor = trendUp
-        ? const Color(0xFF22C55E)
-        : const Color(0xFFEF4444);
+        ? AppColors.success
+        : AppColors.danger;
 
     return Container(
       padding: EdgeInsets.all(dense ? 11 : 18),

@@ -1,20 +1,35 @@
 const express = require('express');
 const prisma = require('../prismaClient');
 
+const V = require('../validate');
 const router = express.Router();
+router.param('id', require('../validate').idParam);
 
 // PUT /api/sub-categories/:id
 router.put('/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const { name, description = '' } = req.body;
-    if (!name || !name.trim()) {
+    const { name } = req.body;
+    const description = V.text(req.body.description, 'description', { max: 1000 });
+    if (typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({ error: 'name is required' });
     }
     // Last modified first: an edited sub-category moves to the top of its
     // category. Ordering is still by sortOrder, so drag-to-reorder still works.
     const existing = await prisma.subCategory.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ error: 'Sub-category not found' });
+    const cleanName = V.text(name, 'name', { max: 150 });
+    const clash = await prisma.subCategory.findFirst({
+      where: {
+        categoryId: existing.categoryId,
+        id: { not: id },
+        name: { equals: cleanName, mode: 'insensitive' },
+      },
+      select: { id: true },
+    });
+    if (clash) {
+      return res.status(409).json({ error: `This category already has a sub-category named "${cleanName}"` });
+    }
     const minOrder = await prisma.subCategory.aggregate({
       where: { categoryId: existing.categoryId },
       _min: { sortOrder: true },
@@ -22,8 +37,8 @@ router.put('/:id', async (req, res, next) => {
     const subCategory = await prisma.subCategory.update({
       where: { id },
       data: {
-        name: name.trim(),
-        description: description.trim(),
+        name: cleanName,
+        description,
         sortOrder: (minOrder._min.sortOrder ?? 0) - 1,
       },
     });

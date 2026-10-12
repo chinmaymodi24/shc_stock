@@ -1,4 +1,5 @@
 import 'package:shc_stock/app/core/utils/amount_format.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 
 /// How a column's values are typed — decides alignment, and whether a
 /// spreadsheet gets a real number it can sum or a string it cannot.
@@ -46,23 +47,7 @@ class ExportCell {
     return value.toStringAsFixed(2);
   }
 
-  static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
-  static String _formatDate(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')} ${_months[d.month - 1]} ${d.year}';
+  static String _formatDate(DateTime d) => fmtDate(d);
 }
 
 /// A fully resolved export payload — headers plus rows, in the exact order

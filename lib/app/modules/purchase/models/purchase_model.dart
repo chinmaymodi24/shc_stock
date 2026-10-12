@@ -1,4 +1,6 @@
 import 'package:shc_stock/app/shared/models/order_payment.dart';
+import 'package:shc_stock/app/core/utils/gst.dart';
+import 'package:shc_stock/app/shared/models/order_qty.dart';
 
 // Purchase Order model
 class PurchaseOrder {
@@ -33,10 +35,16 @@ class PurchaseOrder {
   /// — which is what books the stock IN. Null leaves the status alone.
   final DateTime? expectedDelivery;
 
+  /// When the order was marked Received; null while it is not.
+  final DateTime? receivedAt;
+
   /// How much of this order has been paid to the supplier.
   final OrderPaymentType paymentType;
   final double paidAmount;
   final List<PurchaseDetailItem> items;
+
+  /// Supplier in another state: IGST instead of CGST + SGST.
+  final bool interState;
 
   const PurchaseOrder({
     required this.id,
@@ -62,14 +70,23 @@ class PurchaseOrder {
     this.placeOfSupply = '',
     this.dueDate,
     this.expectedDelivery,
+    this.receivedAt,
     this.paymentType = OrderPaymentType.none,
     this.paidAmount = 0,
     this.items = const [],
+    this.interState = false,
   });
 
   double get subTotal => items.fold(0.0, (s, i) => s + i.amount);
-  double get sgst => subTotal * 0.09;
-  double get cgst => subTotal * 0.09;
+
+  /// The tax on this order: each line at its own rate, IGST when the
+  /// supplier is in another state (see gst.dart).
+  GstBreakup get gst => computeGst([
+    for (final i in items) GstLine(i.amount, i.taxPercent),
+  ], interState: interState);
+  double get sgst => gst.sgst;
+  double get cgst => gst.cgst;
+  double get igst => gst.igst;
 
   /// Builds a [PurchaseOrder] from the backend `/purchase-orders` JSON shape.
   /// Units on the order — every line's quantity added up. The list's "Items"
@@ -79,21 +96,25 @@ class PurchaseOrder {
 
   /// [totalQty] without a trailing `.0`, falling back to the line count for
   /// older records that were saved without their lines.
-  String get totalQtyLabel {
-    if (items.isEmpty) return '$itemCount';
-    final q = totalQty;
-    return q == q.roundToDouble() ? q.toStringAsFixed(0) : q.toStringAsFixed(2);
-  }
+  /// "300 pcs" when every line shares a unit, "2 items" when they don't
+  /// (100 pcs + 200 kg is not 300 of anything). See order_qty.dart.
+  String get totalQtyLabel => orderQtyLabel([
+    for (final i in items) (i.qty, i.unit),
+  ], fallbackCount: itemCount);
+
+  /// "100 pcs + 200 kg" — the full breakdown, for the row's tooltip.
+  String get qtyBreakdown =>
+      orderQtyBreakdown([for (final i in items) (i.qty, i.unit)]);
 
   factory PurchaseOrder.fromJson(Map<String, dynamic> json) {
     DateTime? parseDate(dynamic v) =>
-        v == null ? null : DateTime.parse(v as String);
+        v == null ? null : DateTime.parse(v as String).toLocal();
     return PurchaseOrder(
       id: (json['id'] as int).toString(),
       poNumber: json['poNumber'] as String? ?? '',
       supplier: json['supplier'] as String? ?? '',
       supplierIcon: json['supplierIcon'] as String? ?? '',
-      date: DateTime.parse(json['date'] as String),
+      date: DateTime.parse(json['date'] as String).toLocal(),
       itemCount: (json['items'] as List<dynamic>? ?? []).length,
       amount: (json['amount'] as num?)?.toDouble() ?? 0,
       status: PurchaseStatus.values.firstWhere(
@@ -115,7 +136,9 @@ class PurchaseOrder {
       placeOfSupply: json['placeOfSupply'] as String? ?? '',
       dueDate: parseDate(json['dueDate']),
       expectedDelivery: parseDate(json['expectedDelivery']),
+      receivedAt: parseDate(json['receivedAt']),
       paymentType: orderPaymentTypeFrom(json['paymentType'] as String?),
+      interState: json['interState'] == true,
       paidAmount: (json['paidAmount'] as num?)?.toDouble() ?? 0,
       items: (json['items'] as List<dynamic>? ?? [])
           .map((e) => PurchaseDetailItem.fromJson(e as Map<String, dynamic>))
@@ -147,6 +170,7 @@ class PurchaseOrder {
     if (expectedDelivery != null)
       'expectedDelivery': expectedDelivery!.toIso8601String(),
     'paymentType': paymentType.label,
+    'interState': interState,
     'paidAmount': paidAmount,
     'items': items.map((i) => i.toJson()).toList(),
   };
@@ -166,6 +190,9 @@ class PurchaseDetailItem {
   final String unit;
   final double rate;
 
+  /// GST rate (percent) on this line — the product's own rate.
+  final double taxPercent;
+
   const PurchaseDetailItem({
     this.productId,
     required this.product,
@@ -175,6 +202,7 @@ class PurchaseDetailItem {
     required this.qty,
     this.unit = '',
     required this.rate,
+    this.taxPercent = kDefaultGstRate,
   });
 
   double get amount => qty * rate;
@@ -189,6 +217,7 @@ class PurchaseDetailItem {
       qty: (json['qty'] as num).toDouble(),
       unit: json['unit'] as String? ?? '',
       rate: (json['rate'] as num).toDouble(),
+      taxPercent: (json['taxPercent'] as num?)?.toDouble() ?? kDefaultGstRate,
     );
   }
 
@@ -201,6 +230,7 @@ class PurchaseDetailItem {
     'qty': qty,
     'unit': unit,
     'rate': rate,
+    'taxPercent': taxPercent,
   };
 }
 

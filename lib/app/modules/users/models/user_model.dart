@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/modules/users/models/role_model.dart';
@@ -18,8 +19,14 @@ class UserModel {
   /// The assigned role as the list shows it — name, colour and icon.
   final RoleBadge role;
   final bool isActive;
-  final String lastLogin; // formatted string
-  final String createdAt; // formatted string
+
+  /// Kept as dates and formatted when shown, so they follow
+  /// Settings › Preferences › Date Format.
+  final DateTime? lastLoginAt;
+  final DateTime? createdOn;
+
+  String get lastLogin => fmtDateTime(lastLoginAt, empty: 'Never');
+  String get createdAt => fmtDate(createdOn);
   final String department;
   final String modifiedBy;
   final DateTime? modifiedAt;
@@ -39,8 +46,8 @@ class UserModel {
     required this.phone,
     required this.role,
     required this.isActive,
-    required this.lastLogin,
-    required this.createdAt,
+    this.lastLoginAt,
+    this.createdOn,
     this.department = '',
     this.modifiedBy = 'Admin',
     this.modifiedAt,
@@ -52,7 +59,7 @@ class UserModel {
     final name = json['name'] as String? ?? '';
     DateTime? date(String key) {
       final v = json[key];
-      return v == null ? null : DateTime.tryParse(v as String);
+      return v == null ? null : DateTime.tryParse(v as String)?.toLocal();
     }
 
     return UserModel(
@@ -65,8 +72,8 @@ class UserModel {
       phone: json['phone'] as String? ?? '',
       role: _roleOf(json),
       isActive: json['isActive'] as bool? ?? true,
-      lastLogin: _formatDateTime(date('lastLoginAt')),
-      createdAt: _formatDate(date('createdAt')),
+      lastLoginAt: date('lastLoginAt'),
+      createdOn: date('createdAt'),
       department: json['department'] as String? ?? '',
       modifiedBy: json['modifiedBy'] as String? ?? 'Admin',
       modifiedAt: date('modifiedAt'),
@@ -124,10 +131,10 @@ Map<String, ModuleAccess> _permissionsOf(Object? raw) {
 List<Color> get _badgeColors => [
   const Color(0xFFF47B20),
   appColors.accent,
-  const Color(0xFF22C55E),
+  AppColors.success,
   const Color(0xFF0EA5E9),
-  const Color(0xFFF59E0B),
-  const Color(0xFFEF4444),
+  AppColors.warning,
+  AppColors.danger,
   const Color(0xFF8B5CF6),
   const Color(0xFF14B8A6),
   const Color(0xFFEC4899),
@@ -148,33 +155,6 @@ String _initialsOf(String name) {
     return parts[0].substring(0, parts[0].length < 2 ? 1 : 2).toUpperCase();
   }
   return (parts[0][0] + parts[1][0]).toUpperCase();
-}
-
-const _months = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
-
-String _formatDate(DateTime? d) {
-  if (d == null) return '—';
-  return '${d.day.toString().padLeft(2, '0')} ${_months[d.month - 1]} ${d.year}';
-}
-
-String _formatDateTime(DateTime? d) {
-  if (d == null) return 'Never';
-  final hour12 = d.hour % 12 == 0 ? 12 : d.hour % 12;
-  final ampm = d.hour < 12 ? 'AM' : 'PM';
-  return '${_formatDate(d)}, $hour12:${d.minute.toString().padLeft(2, '0')} $ampm';
 }
 
 /// One entry of the role breakdown from GET /api/stats/users.

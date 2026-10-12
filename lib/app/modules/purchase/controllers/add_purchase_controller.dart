@@ -1,9 +1,18 @@
+import 'package:shc_stock/app/core/utils/dispose_later.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
+import 'package:shc_stock/app/shared/widgets/app_date_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/modules/billing/controllers/billing_profile_controller.dart';
+import 'package:shc_stock/app/core/utils/gst.dart';
+import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
+import 'package:shc_stock/app/routes/app_routes.dart';
+import 'package:shc_stock/app/core/session/session_controller.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
+import 'package:shc_stock/app/core/utils/order_checks.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/core/utils/doc_number.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
-import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
 import 'package:shc_stock/app/modules/settings/controllers/settings_controller.dart';
 import 'package:shc_stock/app/shared/models/order_payment.dart';
@@ -34,6 +43,9 @@ class PurchaseItemRow {
   String uom = 'BOX';
   double netPrice = 0;
 
+  /// GST rate (percent) — the picked product's own, 18% for a typed line.
+  double taxPercent = kDefaultGstRate;
+
   /// What the API stores as the line's `qty`. There used to be an average
   /// contents-per-pack multiplier between the two; it was dropped because it
   /// never round-tripped (a saved order always came back with it at 1), so
@@ -56,7 +68,8 @@ class AddPurchaseController extends GetxController {
   final client = ''.obs;
   final addressCtrl = TextEditingController();
   final cityCtrl = TextEditingController();
-  final statePinCtrl = TextEditingController();
+  final pinCtrl = TextEditingController();
+  final stateCtrl = TextEditingController();
   final buyerGstCtrl = TextEditingController();
   final panCtrl = TextEditingController();
   final invoiceNoCtrl = TextEditingController();
@@ -92,6 +105,12 @@ class AddPurchaseController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // The party's state decides CGST + SGST vs IGST; the totals redraw off
+    // `items`, so poke it whenever one of the boxes that names the state
+    // changes.
+    for (final c in [buyerGstCtrl, placeOfSupplyCtrl, stateCtrl, addressCtrl]) {
+      c.addListener(items.refresh);
+    }
     final arg = Get.arguments;
     if (arg is DuplicatePurchaseOrder) {
       loadFrom(arg.order, asDuplicate: true);
@@ -99,7 +118,7 @@ class AddPurchaseController extends GetxController {
       // would create a byte-for-byte copy — same invoice number, same date.
       // Force a fresh invoice number (regardless of the auto-numbering
       // preference) and today's dates so the new record is distinct.
-      invoiceNoCtrl.text = _nextInvoiceNo();
+      _fillNextNumber();
       final today = DateTime.now();
       invoiceDate.value = today;
       poDate.value = today;
@@ -107,26 +126,24 @@ class AddPurchaseController extends GetxController {
       loadFrom(arg);
     } else {
       _prefillInvoiceNo();
+      // A new purchase starts as fully paid; the amount follows the grand total
+      // until it is typed over (or another option is picked).
+      paymentType.value = OrderPaymentType.full;
     }
   }
 
-  /// The next number in the PO-2024 series, from the loaded orders.
-  String _nextInvoiceNo() {
-    final orders = Get.isRegistered<PurchaseController>()
-        ? Get.find<PurchaseController>().orders
-        : const <PurchaseOrder>[];
-    return nextDocNumber(
-      prefix: 'PO-2024',
-      existing: orders.map((o) => o.poNumber),
-    );
+  /// Writes the server's next order number into "Invoice No.".
+  Future<void> _fillNextNumber() async {
+    final n = await nextOrderNumber(OrderSeries.purchase);
+    if (n.isNotEmpty) invoiceNoCtrl.text = n;
   }
 
-  /// Fills "Invoice No." with [_nextInvoiceNo], unless the user turned
+  /// Fills "Invoice No." with the next number, unless the user turned
   /// auto-numbering off in Settings › Preferences.
   Future<void> _prefillInvoiceNo() async {
     if (isEditing) return;
-    if (!await autoNumberDocsEnabled()) return;
-    invoiceNoCtrl.text = _nextInvoiceNo();
+    if (!await autoNumberPurchaseEnabled()) return;
+    await _fillNextNumber();
   }
 
   /// Fills the form from an existing order. When [asDuplicate] is true,
@@ -152,6 +169,8 @@ class AddPurchaseController extends GetxController {
     expectedDelivery.value = o.expectedDelivery;
     paymentType.value = o.paymentType;
     paidAmountCtrl.text = o.paidAmount == 0 ? '' : trimAmount(o.paidAmount);
+    // The saved figure is the person's own; do not re-derive it from the total.
+    _paidTyped = true;
 
     items.assignAll(
       o.items.isEmpty
@@ -165,7 +184,8 @@ class AddPurchaseController extends GetxController {
                 ..density = i.density
                 ..noPkg = i.qty
                 ..uom = i.unit.isEmpty ? 'BOX' : i.unit
-                ..netPrice = i.rate;
+                ..netPrice = i.rate
+                ..taxPercent = i.taxPercent;
               return row;
             }).toList(),
     );
@@ -176,8 +196,22 @@ class AddPurchaseController extends GetxController {
   /// type. The value stays editable in every case.
   void setPaymentType(OrderPaymentType type) {
     paymentType.value = type;
+    _paidTyped = false;
     final suggested = type.suggestedAmount(grandTotal);
     paidAmountCtrl.text = suggested == null ? '' : trimAmount(suggested);
+  }
+
+  /// True once the person typed their own figure in the amount box; the box
+  /// then stops following the grand total.
+  bool _paidTyped = false;
+  void paidAmountTyped() => _paidTyped = true;
+
+  /// Keeps a Full / Half amount in step with the grand total as lines change.
+  void _followGrandTotal() {
+    if (_paidTyped) return;
+    final suggested = paymentType.value.suggestedAmount(grandTotal);
+    if (suggested == null) return;
+    paidAmountCtrl.text = suggested > 0 ? trimAmount(suggested) : '';
   }
 
   /// The amount actually paid — whatever is in the box, 0 when it is empty or
@@ -188,29 +222,53 @@ class AddPurchaseController extends GetxController {
   }
 
   double get subTotal => items.fold(0.0, (s, r) => s + r.amount);
-  double get sgst => subTotal * 0.09;
-  double get cgst => subTotal * 0.09;
-  double get grandTotal => subTotal + sgst + cgst;
+
+  /// The party's GST state: GSTIN first, then place of supply, state, address.
+  String? get partyStateCode => gstStateOf(buyerGstCtrl.text, [
+    placeOfSupplyCtrl.text,
+    stateCtrl.text,
+    addressCtrl.text,
+  ]);
+
+  /// Inter-state supply → IGST; same state (or either side unknown) → CGST +
+  /// SGST. The seller's state comes from Settings › Billing.
+  bool get interState =>
+      isInterState(BillingProfileController.sellerStateCode, partyStateCode);
+
+  /// Tax on the lines, each at its own product's rate.
+  GstBreakup get gst => computeGst([
+    for (final r in items) GstLine(r.amount, r.taxPercent),
+  ], interState: interState);
+  double get sgst => gst.sgst;
+  double get cgst => gst.cgst;
+  double get igst => gst.igst;
+  double get grandTotal => subTotal + gst.totalTax;
 
   void applyClient(ClientModel c) {
     client.value = c.name;
-    addressCtrl.text = c.address;
-    if (c.state.isNotEmpty) {
-      statePinCtrl.text = c.state;
-      placeOfSupplyCtrl.text = c.state;
-    }
+    addressCtrl.text = c.addressOnly;
+    cityCtrl.text = c.city;
+    pinCtrl.text = c.pin;
+    stateCtrl.text = c.state;
+    if (c.state.isNotEmpty) placeOfSupplyCtrl.text = c.state;
     buyerGstCtrl.text = c.gstin;
     panCtrl.text = c.pan;
   }
 
   void addItemRow() => items.add(PurchaseItemRow());
 
-  void removeItemRow(int index) => items.removeAt(index);
+  void removeItemRow(int index) {
+    items.removeAt(index);
+    _followGrandTotal();
+  }
 
-  void notifyItemsChanged() => items.refresh();
+  void notifyItemsChanged() {
+    items.refresh();
+    _followGrandTotal();
+  }
 
   Future<void> pickDate(BuildContext context, Rx<DateTime?> target) async {
-    final picked = await showDatePicker(
+    final picked = await showAppDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2020),
@@ -221,18 +279,151 @@ class AddPurchaseController extends GetxController {
 
   @override
   void onClose() {
-    addressCtrl.dispose();
-    cityCtrl.dispose();
-    statePinCtrl.dispose();
-    buyerGstCtrl.dispose();
-    panCtrl.dispose();
-    invoiceNoCtrl.dispose();
-    poNoCtrl.dispose();
-    lrNoCtrl.dispose();
-    vehicleNoCtrl.dispose();
-    freightCtrl.dispose();
-    placeOfSupplyCtrl.dispose();
-    paidAmountCtrl.dispose();
+    // Disposed once the page has gone, not while it is still on screen
+    // for its exit transition — see dispose_later.dart.
+    disposeAfterPageExit([
+      addressCtrl,
+      cityCtrl,
+      pinCtrl,
+      stateCtrl,
+      buyerGstCtrl,
+      panCtrl,
+      invoiceNoCtrl,
+      poNoCtrl,
+      lrNoCtrl,
+      vehicleNoCtrl,
+      freightCtrl,
+      placeOfSupplyCtrl,
+      paidAmountCtrl,
+    ]);
     super.onClose();
+  }
+
+  /// The rows that get sent — the empty one left at the bottom is not.
+  List<PurchaseItemRow> sentRows() => withoutBlankRows(
+    items,
+    (r) => (
+      name: r.product,
+      productId: r.productId,
+      qty: r.totalQty,
+      rate: r.netPrice,
+    ),
+  );
+
+  /// Validates, saves (create or update), then returns to the list with a
+  /// toast. Shared by the web and the mobile form, so the two can never save
+  /// different things.
+  Future<void> save() async {
+    final c = Get.find<PurchaseController>();
+    // Editing keeps the record's own id, PO number and status — only the
+    // details being edited change.
+    final editing = this.editing;
+    final newId = editing?.id ?? 'po_${DateTime.now().millisecondsSinceEpoch}';
+    // Blank for a new order: the server numbers it (PO/0001/26-27).
+    final newPoNum = editing?.poNumber ?? '';
+    final supplierName = client.value.trim();
+    // No supplier used to save as the literal "Unknown Supplier", and a
+    // one-letter name crashed the badge below on substring(0, 2).
+    final problem = supplierName.isEmpty
+        ? 'Please select or enter a supplier before saving.'
+        : checkOrderLines([
+                for (final r in items)
+                  (
+                    name: r.product,
+                    productId: r.productId,
+                    qty: r.totalQty,
+                    rate: r.netPrice,
+                  ),
+              ]) ??
+              checkPayment(paid: paidAmount, total: grandTotal) ??
+              checkDateOrder(
+                later: dueDate.value,
+                earlier: invoiceDate.value ?? DateTime.now(),
+                laterName: 'Due date',
+                earlierName: 'the invoice date',
+              ) ??
+              checkDateOrder(
+                later: expectedDelivery.value,
+                earlier: invoiceDate.value ?? DateTime.now(),
+                laterName: 'Expected delivery',
+                earlierName: 'the invoice date',
+              );
+    if (problem != null) {
+      showAppToast(
+        'Check the order',
+        problem,
+        backgroundColor: AppColors.danger,
+        colorText: Colors.white,
+      );
+      return;
+    }
+    final order = PurchaseOrder(
+      id: newId,
+      poNumber: newPoNum,
+      supplier: supplierName,
+      supplierIcon: supplierName
+          .substring(0, supplierName.length < 2 ? supplierName.length : 2)
+          .toUpperCase(),
+      date: invoiceDate.value ?? DateTime.now(),
+      itemCount: sentRows().length,
+      amount: grandTotal,
+      status: editing?.status ?? PurchaseStatus.pending,
+      modifiedBy: currentActorName,
+      modifiedAt: DateTime.now(),
+      supplierAddress: addressCtrl.text.trim(),
+      buyerGst: buyerGstCtrl.text.trim(),
+      pan: panCtrl.text.trim(),
+      invoiceNo: invoiceNoCtrl.text.trim().isEmpty
+          ? newPoNum
+          : invoiceNoCtrl.text.trim(),
+      invoiceDate: invoiceDate.value,
+      despatchThrough: despatchThrough.value,
+      lrNo: lrNoCtrl.text.trim(),
+      lrDate: lrDate.value,
+      vehicleNo: vehicleNoCtrl.text.trim(),
+      freight: double.tryParse(freightCtrl.text.trim()) ?? 0,
+      placeOfSupply: placeOfSupplyCtrl.text.trim(),
+      dueDate: dueDate.value,
+      expectedDelivery: expectedDelivery.value,
+      paymentType: paymentType.value,
+      paidAmount: paidAmount,
+      interState: interState,
+      items: sentRows()
+          .map(
+            (r) => PurchaseDetailItem(
+              productId: r.productId,
+              product: r.product,
+              hsn: r.hsn,
+              grade: r.grade,
+              density: r.density,
+              qty: r.totalQty,
+              unit: r.uom,
+              rate: r.netPrice,
+              taxPercent: r.taxPercent,
+            ),
+          )
+          .toList(),
+    );
+
+    final ok = editing == null
+        ? await c.addOrder(order)
+        : await c.updateOrder(order);
+    if (!ok) return; // controller already showed the error toast
+    // A new order's number is the one the server gave it (newest first).
+    final number = editing == null && c.orders.isNotEmpty
+        ? c.orders.first.poNumber
+        : newPoNum;
+    Get.offNamed(AppRoutes.purchase);
+    final unlinked = unlinkedItemsNote(
+      sentRows().where((r) => r.productId == null).length,
+    );
+    showAppToast(
+      editing == null ? '✅ Purchase Saved' : '✅ Purchase Updated',
+      editing == null
+          ? '$number has been successfully created.$unlinked'
+          : '$number has been successfully updated.$unlinked',
+      backgroundColor: AppColors.success,
+      colorText: Colors.white,
+    );
   }
 }

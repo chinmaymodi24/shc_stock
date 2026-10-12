@@ -1,8 +1,12 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const prisma = require('../prismaClient');
+const { normalisePhone } = require('../phone');
 const { getAppSettings, updateAppSettings } = require('../appSettings');
 const { settingsKey } = require('../permissions');
+const { invalidatePrincipal } = require('../auth/middleware');
+const { sign } = require('../auth/token');
+const V = require('../validate');
 
 const router = express.Router();
 
@@ -100,6 +104,9 @@ router.put('/billing', async (req, res, next) => {
         return res.status(400).json({ error: 'gstPercent must be between 0 and 100' });
       }
     }
+    // The seller's own number follows the same 10-digit rule as everyone
+    // else's, so the invoice and the employee list never disagree on shape.
+    if (profile.phone !== undefined) profile.phone = normalisePhone(profile.phone);
     const { billingProfile } = await updateAppSettings({ billingProfile: profile });
     res.json(billingProfile ?? {});
   } catch (err) {
@@ -142,7 +149,16 @@ const publicFields = {
   rowsPerPage: true,
   dateFormat: true,
   autoNumberDocs: true,
+  autoNumberPurchase: true,
+  autoNumberSales: true,
 };
+
+/// Mirrors kDateFormatLabels in lib/app/core/utils/app_date.dart.
+const DATE_FORMATS = [
+  'MMM D, YYYY (Jul 18, 2026)',
+  'DD/MM/YYYY (18/07/2026)',
+  'YYYY-MM-DD (2026-07-18)',
+];
 
 const str = (v, fallback = '') =>
   v === undefined || v === null ? fallback : String(v).trim();
@@ -162,7 +178,7 @@ function resolveUserId(req) {
 /// account and always allowed; the rest need write on their tab.
 const GATED_FIELDS = {
   [settingsKey('Notifications')]: ['notifyLowStock', 'notifyDelivery', 'notifyPayment', 'notifyWeekly'],
-  [settingsKey('Preferences')]: ['rowsPerPage', 'dateFormat', 'autoNumberDocs'],
+  [settingsKey('Preferences')]: ['rowsPerPage', 'dateFormat', 'autoNumberDocs', 'autoNumberPurchase', 'autoNumberSales'],
 };
 
 // GET /api/settings?userId=
@@ -197,24 +213,31 @@ router.put('/', async (req, res, next) => {
 
     const data = {};
     if (req.body.name !== undefined) {
-      const name = str(req.body.name);
+      const name = V.text(req.body.name, 'name', { max: 100 });
       if (!name) return res.status(400).json({ error: 'name cannot be empty' });
       data.name = name;
     }
     if (req.body.email !== undefined) {
-      const email = str(req.body.email).toLowerCase();
+      const email = V.text(req.body.email, 'email', { max: 150 }).toLowerCase();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
         return res.status(400).json({ error: 'email is not valid' });
       }
       data.email = email;
     }
-    if (req.body.phone !== undefined) data.phone = str(req.body.phone);
+    if (req.body.phone !== undefined) data.phone = normalisePhone(req.body.phone);
 
     for (const key of [
       'notifyLowStock', 'notifyDelivery', 'notifyPayment',
-      'notifyWeekly', 'twoFactor', 'autoNumberDocs',
+      'notifyWeekly', 'twoFactor', 'autoNumberPurchase', 'autoNumberSales',
     ]) {
       if (req.body[key] !== undefined) data[key] = req.body[key] === true;
+    }
+    // An older app build still sends the single switch: it sets both.
+    if (req.body.autoNumberDocs !== undefined) {
+      const on = req.body.autoNumberDocs === true;
+      data.autoNumberDocs = on;
+      if (req.body.autoNumberPurchase === undefined) data.autoNumberPurchase = on;
+      if (req.body.autoNumberSales === undefined) data.autoNumberSales = on;
     }
 
     if (req.body.rowsPerPage !== undefined) {
@@ -225,7 +248,10 @@ router.put('/', async (req, res, next) => {
       data.rowsPerPage = n;
     }
     if (req.body.dateFormat !== undefined) {
-      data.dateFormat = str(req.body.dateFormat) || 'MMM D, YYYY (Jul 18, 2026)';
+      // Only the formats the app knows how to show.
+      data.dateFormat = V.oneOf(req.body.dateFormat, 'dateFormat', DATE_FORMATS, {
+        fallback: DATE_FORMATS[0],
+      });
     }
 
     data.modifiedAt = new Date();
@@ -265,12 +291,23 @@ router.post('/password', async (req, res, next) => {
     // with the page open could reset it.
     const matches = await bcrypt.compare(current, user.passwordHash);
     if (!matches) return res.status(401).json({ error: 'Current password is incorrect' });
+    if (next_ === current) {
+      return res.status(400).json({ error: 'Choose a password different from the current one' });
+    }
 
     await prisma.user.update({
       where: { id: userId },
-      data: { passwordHash: await bcrypt.hash(next_, 10), modifiedAt: new Date() },
+      data: {
+        passwordHash: await bcrypt.hash(next_, 10),
+        mustChangePassword: false,
+        // Every other device holding an older token is signed out.
+        passwordChangedAt: new Date(),
+        modifiedAt: new Date(),
+      },
     });
-    res.json({ ok: true });
+    invalidatePrincipal(userId);
+    // The caller's own token just went stale with the rest; hand back a fresh one.
+    res.json(userId === req.auth.id ? { ok: true, token: sign(userId) } : { ok: true });
   } catch (err) {
     next(err);
   }

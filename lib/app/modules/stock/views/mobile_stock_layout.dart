@@ -3,6 +3,7 @@ import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
 import 'package:shc_stock/app/modules/stock/export/inventory_export.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/utils/qty_format.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
@@ -77,6 +78,7 @@ class MobileStockLayout extends StatelessWidget {
       actions: [
         Obx(
           () => MobileFilterButton(
+            visible: c.items.isNotEmpty,
             filters: _buildFilters(c),
             onClear: () {
               c.search.value = '';
@@ -176,7 +178,7 @@ class MobileStockLayout extends StatelessWidget {
         label: 'Low Stock',
         value: '${c.stats.value.intOf('lowStock')}',
         icon: Icons.warning_amber_rounded,
-        color: const Color(0xFFF59E0B),
+        color: AppColors.warning,
         selected: c.statFilters.contains('Low Stock'),
         onTap: () => c.statFilters.contains('Low Stock')
             ? c.statFilters.remove('Low Stock')
@@ -186,7 +188,7 @@ class MobileStockLayout extends StatelessWidget {
         label: 'Out of Stock',
         value: '${c.stats.value.intOf('outOfStock')}',
         icon: Icons.block_rounded,
-        color: const Color(0xFFEF4444),
+        color: AppColors.danger,
         selected: c.statFilters.contains('Out of Stock'),
         onTap: () => c.statFilters.contains('Out of Stock')
             ? c.statFilters.remove('Out of Stock')
@@ -196,7 +198,7 @@ class MobileStockLayout extends StatelessWidget {
         label: 'Stock Value',
         value: formatRupees(c.stats.value.doubleOf('totalValue')),
         icon: Icons.currency_rupee_rounded,
-        color: const Color(0xFF22C55E),
+        color: AppColors.success,
       ),
     ];
   }
@@ -348,7 +350,7 @@ class _MobileStockCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Qty: ${item.stockInHand}',
+                  'Qty: ${fmtStockQty(item.stockInHand)}',
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,

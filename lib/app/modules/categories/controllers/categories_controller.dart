@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -82,7 +83,7 @@ class CategoriesController extends GetxController {
     showAppToast(
       'Error',
       message,
-      backgroundColor: const Color(0xFFEF4444),
+      backgroundColor: AppColors.danger,
       colorText: Colors.white,
     );
   }
@@ -94,7 +95,7 @@ class CategoriesController extends GetxController {
     showAppToast(
       'Can’t delete',
       message,
-      backgroundColor: const Color(0xFFEF4444),
+      backgroundColor: AppColors.danger,
       colorText: Colors.white,
       duration: const Duration(seconds: 30),
     );
@@ -124,7 +125,9 @@ class CategoriesController extends GetxController {
   // ── CRUD — Categories ─────────────────────────────────────────
 
   /// Add a new top-level category.
-  Future<void> addCategory(String name, {String desc = ''}) async {
+  /// True when the category was saved; false (after showing why) when not, so
+  /// the dialog stays open on a refusal instead of vanishing with the toast.
+  Future<bool> addCategory(String name, {String desc = ''}) async {
     try {
       final json = await _api.post('/categories', {
         'name': name.trim(),
@@ -135,13 +138,15 @@ class CategoriesController extends GetxController {
         0,
         CategoryModel.fromJson(json as Map<String, dynamic>),
       );
+      return true;
     } catch (e) {
-      _showError('Failed to add category.');
+      _showError(apiErrorMessage(e, 'Failed to add category.'));
+      return false;
     }
   }
 
   /// Update an existing category's name and/or description.
-  Future<void> updateCategory(
+  Future<bool> updateCategory(
     String catId,
     String name, {
     String desc = '',
@@ -160,8 +165,10 @@ class CategoriesController extends GetxController {
           CategoryModel.fromJson(json as Map<String, dynamic>),
         );
       }
+      return true;
     } catch (e) {
-      _showError('Failed to update category.');
+      _showError(apiErrorMessage(e, 'Failed to update category.'));
+      return false;
     }
   }
 
@@ -204,13 +211,13 @@ class CategoriesController extends GetxController {
   // ── CRUD — Sub-Categories ─────────────────────────────────────
 
   /// Add a new sub-category to a given parent category.
-  Future<void> addSubCategory(
+  Future<bool> addSubCategory(
     String catId,
     String name, {
     String desc = '',
   }) async {
     final idx = categories.indexWhere((c) => c.id == catId);
-    if (idx == -1) return;
+    if (idx == -1) return false;
     try {
       final json = await _api.post('/categories/$catId/sub-categories', {
         'name': name.trim(),
@@ -221,22 +228,24 @@ class CategoriesController extends GetxController {
       final newSubs = List<SubCategoryItem>.from(old.subCategories)
         ..insert(0, SubCategoryItem.fromJson(json as Map<String, dynamic>));
       categories[idx] = old.copyWith(subCategories: newSubs);
+      return true;
     } catch (e) {
-      _showError('Failed to add sub-category.');
+      _showError(apiErrorMessage(e, 'Failed to add sub-category.'));
+      return false;
     }
   }
 
   /// Update an existing sub-category's name and/or description.
-  Future<void> updateSubCategory(
+  Future<bool> updateSubCategory(
     String catId,
     int subIdx,
     String name, {
     String desc = '',
   }) async {
     final idx = categories.indexWhere((c) => c.id == catId);
-    if (idx == -1) return;
+    if (idx == -1) return false;
     final old = categories[idx];
-    if (subIdx < 0 || subIdx >= old.subCategories.length) return;
+    if (subIdx < 0 || subIdx >= old.subCategories.length) return false;
     final sub = old.subCategories[subIdx];
     try {
       final json = await _api.put('/sub-categories/${sub.id}', {
@@ -248,8 +257,10 @@ class CategoriesController extends GetxController {
         ..removeAt(subIdx)
         ..insert(0, SubCategoryItem.fromJson(json as Map<String, dynamic>));
       categories[idx] = old.copyWith(subCategories: newSubs);
+      return true;
     } catch (e) {
-      _showError('Failed to update sub-category.');
+      _showError(apiErrorMessage(e, 'Failed to update sub-category.'));
+      return false;
     }
   }
 

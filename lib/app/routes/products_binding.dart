@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
-import 'package:shc_stock/app/modules/products/controllers/add_product_form_controller.dart';
 
 class ProductsBinding extends Bindings {
   @override
@@ -12,7 +11,5 @@ class ProductsBinding extends Bindings {
     if (!Get.isRegistered<ProductsController>()) {
       Get.put(ProductsController(), permanent: true);
     }
-    // Fresh per visit — not permanent, so it's disposed when the Add Item page closes.
-    Get.lazyPut<AddProductFormController>(() => AddProductFormController());
   }
 }

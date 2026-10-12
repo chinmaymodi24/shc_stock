@@ -17,6 +17,9 @@ const sessionSelect = {
   department: true,
   isActive: true,
   permissions: true,
+  mustChangePassword: true,
+  // The app formats every date with this from the first screen on.
+  dateFormat: true,
   roleRef: { select: { isSuperAdmin: true } },
 };
 
@@ -36,6 +39,8 @@ function sessionPayload(user) {
     phone: user.phone,
     department: user.department,
     permissions: user.permissions ?? {},
+    mustChangePassword: user.mustChangePassword === true,
+    dateFormat: user.dateFormat,
     token: sign(user.id),
   };
 }
@@ -43,11 +48,12 @@ function sessionPayload(user) {
 // POST /api/auth/login
 router.post('/login', async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !email.trim()) {
+    const { email, password } = req.body || {};
+    // Strings only: a number or object here used to crash on email.trim().
+    if (typeof email !== 'string' || !email.trim()) {
       return res.status(400).json({ error: 'email is required' });
     }
-    if (!password) {
+    if (typeof password !== 'string' || !password) {
       return res.status(400).json({ error: 'password is required' });
     }
 

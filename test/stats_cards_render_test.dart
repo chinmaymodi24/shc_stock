@@ -7,6 +7,7 @@ import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/theme/theme_controller.dart';
 import 'package:shc_stock/app/core/theme/theme_ripple_controller.dart';
 import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
+import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
 import 'package:shc_stock/app/modules/sales/views/web_sales_layout.dart';
 import 'package:shc_stock/app/modules/stock/controllers/stock_controller.dart';
 import 'package:shc_stock/app/modules/stock/views/web_stock_layout.dart';
@@ -22,9 +23,24 @@ import 'support/session.dart';
 // hardcoded "₹ 24,85,600".
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// One order on the books. The Sales rail is hidden when there are none, so a
+/// test about the rail has to have something for it to summarise.
+final _oneSale = SalesOrder(
+  id: '1',
+  soNumber: 'SO-2026-00001',
+  client: 'Aavkar Enterprise',
+  clientBadge: 'AE',
+  clientColor: Colors.orange,
+  date: DateTime(2026, 9, 1),
+  itemCount: 1,
+  amount: 1500,
+  status: SalesStatus.delivered,
+  paymentStatus: PaymentStatus.paid,
+);
+
 class _OfflineSalesController extends SalesController {
   @override
-  Future<void> fetchOrders() async {}
+  Future<void> fetchOrders() async => orders.assignAll([_oneSale]);
 
   @override
   Future<void> fetchStats() async {

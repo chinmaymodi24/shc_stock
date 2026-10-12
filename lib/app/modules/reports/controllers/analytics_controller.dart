@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -169,7 +170,7 @@ class AnalyticsController extends GetxController {
       showAppToast(
         'Error',
         'Failed to load analytics. Is the backend running?',
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: AppColors.danger,
         colorText: Colors.white,
       );
     } finally {

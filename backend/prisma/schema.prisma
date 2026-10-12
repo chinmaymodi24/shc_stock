@@ -20,6 +20,13 @@ model User {
   name         String
   email        String @unique
   passwordHash String
+  /// True for an account whose password somebody ELSE chose (a new employee,
+  /// or a reset by an admin). Until the person sets their own, the API only
+  /// lets them reach /auth/me and /settings/password.
+  mustChangePassword Boolean @default(false)
+  /// When the password last changed. A session token signed before this is
+  /// refused, so a lost phone is signed out by a password reset.
+  passwordChangedAt DateTime?
   /// Display name of the assigned role ("Super Admin", "Store Staff", or a
   /// custom role's name). Kept as text so the Employee list still reads
   /// sensibly for a row whose role was since deleted.
@@ -50,7 +57,12 @@ model User {
   dateFormat     String  @default("MMM D, YYYY (Jul 18, 2026)")
   /// When on, the Add Purchase / Add Sale forms prefill "Invoice No." with the
   /// next number in the PO-2024-##### / SO-2024-##### series.
+  /// Legacy single switch, superseded by the two below (kept so old rows and
+  /// old app builds still read sensibly).
   autoNumberDocs Boolean @default(true)
+  /// Prefill "Invoice No." on Add Purchase / Add Sale with the next number.
+  autoNumberPurchase Boolean @default(true)
+  autoNumberSales    Boolean @default(true)
 
   notes DashboardNote[]
 
@@ -132,8 +144,9 @@ model Product {
   imageUrl           String?
   sellingPrice       Decimal      @db.Decimal(14, 2)
   costPrice          Decimal      @db.Decimal(14, 2)
-  currentStock       Int          @default(0)
-  minimumStock       Int          @default(0)
+  /// Decimal: measured units (kg, m) hold fractions — see src/units.js.
+  currentStock       Decimal      @default(0) @db.Decimal(14, 3)
+  minimumStock       Decimal      @default(0) @db.Decimal(14, 3)
   isActive           Boolean      @default(true)
   brand              String?
   hsnCode            String?
@@ -183,6 +196,10 @@ model PurchaseOrder {
   /// that date — which is also what books the stock IN. Left null, the status
   /// (and therefore the stock) only moves when someone changes it by hand.
   expectedDelivery DateTime?
+  /// When the order was marked Received (null while it is not).
+  receivedAt       DateTime?
+  /// The supplier is in another state: IGST instead of CGST + SGST.
+  interState       Boolean        @default(false)
   /// "" | Full Payment | Half Payment | Other — how much of this order has
   /// been paid to the supplier, with [paidAmount] holding the figure.
   paymentType      String         @default("")
@@ -210,6 +227,9 @@ model PurchaseItem {
   unit            String        @default("")
   rate            Decimal       @db.Decimal(14, 2)
 
+  /// GST rate (percent) charged on this line.
+  taxPercent      Decimal       @default(18) @db.Decimal(5, 2)
+
   @@map("purchase_items")
 }
 
@@ -235,11 +255,18 @@ model SalesOrder {
   /// that date — which is also what books the stock OUT. Left null, the status
   /// (and therefore the stock) only moves when someone changes it by hand.
   expectedDelivery  DateTime?
+  /// When the order was marked Delivered (null while it is not).
+  deliveredAt       DateTime?
+  /// The buyer is in another state: IGST instead of CGST + SGST.
+  interState        Boolean    @default(false)
   /// "" | Full Payment | Half Payment | Other, with [paidAmount] holding the
   /// figure the client has actually paid.
   paymentType       String     @default("")
   paidAmount        Decimal    @default(0) @db.Decimal(14, 2)
   items             SaleItem[]
+  /// The payments received, one Transactions row each. paidAmount is their
+  /// sum whenever the order is saved with its payments.
+  payments          Transaction[]
   bill              Bill?
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
@@ -258,6 +285,8 @@ model SaleItem {
   qty          Decimal    @db.Decimal(14, 3)
   unit         String     @default("")
   rate         Decimal    @db.Decimal(14, 2)
+  /// GST rate (percent) charged on this line.
+  taxPercent   Decimal    @default(18) @db.Decimal(5, 2)
 
   @@map("sale_items")
 }
@@ -380,12 +409,32 @@ model Transaction {
 
   notes String @default("")
 
+  /// Money moved by this row (a payment received on a sale, or paid on a
+  /// purchase). 0 for a row that records goods only.
+  amount Decimal @default(0) @db.Decimal(14, 2)
+
+  /// How the money moved: Cash | UPI | Bank Transfer | Cheque | Card | Other
+  /// ("" when not recorded).
+  mode String @default("")
+
+  /// Set when this row is generated from an order: 'purchase' (a fully-paid
+  /// purchase) or 'sale' (one payment on a sale) + the order id. Hand-entered
+  /// rows leave both null, and generated rows are edited from their order.
+  refType String?
+  refId   Int?
+
+  /// A payment entered on a sale. Deleting the sale deletes its payments.
+  salesOrderId Int?
+  salesOrder   SalesOrder? @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+
   modifiedBy String   @default("Admin")
   modifiedAt DateTime @default(now())
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   @@index([date])
+  @@index([refType, refId])
+  @@index([salesOrderId])
   @@map("transactions")
 }
 

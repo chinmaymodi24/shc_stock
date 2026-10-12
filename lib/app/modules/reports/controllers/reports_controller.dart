@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -130,7 +131,7 @@ class ReportsController extends GetxController {
       showAppToast(
         'Error',
         'Failed to load the report. Is the backend running?',
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: AppColors.danger,
         colorText: Colors.white,
       );
     } finally {

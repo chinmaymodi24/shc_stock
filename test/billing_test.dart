@@ -111,6 +111,7 @@ Widget _invoice({BillOptions options = const BillOptions(), BillModel? bill}) =>
     );
 
 void main() {
+  _qtyOverflowTest();
   group('BillingProfile', () {
     test('round-trips through JSON', () {
       final decoded = BillingProfile.fromJson(
@@ -803,5 +804,77 @@ void main() {
       // The figures are not a display option.
       expect(find.text('₹48,342'), findsOneWidget);
     });
+  });
+}
+
+// A one-line item with a unit — "1 (pcs)" — wrapped to two lines inside the
+// narrow Quantity column. The row had been sized for one line, so the invoice
+// showed a red "BOTTOM OVERFLOWED BY 14 PIXELS" in the Quantity cell. Flutter
+// reports overflow as a test failure, so simply rendering it is the check.
+void _qtyOverflowTest() {
+  testWidgets('a unit-bearing quantity stays on one line in a narrow invoice', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final order = SalesOrder(
+      id: '1',
+      soNumber: 'SO-2024-10001',
+      client: 'Aavkar Enterprise',
+      clientBadge: 'AE',
+      clientColor: Colors.orange,
+      date: DateTime(2026, 10, 4),
+      itemCount: 1,
+      amount: 65,
+      status: SalesStatus.delivered,
+      paymentStatus: PaymentStatus.paid,
+      items: const [
+        SaleDetailItem(
+          product: 'HF/CF Insulation Bricks (Cold Face)',
+          hsn: '69021000',
+          qty: 1,
+          unit: '(pcs)',
+          rate: 55,
+        ),
+      ],
+    );
+    final totals = computeInvoiceTotals([
+      for (final i in order.items)
+        InvoiceLine(
+          name: i.product,
+          hsn: i.hsn,
+          qty: i.qty,
+          uom: i.unit,
+          rate: i.rate,
+        ),
+    ], tax: _profile.tax);
+
+    await tester.pumpWidget(
+      GetMaterialApp(
+        theme: AppTheme.lightTheme,
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 620,
+              child: SingleChildScrollView(
+                child: GstTaxInvoice(
+                  profile: _profile,
+                  sellerName: 'Secure Heat Care',
+                  order: order,
+                  totals: totals,
+                  options: const BillOptions(),
+                  invoiceNo: 'SO-2024-10001',
+                  invoiceDate: DateTime(2026, 10, 4),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('1 (pcs)'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

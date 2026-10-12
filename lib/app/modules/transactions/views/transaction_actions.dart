@@ -17,8 +17,14 @@ class TransactionActions {
   static void view(TransactionModel txn) =>
       Get.dialog(TransactionFormDialog(existing: txn, readOnly: true));
 
+  /// A row generated from a sale or purchase opens read-only: it is changed
+  /// from that order, and the server refuses an edit made here.
+  static void open(TransactionModel txn) =>
+      txn.isLinked ? view(txn) : edit(txn);
+
   static void edit(TransactionModel txn) {
     if (!requireWrite('Transactions')) return;
+    if (txn.isLinked) return view(txn);
     Get.dialog(TransactionFormDialog(existing: txn));
   }
 

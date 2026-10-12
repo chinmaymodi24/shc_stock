@@ -293,7 +293,7 @@ void main() {
       expect(find.text('Secure Heat Care'), findsOneWidget);
       expect(find.text('Profit & Loss Statement'), findsOneWidget);
       expect(
-        find.text('For the period 01 Apr 2025 to 31 Mar 2026'),
+        find.text('For the period Apr 1, 2025 to Mar 31, 2026'),
         findsOneWidget,
       );
       expect(find.text('PARTICULARS'), findsOneWidget);

@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/controllers/add_purchase_controller.dart';
-import 'package:shc_stock/app/modules/purchase/controllers/mobile_add_purchase_controller.dart';
 import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
 import 'package:shc_stock/app/modules/clients/controllers/clients_controller.dart';
 
@@ -36,8 +35,5 @@ class PurchaseBinding extends Bindings {
       Get.delete<AddPurchaseController>(force: true);
     }
     Get.lazyPut<AddPurchaseController>(() => AddPurchaseController());
-    Get.lazyPut<MobileAddPurchaseController>(
-      () => MobileAddPurchaseController(),
-    );
   }
 }

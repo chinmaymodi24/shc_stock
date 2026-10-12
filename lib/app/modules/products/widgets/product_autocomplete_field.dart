@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
 import 'package:shc_stock/app/modules/products/models/product_model.dart';
+import 'package:shc_stock/app/modules/products/widgets/stock_badge.dart';
 import 'package:shc_stock/app/shared/widgets/overlay_autocomplete_field.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -17,16 +18,30 @@ class ProductAutocompleteField extends StatelessWidget {
   final AppThemeColors colors;
   final ValueChanged<ProductModel> onSelected;
 
+  /// The text as typed, for a line that is not one of the listed products.
+  final ValueChanged<String>? onTyped;
+
   /// Price shown on the right of each suggestion row — cost price on
   /// Purchase, selling price on Sale.
   final double Function(ProductModel product) priceOf;
+
+  /// Sale only: show how many are in stock under each suggestion.
+  final bool showStock;
+
+  /// Sale only: why a product cannot be picked (nothing left to sell), or null
+  /// when it can. Such a product stays in the list, greyed out with the reason
+  /// under its name, and tapping it does nothing.
+  final String? Function(ProductModel product)? blockReason;
 
   const ProductAutocompleteField({
     super.key,
     required this.initialValue,
     required this.colors,
     required this.onSelected,
+    this.onTyped,
     required this.priceOf,
+    this.showStock = false,
+    this.blockReason,
   });
 
   @override
@@ -39,12 +54,14 @@ class ProductAutocompleteField extends StatelessWidget {
       optionsFor: (query) {
         final q = query.toLowerCase();
         return products
-            .where((p) => p.name.toLowerCase().contains(q))
+            .where((p) => p.isActive && p.name.toLowerCase().contains(q))
             .take(30)
             .toList();
       },
       displayStringFor: (p) => p.name,
       onSelected: onSelected,
+      isSelectable: blockReason == null ? null : (p) => blockReason!(p) == null,
+      onTextChanged: onTyped,
       textStyle: TextStyle(
         fontSize: 13,
         color: colors.textPrimary,
@@ -86,51 +103,91 @@ class ProductAutocompleteField extends StatelessWidget {
           borderSide: BorderSide(color: AppColors.primaryOrange, width: 1.2),
         ),
       ),
-      optionBuilder: (context, p, highlighted) => Container(
-        color: highlighted
-            ? AppColors.primaryOrange.withValues(alpha: 0.1)
-            : null,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    p.name,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: colors.textPrimary,
-                      fontFamily: brandFontFamily,
-                    ),
+      optionBuilder: (context, p, highlighted) {
+        final blocked = blockReason?.call(p);
+        return Opacity(
+          opacity: blocked == null ? 1 : 0.7,
+          child: Container(
+            color: highlighted && blocked == null
+                ? AppColors.primaryOrange.withValues(alpha: 0.1)
+                : null,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        p.name,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                          fontFamily: brandFontFamily,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              'HSN ${p.hsnCode ?? '—'} · ${p.unit}',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: colors.textHint,
+                                fontFamily: brandFontFamily,
+                              ),
+                            ),
+                          ),
+                          if (showStock && blocked == null) ...[
+                            const SizedBox(width: 8),
+                            StockBadge(product: p, colors: colors),
+                          ],
+                        ],
+                      ),
+                      if (blocked != null) ...[
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline_rounded,
+                              size: 12,
+                              color: AppColors.danger,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                blocked,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.danger,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'HSN ${p.hsnCode ?? '—'} · ${p.unit}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: colors.textHint,
-                      fontFamily: brandFontFamily,
-                    ),
+                ),
+                Text(
+                  '₹${priceOf(p).toStringAsFixed(0)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textSecondary,
+                    fontFamily: brandFontFamily,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Text(
-              '₹${priceOf(p).toStringAsFixed(0)}',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: colors.textSecondary,
-                fontFamily: brandFontFamily,
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

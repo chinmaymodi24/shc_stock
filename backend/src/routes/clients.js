@@ -1,15 +1,28 @@
 const express = require('express');
 const prisma = require('../prismaClient');
+const { normalisePhone } = require('../phone');
 const { actorName } = require('../auth/middleware');
 const { listResponse } = require('../pagination');
+const V = require('../validate');
+const { ValidationError } = V;
 
 const router = express.Router();
+router.param('id', require('../validate').idParam);
 
-const str = (v, fallback = '') => (v === undefined || v === null ? fallback : String(v).trim());
+/// Trimmed text; anything longer than [max] is refused (it would only break the
+/// list and the printed bill).
+const str = (v, fallback = '', max = 500) => {
+  if (v === undefined || v === null) return fallback;
+  const s = String(v).trim();
+  if (s.length > max) throw new ValidationError(`A client field must be at most ${max} characters`);
+  return s;
+};
 const num = (v, fallback = 0) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
 };
+/// A money amount the NUMERIC column can hold (an opening balance may be negative).
+const amount = (v, field) => V.number(v, field, { min: -V.MAX_MONEY, max: V.MAX_MONEY });
 
 /// Builds the free-text display address the clients list renders. Legacy rows
 /// imported from the accounting export carry their own blob; rows created here
@@ -25,15 +38,15 @@ function composeAddress(body) {
 
 function clientData(body, actor) {
   return {
-    name: str(body.name),
+    name: str(body.name, '', 200),
     clientType: str(body.clientType),
     registrationType: str(body.registrationType, 'Regular') || 'Regular',
     email: str(body.email),
-    phone: str(body.phone),
-    altPhone: str(body.altPhone),
+    phone: normalisePhone(body.phone),
+    altPhone: normalisePhone(body.altPhone),
     gstin: str(body.gstin),
     pan: str(body.pan),
-    clientSince: body.clientSince ? new Date(body.clientSince) : null,
+    clientSince: V.date(body.clientSince, 'clientSince'),
 
     address: composeAddress(body),
     regAddr1: str(body.regAddr1),
@@ -62,18 +75,69 @@ function clientData(body, actor) {
 
     paymentTerms: str(body.paymentTerms),
     priceList: str(body.priceList),
-    openingBalance: num(body.openingBalance),
-    creditLimit: num(body.creditLimit),
+    openingBalance: amount(body.openingBalance, 'Opening balance'),
+    creditLimit: amount(body.creditLimit, 'Credit limit'),
     creditDays: Math.trunc(num(body.creditDays)),
 
     contactPerson: str(body.contactPerson),
     contactDesignation: str(body.contactDesignation),
-    contactPhone: str(body.contactPhone),
+    contactPhone: normalisePhone(body.contactPhone),
     contactEmail: str(body.contactEmail),
 
     modifiedBy: actor,
     modifiedAt: new Date(),
   };
+}
+
+const GSTIN_RE = /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+const PAN_RE = /^[A-Z]{5}\d{4}[A-Z]$/;
+const PIN_RE = /^\d{6}$/;
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+/// Format rules for the tax and contact fields. A field is only checked when it
+/// is non-empty and differs from what is already stored, so a legacy row
+/// imported from the accounting export can still be edited without tripping
+/// over a value that was never validated.
+function checkFormats(data, existing) {
+  const rules = [
+    ['gstin', 'GSTIN', (v) => GSTIN_RE.test(v), 'must be 15 characters like 24ABCDE1234F1Z5'],
+    ['pan', 'PAN', (v) => PAN_RE.test(v), 'must be 10 characters like ABCDE1234F'],
+    ['regPin', 'PIN code', (v) => PIN_RE.test(v), 'must be 6 digits'],
+    ['shipPin', 'Shipping PIN code', (v) => PIN_RE.test(v), 'must be 6 digits'],
+    ['billPin', 'Billing PIN code', (v) => PIN_RE.test(v), 'must be 6 digits'],
+    ['email', 'Email', (v) => EMAIL_RE.test(v), 'is not valid'],
+    ['contactEmail', 'Contact email', (v) => EMAIL_RE.test(v), 'is not valid'],
+  ];
+  for (const [field, label, ok, why] of rules) {
+    const value = data[field];
+    if (!value || (existing && existing[field] === value)) continue;
+    if (!ok(value)) throw new ValidationError(`${label} ${why}`);
+  }
+  if (data.creditLimit < 0) throw new ValidationError('Credit limit cannot be negative');
+  if (data.creditDays < 0 || data.creditDays > 3650) {
+    throw new ValidationError('Credit days must be between 0 and 3650');
+  }
+}
+
+/// Another client already using this name or GSTIN, or null. Only what changed
+/// is compared, for the same reason as [checkFormats].
+async function findDuplicate(data, existing, selfId) {
+  const notSelf = selfId ? { id: { not: selfId } } : {};
+  if (data.name && (!existing || existing.name.toLowerCase() !== data.name.toLowerCase())) {
+    const clash = await prisma.client.findFirst({
+      where: { ...notSelf, name: { equals: data.name, mode: 'insensitive' } },
+      select: { code: true },
+    });
+    if (clash) return `A client named "${data.name}" already exists (${clash.code})`;
+  }
+  if (data.gstin && (!existing || existing.gstin !== data.gstin)) {
+    const clash = await prisma.client.findFirst({
+      where: { ...notSelf, gstin: data.gstin },
+      select: { code: true, name: true },
+    });
+    if (clash) return `GSTIN ${data.gstin} already belongs to ${clash.name} (${clash.code})`;
+  }
+  return null;
 }
 
 /// Next free CLT-#### code, used when the client didn't supply one.
@@ -202,10 +266,14 @@ router.post('/', async (req, res, next) => {
     if (!str(req.body.name)) {
       return res.status(400).json({ error: 'name is required' });
     }
+    const data = clientData(req.body, actorName(req));
+    data.gstin = data.gstin.toUpperCase();
+    data.pan = data.pan.toUpperCase();
+    checkFormats(data, null);
+    const clash = await findDuplicate(data, null, null);
+    if (clash) return res.status(409).json({ error: clash });
     const code = str(req.body.code) || (await nextClientCode());
-    const client = await prisma.client.create({
-      data: { ...clientData(req.body, actorName(req)), code },
-    });
+    const client = await prisma.client.create({ data: { ...data, code } });
     res.status(201).json(client);
   } catch (err) {
     if (err.code === 'P2002') {
@@ -222,7 +290,14 @@ router.put('/:id', async (req, res, next) => {
     if (!str(req.body.name)) {
       return res.status(400).json({ error: 'name is required' });
     }
+    const existing = await prisma.client.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: 'Client not found' });
     const data = clientData(req.body, actorName(req));
+    data.gstin = data.gstin.toUpperCase();
+    data.pan = data.pan.toUpperCase();
+    checkFormats(data, existing);
+    const clash = await findDuplicate(data, existing, id);
+    if (clash) return res.status(409).json({ error: clash });
     const code = str(req.body.code);
     if (code) data.code = code;
     const client = await prisma.client.update({ where: { id }, data });
@@ -240,6 +315,18 @@ router.put('/:id', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
+    // Orders keep the client as a name, not a link, so deleting a client that
+    // has orders would leave those orders pointing at nobody.
+    const client = await prisma.client.findUnique({ where: { id }, select: { name: true } });
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+    const orders = await prisma.salesOrder.count({
+      where: { client: { equals: client.name, mode: 'insensitive' } },
+    });
+    if (orders > 0) {
+      return res.status(409).json({
+        error: `${client.name} has ${orders} sales order${orders === 1 ? '' : 's'}, so it cannot be deleted`,
+      });
+    }
     await prisma.client.delete({ where: { id } });
     res.status(204).send();
   } catch (err) {

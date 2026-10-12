@@ -60,7 +60,7 @@ class MobileReportsLayout extends GetView<ReportsController> {
                   ReportSectionCard(
                     title: 'Sales',
                     icon: Icons.trending_up_rounded,
-                    accent: const Color(0xFF22C55E),
+                    accent: AppColors.success,
                     lines: controller.salesLines,
                     display: displayReportValue,
                   ),

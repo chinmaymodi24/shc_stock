@@ -1,133 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
-import 'package:shc_stock/app/core/session/session_controller.dart';
+import 'package:shc_stock/app/core/utils/gst.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/shared/widgets/async_button.dart';
-import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
 import 'package:shc_stock/app/modules/sales/controllers/add_sale_controller.dart';
-import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
+import 'package:shc_stock/app/core/utils/app_toast.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_sidebar.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/web_top_bar.dart';
 import 'package:shc_stock/app/modules/products/controllers/products_controller.dart';
 import 'package:shc_stock/app/modules/products/models/product_model.dart';
+import 'package:shc_stock/app/modules/products/widgets/stock_badge.dart';
+import 'package:shc_stock/app/modules/sales/utils/sale_stock_guard.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
 import 'package:shc_stock/app/modules/clients/widgets/client_autocomplete_field.dart';
-import 'package:shc_stock/app/shared/models/order_payment.dart';
+import 'package:shc_stock/app/modules/sales/widgets/sale_payments_section.dart';
 import 'package:shc_stock/app/shared/widgets/form_fields.dart';
 import 'package:shc_stock/app/shared/widgets/section_card.dart';
-import 'package:shc_stock/app/core/utils/app_toast.dart';
+
+part 'web_new_sales_layout_part1.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Add Sell — tax-invoice style entry form
+// Add Sale — tax-invoice style entry form
 // All form state lives in AddSaleController (registered by SalesBinding) —
 // no setState anywhere in this file.
 // ─────────────────────────────────────────────────────────────────────────────
 class WebNewSalesLayout extends GetView<AddSaleController> {
   const WebNewSalesLayout({super.key});
-
-  /// Maps the "Order Paid" entry onto the list's Payment column.
-  static PaymentStatus _paymentStatusFor(
-    OrderPaymentType type,
-    double paid,
-    double total,
-    PaymentStatus fallback,
-  ) {
-    if (type == OrderPaymentType.none) return fallback;
-    if (paid <= 0) return PaymentStatus.pending;
-    if (type == OrderPaymentType.full || (total > 0 && paid >= total)) {
-      return PaymentStatus.paid;
-    }
-    return PaymentStatus.partial;
-  }
-
-  Future<void> _saveSale() async {
-    final c = Get.find<SalesController>();
-    // A sale with no client silently saved as the literal string "New
-    // Client" before — indistinguishable from a real client of that name,
-    // and unmatchable to anyone in the Item Details / client history views.
-    // Block the save instead so every order carries a real client.
-    if (controller.client.value.trim().isEmpty) {
-      showAppToast(
-        'Error',
-        'Please select or enter a client before saving.',
-        backgroundColor: const Color(0xFFEF4444),
-        colorText: Colors.white,
-      );
-      return;
-    }
-    // Editing keeps the record's own id, SO number and statuses — only the
-    // details being edited change.
-    final editing = controller.editing;
-    final newId = editing?.id ?? 'so_${DateTime.now().millisecondsSinceEpoch}';
-    final newSoNum =
-        editing?.soNumber ??
-        'SO-2024-${(10000 + c.orders.length + 1).toString().padLeft(5, '0')}';
-    final clientName = controller.client.value.trim();
-    final order = SalesOrder(
-      id: newId,
-      soNumber: newSoNum,
-      client: clientName,
-      clientBadge: clientName
-          .substring(0, clientName.length < 2 ? clientName.length : 2)
-          .toUpperCase(),
-      clientColor: AppColors.primaryOrange,
-      date: controller.invoiceDate.value ?? DateTime.now(),
-      itemCount: controller.items.length,
-      amount: controller.grandTotal,
-      status: editing?.status ?? SalesStatus.confirmed,
-      // The Payment column follows what was entered under "Order Paid": a
-      // full payment reads Paid, anything part-paid reads Partial, and with no
-      // payment recorded the order keeps the status it already had.
-      paymentStatus: _paymentStatusFor(
-        controller.paymentType.value,
-        controller.paidAmount,
-        controller.grandTotal,
-        editing?.paymentStatus ?? PaymentStatus.pending,
-      ),
-      modifiedBy: currentActorName,
-      modifiedAt: DateTime.now(),
-      clientAddress: controller.addressCtrl.text.trim(),
-      buyerGstin: controller.buyerGstCtrl.text.trim(),
-      pan: controller.panCtrl.text.trim(),
-      invoiceNo: controller.invoiceNoCtrl.text.trim().isEmpty
-          ? newSoNum
-          : controller.invoiceNoCtrl.text.trim(),
-      invoiceDate: controller.invoiceDate.value,
-      despatchedThrough: controller.despatchThrough.value,
-      destination: controller.placeOfSupplyCtrl.text.trim(),
-      expectedDelivery: controller.expectedDelivery.value,
-      paymentType: controller.paymentType.value,
-      paidAmount: controller.paidAmount,
-      items: controller.items
-          .map(
-            (r) => SaleDetailItem(
-              productId: r.productId,
-              product: r.product,
-              hsn: r.hsn,
-              qty: r.qty,
-              unit: r.unit,
-              rate: r.rate,
-            ),
-          )
-          .toList(),
-    );
-
-    final ok = editing == null
-        ? await c.addOrder(order)
-        : await c.updateOrder(order);
-    if (!ok) return; // controller already showed the error toast
-    Get.offNamed(AppRoutes.sales);
-    showAppToast(
-      editing == null ? '✅ Sale Saved' : '✅ Sale Updated',
-      editing == null
-          ? '$newSoNum has been successfully created.'
-          : '$newSoNum has been successfully updated.',
-      backgroundColor: const Color(0xFF22C55E),
-      colorText: Colors.white,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -162,7 +63,7 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                 Text(
                                   controller.isEditing
                                       ? 'Edit Sale'
-                                      : 'Add Sell',
+                                      : 'Add Sale',
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.w700,
@@ -206,6 +107,8 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                           initialValue: controller.client.value,
                                           colors: colors,
                                           hint: 'Type to search client...',
+                                          onTyped: (text) =>
+                                              controller.client.value = text,
                                           onSelected: (ClientModel c) =>
                                               controller.applyClient(c),
                                         ),
@@ -225,24 +128,55 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
-                                      child: AppField(
-                                        label: 'City',
-                                        colors: colors,
-                                        child: AppTextBox(
-                                          controller: controller.cityCtrl,
-                                          hint: 'Ahmedabad',
-                                          colors: colors,
-                                        ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            flex: 3,
+                                            child: AppField(
+                                              label: 'City',
+                                              colors: colors,
+                                              child: AppTextBox(
+                                                controller: controller.cityCtrl,
+                                                hint: 'Ahmedabad',
+                                                colors: colors,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            flex: 2,
+                                            child: AppField(
+                                              label: 'Pin Code',
+                                              colors: colors,
+                                              child: AppTextBox(
+                                                controller: controller.pinCtrl,
+                                                hint: '380001',
+                                                colors: colors,
+                                                keyboardType:
+                                                    TextInputType.number,
+                                                inputFormatters: [
+                                                  FilteringTextInputFormatter
+                                                      .digitsOnly,
+                                                  LengthLimitingTextInputFormatter(
+                                                    6,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
                                       child: AppField(
-                                        label: 'State & PIN',
+                                        label: 'State',
                                         colors: colors,
                                         child: AppTextBox(
-                                          controller: controller.statePinCtrl,
-                                          hint: 'Gujarat - 380001',
+                                          controller: controller.stateCtrl,
+                                          hint: 'Gujarat',
                                           colors: colors,
                                         ),
                                       ),
@@ -463,54 +397,11 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                       ),
                                     ),
                                     const SizedBox(width: 16),
-                                    Expanded(
-                                      child: AppField(
-                                        label: 'Order Paid',
-                                        colors: colors,
-                                        child: AppDropBox(
-                                          hint: 'Select...',
-                                          value:
-                                              controller
-                                                  .paymentType
-                                                  .value
-                                                  .label
-                                                  .isEmpty
-                                              ? null
-                                              : controller
-                                                    .paymentType
-                                                    .value
-                                                    .label,
-                                          items: kOrderPaymentOptions
-                                              .map((t) => t.label)
-                                              .toList(),
-                                          colors: colors,
-                                          onChanged: (v) =>
-                                              controller.setPaymentType(
-                                                orderPaymentTypeFrom(v),
-                                              ),
-                                        ),
-                                      ),
-                                    ),
+                                    // Payments have their own section (4) — a
+                                    // sale can be paid in several goes.
+                                    const Expanded(child: SizedBox()),
                                     const SizedBox(width: 16),
-                                    // Only meaningful once a payment type is
-                                    // chosen — prefilled from the grand total
-                                    // for Full/Half, and editable either way.
-                                    Expanded(
-                                      child:
-                                          controller.paymentType.value ==
-                                              OrderPaymentType.none
-                                          ? const SizedBox()
-                                          : AppField(
-                                              label: 'Amount Paid',
-                                              colors: colors,
-                                              child: AppTextBox(
-                                                controller:
-                                                    controller.paidAmountCtrl,
-                                                hint: 'e.g. 25000',
-                                                colors: colors,
-                                              ),
-                                            ),
-                                    ),
+                                    const Expanded(child: SizedBox()),
                                   ],
                                 ),
                               ],
@@ -532,6 +423,7 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                           child: Obx(
                             () => _ItemDetailsTable(
                               items: controller.items.toList(),
+                              guard: controller.stock,
                               colors: colors,
                               onChanged: controller.notifyItemsChanged,
                               onDelete: controller.removeItemRow,
@@ -567,19 +459,29 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                                         colors: colors,
                                       ),
                                       const SizedBox(height: 10),
-                                      AppTotalRow(
-                                        label: 'CGST (9%)',
-                                        value:
-                                            '₹${controller.cgst.toStringAsFixed(0)}',
-                                        colors: colors,
-                                      ),
-                                      const SizedBox(height: 10),
-                                      AppTotalRow(
-                                        label: 'SGST (9%)',
-                                        value:
-                                            '₹${controller.sgst.toStringAsFixed(0)}',
-                                        colors: colors,
-                                      ),
+                                      // IGST for a party in another state, CGST + SGST otherwise —
+                                      if (controller.gst.interState)
+                                        AppTotalRow(
+                                          label: controller.gst.igstLabel,
+                                          value:
+                                              '₹${controller.igst.toStringAsFixed(0)}',
+                                          colors: colors,
+                                        )
+                                      else ...[
+                                        AppTotalRow(
+                                          label: controller.gst.cgstLabel,
+                                          value:
+                                              '₹${controller.cgst.toStringAsFixed(0)}',
+                                          colors: colors,
+                                        ),
+                                        const SizedBox(height: 10),
+                                        AppTotalRow(
+                                          label: controller.gst.sgstLabel,
+                                          value:
+                                              '₹${controller.sgst.toStringAsFixed(0)}',
+                                          colors: colors,
+                                        ),
+                                      ],
                                       const SizedBox(height: 12),
                                       Divider(height: 1, color: colors.divider),
                                       const SizedBox(height: 12),
@@ -614,6 +516,14 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 16),
+
+                        // ── Section 4: Payments ───────────────
+                        SalePaymentsSection(
+                          controller: controller,
+                          colors: colors,
+                          number: 4,
+                        ),
                         const SizedBox(height: 20),
 
                         // ── Footer buttons ────────────────────
@@ -646,7 +556,7 @@ class WebNewSalesLayout extends GetView<AddSaleController> {
                               label: controller.isEditing
                                   ? 'Update Sale'
                                   : 'Save Sale',
-                              onPressed: _saveSale,
+                              onPressed: controller.save,
                             ),
                           ],
                         ),
@@ -674,385 +584,3 @@ const double _iUomWidth = 90.0;
 const double _iRateWidth = 100.0;
 const double _iAmtWidth = 100.0;
 const double _iDelWidth = 32.0;
-
-class _ItemDetailsTable extends StatelessWidget {
-  final List<SaleItemRow> items;
-  final AppThemeColors colors;
-  final VoidCallback onChanged;
-  final void Function(int) onDelete;
-
-  const _ItemDetailsTable({
-    required this.items,
-    required this.colors,
-    required this.onChanged,
-    required this.onDelete,
-  });
-
-  TextStyle get _h => TextStyle(
-    fontSize: 11.5,
-    fontWeight: FontWeight.w600,
-    color: colors.textSecondary,
-    fontFamily: brandFontFamily,
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          color: colors.rowEven,
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          child: Row(
-            children: [
-              Expanded(
-                flex: _iItemFlex,
-                child: Text('Item (type to search)', style: _h),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: _iHsnWidth,
-                child: Text('HSN/SAC', style: _h, textAlign: TextAlign.center),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: _iQtyWidth,
-                child: Text('Quantity', style: _h, textAlign: TextAlign.center),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: _iUomWidth,
-                child: Text('UoM', style: _h, textAlign: TextAlign.center),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: _iRateWidth,
-                child: Text('Rate', style: _h, textAlign: TextAlign.right),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: _iAmtWidth,
-                child: Text('Amount', style: _h, textAlign: TextAlign.right),
-              ),
-              SizedBox(width: _iDelWidth),
-            ],
-          ),
-        ),
-        Divider(height: 1, color: colors.divider),
-        ...items.asMap().entries.map(
-          (e) => _ItemDetailsRow(
-            row: e.value,
-            colors: colors,
-            onChanged: onChanged,
-            onDelete: () => onDelete(e.key),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ItemDetailsRow extends StatelessWidget {
-  final SaleItemRow row;
-  final AppThemeColors colors;
-  final VoidCallback onChanged;
-  final VoidCallback onDelete;
-
-  const _ItemDetailsRow({
-    required this.row,
-    required this.colors,
-    required this.onChanged,
-    required this.onDelete,
-  });
-
-  void _applyProduct(ProductModel p) {
-    row.productId = int.tryParse(p.id);
-    row.product = p.name;
-    row.hsn = p.hsnCode ?? '';
-    row.unit = p.unit;
-    row.rate = p.sellingPrice;
-    // A fresh row starts at qty 0, which pinned the line — and the invoice
-    // total — to ₹0 until a quantity was typed; the picked product should
-    // price itself straight away.
-    if (row.qty == 0) row.qty = 1;
-    // Re-seeds the HSN / UoM / Rate boxes below, which otherwise keep the
-    // text they were first built with.
-    row.version++;
-    onChanged();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: colors.divider, width: 0.8)),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            flex: _iItemFlex,
-            child: _ProductAutocomplete(
-              initialValue: row.product,
-              colors: colors,
-              onSelected: _applyProduct,
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: _iHsnWidth,
-            child: AppSmallInput(
-              key: ValueKey('${row.id}_hsn_${row.version}'),
-              hint: 'HSN/SAC',
-              value: row.hsn,
-              colors: colors,
-              center: true,
-              onChanged: (v) {
-                row.hsn = v;
-                onChanged();
-              },
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: _iQtyWidth,
-            // Editable with ± steppers, same as the purchase form.
-            child: AppSmallStepper(
-              value: row.qty,
-              colors: colors,
-              onChanged: (v) {
-                row.qty = v;
-                onChanged();
-              },
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: _iUomWidth,
-            child: AppSmallInput(
-              key: ValueKey('${row.id}_uom_${row.version}'),
-              hint: 'UoM',
-              value: row.unit,
-              colors: colors,
-              center: true,
-              onChanged: (v) {
-                row.unit = v;
-                onChanged();
-              },
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: _iRateWidth,
-            child: AppSmallNumber(
-              key: ValueKey('${row.id}_rate_${row.version}'),
-              value: row.rate,
-              colors: colors,
-              decimal: true,
-              onChanged: (v) {
-                row.rate = v;
-                onChanged();
-              },
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: _iAmtWidth,
-            child: Text(
-              '₹${row.amount.toStringAsFixed(0)}',
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: colors.textPrimary,
-                fontFamily: brandFontFamily,
-              ),
-              textAlign: TextAlign.right,
-            ),
-          ),
-          SizedBox(
-            width: _iDelWidth,
-            child: IconButton(
-              onPressed: onDelete,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-              icon: const Icon(
-                Icons.close_rounded,
-                color: Color(0xFFEF4444),
-                size: 16,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Product autocomplete — typing filters ProductsController by name; selecting
-// an option fetches its HSN/SAC, unit and rate into the row.
-// ─────────────────────────────────────────────────────────────────────────────
-class _ProductAutocomplete extends StatelessWidget {
-  final String initialValue;
-  final AppThemeColors colors;
-  final ValueChanged<ProductModel> onSelected;
-
-  const _ProductAutocomplete({
-    required this.initialValue,
-    required this.colors,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final products = Get.find<ProductsController>().products;
-    return Autocomplete<ProductModel>(
-      displayStringForOption: (p) => p.name,
-      optionsBuilder: (textEditingValue) {
-        final q = textEditingValue.text.trim().toLowerCase();
-        if (q.isEmpty) return const Iterable<ProductModel>.empty();
-        return products.where((p) => p.name.toLowerCase().contains(q)).take(30);
-      },
-      onSelected: onSelected,
-      fieldViewBuilder: (context, controller, focusNode, onSubmit) {
-        if (controller.text.isEmpty && initialValue.isNotEmpty) {
-          controller.text = initialValue;
-        }
-        return TextField(
-          controller: controller,
-          focusNode: focusNode,
-          onSubmitted: (_) => onSubmit(),
-          style: TextStyle(
-            fontSize: 12.5,
-            color: colors.textPrimary,
-            fontFamily: brandFontFamily,
-          ),
-          decoration: InputDecoration(
-            hintText: 'Type e.g. Ceramic Fiber Blanket 1260...',
-            hintStyle: TextStyle(
-              fontSize: 12,
-              color: colors.textHint,
-              fontFamily: brandFontFamily,
-            ),
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 8,
-            ),
-            filled: true,
-            fillColor: colors.surface,
-            prefixIcon: Icon(
-              Icons.search_rounded,
-              size: 15,
-              color: colors.textHint,
-            ),
-            prefixIconConstraints: const BoxConstraints(
-              minWidth: 32,
-              minHeight: 20,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(6),
-              borderSide: BorderSide(color: colors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(6),
-              borderSide: BorderSide(color: colors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(6),
-              borderSide: BorderSide(
-                color: AppColors.primaryOrange,
-                width: 1.2,
-              ),
-            ),
-          ),
-        );
-      },
-      optionsViewBuilder: (context, onSelect, options) {
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(appColors.radius),
-            color: colors.surface,
-            child: Container(
-              width: 380,
-              constraints: const BoxConstraints(maxHeight: 260),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(appColors.radius),
-                border: Border.all(color: colors.border),
-              ),
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                shrinkWrap: true,
-                itemCount: options.length,
-                itemBuilder: (context, index) {
-                  final p = options.elementAt(index);
-                  final highlighted =
-                      AutocompleteHighlightedOption.of(context) == index;
-                  if (highlighted) {
-                    SchedulerBinding.instance.addPostFrameCallback((_) {
-                      Scrollable.ensureVisible(context, alignment: 0.5);
-                    });
-                  }
-                  return Container(
-                    color: highlighted
-                        ? AppColors.primaryOrange.withValues(alpha: 0.1)
-                        : null,
-                    child: InkWell(
-                      onTap: () => onSelect(p),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    p.name,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: colors.textPrimary,
-                                      fontFamily: brandFontFamily,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'HSN ${p.hsnCode ?? '—'} · ${p.unit}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: colors.textHint,
-                                      fontFamily: brandFontFamily,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              '₹${p.sellingPrice.toStringAsFixed(0)}',
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w600,
-                                color: colors.textSecondary,
-                                fontFamily: brandFontFamily,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}

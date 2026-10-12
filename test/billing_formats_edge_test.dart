@@ -106,8 +106,9 @@ List<String> _offPage(String pdf) {
       final x = double.parse(m.group(1)!);
       final y = double.parse(m.group(2)!);
       // A baseline sitting exactly on 0 is legal; below it is not.
-      if (y < 0 || y > h || x < -1 || x > w)
+      if (y < 0 || y > h || x < -1 || x > w) {
         bad.add('${m.group(0)} on page $i');
+      }
     }
   }
   return bad;

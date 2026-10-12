@@ -130,9 +130,7 @@ void main() {
 
   group('permissions', () {
     test('summary rights on Reports open it', () {
-      _signInWith(const {
-        'Reports': ModuleAccess(read: true, summary: true),
-      });
+      _signInWith(const {'Reports': ModuleAccess(read: true, summary: true)});
       expect(canOpenRoute(AppRoutes.reportsInsights), isTrue);
     });
 

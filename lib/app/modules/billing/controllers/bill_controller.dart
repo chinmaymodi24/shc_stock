@@ -139,6 +139,7 @@ class BillController extends GetxController {
           qty: item.qty,
           uom: item.unit,
           rate: item.rate,
+          taxPercent: item.taxPercent,
         ),
     ];
   }
@@ -154,8 +155,11 @@ class BillController extends GetxController {
     return (product.brand ?? '').trim();
   }
 
-  InvoiceTotals get totals =>
-      computeInvoiceTotals(invoiceLines, tax: profile.tax);
+  /// Each line at its own rate; IGST when the sale was to another state.
+  InvoiceTotals get totals => computeInvoiceTotals(
+    invoiceLines,
+    tax: profile.tax.copyWith(interState: order.value?.interState ?? false),
+  );
 
   /// The client record behind the sale — it carries the shipping address and
   /// contact details the sale itself does not.

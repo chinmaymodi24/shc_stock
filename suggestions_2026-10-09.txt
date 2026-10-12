@@ -1,0 +1,87 @@
+SHC STOCK - SUGGESTIONS LIST (09-10-2026)
+==========================================
+Web + Mobile banne mate. Priority mujab: Red -> Orange -> Yellow -> Blue.
+
+
+[RED] BUSINESS / DATA NA BUG (pehla karva jeva)
+------------------------------------------------
+1. GST hamesha 9% CGST + 9% SGST
+   - Bija state no client/supplier hoy to IGST 18% aavvo joie.
+   - Product ma taxPercent chhe pan Add Sale / Add Purchase form e vaaprtu nathi.
+   - Asar: invoice ma tax khoto aavse.
+
+2. Stock fakt whole number ma
+   - "CF Bulk" Kilogram ma chhe, pan 12.5 kg vechi/kharidi shakata nathi
+     kemke stock column Int chhe.
+   - Fix: stock decimal karvo (DB migration + ledger + forms).
+
+3. Invoice number nu prefix code ma fixed chhe
+   - PO-2024 / SO-2024 hardcoded chhe; 2026 ma pan 2024 lakhay chhe.
+   - Fix: financial year pramane (PO/26-27/0001) server par number banavvo,
+     jethi be jan ek sathe save kare to number na takraay.
+
+4. Mobile Add Purchase / Add Sale ma "Order Paid" field j nathi
+   - Mobile thi banelo order hamesha unpaid gane chhe.
+   - Asar: Dues, Amount Paid card ane Transactions entry khota thay.
+
+5. Purchase list nu "Items" column judi judi units no sarvalo kare chhe
+   - Example: 100 pcs + 200 kg = "300" dekhay.
+   - Fix: lines ni sankhya batavvi (e.g. "2 items").
+
+6. Delivery sweep server na timezone par chale chhe
+   - Render jeva UTC server par order 5:30 kalak moda Received/Delivered thase.
+   - Sweep thi Received thay tyare "Received On" ma expected date nahi pan
+     sweep chalyu e time aave chhe.
+
+
+[ORANGE] FLOW / UX
+------------------
+7. Purchase ma "Client Name" label
+   - Add Purchase form ane Purchase Details banne ma "Client Name" lakhyu chhe,
+     e "Supplier" hovu joie.
+
+8. Auto-banela Transactions
+   - Paid purchase thi banti Transactions entry user edit/delete kari shake chhe;
+     ene read-only karvi joie.
+   - Sales paid thay tyare Outbound entry pan banavvi joie.
+
+9. Fetch-once cache
+   - Be employee ek sathe kaam kare to bijani entry refresh vagar nathi dekhati.
+   - Fix: web par Refresh button ke screen focus par refetch.
+
+10. Har API call par 1 second no artificial delay
+    - Fakt dev mate rakho; production ma app dhimi lagse.
+
+11. Web Settings > Profile ma Name/Email thodi vaar khali dekhaya
+    - Loading delay hoy ke bug, e check karvanu baki chhe.
+
+
+[YELLOW] CODE QUALITY
+---------------------
+12. Web ane mobile na be alag controllers
+    - AddSaleController / MobileAddSaleController (Purchase ma pan aavu j).
+    - Aa j karane mobile ma Order Paid rahi gayu.
+    - Fix: ek controller banavo, jethi web/mobile parity automatic rahe.
+
+13. Duplicate code ane moti files
+    - Rupee formatting web_purchase_layout.dart ma 3 vaar copy chhe;
+      shared formatRupees vaapro.
+    - Ghani files 1000+ lines ni chhe; nana widgets ma todvi.
+
+14. Haju ketlak setState vala widgets chhe
+    - Jemake stock adjustment dialog; project na GetX rule viruddh.
+
+15. Automatic UI flow tests nathi
+    - integration_test umero (login -> sale -> bill), web + mobile banne mate.
+
+
+[BLUE] PRODUCTION / SAFETY
+--------------------------
+16. CORS_ORIGINS ane TRUST_PROXY production ma set karva.
+
+17. DB backup fakt aa machine par j chhe
+    - Bahar (cloud / bijo drive) pan copy rakhvi joie.
+
+
+MARU SUGGESTION: pehla 1, 2, 3, 4 karo (GST, decimal stock, invoice number,
+mobile Order Paid) - kemke e paisa ane invoice ne sidha asar kare chhe.

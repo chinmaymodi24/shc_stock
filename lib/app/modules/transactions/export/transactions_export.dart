@@ -13,7 +13,15 @@ ExportEntityConfig<TransactionModel> transactionsExportConfig(
     rowNoun: 'transactions',
     filteredRows: () => c.filteredTransactions,
     allRows: () => c.transactions.toList(),
-    defaultColumnKeys: const ['item', 'type', 'party', 'date', 'status'],
+    defaultColumnKeys: const [
+      'poNumber',
+      'item',
+      'type',
+      'party',
+      'amount',
+      'date',
+      'status',
+    ],
     presets: const [
       ExportColumnPreset('Movement log', [
         'date',
@@ -22,6 +30,15 @@ ExportEntityConfig<TransactionModel> transactionsExportConfig(
         'poNumber',
         'party',
         'status',
+      ]),
+      // A sale's payments, one per row, with how each was paid.
+      ExportColumnPreset('Payments', [
+        'poNumber',
+        'party',
+        'date',
+        'amount',
+        'mode',
+        'notes',
       ]),
     ],
     allColumns: [
@@ -53,9 +70,22 @@ ExportEntityConfig<TransactionModel> transactionsExportConfig(
       ),
       ExportColumn(
         key: 'poNumber',
-        label: 'PO Number',
+        label: 'SO / PO #',
         width: 1.5,
         value: (t) => t.poNumber,
+      ),
+      ExportColumn(
+        key: 'amount',
+        label: 'Amount',
+        type: ExportCellType.money,
+        width: 1.4,
+        value: (t) => t.amount,
+      ),
+      ExportColumn(
+        key: 'mode',
+        label: 'Mode',
+        width: 1.3,
+        value: (t) => t.mode,
       ),
       ExportColumn(
         key: 'notes',

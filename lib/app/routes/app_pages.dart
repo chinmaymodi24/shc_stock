@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/splash/splash_view.dart';
 import 'package:shc_stock/app/modules/auth/views/login_view.dart';
+import 'package:shc_stock/app/modules/auth/views/set_password_view.dart';
 import 'package:shc_stock/app/modules/dashboard/views/dashboard_view.dart';
 import 'package:shc_stock/app/modules/products/views/products_view.dart';
 import 'package:shc_stock/app/modules/products/views/add_product_view.dart';
@@ -50,6 +51,11 @@ class AppPages {
     GetPage(
       name: AppRoutes.login,
       page: () => const LoginView(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: AppRoutes.setPassword,
+      page: () => const SetPasswordView(),
       transition: Transition.fadeIn,
     ),
     GetPage(
@@ -151,7 +157,7 @@ class AppPages {
     GetPage(
       name: AppRoutes.addEmployee,
       page: () => const AddEmployeeView(),
-      binding: UsersBinding(),
+      binding: AddEmployeeBinding(),
       transition: Transition.fadeIn,
       middlewares: [PermissionMiddleware()],
     ),

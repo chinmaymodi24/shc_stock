@@ -37,16 +37,16 @@ Color roleColorFor({String? key, required String name}) {
     case 'super_admin':
       return const Color(0xFFF47B20);
     case 'admin':
-      return const Color(0xFFEF4444);
+      return AppColors.danger;
     case 'manager':
       return appColors.accent;
     case 'sales':
-      return const Color(0xFF22C55E);
+      return AppColors.success;
     case 'store_staff':
-      return const Color(0xFF0EA5E9);
+      return Color(0xFF0EA5E9);
   }
-  const palette = [
-    Color(0xFFF59E0B),
+  final palette = [
+    AppColors.warning,
     Color(0xFF8B5CF6),
     Color(0xFF14B8A6),
     Color(0xFFEC4899),

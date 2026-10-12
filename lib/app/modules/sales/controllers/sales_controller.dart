@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -122,7 +123,7 @@ class SalesController extends GetxController {
     showAppToast(
       'Error',
       message,
-      backgroundColor: const Color(0xFFEF4444),
+      backgroundColor: AppColors.danger,
       colorText: Colors.white,
     );
   }
@@ -196,6 +197,9 @@ class SalesController extends GetxController {
       // Selling lowered stock server-side — pull the inventory and
       // product caches back in line.
       await refreshStockViews();
+      // The summary cards (Total Sales, Orders, Amount Due…) are fetched once;
+      // without this they kept showing the figures from before the new order.
+      await fetchStats();
       return true;
     } catch (e) {
       _showError(_stockAwareMessage(e, 'Failed to save sales order.'));
@@ -206,12 +210,8 @@ class SalesController extends GetxController {
   /// Turns a 409 insufficient-stock response (`{error, details: [{product,
   /// requested, available}, ...]}`) into a readable per-item message; falls
   /// back to [fallback] for any other failure.
-  String _stockAwareMessage(Object e, String fallback) {
-    if (e is! ApiException || e.statusCode != 409) return fallback;
-    // Shared with the Inventory adjustment path — the same 409 shape reaches
-    // both, and they used to word it differently.
-    return shortfallMessage(e) ?? e.message;
-  }
+  String _stockAwareMessage(Object e, String fallback) =>
+      apiErrorMessage(e, fallback);
 
   /// Replaces an existing order — the whole record, not just its status.
   /// The server puts the old lines' stock back and takes the new lines out in
@@ -243,8 +243,9 @@ class SalesController extends GetxController {
       orders.removeWhere((o) => o.id == id);
       // Deleting the order put the sold stock back server-side.
       await refreshStockViews();
+      await fetchStats();
     } catch (e) {
-      _showError('Failed to delete sales order.');
+      _showError(_stockAwareMessage(e, 'Failed to delete sales order.'));
     }
   }
 
@@ -265,8 +266,13 @@ class SalesController extends GetxController {
       });
       orders.removeAt(idx);
       orders.insert(0, SalesOrder.fromJson(json as Map<String, dynamic>));
+      // Delivered takes stock out, Cancelled releases what the order held, and
+      // Paid moves money from due to received — so stock caches and the cards
+      // both need to follow.
+      await refreshStockViews();
+      await fetchStats();
     } catch (e) {
-      _showError('Failed to update status.');
+      _showError(_stockAwareMessage(e, 'Failed to update status.'));
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -34,7 +35,7 @@ class StockActions {
   static void _needsProduct() => showAppToast(
     'Product Not Loaded',
     'Open the Products page once so this item can be edited.',
-    backgroundColor: const Color(0xFFEF4444),
+    backgroundColor: AppColors.danger,
     colorText: Colors.white,
   );
 

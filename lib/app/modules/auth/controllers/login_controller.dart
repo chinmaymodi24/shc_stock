@@ -1,8 +1,9 @@
+import 'package:shc_stock/app/core/utils/dispose_later.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
 import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
@@ -42,8 +43,9 @@ class LoginController extends GetxController {
 
   @override
   void onClose() {
-    emailController.dispose();
-    passwordController.dispose();
+    // Disposed once the page has gone, not while it is still on screen
+    // for its exit transition — see dispose_later.dart.
+    disposeAfterPageExit([emailController, passwordController]);
     super.onClose();
   }
 
@@ -130,21 +132,21 @@ class LoginController extends GetxController {
         await _saveRememberMe();
       } catch (_) {}
 
-      Get.offNamed(AppRoutes.dashboard);
+      Get.offNamed(Get.find<SessionController>().homeRoute);
     } on ApiException catch (e) {
       showAppToast(
         'Sign In Failed',
         e.statusCode == 401
             ? 'Invalid email or password.'
             : 'Something went wrong. Please try again.',
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: AppColors.danger,
         colorText: Colors.white,
       );
     } catch (e) {
       showAppToast(
         'Sign In Failed',
         'Something went wrong. Please try again.',
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: AppColors.danger,
         colorText: Colors.white,
       );
     } finally {
@@ -156,13 +158,6 @@ class LoginController extends GetxController {
     showAppToast(
       'Coming Soon',
       'Single Sign-On (SSO) will be available in a future release.',
-    );
-  }
-
-  void forgotPassword() {
-    showAppToast(
-      'Coming Soon',
-      'Password reset via email will be available soon.',
     );
   }
 }

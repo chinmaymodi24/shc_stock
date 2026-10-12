@@ -26,7 +26,7 @@ void main() {
     final msg = shortfallMessage(e)!;
     expect(msg, contains('CF Bulk (Standard 1260°C)'));
     expect(msg, contains('99'));
-    expect(msg, contains('only 0 in stock'));
+    expect(msg, contains('only 0 available'));
   });
 
   test('lists every short line, not just the first', () {

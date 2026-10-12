@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -70,16 +71,18 @@ class PurchaseController extends GetxController {
   // ── Stats ────────────────────────────────────────────────────
   int get totalOrders => orders.length;
   double get totalPurchaseMTD => orders.fold(0, (s, o) => s + o.amount);
+  // Paid is what was actually paid (never more than the order), due is what is
+  // left; a cancelled order counts for neither. Same split as
+  // /api/stats/purchase, so this rail and the cards above agree.
   double get totalAmountPaid => orders
-      .where((o) => o.status == PurchaseStatus.received)
-      .fold(0, (s, o) => s + o.amount);
+      .where((o) => o.status != PurchaseStatus.cancelled)
+      .fold(0, (s, o) => s + o.paidAmount.clamp(0, o.amount).toDouble());
   double get totalAmountDue => orders
-      .where(
-        (o) =>
-            o.status == PurchaseStatus.pending ||
-            o.status == PurchaseStatus.partial,
-      )
-      .fold(0, (s, o) => s + o.amount);
+      .where((o) => o.status != PurchaseStatus.cancelled)
+      .fold(
+        0,
+        (s, o) => s + (o.amount - o.paidAmount).clamp(0, o.amount).toDouble(),
+      );
   double get averageOrderValue =>
       orders.isEmpty ? 0 : totalPurchaseMTD / orders.length;
 
@@ -109,7 +112,7 @@ class PurchaseController extends GetxController {
     showAppToast(
       'Error',
       message,
-      backgroundColor: const Color(0xFFEF4444),
+      backgroundColor: AppColors.danger,
       colorText: Colors.white,
     );
   }
@@ -154,9 +157,10 @@ class PurchaseController extends GetxController {
       // Receiving goods raised stock server-side — pull the inventory and
       // product caches back in line.
       await refreshStockViews();
+      await fetchStats();
       return true;
     } catch (e) {
-      _showError('Failed to save purchase order.');
+      _showError(apiErrorMessage(e, 'Failed to save purchase order.'));
       return false;
     }
   }
@@ -180,7 +184,7 @@ class PurchaseController extends GetxController {
       await fetchStats();
       return true;
     } catch (e) {
-      _showError('Failed to update purchase order.');
+      _showError(apiErrorMessage(e, 'Failed to update purchase order.'));
       return false;
     }
   }
@@ -191,8 +195,9 @@ class PurchaseController extends GetxController {
       orders.removeWhere((o) => o.id == id);
       // Deleting the order reversed its stock movements server-side.
       await refreshStockViews();
+      await fetchStats();
     } catch (e) {
-      _showError('Failed to delete purchase order.');
+      _showError(apiErrorMessage(e, 'Failed to delete purchase order.'));
     }
   }
 
@@ -206,8 +211,11 @@ class PurchaseController extends GetxController {
       });
       orders.removeAt(idx);
       orders.insert(0, PurchaseOrder.fromJson(json as Map<String, dynamic>));
+      // Received adds stock; the cards follow what was paid / is due.
+      await refreshStockViews();
+      await fetchStats();
     } catch (e) {
-      _showError('Failed to update status.');
+      _showError(apiErrorMessage(e, 'Failed to update status.'));
     }
   }
 }

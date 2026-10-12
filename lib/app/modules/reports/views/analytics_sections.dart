@@ -17,7 +17,7 @@ import 'package:shc_stock/app/shared/widgets/stat_cards.dart';
 
 const Color kAnalyticsGreen = Color(0xFF16A34A);
 const Color kAnalyticsPurple = Color(0xFF7C6BE8);
-const Color kAnalyticsRed = Color(0xFFEF4444);
+Color kAnalyticsRed = AppColors.danger;
 const Color kAnalyticsAmber = Color(0xFFB45309);
 
 /// Trend percentage as the stat card wants it — empty when the backend had no

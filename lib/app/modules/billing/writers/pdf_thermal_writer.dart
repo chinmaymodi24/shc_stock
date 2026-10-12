@@ -325,10 +325,13 @@ List<_Block> _blocks({
   dashes();
   gap(3);
 
-  final half = totals.tax.halfLabel;
   pair('Taxable', totals.taxableTotalText);
-  pair('CGST $half', totals.cgstTotalText);
-  pair('SGST $half', totals.sgstTotalText);
+  if (totals.interState) {
+    pair(totals.igstHeader, totals.igstTotalText);
+  } else {
+    pair(totals.cgstHeader, totals.cgstTotalText);
+    pair(totals.sgstHeader, totals.sgstTotalText);
+  }
   pair('Round Off', totals.roundOffText);
 
   gap(3);

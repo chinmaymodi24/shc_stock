@@ -125,7 +125,7 @@ void main() {
     expect(source.contains('Get.offNamed(AppRoutes.sales)'), isTrue);
   });
 
-  group('the Items column counts units, not lines', () {
+  group('the Items column: units when they match, lines when they do not', () {
     test('a single 5-unit line reads 5, matching the form', () {
       final order = SalesOrder(
         id: '1',
@@ -144,7 +144,7 @@ void main() {
       );
 
       expect(order.totalQty, 5);
-      expect(order.totalQtyLabel, '5');
+      expect(order.totalQtyLabel, '5 kg');
       expect(order.itemCount, 1, reason: 'still one line behind that 5');
     });
 
@@ -167,7 +167,9 @@ void main() {
       );
 
       expect(order.totalQty, 3.5);
-      expect(order.totalQtyLabel, '3.50');
+      // 2.5 kg + 1 BOX is not 3.5 of anything: count the lines instead.
+      expect(order.totalQtyLabel, '2 items');
+      expect(order.qtyBreakdown, '2.50 kg + 1 BOX');
     });
 
     test('an order saved without its lines falls back to the line count', () {
@@ -184,7 +186,7 @@ void main() {
         paymentStatus: PaymentStatus.pending,
       );
 
-      expect(order.totalQtyLabel, '4');
+      expect(order.totalQtyLabel, '4 items');
     });
   });
 }

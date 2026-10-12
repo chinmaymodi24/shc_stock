@@ -140,6 +140,96 @@ void main() {
       final save = _rectOf(tester, find.byType(AppAsyncButton));
       expect(cancel.height, save.height);
     });
+
+    testWidgets(
+      'the quantity box takes digits and up to 3 decimals, not letters',
+      (tester) async {
+        Get.put<CategoriesController>(
+          _OfflineCategoriesController(),
+          permanent: true,
+        );
+        Get.put<ProductsController>(_OfflineProductsController());
+        Get.put<StockController>(_OfflineStockController());
+        tester.view.physicalSize = const Size(1000, 1600);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(_host(const StockAdjustmentDialog()));
+        await tester.pump();
+
+        final box = find.byWidgetPredicate(
+          (w) => w is TextField && w.controller?.text == '1',
+        );
+        expect(box, findsOneWidget);
+        // Hold the controller: the finder above stops matching once the text
+        // changes.
+        final ctrl = tester.widget<TextField>(box).controller!;
+        String text() => ctrl.text;
+
+        await tester.enterText(
+          find.byWidgetPredicate((w) => w is TextField && w.controller == ctrl),
+          '12.5',
+        );
+        expect(text(), '12.5');
+        await tester.enterText(
+          find.byWidgetPredicate((w) => w is TextField && w.controller == ctrl),
+          '0.125',
+        );
+        expect(text(), '0.125');
+        await tester.enterText(
+          find.byWidgetPredicate((w) => w is TextField && w.controller == ctrl),
+          '7',
+        );
+        expect(text(), '7');
+        await tester.enterText(
+          find.byWidgetPredicate((w) => w is TextField && w.controller == ctrl),
+          '7.1234',
+        );
+        expect(
+          text(),
+          '7.123',
+          reason: 'a 4th decimal is cut off',
+        );
+        await tester.enterText(
+          find.byWidgetPredicate((w) => w is TextField && w.controller == ctrl),
+          'abc',
+        );
+        expect(text(), '', reason: 'letters are refused');
+      },
+    );
+
+    testWidgets('picking "Other" as the reason asks for the reason in words', (
+      tester,
+    ) async {
+      Get.put<CategoriesController>(
+        _OfflineCategoriesController(),
+        permanent: true,
+      );
+      Get.put<ProductsController>(_OfflineProductsController());
+      Get.put<StockController>(_OfflineStockController());
+      tester.view.physicalSize = const Size(1000, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(_host(const StockAdjustmentDialog()));
+      await tester.pump();
+
+      expect(find.text('Write the reason'), findsNothing);
+
+      await tester.tap(find.text('Select reason...'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Damaged / defective goods').last);
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Write the reason'),
+        findsNothing,
+        reason: 'a ready-made reason needs no text',
+      );
+
+      await tester.tap(find.text('Damaged / defective goods').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Other').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Write the reason'), findsOneWidget);
+    });
   });
 
   group('Settings "Reset / Apply" row', () {

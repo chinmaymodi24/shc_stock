@@ -19,7 +19,11 @@ import 'support/session.dart';
 late List<String> requests;
 
 /// A client row shaped the way /api/clients returns one.
-Map<String, dynamic> _row(int id, {String state = 'Gujarat', String city = ''}) => {
+Map<String, dynamic> _row(
+  int id, {
+  String state = 'Gujarat',
+  String city = '',
+}) => {
   'id': id,
   'code': 'CLT-${id.toString().padLeft(4, '0')}',
   'name': 'Client $id',
@@ -58,11 +62,24 @@ void _installFakeBackend() {
       body = fakeOptions;
     } else if (options.path.startsWith('/clients/directory')) {
       body = [
-        {'id': 1, 'code': 'CLT-0001', 'name': 'Client 1', 'regState': 'Gujarat', 'gstin': 'G1'},
-        {'id': 2, 'code': 'CLT-0002', 'name': 'Client 2', 'regState': 'Assam', 'gstin': ''},
+        {
+          'id': 1,
+          'code': 'CLT-0001',
+          'name': 'Client 1',
+          'regState': 'Gujarat',
+          'gstin': 'G1',
+        },
+        {
+          'id': 2,
+          'code': 'CLT-0002',
+          'name': 'Client 2',
+          'regState': 'Assam',
+          'gstin': '',
+        },
       ];
     } else if (options.path.startsWith('/clients')) {
-      final limit = int.tryParse(options.uri.queryParameters['limit'] ?? '') ?? 10;
+      final limit =
+          int.tryParse(options.uri.queryParameters['limit'] ?? '') ?? 10;
       body = {
         'items': fakePage.take(limit).toList(),
         'page': int.tryParse(options.uri.queryParameters['page'] ?? '') ?? 1,
@@ -125,54 +142,84 @@ void main() {
   test('the first load asks for page one and the supporting lists', () async {
     final c = await _boot();
 
-    expect(requests.any((r) => r.startsWith('/clients?page=1&limit=10')), isTrue,
-        reason: 'the table asks for its first page');
-    expect(requests.any((r) => r.startsWith('/clients/directory')), isTrue,
-        reason: 'the autocomplete needs every name');
-    expect(requests.any((r) => r.startsWith('/clients/options')), isTrue,
-        reason: 'the filter pills cannot be derived from a page');
+    expect(
+      requests.any((r) => r.startsWith('/clients?page=1&limit=10')),
+      isTrue,
+      reason: 'the table asks for its first page',
+    );
+    expect(
+      requests.any((r) => r.startsWith('/clients/directory')),
+      isTrue,
+      reason: 'the autocomplete needs every name',
+    );
+    expect(
+      requests.any((r) => r.startsWith('/clients/options')),
+      isTrue,
+      reason: 'the filter pills cannot be derived from a page',
+    );
 
     expect(c.clients.length, 2, reason: 'the page, not the whole table');
-    expect(c.totalFiltered.value, 1049, reason: 'the match count comes from the server');
+    expect(
+      c.totalFiltered.value,
+      1049,
+      reason: 'the match count comes from the server',
+    );
     expect(c.totalPages, 105);
     expect(c.directory.length, 2);
     expect(c.directory.first.state, 'Gujarat');
     expect(c.directory.first.gstin, 'G1');
   });
 
-  test('typing is debounced into one request, and resets to page one', () async {
-    final c = await _boot();
-    c.goToPage(4);
-    await _settle(100);
-    requests.clear();
+  test(
+    'typing is debounced into one request, and resets to page one',
+    () async {
+      final c = await _boot();
+      c.goToPage(4);
+      await _settle(100);
+      requests.clear();
 
-    // Four keystrokes in quick succession.
-    for (final q in ['a', 'am', 'amb', 'ambi']) {
-      c.searchQuery.value = q;
-      await _settle(60);
-    }
-    await _settle(500);
+      // Four keystrokes in quick succession.
+      for (final q in ['a', 'am', 'amb', 'ambi']) {
+        c.searchQuery.value = q;
+        await _settle(60);
+      }
+      await _settle(500);
 
-    final listCalls = requests.where((r) => r.startsWith('/clients?')).toList();
-    expect(listCalls.length, 1,
-        reason: 'four keystrokes must not be four requests: $listCalls');
-    expect(listCalls.single, contains('search=ambi'));
-    expect(listCalls.single, contains('page=1'),
-        reason: 'a new search starts at the first page, not page 4');
-    expect(c.currentPage.value, 1);
-  });
+      final listCalls = requests
+          .where((r) => r.startsWith('/clients?'))
+          .toList();
+      expect(
+        listCalls.length,
+        1,
+        reason: 'four keystrokes must not be four requests: $listCalls',
+      );
+      expect(listCalls.single, contains('search=ambi'));
+      expect(
+        listCalls.single,
+        contains('page=1'),
+        reason: 'a new search starts at the first page, not page 4',
+      );
+      expect(c.currentPage.value, 1);
+    },
+  );
 
-  test('search text is encoded, so an ampersand cannot split the query', () async {
-    final c = await _boot();
-    requests.clear();
-    c.searchQuery.value = 'A & B Traders';
-    await _settle(500);
+  test(
+    'search text is encoded, so an ampersand cannot split the query',
+    () async {
+      final c = await _boot();
+      requests.clear();
+      c.searchQuery.value = 'A & B Traders';
+      await _settle(500);
 
-    final q = lastListQuery();
-    expect(q, contains('search=A+%26+B+Traders'));
-    expect(q.split('&').where((p) => p.startsWith('search=')).length, 1,
-        reason: 'the ampersand must not create a second parameter');
-  });
+      final q = lastListQuery();
+      expect(q, contains('search=A+%26+B+Traders'));
+      expect(
+        q.split('&').where((p) => p.startsWith('search=')).length,
+        1,
+        reason: 'the ampersand must not create a second parameter',
+      );
+    },
+  );
 
   test('state and city filters ride along, and cities re-cascade', () async {
     final c = await _boot();
@@ -182,16 +229,22 @@ void main() {
     await c.onStateFiltersChanged();
     await _settle(100);
 
-    expect(requests.any((r) => r.startsWith('/clients/options?state=Gujarat')), isTrue,
-        reason: 'the city list must narrow to the chosen state');
+    expect(
+      requests.any((r) => r.startsWith('/clients/options?state=Gujarat')),
+      isTrue,
+      reason: 'the city list must narrow to the chosen state',
+    );
     expect(lastListQuery(), contains('state=Gujarat'));
 
     c.cityFilters.add('Ahmedabad');
     c.onCityFiltersChanged();
     await _settle(100);
     expect(lastListQuery(), contains('city=Ahmedabad'));
-    expect(lastListQuery(), contains('state=Gujarat'),
-        reason: 'city narrows within the state, it does not replace it');
+    expect(
+      lastListQuery(),
+      contains('state=Gujarat'),
+      reason: 'city narrows within the state, it does not replace it',
+    );
   });
 
   test('several states go up as one comma-separated parameter', () async {
@@ -215,8 +268,11 @@ void main() {
     await c.onStateFiltersChanged();
     await _settle(100);
 
-    expect(c.cityFilters, isEmpty,
-        reason: 'a stale city would keep filtering rows nobody asked to exclude');
+    expect(
+      c.cityFilters,
+      isEmpty,
+      reason: 'a stale city would keep filtering rows nobody asked to exclude',
+    );
     expect(lastListQuery(), isNot(contains('city=')));
   });
 
@@ -231,8 +287,11 @@ void main() {
     c.setRowsPerPage(25);
     await _settle(100);
     expect(lastListQuery(), contains('limit=25'));
-    expect(lastListQuery(), contains('page=1'),
-        reason: 'changing the page size starts again at the first page');
+    expect(
+      lastListQuery(),
+      contains('page=1'),
+      reason: 'changing the page size starts again at the first page',
+    );
   });
 
   test('Reset clears everything and reloads unfiltered', () async {
@@ -254,22 +313,29 @@ void main() {
     expect(q, isNot(contains('city=')));
   });
 
-  test('the phone list appends the next page instead of replacing it', () async {
-    fakeTotal = 4;
-    fakePage = [_row(1), _row(2)];
-    final c = await _boot();
-    expect(c.clients.length, 2);
-    expect(c.hasMore, isTrue);
+  test(
+    'the phone list appends the next page instead of replacing it',
+    () async {
+      fakeTotal = 4;
+      fakePage = [_row(1), _row(2)];
+      final c = await _boot();
+      expect(c.clients.length, 2);
+      expect(c.hasMore, isTrue);
 
-    fakePage = [_row(3), _row(4)];
-    await c.loadMore();
-    await _settle(100);
+      fakePage = [_row(3), _row(4)];
+      await c.loadMore();
+      await _settle(100);
 
-    expect(c.clients.length, 4, reason: 'load more grows the list, it does not swap it');
-    expect(c.clients.map((e) => e.id), ['1', '2', '3', '4']);
-    expect(c.hasMore, isFalse, reason: 'nothing left to load');
-    expect(lastListQuery(), contains('page=2'));
-  });
+      expect(
+        c.clients.length,
+        4,
+        reason: 'load more grows the list, it does not swap it',
+      );
+      expect(c.clients.map((e) => e.id), ['1', '2', '3', '4']);
+      expect(c.hasMore, isFalse, reason: 'nothing left to load');
+      expect(lastListQuery(), contains('page=2'));
+    },
+  );
 
   test('load more does nothing once every row is in', () async {
     fakeTotal = 2;
@@ -289,12 +355,21 @@ void main() {
     requests.clear();
     await c.loadExportRows();
 
-    expect(c.exportRows.length, 3,
-        reason: 'the export must cover the whole result, not the ten rows on screen');
-    final exportCalls = requests.where((r) => r.startsWith('/clients?')).toList();
+    expect(
+      c.exportRows.length,
+      3,
+      reason:
+          'the export must cover the whole result, not the ten rows on screen',
+    );
+    final exportCalls = requests
+        .where((r) => r.startsWith('/clients?'))
+        .toList();
     expect(exportCalls.first, contains('limit=500'));
-    expect(exportCalls.first, contains('search=ambica'),
-        reason: 'an export may never widen past what the screen was showing');
+    expect(
+      exportCalls.first,
+      contains('search=ambica'),
+      reason: 'an export may never widen past what the screen was showing',
+    );
   });
 
   test('with no filters the export fetches one set, not two', () async {
@@ -305,8 +380,11 @@ void main() {
 
     expect(c.exportRows.length, 2);
     expect(c.exportAllRows.length, 2);
-    expect(requests.where((r) => r.startsWith('/clients?')).length, 1,
-        reason: 'unfiltered, both scopes are the same rows');
+    expect(
+      requests.where((r) => r.startsWith('/clients?')).length,
+      1,
+      reason: 'unfiltered, both scopes are the same rows',
+    );
   });
 
   test('a filtered export also fetches the unfiltered "all" scope', () async {
@@ -351,19 +429,28 @@ void main() {
     expect(await c.findByName('   '), isNull);
   });
 
-  test('a write reloads the page, the cards, the names and the pills', () async {
-    final c = await _boot();
-    requests.clear();
+  test(
+    'a write reloads the page, the cards, the names and the pills',
+    () async {
+      final c = await _boot();
+      requests.clear();
 
-    await c.deleteClient('1');
-    await _settle(100);
+      await c.deleteClient('1');
+      await _settle(100);
 
-    expect(requests.any((r) => r.startsWith('/clients?')), isTrue);
-    expect(requests.any((r) => r.startsWith('/clients/directory')), isTrue,
-        reason: 'a deleted client must leave the autocomplete too');
-    expect(requests.any((r) => r.startsWith('/clients/options')), isTrue,
-        reason: 'its state or city may have been the last one');
-  });
+      expect(requests.any((r) => r.startsWith('/clients?')), isTrue);
+      expect(
+        requests.any((r) => r.startsWith('/clients/directory')),
+        isTrue,
+        reason: 'a deleted client must leave the autocomplete too',
+      );
+      expect(
+        requests.any((r) => r.startsWith('/clients/options')),
+        isTrue,
+        reason: 'its state or city may have been the last one',
+      );
+    },
+  );
 
   test('the pager steps back when the last page empties', () async {
     fakeTotal = 25;
@@ -378,7 +465,10 @@ void main() {
     await c.fetchClients();
     await _settle(100);
 
-    expect(c.currentPage.value, 1,
-        reason: 'a page that no longer exists must not strand the user on empty');
+    expect(
+      c.currentPage.value,
+      1,
+      reason: 'a page that no longer exists must not strand the user on empty',
+    );
   });
 }

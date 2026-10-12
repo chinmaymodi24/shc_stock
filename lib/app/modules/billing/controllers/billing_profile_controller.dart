@@ -19,6 +19,12 @@ class BillingProfileController extends GetxService {
   final _api = ApiClient.instance;
 
   final Rx<BillingProfile> profile = BillingProfile.empty.obs;
+
+  /// The seller's GST state, or null when no profile is loaded / filled in.
+  static String? get sellerStateCode =>
+      Get.isRegistered<BillingProfileController>()
+      ? to.profile.value.sellerStateCode
+      : null;
   final RxBool isLoading = false.obs;
   final RxBool isSaving = false.obs;
 

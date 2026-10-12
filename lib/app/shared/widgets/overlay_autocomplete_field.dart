@@ -34,6 +34,15 @@ class OverlayAutocompleteField<T extends Object> extends StatefulWidget {
 
   final ValueChanged<T> onSelected;
 
+  /// Whether [option] may be chosen. An option that returns false stays in the
+  /// list (its builder can say why) but a tap or Enter on it does nothing and
+  /// the typed text is left as it is. Null means every option is selectable.
+  final bool Function(T option)? isSelectable;
+
+  /// Called with the text as the person types (not when an option is chosen),
+  /// so a value that matches no option can still be kept by the form.
+  final ValueChanged<String>? onTextChanged;
+
   /// One row of the dropdown. [highlighted] is true for the row the arrow
   /// keys have landed on, so callers can tint it.
   final Widget Function(BuildContext context, T option, bool highlighted)
@@ -53,6 +62,8 @@ class OverlayAutocompleteField<T extends Object> extends StatefulWidget {
     required this.optionsFor,
     required this.displayStringFor,
     required this.onSelected,
+    this.isSelectable,
+    this.onTextChanged,
     required this.optionBuilder,
     required this.decoration,
     required this.colors,
@@ -100,6 +111,7 @@ class _OverlayAutocompleteFieldState<T extends Object>
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialValue);
+    _lastText = widget.initialValue;
     _focusNode.addListener(_onFocusChange);
     _controller.addListener(_onTextChange);
   }
@@ -124,7 +136,13 @@ class _OverlayAutocompleteFieldState<T extends Object>
     }
   }
 
+  String _lastText = '';
+
   void _onTextChange() {
+    if (_controller.text != _lastText) {
+      _lastText = _controller.text;
+      widget.onTextChanged?.call(_controller.text);
+    }
     final query = _controller.text.trim();
     if (query.isEmpty || !_focusNode.hasFocus) {
       _options = const [];
@@ -141,12 +159,14 @@ class _OverlayAutocompleteFieldState<T extends Object>
   }
 
   void _select(T option) {
+    if (widget.isSelectable != null && !widget.isSelectable!(option)) return;
     // Detach the listener before writing the chosen text: `.text =` fires it
     // synchronously, and with focus still held it would recompute options for
     // the now-selected name and reopen the dropdown a beat before the lines
     // below close it for good.
     _controller.removeListener(_onTextChange);
     _controller.text = widget.displayStringFor(option);
+    _lastText = _controller.text;
     _controller.addListener(_onTextChange);
     _removeOverlay();
     _focusNode.unfocus();

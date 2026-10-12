@@ -102,7 +102,9 @@ SalesOrder _sale({
   status: SalesStatus.confirmed,
   paymentStatus: paymentStatus,
   paidAmount: paid,
-  items: [SaleDetailItem(product: product, qty: 120, rate: amount / 120)],
+  items: [
+    SaleDetailItem(product: product, qty: 120, unit: 'pcs', rate: amount / 120),
+  ],
 );
 
 Future<void> _pumpMobile(WidgetTester tester, Widget page) async {
@@ -258,7 +260,7 @@ void main() {
       await _pumpMobile(tester, const MobileSalesLayout());
 
       expect(find.text('Copper Pipe 15mm'), findsOneWidget);
-      expect(find.text('Suresh Patel · Qty 120'), findsOneWidget);
+      expect(find.text('Suresh Patel · 120 pcs'), findsOneWidget);
       // Sales rows badge by the client, matching the rest of the module.
       // Scoped to the rows: the page's Top Clients card badges by client too,
       // so an unscoped finder would match that as well.

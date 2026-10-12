@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:flutter/services.dart';
+import 'package:shc_stock/app/core/utils/qty_format.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 
@@ -71,17 +73,31 @@ class AppTextBox extends StatelessWidget {
   final String hint;
   final AppThemeColors colors;
 
+  /// Restricts what can be typed — phone boxes pass
+  /// [kPhoneInputFormatters] so a number can only ever be 10 digits.
+  final List<TextInputFormatter>? inputFormatters;
+  final TextInputType? keyboardType;
+
+  /// Called when the person types (not when code sets the text).
+  final ValueChanged<String>? onChanged;
+
   const AppTextBox({
     super.key,
     required this.controller,
     required this.hint,
     required this.colors,
+    this.inputFormatters,
+    this.keyboardType,
+    this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
+      inputFormatters: inputFormatters,
+      keyboardType: keyboardType,
+      onChanged: onChanged,
       style: TextStyle(
         fontSize: 13,
         color: colors.textPrimary,
@@ -208,9 +224,7 @@ class _AppDateBoxState extends State<AppDateBox> {
   Widget build(BuildContext context) {
     final d = widget.date;
     final colors = widget.colors;
-    final label = d == null
-        ? 'dd-mm-yyyy'
-        : '${d.day.toString().padLeft(2, '0')}-${d.month.toString().padLeft(2, '0')}-${d.year}';
+    final label = d == null ? AppDates.placeholder : fmtDate(d);
     return Focus(
       onFocusChange: (f) => _focused.value = f,
       onKeyEvent: (node, event) {
@@ -552,7 +566,8 @@ class _AppSmallStepperState extends State<AppSmallStepper> {
   }
 
   static String _fmt(double v) =>
-      v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
+      // Up to 3 decimals: 0.125 kg must not be shown (and re-read) as 0.13.
+      fmtStockQty(v);
 
   String _text(double v) => widget.mobile && v == 0 ? '' : _fmt(v);
 

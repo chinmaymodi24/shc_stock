@@ -125,9 +125,7 @@ class IndicatorTile extends StatelessWidget {
     final colors = context.appColors;
     final trendColor = indicator.neutral
         ? colors.textHint
-        : (indicator.trendUp
-              ? const Color(0xFF22C55E)
-              : const Color(0xFFEF4444));
+        : (indicator.trendUp ? AppColors.success : AppColors.danger);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),

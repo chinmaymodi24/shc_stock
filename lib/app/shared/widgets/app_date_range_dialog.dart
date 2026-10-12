@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 
@@ -130,9 +132,7 @@ class _AppDateRangeDialogState extends State<AppDateRangeDialog> {
       DateTime(_visible.value.year, _visible.value.month + monthsShown) ==
           _monthOf(widget.lastDate);
 
-  String _label(DateTime? d) => d == null
-      ? '—'
-      : '${d.day.toString().padLeft(2, '0')} ${_months[d.month - 1].substring(0, 3)} ${d.year}';
+  String _label(DateTime? d) => fmtDate(d);
 
   @override
   Widget build(BuildContext context) {
@@ -140,6 +140,29 @@ class _AppDateRangeDialogState extends State<AppDateRangeDialog> {
     final width = MediaQuery.sizeOf(context).width;
     final monthsShown = width >= 760 ? 2 : 1;
 
+    return CallbackShortcuts(
+      // Enter applies the range (a single tapped day counts as a one-day
+      // range), Esc cancels — same keys as every other date picker.
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.enter): _apply,
+        const SingleActivator(LogicalKeyboardKey.numpadEnter): _apply,
+        const SingleActivator(LogicalKeyboardKey.escape): () =>
+            Get.back<DateTimeRange>(),
+      },
+      child: Focus(autofocus: true, child: _dialog(colors, monthsShown)),
+    );
+  }
+
+  /// Closes with the picked range; does nothing until a start day is chosen.
+  void _apply() {
+    final s = _start.value;
+    if (s == null) return;
+    Get.back<DateTimeRange>(
+      result: DateTimeRange(start: s, end: _end.value ?? s),
+    );
+  }
+
+  Widget _dialog(AppThemeColors colors, int monthsShown) {
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),

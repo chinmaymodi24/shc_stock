@@ -1,5 +1,9 @@
+import 'package:shc_stock/app/shared/widgets/app_date_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
+import 'package:shc_stock/app/modules/sales/models/sale_payment.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
 import 'package:shc_stock/app/modules/transactions/controllers/transactions_controller.dart';
@@ -45,6 +49,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
   late final TextEditingController _party;
   late final TextEditingController _po;
   late final TextEditingController _notes;
+  late final TextEditingController _amount;
+  late final RxString _mode;
 
   late final RxString _type;
   late final RxString _status;
@@ -59,6 +65,10 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
     _party = TextEditingController(text: e?.party ?? '');
     _po = TextEditingController(text: e?.poNumber ?? '');
     _notes = TextEditingController(text: e?.notes ?? '');
+    _amount = TextEditingController(
+      text: e != null && e.amount > 0 ? trimAmount(e.amount) : '',
+    );
+    _mode = (e?.mode ?? '').obs;
     _type = (e?.typeLabel ?? 'Inbound').obs;
     _status = (e?.statusLabel ?? 'Pending').obs;
     _date = (e?.date ?? DateTime.now()).obs;
@@ -66,14 +76,14 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
 
   @override
   void dispose() {
-    for (final c in [_item, _party, _po, _notes]) {
+    for (final c in [_item, _party, _po, _notes, _amount]) {
       c.dispose();
     }
     super.dispose();
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
+    final picked = await showAppDatePicker(
       context: context,
       initialDate: _date.value,
       firstDate: DateTime(2020),
@@ -87,7 +97,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
       showAppToast(
         'Validation Error',
         'Item is required.',
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: AppColors.danger,
         colorText: Colors.white,
         duration: const Duration(seconds: 2),
       );
@@ -103,6 +113,8 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
       'date': _date.value.toIso8601String(),
       'status': _status.value,
       'notes': _notes.text.trim(),
+      'amount': double.tryParse(_amount.text.trim()) ?? 0,
+      'mode': _mode.value,
     };
 
     _saving.value = true;
@@ -118,7 +130,7 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
     showAppToast(
       widget.isEdit ? '✅ Transaction Updated' : '✅ Transaction Added',
       '${saved.item} has been saved.',
-      backgroundColor: const Color(0xFF22C55E),
+      backgroundColor: AppColors.success,
       colorText: Colors.white,
     );
   }
@@ -153,6 +165,33 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                 ),
               ),
               const SizedBox(height: 18),
+
+              // A payment on a sale (or a paid purchase) belongs to that
+              // order — say where to change it.
+              if (widget.existing?.isLinked == true && !widget.duplicate) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.info.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'From ${widget.existing!.sourceLabel.toLowerCase()} '
+                    '${widget.existing!.poNumber} — change it from that '
+                    '${widget.existing!.sourceLabel.toLowerCase()}.',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: colors.textSecondary,
+                      fontFamily: brandFontFamily,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+              ],
 
               // View mode reuses this form verbatim; AbsorbPointer
               // makes every field non-interactive instead of
@@ -231,12 +270,55 @@ class _TransactionFormDialogState extends State<TransactionFormDialog> {
                         const SizedBox(width: 14),
                         Expanded(
                           child: AppField(
-                            label: 'PO #',
+                            label: 'SO / PO #',
                             colors: colors,
                             child: AppTextBox(
                               controller: _po,
                               hint: 'e.g. #4421',
                               colors: colors,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: AppField(
+                            label: 'Amount (₹)',
+                            colors: colors,
+                            child: AppTextBox(
+                              controller: _amount,
+                              hint: 'Optional',
+                              colors: colors,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'^\d*\.?\d{0,2}'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: AppField(
+                            label: 'Mode',
+                            colors: colors,
+                            child: Obx(
+                              () => AppDropBox(
+                                hint: 'Select mode',
+                                value: _mode.value.isEmpty ? null : _mode.value,
+                                items: kPaymentModes,
+                                colors: colors,
+                                onChanged: (v) => _mode.value = v ?? '',
+                              ),
                             ),
                           ),
                         ),

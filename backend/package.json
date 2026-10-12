@@ -12,7 +12,11 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "seed": "node prisma/seed.js && node prisma/seedUsers.js && node prisma/seedProducts.js"
+    "seed": "node prisma/seed.js && node prisma/seedUsers.js && node prisma/seedProducts.js",
+    "backup:db": "node scripts/backupDb.js",
+    "test": "node src/validation.test.js && node src/inputGuard.test.js && node src/timezone.test.js && node src/stockService.test.js && node src/pagination.test.js && node src/phone.test.js && node src/jsonDecimal.test.js && node src/auth/policy.test.js && node src/auth/token.test.js && node src/auth/rateLimit.test.js",
+    "test:e2e-audit": "node e2e_audit_test.js",
+    "test:race": "node race_audit_test.js"
   },
   "engines": {
     "node": ">=20"
@@ -28,5 +32,8 @@
   "devDependencies": {
     "nodemon": "^3.1.9",
     "prisma": "^6.2.1"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
   }
 }

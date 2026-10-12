@@ -113,7 +113,7 @@ class ClientModel {
         json[key] as String? ?? fallback;
     DateTime? date(String key) {
       final v = json[key];
-      return v == null ? null : DateTime.tryParse(v as String);
+      return v == null ? null : DateTime.tryParse(v as String)?.toLocal();
     }
 
     return ClientModel(
@@ -251,6 +251,36 @@ class ClientModel {
     return parts.last.trim();
   }
 
+  /// Structured PIN when the client was added through the form; otherwise the
+  /// 6-digit code out of the free-text [address]. '' when there is none.
+  String get pin {
+    if (regPin.trim().isNotEmpty) return regPin.trim();
+    final match = RegExp(
+      r'(?<!\d)(\d{6}|\d{3}\s\d{3})(?!\d)',
+    ).firstMatch(address);
+    return match == null ? '' : match.group(1)!.replaceAll(' ', '');
+  }
+
+  /// [address] without its trailing "City - PIN" part (and the state/country
+  /// that follows the PIN) — for forms that show City, PIN and State in their
+  /// own boxes. Unchanged when there is no PIN to anchor on, or when nothing
+  /// would be left.
+  String get addressOnly {
+    final m = RegExp(r'(?<!\d)(\d{6}|\d{3}\s\d{3})(?!\d)').firstMatch(address);
+    if (m == null) return address;
+    var head = address
+        .substring(0, m.start)
+        .replaceFirst(RegExp(r'[\s,\-–]+$'), '');
+    final c = city.toLowerCase();
+    if (c.isNotEmpty) {
+      final comma = head.lastIndexOf(',');
+      final seg = head.substring(comma + 1).toLowerCase();
+      if (seg.contains(c)) head = comma < 0 ? '' : head.substring(0, comma);
+    }
+    head = head.replaceFirst(RegExp(r'[\s,]+$'), '').trim();
+    return head.isEmpty ? address : head;
+  }
+
   String get contactInitials {
     final parts = contactPerson
         .trim()
@@ -267,13 +297,13 @@ class ClientModel {
 
 List<Color> get _badgeColors => [
   appColors.accent,
-  const Color(0xFFEF4444),
-  const Color(0xFF22C55E),
+  AppColors.danger,
+  AppColors.success,
   const Color(0xFFFF6B35),
   const Color(0xFF0EA5E9),
   const Color(0xFF14B8A6),
   const Color(0xFF8B5CF6),
-  const Color(0xFFF59E0B),
+  AppColors.warning,
   const Color(0xFFEC4899),
   const Color(0xFF6366F1),
 ];

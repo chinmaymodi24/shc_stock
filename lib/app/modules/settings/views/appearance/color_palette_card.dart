@@ -28,7 +28,14 @@ class ColorPaletteCard extends StatefulWidget {
 }
 
 class _ColorPaletteCardState extends State<ColorPaletteCard> {
-  PaletteMode _mode = PaletteMode.presets;
+  /// Reactive (no setState): presets / custom hex / advanced.
+  final Rx<PaletteMode> _mode = PaletteMode.presets.obs;
+
+  @override
+  void dispose() {
+    _mode.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,13 +43,12 @@ class _ColorPaletteCardState extends State<ColorPaletteCard> {
     return AppearanceCard(
       title: 'Color palette',
       subtitle: 'Start from a preset, then fine-tune any individual color',
-      trailing: _ModeSwitch(
-        mode: _mode,
-        onChanged: (m) => setState(() => _mode = m),
+      trailing: Obx(
+        () => _ModeSwitch(mode: _mode.value, onChanged: (m) => _mode.value = m),
       ),
       child: Obx(() {
         final draft = bc.draft.value;
-        switch (_mode) {
+        switch (_mode.value) {
           case PaletteMode.presets:
             return _PresetGrid(draft: draft, onPick: bc.selectPreset);
           case PaletteMode.customHex:

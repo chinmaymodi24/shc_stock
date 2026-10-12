@@ -18,7 +18,6 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
     final c = context.appColors;
     return Obx(() {
       final status = controller.status.value;
-      final welcome = controller.welcome.value;
       final selRole = controller.selRole;
       final editor = controller.editor;
 
@@ -31,8 +30,11 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
               c,
               icon: Icons.checklist_rounded,
               title: 'Review & Confirm',
-              sub:
-                  'Review all information before creating the employee account.',
+              sub: controller.isEdit
+                  ? 'Review the changes before saving them to the employee '
+                        'account.'
+                  : 'Review all information before creating the employee '
+                        'account.',
             ),
             const SizedBox(height: 20),
 
@@ -105,8 +107,8 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: status == 'Active'
-                                  ? const Color(0xFF22C55E)
-                                  : const Color(0xFFEF4444),
+                                  ? AppColors.success
+                                  : AppColors.danger,
                             ),
                           ),
                           const SizedBox(width: 5),
@@ -117,8 +119,8 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
                               fontWeight: FontWeight.w600,
                               fontFamily: brandFontFamily,
                               color: status == 'Active'
-                                  ? const Color(0xFF22C55E)
-                                  : const Color(0xFFEF4444),
+                                  ? AppColors.success
+                                  : AppColors.danger,
                             ),
                           ),
                         ],
@@ -136,74 +138,24 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
               icon: Icons.lock_outline_rounded,
               title: 'Account Settings',
               onEdit: () => controller.step.value = 0,
-              child: wizRow2(wide, [
-                Column(
-                  children: [
-                    wizRevRow(
-                      'Username',
-                      controller.userCtrl.text.isEmpty
-                          ? '-'
-                          : controller.userCtrl.text,
-                      c,
-                    ),
-                    _PasswordReviewRow(
-                      password: controller.passCtrl.text,
-                      // On an edit a blank field keeps the current password.
-                      emptyLabel: controller.isEdit ? 'Unchanged' : '-',
-                      show: controller.showReviewPass.value,
-                      onToggle: () => controller.showReviewPass.toggle(),
-                    ),
-                  ],
-                ),
-                Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 130,
-                            child: Text(
-                              'Send Welcome Email',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: c.textSecondary,
-                                fontFamily: brandFontFamily,
-                              ),
-                            ),
-                          ),
-                          const Text(
-                            ' :  ',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: welcome
-                                  ? const Color(0xFF22C55E)
-                                  : c.textHint,
-                            ),
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            welcome ? 'Yes' : 'No',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: brandFontFamily,
-                              color: welcome
-                                  ? const Color(0xFF22C55E)
-                                  : c.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ]),
+              child: Column(
+                children: [
+                  wizRevRow(
+                    'Signs in with',
+                    controller.emailCtrl.text.isEmpty
+                        ? '-'
+                        : controller.emailCtrl.text,
+                    c,
+                  ),
+                  _PasswordReviewRow(
+                    password: controller.passCtrl.text,
+                    // On an edit a blank field keeps the current password.
+                    emptyLabel: controller.isEdit ? 'Unchanged' : '-',
+                    show: controller.showReviewPass.value,
+                    onToggle: () => controller.showReviewPass.toggle(),
+                  ),
+                ],
+              ),
             ),
             Divider(height: 1, color: c.divider),
 
@@ -274,14 +226,14 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
                   icon: Icons.insights_outlined,
                   label: 'Modules with Summary Access',
                   value: '${editor.summaryCnt}',
-                  color: const Color(0xFF22C55E),
+                  color: AppColors.success,
                 ),
                 wizPermStat(
                   c,
                   icon: Icons.visibility_off_outlined,
                   label: 'Modules with No Access',
                   value: '${editor.noCnt}',
-                  color: const Color(0xFFEF4444),
+                  color: AppColors.danger,
                 ),
                 wizPermStat(
                   c,
@@ -304,8 +256,11 @@ class ReviewCreateStep extends GetView<AddEmployeeWizardController> {
             const SizedBox(height: 12),
             wizInfoBox(
               c,
-              text:
-                  'Please review all the details carefully. After creating the account, you can edit the information anytime.',
+              text: controller.isEdit
+                  ? 'Please review all the changes carefully. Saving updates '
+                        'the employee account right away.'
+                  : 'Please review all the details carefully. After creating '
+                        'the account, you can edit the information anytime.',
             ),
           ],
         ),

@@ -73,7 +73,7 @@ class ProductImagePicker extends StatelessWidget {
               right: -6,
               child: _Badge(
                 icon: Icons.close_rounded,
-                background: const Color(0xFFEF4444),
+                background: AppColors.danger,
                 onTap: onRemove,
               ),
             ),

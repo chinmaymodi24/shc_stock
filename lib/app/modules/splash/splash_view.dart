@@ -58,8 +58,8 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
   Future<void> _goNext() async {
     await Get.find<SessionController>().ready;
     if (!mounted) return;
-    final signedIn = Get.find<SessionController>().isSignedIn;
-    Get.offAllNamed(signedIn ? AppRoutes.dashboard : AppRoutes.login);
+    final session = Get.find<SessionController>();
+    Get.offAllNamed(session.isSignedIn ? session.homeRoute : AppRoutes.login);
   }
 
   @override

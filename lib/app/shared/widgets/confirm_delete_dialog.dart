@@ -196,8 +196,17 @@ class _ConfirmDeleteDialog extends StatelessWidget {
                             // actually comes back, then closes — it used to
                             // close first and fire the call into the void.
                             onPressed: () async {
+                              // Taken before the await: the dialog's own route,
+                              // not "whatever is on top". When the delete is
+                              // refused the controller shows an error toast,
+                              // and Get.back() would then close THAT toast —
+                              // leaving the dialog open and the reason unread.
+                              final route = ModalRoute.of(context);
+                              final navigator = Navigator.of(context);
                               await onConfirm();
-                              Get.back();
+                              if (route != null && route.isActive) {
+                                navigator.removeRoute(route);
+                              }
                             },
                             padding: const EdgeInsets.symmetric(
                               horizontal: 20,

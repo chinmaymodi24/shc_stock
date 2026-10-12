@@ -27,6 +27,12 @@ services:
         value: https://shc-stock.web.app,https://shc-stock.firebaseapp.com
       - key: UPLOADS_DIR
         value: uploads
+      - key: AUTH_SECRET    # signs the session tokens; Render makes a random one
+        generateValue: true
+      - key: TRUST_PROXY   # Render puts exactly one proxy in front: without this every
+        value: "1"         # caller shares one sign-in rate-limit bucket (see server.js)
+      - key: BUSINESS_TZ    # every "today" / "this month" / FY the server works out
+        value: Asia/Kolkata
 
   - type: web
     name: shc-stock-web

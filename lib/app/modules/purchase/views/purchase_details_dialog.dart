@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -20,9 +22,8 @@ class PurchaseDetailsDialog extends StatelessWidget {
     this.onDelete,
   });
 
-  String _fmtDate(DateTime? d) =>
-      d == null ? '—' : DateFormat('yyyy-MM-dd').format(d);
-  String _fmtAmt(double v) => '₹${NumberFormat('#,##,##0', 'en_IN').format(v)}';
+  String _fmtDate(DateTime? d) => d == null ? '—' : fmtDate(d);
+  String _fmtAmt(double v) => formatRupees(v);
 
   @override
   Widget build(BuildContext context) {
@@ -185,6 +186,12 @@ class PurchaseDetailsDialog extends StatelessWidget {
                         order.paymentType.displayLabel,
                         colors,
                       ),
+                      if (order.receivedAt != null) ...[
+                        const SizedBox(height: 16),
+                        _Label('RECEIVED ON', colors),
+                        const SizedBox(height: 4),
+                        _Value(_fmtDate(order.receivedAt), colors),
+                      ],
                       if (order.paidAmount > 0) ...[
                         const SizedBox(height: 16),
                         _Label('AMOUNT PAID', colors),
@@ -274,17 +281,25 @@ class PurchaseDetailsDialog extends StatelessWidget {
                               colors,
                             ),
                             const SizedBox(height: 8),
-                            _TotalLine(
-                              'SGST (9%)',
-                              _fmtAmt(order.sgst),
-                              colors,
-                            ),
-                            const SizedBox(height: 8),
-                            _TotalLine(
-                              'CGST (9%)',
-                              _fmtAmt(order.cgst),
-                              colors,
-                            ),
+                            if (order.interState)
+                              _TotalLine(
+                                order.gst.igstLabel,
+                                _fmtAmt(order.igst),
+                                colors,
+                              )
+                            else ...[
+                              _TotalLine(
+                                order.gst.cgstLabel,
+                                _fmtAmt(order.cgst),
+                                colors,
+                              ),
+                              const SizedBox(height: 8),
+                              _TotalLine(
+                                order.gst.sgstLabel,
+                                _fmtAmt(order.sgst),
+                                colors,
+                              ),
+                            ],
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               child: Divider(height: 1, color: colors.divider),
@@ -345,9 +360,7 @@ class PurchaseDetailsDialog extends StatelessWidget {
                                     Text(
                                       order.modifiedAt == null
                                           ? '—'
-                                          : DateFormat(
-                                              'MMM d, yyyy, h:mm a',
-                                            ).format(order.modifiedAt!),
+                                          : fmtDateTime(order.modifiedAt!),
                                       style: TextStyle(
                                         fontSize: 11.5,
                                         color: colors.textHint,

@@ -9,13 +9,16 @@ const {
 const { getAppSettings } = require('../appSettings');
 const { actorName } = require('../auth/middleware');
 const { listResponse } = require('../pagination');
+const V = require('../validate');
+const { committedByProduct, assertUnitQuantities } = require('../stockService');
 
 const router = express.Router();
 
 /// Inventory rows are products viewed through their stock. Purchases and sales
 /// move the numbers automatically (see stockService); this route covers the
 /// manual side — adjustments, and editing the reorder settings.
-function toInventoryRow(p, lowStockThreshold = 0) {
+function toInventoryRow(p, lowStockThreshold = 0, committed = new Map()) {
+  const held = committed.get(p.id) || 0;
   return {
     id: p.id,
     productId: p.id,
@@ -26,12 +29,15 @@ function toInventoryRow(p, lowStockThreshold = 0) {
     subCategory: p.subCategory ? p.subCategory.name : '',
     unit: p.unit,
     stockInHand: p.currentStock,
-    availableStock: p.currentStock,
+    // What can still be promised: in the warehouse, less what open sales hold.
+    committedStock: held,
+    availableStock: Math.max(p.currentStock - held, 0),
     minimumStock: p.minimumStock,
     costPrice: p.costPrice,
     sellingPrice: p.sellingPrice,
     stockValue: Number((p.currentStock * p.costPrice).toFixed(2)),
     stockLocation: p.stockLocation,
+    imageUrl: p.imageUrl,
     isActive: p.isActive,
     status: stockStatus(p, lowStockThreshold),
     modifiedBy: p.modifiedBy,
@@ -48,6 +54,7 @@ router.get('/', async (req, res, next) => {
     // adjustment, a purchase/sale movement, a reorder-setting edit) tops the
     // list. Rows that never carried a modifiedAt fall back to id order.
     const { lowStockThreshold } = await getAppSettings();
+    const committed = await committedByProduct(prisma);
     res.json(await listResponse({
       query: req.query,
       findMany: (page) => prisma.product.findMany({
@@ -56,7 +63,7 @@ router.get('/', async (req, res, next) => {
         ...page,
       }),
       count: () => prisma.product.count(),
-      transform: (rows) => rows.map((p) => toInventoryRow(p, lowStockThreshold)),
+      transform: (rows) => rows.map((p) => toInventoryRow(p, lowStockThreshold, committed)),
     }));
   } catch (err) {
     next(err);
@@ -86,33 +93,19 @@ router.get('/movements', async (req, res, next) => {
 // { productId, type: 'IN' | 'OUT', qty, note }
 router.post('/adjust', async (req, res, next) => {
   try {
-    const productId = Number(req.body.productId);
-    const qty = Number(req.body.qty);
-    const type = String(req.body.type || 'IN').toUpperCase();
+    const productId = V.id(req.body.productId, 'productId');
+    // Decimals only for a product measured in kg / m / …; see units.js.
+    const qty = V.lineQty(req.body.qty, 'qty');
+    const type = V.oneOf(req.body.type || 'IN', 'type', ['IN', 'OUT'], { required: true });
     // Optional — only set when the person doing the adjustment chose to
     // record a per-unit price (e.g. an opening-balance entry). Left null
     // otherwise, same as a purchase/sale movement's price living on the
     // order instead.
-    let rate = null;
-    if (req.body.rate !== undefined && req.body.rate !== null && req.body.rate !== '') {
-      rate = Number(req.body.rate);
-      if (!Number.isFinite(rate) || rate < 0) {
-        return res.status(400).json({ error: 'rate must be 0 or more' });
-      }
-    }
-
-    if (!Number.isInteger(productId) || productId <= 0) {
-      return res.status(400).json({ error: 'productId is required' });
-    }
-    if (!Number.isFinite(qty) || qty <= 0) {
-      return res.status(400).json({ error: 'qty must be greater than 0' });
-    }
-    if (type !== 'IN' && type !== 'OUT') {
-      return res.status(400).json({ error: "type must be 'IN' or 'OUT'" });
-    }
+    const rate = V.isBlank(req.body.rate) ? null : V.money(req.body.rate, 'rate');
 
     const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product) return res.status(404).json({ error: 'Product not found' });
+    await assertUnitQuantities(prisma, [{ productId, qty }]);
 
     const row = await prisma.$transaction(async (tx) => {
       const [movement] = await applyStock(tx, {
@@ -121,8 +114,8 @@ router.post('/adjust', async (req, res, next) => {
         type: 'ADJUST',
         refType: 'manual',
         refId: null,
-        reference: req.body.reference || 'Manual adjustment',
-        note: req.body.note || '',
+        reference: V.text(req.body.reference, 'reference', { max: 100 }) || 'Manual adjustment',
+        note: V.text(req.body.note, 'note', { max: 500 }),
         createdBy: actorName(req),
         rate,
       });
@@ -133,7 +126,10 @@ router.post('/adjust', async (req, res, next) => {
         include: productInclude,
       });
       const { lowStockThreshold } = await getAppSettings();
-      return { movementId: movement.id, item: toInventoryRow(fresh, lowStockThreshold) };
+      return {
+        movementId: movement.id,
+        item: toInventoryRow(fresh, lowStockThreshold, await committedByProduct(tx)),
+      };
     });
     res.status(201).json(row);
   } catch (err) {
@@ -148,14 +144,10 @@ router.put('/:productId', async (req, res, next) => {
     const id = Number(req.params.productId);
     const data = { modifiedAt: new Date() };
     if (req.body.minimumStock !== undefined) {
-      const min = Number(req.body.minimumStock);
-      if (!Number.isFinite(min) || min < 0) {
-        return res.status(400).json({ error: 'minimumStock must be 0 or more' });
-      }
-      data.minimumStock = Math.trunc(min);
+      data.minimumStock = V.stockQty(req.body.minimumStock, 'minimumStock');
     }
     if (req.body.stockLocation !== undefined) {
-      data.stockLocation = String(req.body.stockLocation).trim();
+      data.stockLocation = V.text(req.body.stockLocation, 'stockLocation', { max: 100 });
     }
     if (req.body.isActive !== undefined) data.isActive = req.body.isActive === true;
     data.modifiedBy = actorName(req);
@@ -188,7 +180,7 @@ router.delete('/movements/:id', async (req, res, next) => {
     }
 
     const item = await prisma.$transaction(async (tx) => {
-      const delta = movement.type === 'IN' ? -Math.round(movement.qty) : Math.round(movement.qty);
+      const delta = movement.type === 'IN' ? -movement.qty : movement.qty;
       // Floored at zero. Undoing a +2 against a product that no longer holds
       // those 2 units used to leave it at -2, which is what put a negative
       // "Total Stock Items" on the dashboard.

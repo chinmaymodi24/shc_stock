@@ -32,12 +32,19 @@ class FilterBar extends StatelessWidget {
   /// Right-aligned extras (Export, view toggle, result count…).
   final Widget? trailing;
 
+  /// Asked on every rebuild (inside an Obx, so it can read Rx lists): false
+  /// hides every pill. Pages pass "does this list have any records at all" —
+  /// there is nothing to filter or sort in an empty list, and a Client pill
+  /// that opens onto an empty dropdown just looks broken.
+  final bool Function()? pillsVisible;
+
   const FilterBar({
     super.key,
     required this.search,
     this.pills = const [],
     this.clearAll,
     this.trailing,
+    this.pillsVisible,
   });
 
   @override
@@ -45,6 +52,12 @@ class FilterBar extends StatelessWidget {
     // Search and the trailing actions stay pinned; the pill strip takes the
     // slack and scrolls horizontally when there are more filters than fit.
     // A plain Row here overflowed by ~550px on Sales at laptop widths.
+    final visible = pillsVisible;
+    if (visible == null) return _row(pills);
+    return Obx(() => _row(visible() ? pills : const <Widget>[]));
+  }
+
+  Widget _row(List<Widget> pills) {
     return SizedBox(
       height: kFilterRowHeight,
       child: Row(

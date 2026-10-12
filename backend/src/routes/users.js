@@ -1,11 +1,14 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const prisma = require('../prismaClient');
+const { normalisePhone } = require('../phone');
 const { sanitizePermissions, clampToGranter } = require('../permissions');
 const { invalidatePrincipal } = require('../auth/middleware');
 const { listResponse } = require('../pagination');
+const { ValidationError } = require('../validate');
 
 const router = express.Router();
+router.param('id', require('../validate').idParam);
 
 /// passwordHash must never leave the API.
 const publicFields = {
@@ -26,8 +29,13 @@ const publicFields = {
   createdAt: true,
 };
 
-const str = (v, fallback = '') =>
-  v === undefined || v === null ? fallback : String(v).trim();
+/// Trimmed text; anything over 200 characters is refused rather than stored.
+const str = (v, fallback = '') => {
+  if (v === undefined || v === null) return fallback;
+  const s = String(v).trim();
+  if (s.length > 200) throw new ValidationError('A field must be at most 200 characters');
+  return s;
+};
 
 class ForbiddenError extends Error {}
 
@@ -53,7 +61,7 @@ async function userData(body, auth) {
   const data = {
     name: str(body.name),
     email: str(body.email).toLowerCase(),
-    phone: str(body.phone),
+    phone: normalisePhone(body.phone),
     department: str(body.department),
     modifiedBy: auth.name || 'Admin',
     modifiedAt: new Date(),
@@ -90,8 +98,31 @@ function validate(body) {
   return null;
 }
 
+/// Only an ACTIVE Super Admin can still sign in, so only those count as
+/// "somebody who can manage the portal".
 const superAdminCount = () =>
-  prisma.user.count({ where: { roleRef: { isSuperAdmin: true } } });
+  prisma.user.count({ where: { isActive: true, roleRef: { isSuperAdmin: true } } });
+
+/// True when [id] is an active Super Admin and nobody else active is left, so
+/// deactivating, demoting or deleting them would lock everyone out.
+async function isLastActiveSuperAdmin(id) {
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: { isActive: true, roleRef: { select: { isSuperAdmin: true } } },
+  });
+  if (!user || !user.isActive || !(user.roleRef && user.roleRef.isSuperAdmin)) return false;
+  return (await superAdminCount()) <= 1;
+}
+
+const MIN_PASSWORD = 6;
+const MAX_PASSWORD = 100;
+
+/// Null when [password] is acceptable, otherwise the reason it is not.
+function passwordProblem(password) {
+  if (password.length < MIN_PASSWORD) return `password must be at least ${MIN_PASSWORD} characters`;
+  if (password.length > MAX_PASSWORD) return `password must be at most ${MAX_PASSWORD} characters`;
+  return null;
+}
 
 async function roleIsSuperAdmin(roleId) {
   const role = await prisma.role.findUnique({ where: { id: roleId }, select: { isSuperAdmin: true } });
@@ -133,14 +164,20 @@ router.post('/', async (req, res, next) => {
     const invalid = validate(req.body);
     if (invalid) return res.status(400).json({ error: invalid });
 
-    // New employees get a starter password they're expected to change; the
-    // caller may supply one instead. It is hashed and never echoed back.
-    const password = str(req.body.password) || 'shc@12345';
+    // The password the admin typed is the one the employee signs in with.
+    // There is no built-in starter password: one that sits in the repo is a
+    // password everybody knows. It is hashed and never echoed back.
+    const password = typeof req.body.password === 'string' ? req.body.password.trim() : '';
+    if (!password) return res.status(400).json({ error: 'password is required' });
+    const weak = passwordProblem(password);
+    if (weak) return res.status(400).json({ error: weak });
     const user = await prisma.user.create({
       data: {
         ...(await userData(req.body, req.auth)),
         code: str(req.body.code) || (await nextUserCode()),
         passwordHash: await bcrypt.hash(password, 10),
+        // The admin chose it, so the employee must replace it on first sign-in.
+        mustChangePassword: true,
       },
       select: publicFields,
     });
@@ -170,14 +207,28 @@ router.put('/:id', async (req, res, next) => {
     const code = str(req.body.code);
     if (code) data.code = code;
     // Only rehash when a new password was actually supplied.
-    const password = str(req.body.password);
-    if (password) data.passwordHash = await bcrypt.hash(password, 10);
+    const password = typeof req.body.password === 'string' ? req.body.password.trim() : '';
+    if (password) {
+      const weak = passwordProblem(password);
+      if (weak) return res.status(400).json({ error: weak });
+      data.passwordHash = await bcrypt.hash(password, 10);
+      // Changing your own password is a choice; resetting somebody else's is
+      // not, so they are asked to pick their own at next sign-in.
+      data.mustChangePassword = id !== req.auth.id;
+      // Resetting somebody else's password also signs out their old sessions.
+      // (Your own is left alone here: this call has no way to hand you the
+      // fresh token, so Settings › Security is where you change that one.)
+      if (id !== req.auth.id) data.passwordChangedAt = new Date();
+    }
 
-    // Moving the last Super Admin to another role would leave nobody able to
-    // manage the portal.
-    if (targetIsSuperAdmin && data.roleId !== undefined && !(await roleIsSuperAdmin(data.roleId))) {
-      if ((await superAdminCount()) <= 1) {
+    // Moving the last active Super Admin to another role, or switching them
+    // off, would leave nobody able to manage the portal.
+    if (await isLastActiveSuperAdmin(id)) {
+      if (data.roleId !== undefined && !(await roleIsSuperAdmin(data.roleId))) {
         return res.status(409).json({ error: 'Cannot change the role of the last Super Admin' });
+      }
+      if (data.isActive === false) {
+        return res.status(409).json({ error: 'Cannot deactivate the last active Super Admin' });
       }
     }
 
@@ -212,6 +263,9 @@ router.patch('/:id/status', async (req, res, next) => {
     if (id === req.auth.id && req.body.isActive !== true) {
       return res.status(409).json({ error: 'You cannot deactivate your own account' });
     }
+    if (req.body.isActive !== true && (await isLastActiveSuperAdmin(id))) {
+      return res.status(409).json({ error: 'Cannot deactivate the last active Super Admin' });
+    }
 
     const user = await prisma.user.update({
       where: { id },
@@ -238,7 +292,7 @@ router.delete('/:id', async (req, res, next) => {
       return res.status(409).json({ error: 'You cannot delete your own account' });
     }
     // Refuse to delete the last Super Admin — that would lock everyone out.
-    if (targetIsSuperAdmin && (await superAdminCount()) <= 1) {
+    if (await isLastActiveSuperAdmin(id)) {
       return res.status(409).json({ error: 'Cannot delete the last Super Admin account' });
     }
     await prisma.user.delete({ where: { id } });

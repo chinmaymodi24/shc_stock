@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
@@ -74,6 +75,9 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // The recent-transactions dates are text built at fetch time; rebuild
+    // them when Settings › Preferences › Date Format changes.
+    ever(AppDates.style, (_) => _applyTransactions(_lastTransactionsRaw));
     fetchDashboard();
     fetchNotes();
   }
@@ -82,7 +86,7 @@ class DashboardController extends GetxController {
     showAppToast(
       'Error',
       message,
-      backgroundColor: const Color(0xFFEF4444),
+      backgroundColor: AppColors.danger,
       colorText: Colors.white,
     );
   }
@@ -121,7 +125,7 @@ class DashboardController extends GetxController {
     webStatCards.assignAll([
       StatCardData(
         title: 'Total Stock Items',
-        value: fmt.format(i('totalStockItems')),
+        value: fmt.format(d('totalStockItems')),
         icon: StatCardIcon.box,
       ),
       StatCardData(
@@ -144,7 +148,7 @@ class DashboardController extends GetxController {
     dashboardStats.assignAll([
       DashboardStatData(
         title: 'Total Stock Items',
-        value: fmt.format(i('totalStockItems')),
+        value: fmt.format(d('totalStockItems')),
         icon: Icons.inventory_2_rounded,
         iconColor: const Color(0xFF3B6FE0),
       ),
@@ -225,17 +229,21 @@ class DashboardController extends GetxController {
     );
   }
 
+  /// Last rows from the API, kept so a Date Format change can redraw them
+  /// without another round trip.
+  List<dynamic> _lastTransactionsRaw = const [];
+
   void _applyTransactions(List<dynamic> raw) {
-    final fmt = DateFormat('dd MMM yyyy');
+    _lastTransactionsRaw = raw;
     recentTransactions.assignAll(
       raw.map((e) {
         final m = e as Map<String, dynamic>;
-        final date = DateTime.tryParse(m['date'] as String? ?? '');
+        final date = DateTime.tryParse(m['date'] as String? ?? '')?.toLocal();
         return TransactionRow(
           item: m['item'] as String? ?? '',
           type: m['type'] as String? ?? '',
           warehouse: m['party'] as String? ?? '',
-          date: date == null ? '—' : fmt.format(date),
+          date: date == null ? '—' : fmtDate(date),
           status: m['status'] as String? ?? '',
         );
       }),
@@ -246,7 +254,9 @@ class DashboardController extends GetxController {
     incomingDeliveries.assignAll(
       raw.map((e) {
         final m = e as Map<String, dynamic>;
-        final due = DateTime.tryParse(m['dueDate'] as String? ?? '');
+        // Stored as UTC midnight-of-the-local-day; compare in local time or
+        // "tomorrow" reads as today.
+        final due = DateTime.tryParse(m['dueDate'] as String? ?? '')?.toLocal();
         return DeliveryItem(
           item: m['item'] as String? ?? '',
           poRef: m['poRef'] as String? ?? '',
@@ -281,10 +291,10 @@ class DashboardController extends GetxController {
     lowStockAlerts.assignAll(
       raw.map((e) {
         final m = e as Map<String, dynamic>;
-        final min = (m['minimum'] as num?)?.toInt() ?? 0;
+        final min = (m['minimum'] as num?)?.toDouble() ?? 0;
         return LowStockAlertItem(
           product: m['product'] as String? ?? '',
-          current: (m['current'] as num?)?.toInt() ?? 0,
+          current: (m['current'] as num?)?.toDouble() ?? 0,
           // The bar needs a ceiling; the reorder level is the meaningful one.
           max: min > 0 ? min : 1,
         );

@@ -1,4 +1,5 @@
 import 'package:shc_stock/app/core/session/app_modules.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
@@ -22,16 +23,21 @@ import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 import 'package:shc_stock/app/shared/widgets/table_footer.dart';
 
+part 'web_purchase_side_panel.dart';
+
+part 'web_purchase_row.dart';
+
 // ── Table column constants (header + row MUST match) ──────────────────────
 const double _kIdxW = 32.0; // # badge
 const double _kGap = 16.0; // column gap after # badge
-const int _kPoFlex = 16; // PO Number
-const int _kSupFlex = 24; // Supplier
-const int _kDateFlex = 14; // Date
-const int _kItemFlex = 8; // Items
-const int _kAmtFlex = 14; // Amount
-const int _kStsFlex = 12; // Status
-const int _kModFlex = 18; // Modified By
+const int _kPoFlex = 14; // PO Number
+const int _kSupFlex = 16; // Supplier
+const int _kDateFlex = 13; // Date
+const int _kExpFlex = 14; // Expected Delivery
+const int _kItemFlex = 7; // Items
+const int _kAmtFlex = 12; // Amount
+const int _kStsFlex = 11; // Status
+const int _kModFlex = 16; // Modified By
 const int _kActFlex = 20; // Actions — View + Edit + Duplicate + Delete
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -175,7 +181,7 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                     c.stats.value.doubleOf('amountPaid'),
                                   ),
                                   icon: Icons.check_circle_outline_rounded,
-                                  iconColor: const Color(0xFF22C55E),
+                                  iconColor: AppColors.success,
                                   trend: c.stats.value.trendLabel('amountPaid'),
                                   showCaption: false,
                                   smallValue: true,
@@ -186,7 +192,7 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                     c.stats.value.doubleOf('amountDue'),
                                   ),
                                   icon: Icons.currency_rupee_rounded,
-                                  iconColor: const Color(0xFFF59E0B),
+                                  iconColor: AppColors.warning,
                                   trend: c.stats.value.trendLabel('amountDue'),
                                   trendUp: false,
                                   showCaption: false,
@@ -312,19 +318,31 @@ class WebPurchaseLayout extends GetView<PurchaseController> {
                                 ),
                               ),
 
-                              const SizedBox(width: 16),
-
                               // ── RIGHT: Panel ──────────────────────────────
-                              SizedBox(
-                                width: 272,
-                                child: Column(
-                                  children: [
-                                    _PurchaseSummaryCard(colors: colors, c: c),
-                                    const SizedBox(height: 14),
-                                    _TopSuppliersCard(colors: colors, c: c),
-                                  ],
+                              // Both cards are figures about the orders. With
+                              // no purchase on record they could only read
+                              // zero and list nobody, so the rail stays away
+                              // entirely and the table takes the full width.
+                              // Gated on the whole list, not the filtered one,
+                              // so a search that matches nothing does not make
+                              // the page jump about.
+                              if (canSeeSummary('Purchase') &&
+                                  c.orders.isNotEmpty) ...[
+                                const SizedBox(width: 16),
+                                SizedBox(
+                                  width: 272,
+                                  child: Column(
+                                    children: [
+                                      _PurchaseSummaryCard(
+                                        colors: colors,
+                                        c: c,
+                                      ),
+                                      const SizedBox(height: 14),
+                                      _TopSuppliersCard(colors: colors, c: c),
+                                    ],
+                                  ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ],
@@ -366,6 +384,7 @@ class _TableToolbarState extends State<_TableToolbar> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: FilterBar(
+        pillsVisible: () => c.orders.isNotEmpty,
         search: FilterSearchField(
           controller: c.searchCtrl,
           hint: 'Search by Item or PO...',
@@ -453,6 +472,10 @@ class _ColumnHeader extends StatelessWidget {
             child: Text('Date', style: _s),
           ),
           Expanded(
+            flex: _kExpFlex,
+            child: Text('Expected Delivery', style: _s),
+          ),
+          Expanded(
             flex: _kItemFlex,
             child: Center(child: Text('Items', style: _s)),
           ),
@@ -478,314 +501,6 @@ class _ColumnHeader extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Purchase Row
-// ─────────────────────────────────────────────────────────────────────────────
-class _PurchaseRow extends StatefulWidget {
-  final PurchaseOrder order;
-  final int index;
-  final AppThemeColors colors;
-  final bool isLast;
-  final VoidCallback onDelete;
-
-  const _PurchaseRow({
-    required this.order,
-    required this.index,
-    required this.colors,
-    required this.isLast,
-    required this.onDelete,
-  });
-
-  @override
-  State<_PurchaseRow> createState() => _PurchaseRowState();
-}
-
-class _PurchaseRowState extends State<_PurchaseRow> {
-  final _hovered = false.obs;
-
-  @override
-  void dispose() {
-    _hovered.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final o = widget.order;
-    final colors = widget.colors;
-    final dateStr =
-        '${o.date.day.toString().padLeft(2, '0')} ${_month(o.date.month)} ${o.date.year}';
-
-    // Resolve modified by
-    final mod = resolveModifiedBy(
-      storedName: o.modifiedBy,
-      storedDate: o.modifiedAt,
-    );
-
-    return MouseRegion(
-      onEnter: (_) => _hovered.value = true,
-      onExit: (_) => _hovered.value = false,
-      child: Obx(
-        () => AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          decoration: BoxDecoration(
-            color: _hovered.value ? colors.rowEven : colors.surface,
-            border: widget.isLast
-                ? null
-                : Border(bottom: BorderSide(color: colors.divider, width: 0.8)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                // # badge
-                Container(
-                  width: _kIdxW,
-                  height: _kIdxW,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryOrange.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${widget.index + 1}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryOrange,
-                        fontFamily: brandFontFamily,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: _kGap),
-
-                // PO Number
-                Expanded(
-                  flex: _kPoFlex,
-                  child: Text(
-                    o.poNumber,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: context.appColors.accent,
-                      fontFamily: brandFontFamily,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-
-                // Supplier
-                Expanded(
-                  flex: _kSupFlex,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 30,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: context.appColors.accent.withValues(
-                            alpha: 0.09,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.business_outlined,
-                          color: context.appColors.accent,
-                          size: 15,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          o.supplier,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: colors.textPrimary,
-                            fontFamily: brandFontFamily,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Date
-                Expanded(
-                  flex: _kDateFlex,
-                  child: Text(
-                    dateStr,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: colors.textSecondary,
-                      fontFamily: brandFontFamily,
-                    ),
-                  ),
-                ),
-
-                // Items
-                Expanded(
-                  flex: _kItemFlex,
-                  child: Center(
-                    // Units, not lines — a single 5-unit line used to read "1"
-                    // here while the form showed 5. The line count is still a
-                    // hover away.
-                    child: Tooltip(
-                      message: o.itemCount == 1
-                          ? '1 line item'
-                          : '${o.itemCount} line items',
-                      child: Text(
-                        o.totalQtyLabel,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: colors.textPrimary,
-                          fontFamily: brandFontFamily,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Amount
-                Expanded(
-                  flex: _kAmtFlex,
-                  child: Text(
-                    _formatAmount(o.amount),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: colors.textPrimary,
-                      fontFamily: brandFontFamily,
-                    ),
-                  ),
-                ),
-
-                // Status badge — tap to change just the status, without
-                // opening the whole record for editing.
-                Expanded(
-                  flex: _kStsFlex,
-                  child: Center(
-                    child: Tooltip(
-                      message: 'Update status',
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () => Get.dialog(
-                          UpdatePurchaseStatusDialog(order: widget.order),
-                        ),
-                        child: _StatusBadge(status: o.status),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Modified By
-                Expanded(
-                  flex: _kModFlex,
-                  child: mod == null
-                      ? ModifiedByEmpty(textHint: colors.textHint)
-                      : ModifiedByCell(
-                          name: mod.name,
-                          date: mod.date,
-                          textPrimary: colors.textPrimary,
-                          textHint: colors.textHint,
-                        ),
-                ),
-
-                // Actions: View, Edit, Delete
-                Expanded(
-                  flex: _kActFlex,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      RowActionButton(
-                        icon: Icons.remove_red_eye_outlined,
-                        color: context.appColors.success,
-                        bg: context.appColors.success.withValues(alpha: 0.10),
-                        tooltip: 'View',
-                        onTap: () =>
-                            PurchaseActions.view(context, widget.order),
-                      ),
-                      if (canWriteModule('Purchase')) ...[
-                        const SizedBox(width: 5),
-                        RowActionButton(
-                          icon: Icons.edit_outlined,
-                          color: AppColors.primaryOrange,
-                          bg: AppColors.primaryOrange.withValues(alpha: 0.10),
-                          tooltip: 'Edit',
-                          onTap: () => PurchaseActions.edit(widget.order),
-                        ),
-                        const SizedBox(width: 5),
-                        RowActionButton(
-                          icon: Icons.copy_outlined,
-                          color: const Color(0xFF3B82F6),
-                          bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
-                          tooltip: 'Duplicate',
-                          onTap: () => PurchaseActions.duplicate(widget.order),
-                        ),
-                        const SizedBox(width: 5),
-                        RowActionButton(
-                          icon: Icons.delete_outline_rounded,
-                          iconSize: 18,
-                          color: context.appColors.error,
-                          // Neutral, not red-tinted — only the icon carries
-                          // the warning color.
-                          bg: context.appColors.tagBg,
-                          tooltip: 'Delete',
-                          onTap: widget.onDelete,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _month(int m) {
-    const months = [
-      '',
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return months[m];
-  }
-
-  String _formatAmount(double v) {
-    if (v >= 100000) {
-      final lakh = v ~/ 100000;
-      final thousands = (v % 100000) ~/ 1000;
-      final rem = (v % 1000).toInt();
-      if (thousands > 0) {
-        return '₹$lakh,${thousands.toString().padLeft(2, '0')},${rem.toString().padLeft(3, '0')}';
-      }
-      return '₹$lakh,${rem.toString().padLeft(5, '0')}';
-    }
-    final s = v.toInt();
-    if (s >= 1000) {
-      final str = s.toString();
-      return '₹${str.substring(0, str.length - 3)},${str.substring(str.length - 3)}';
-    }
-    return '₹$s';
-  }
-}
-
 // Status Badge
 class _StatusBadge extends StatelessWidget {
   final PurchaseStatus status;
@@ -796,20 +511,20 @@ class _StatusBadge extends StatelessWidget {
     Color bg, fg;
     switch (status) {
       case PurchaseStatus.received:
-        bg = const Color(0xFF22C55E).withValues(alpha: 0.1);
-        fg = const Color(0xFF22C55E);
+        bg = AppColors.success.withValues(alpha: 0.1);
+        fg = AppColors.success;
         break;
       case PurchaseStatus.partial:
-        bg = const Color(0xFFF59E0B).withValues(alpha: 0.1);
-        fg = const Color(0xFFF59E0B);
+        bg = AppColors.warning.withValues(alpha: 0.1);
+        fg = AppColors.warning;
         break;
       case PurchaseStatus.pending:
         bg = context.appColors.accent.withValues(alpha: 0.1);
         fg = context.appColors.accent;
         break;
       case PurchaseStatus.cancelled:
-        bg = const Color(0xFFEF4444).withValues(alpha: 0.1);
-        fg = const Color(0xFFEF4444);
+        bg = AppColors.danger.withValues(alpha: 0.1);
+        fg = AppColors.danger;
         break;
     }
     return Container(
@@ -858,319 +573,5 @@ class _EmptyState extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Right Panel — Purchase Summary Card
-// ─────────────────────────────────────────────────────────────────────────────
-class _PurchaseSummaryCard extends StatelessWidget {
-  final AppThemeColors colors;
-  final PurchaseController c;
-  const _PurchaseSummaryCard({required this.colors, required this.c});
-
-  String _fmt(double v) {
-    if (v >= 100000) {
-      final lakh = v ~/ 100000;
-      final thousands = (v % 100000) ~/ 1000;
-      final rem = (v % 1000).toInt();
-      if (thousands > 0) {
-        return '₹$lakh,${thousands.toString().padLeft(2, '0')},${rem.toString().padLeft(3, '0')}';
-      }
-      return '₹$lakh,${rem.toString().padLeft(5, '0')}';
-    }
-    final s = v.toInt();
-    if (s >= 1000) {
-      final str = s.toString();
-      return '₹${str.substring(0, str.length - 3)},${str.substring(str.length - 3)}';
-    }
-    return '₹$s';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(
-      () => Container(
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: colors.divider),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-              child: Text(
-                'Purchase Summary',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
-                  fontFamily: brandFontFamily,
-                ),
-              ),
-            ),
-            Divider(height: 1, color: colors.divider),
-            _SumRow(
-              label: 'Total Purchase Orders',
-              value: '${c.totalOrders}',
-              colors: colors,
-            ),
-            _SumRow(
-              label: 'Total Purchase Amount',
-              value: _fmt(c.totalPurchaseMTD),
-              colors: colors,
-            ),
-            _SumRow(
-              label: 'Total Paid',
-              value: _fmt(c.totalAmountPaid),
-              colors: colors,
-              valueColor: const Color(0xFF22C55E),
-            ),
-            _SumRow(
-              label: 'Total Due',
-              value: _fmt(c.totalAmountDue),
-              colors: colors,
-              valueColor: const Color(0xFFEF4444),
-            ),
-            _SumRow(
-              label: 'Average Order Value',
-              value: _fmt(c.averageOrderValue),
-              colors: colors,
-              isLast: true,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SumRow extends StatelessWidget {
-  final String label, value;
-  final AppThemeColors colors;
-  final Color? valueColor;
-  final bool isLast;
-  const _SumRow({
-    required this.label,
-    required this.value,
-    required this.colors,
-    this.valueColor,
-    this.isLast = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: isLast
-          ? null
-          : BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: colors.divider, width: 0.5),
-              ),
-            ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.5,
-                color: colors.textSecondary,
-                fontFamily: brandFontFamily,
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: valueColor ?? colors.textPrimary,
-              fontFamily: brandFontFamily,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Right Panel — Top Suppliers Card
-// ─────────────────────────────────────────────────────────────────────────────
-class _TopSuppliersCard extends StatelessWidget {
-  final AppThemeColors colors;
-  final PurchaseController c;
-  const _TopSuppliersCard({required this.colors, required this.c});
-
-  String _fmt(double v) {
-    if (v >= 100000) {
-      final lakh = v ~/ 100000;
-      final thousands = (v % 100000) ~/ 1000;
-      final rem = (v % 1000).toInt();
-      if (thousands > 0) {
-        return '₹$lakh,${thousands.toString().padLeft(2, '0')},${rem.toString().padLeft(3, '0')}';
-      }
-      return '₹$lakh,${rem.toString().padLeft(5, '0')}';
-    }
-    final s = v.toInt();
-    if (s >= 1000) {
-      final str = s.toString();
-      return '₹${str.substring(0, str.length - 3)},${str.substring(str.length - 3)}';
-    }
-    return '₹$s';
-  }
-
-  String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    return parts
-        .take(2)
-        .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
-        .join();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final top = c.topSuppliers;
-      return Container(
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: colors.divider),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Top Suppliers',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
-                        fontFamily: brandFontFamily,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    'View All',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryOrange,
-                      fontFamily: brandFontFamily,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: colors.divider),
-            ...top.asMap().entries.map((e) {
-              final supplier = e.value.key;
-              final amount = e.value.value;
-              final isLast = e.key == top.length - 1;
-              final orderCount = c.orders
-                  .where((o) => o.supplier == supplier)
-                  .length;
-
-              return Container(
-                decoration: isLast
-                    ? null
-                    : BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(color: colors.divider, width: 0.5),
-                        ),
-                      ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: context.appColors.accent.withValues(alpha: 0.09),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Text(
-                          _initials(supplier),
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: context.appColors.accent,
-                            fontFamily: brandFontFamily,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            supplier,
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w500,
-                              color: colors.textPrimary,
-                              fontFamily: brandFontFamily,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            '$orderCount Orders',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: colors.textHint,
-                              fontFamily: brandFontFamily,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _fmt(amount),
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
-                        fontFamily: brandFontFamily,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ],
-        ),
-      );
-    });
   }
 }

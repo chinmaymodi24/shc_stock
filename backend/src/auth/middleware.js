@@ -1,5 +1,5 @@
 const prisma = require('../prismaClient');
-const { verify } = require('./token');
+const { decode } = require('./token');
 const { allows } = require('../permissions');
 const { isPublic, requirementFor } = require('./policy');
 
@@ -33,6 +33,9 @@ function toPrincipal(user) {
     name: user.name,
     isSuperAdmin,
     permissions,
+    mustChangePassword: user.mustChangePassword === true,
+    // Tokens signed before this moment are refused (see guard).
+    passwordChangedAtMs: user.passwordChangedAt ? user.passwordChangedAt.getTime() : 0,
     can: (key, action) => isSuperAdmin || allows(permissions, key, action),
   };
 }
@@ -48,6 +51,8 @@ async function loadPrincipal(userId) {
       name: true,
       isActive: true,
       permissions: true,
+      mustChangePassword: true,
+      passwordChangedAt: true,
       roleRef: { select: { isSuperAdmin: true } },
     },
   });
@@ -55,6 +60,9 @@ async function loadPrincipal(userId) {
   cache.set(userId, { principal, at: Date.now() });
   return principal;
 }
+
+/// What an account that still has to choose its password may call.
+const PASSWORD_SETUP_PATHS = ['/auth/me', '/settings/password'];
 
 const ACTION_WORDS = { read: 'view', write: 'change', summary: 'view the summary of' };
 
@@ -64,12 +72,23 @@ async function guard(req, res, next) {
 
     const header = req.get('authorization') || '';
     const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-    const userId = verify(token);
-    const principal = userId ? await loadPrincipal(userId) : null;
-    if (!principal) {
+    const claims = decode(token);
+    const principal = claims ? await loadPrincipal(claims.uid) : null;
+    // A password changed or reset after this token was signed ends the session
+    // (a lost phone must not stay signed in through a reset).
+    if (!principal || claims.iat < principal.passwordChangedAtMs) {
       return res.status(401).json({ error: 'Your session has ended. Please sign in again.' });
     }
     req.auth = principal;
+
+    // A password somebody else chose must be replaced before anything else.
+    // The two calls below are what the "set your own password" screen needs.
+    if (principal.mustChangePassword && !PASSWORD_SETUP_PATHS.includes(req.path)) {
+      return res.status(403).json({
+        error: 'Set your own password before continuing.',
+        code: 'PASSWORD_CHANGE_REQUIRED',
+      });
+    }
 
     const need = requirementFor(req.method, req.path);
     if (need && !principal.can(need.key, need.action)) {

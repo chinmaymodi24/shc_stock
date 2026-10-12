@@ -89,7 +89,7 @@ class EmployeeDetailsDialog extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: u.isActive
-                          ? const Color(0xFF22C55E).withValues(alpha: 0.10)
+                          ? AppColors.success.withValues(alpha: 0.10)
                           : colors.comingSoonBadge,
                       borderRadius: BorderRadius.circular(999),
                     ),
@@ -99,7 +99,7 @@ class EmployeeDetailsDialog extends StatelessWidget {
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
                         color: u.isActive
-                            ? const Color(0xFF22C55E)
+                            ? AppColors.success
                             : colors.textSecondary,
                         fontFamily: brandFontFamily,
                       ),
@@ -166,7 +166,7 @@ class EmployeeDetailsDialog extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFFEF4444),
+                          color: AppColors.danger,
                           fontFamily: brandFontFamily,
                         ),
                       ),

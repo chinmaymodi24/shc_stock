@@ -16,8 +16,15 @@ class ProductModel {
   final String? imageUrl;
   final double sellingPrice;
   final double costPrice;
-  final int currentStock;
-  final int minimumStock;
+
+  /// Decimal: a product measured in kg / m can hold 12.5 of it.
+  final double currentStock;
+
+  /// Units already promised to open (not yet delivered) sales. A sale only
+  /// takes stock out on delivery, so these are still in [currentStock] but
+  /// spoken for. What can be sold now is [availableStock].
+  final double committedStock;
+  final double minimumStock;
   final bool isActive;
 
   /// `inStock` | `lowStock` | `outOfStock` | `inactive`, as derived by the
@@ -53,6 +60,7 @@ class ProductModel {
     required this.sellingPrice,
     required this.costPrice,
     required this.currentStock,
+    this.committedStock = 0,
     required this.minimumStock,
     this.isActive = true,
     this.serverStockStatus = '',
@@ -73,14 +81,21 @@ class ProductModel {
 
   DateTime get effectiveModifiedAt => modifiedAt ?? createdAt;
 
+  /// Free to promise: in the warehouse, less what open sales already hold.
+  double get availableStock {
+    final free = currentStock - committedStock;
+    return free < 0 ? 0 : free;
+  }
+
   String get stockStatus {
     switch (serverStockStatus) {
       case 'outOfStock':
         return 'Out of Stock';
       case 'lowStock':
         return 'Low Stock';
-      case 'inStock':
       case 'inactive':
+        return 'Inactive';
+      case 'inStock':
         return 'In Stock';
     }
     // Fallback for models not built from the API response.
@@ -105,8 +120,9 @@ class ProductModel {
       imageUrl: json['imageUrl'] as String?,
       sellingPrice: (json['sellingPrice'] as num).toDouble(),
       costPrice: (json['costPrice'] as num).toDouble(),
-      currentStock: json['currentStock'] as int? ?? 0,
-      minimumStock: json['minimumStock'] as int? ?? 0,
+      currentStock: (json['currentStock'] as num?)?.toDouble() ?? 0,
+      committedStock: (json['committedStock'] as num?)?.toDouble() ?? 0,
+      minimumStock: (json['minimumStock'] as num?)?.toDouble() ?? 0,
       isActive: json['isActive'] as bool? ?? true,
       serverStockStatus: json['stockStatus'] as String? ?? '',
       brand: json['brand'] as String?,
@@ -114,10 +130,10 @@ class ProductModel {
       description: json['description'] as String?,
       taxPercent: (json['taxPercent'] as num?)?.toDouble() ?? 18.0,
       stockLocation: json['stockLocation'] as String? ?? 'Main Warehouse',
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: DateTime.parse(json['createdAt'] as String).toLocal(),
       modifiedBy: json['modifiedBy'] as String? ?? 'Admin',
       modifiedAt: json['modifiedAt'] != null
-          ? DateTime.parse(json['modifiedAt'] as String)
+          ? DateTime.parse(json['modifiedAt'] as String).toLocal()
           : null,
       densityVariants: (json['densityVariants'] as List<dynamic>? ?? [])
           .cast<String>(),
@@ -140,8 +156,8 @@ class ProductModel {
     String? unit,
     double? sellingPrice,
     double? costPrice,
-    int? currentStock,
-    int? minimumStock,
+    double? currentStock,
+    double? minimumStock,
     bool? isActive,
     String? brand,
     String? hsnCode,
@@ -160,6 +176,7 @@ class ProductModel {
       sellingPrice: sellingPrice ?? this.sellingPrice,
       costPrice: costPrice ?? this.costPrice,
       currentStock: currentStock ?? this.currentStock,
+      committedStock: committedStock,
       minimumStock: minimumStock ?? this.minimumStock,
       isActive: isActive ?? this.isActive,
       // Carried through unchanged; refreshed from the API on the next fetch.

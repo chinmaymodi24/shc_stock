@@ -17,8 +17,16 @@ const TTL_MS = 30 * 24 * 60 * 60 * 1000;
 /// AUTH_SECRET should be set in production. The fallback is derived from the
 /// database URL so a dev machine gets a stable secret (tokens survive a
 /// nodemon restart) without committing one to the repo.
+let warned = false;
 function secret() {
   if (process.env.AUTH_SECRET) return process.env.AUTH_SECRET;
+  if (!warned && process.env.NODE_ENV === 'production') {
+    warned = true;
+    console.warn(
+      '[auth] AUTH_SECRET is not set: session tokens are signed with a key derived from DATABASE_URL. ' +
+        'Set AUTH_SECRET to a long random string.',
+    );
+  }
   return crypto
     .createHash('sha256')
     .update(`shc-stock:${process.env.DATABASE_URL || 'local'}`)
@@ -28,13 +36,21 @@ function secret() {
 const b64url = (buf) => Buffer.from(buf).toString('base64url');
 
 function sign(userId) {
-  const payload = b64url(JSON.stringify({ uid: userId, exp: Date.now() + TTL_MS }));
+  const now = Date.now();
+  const payload = b64url(JSON.stringify({ uid: userId, iat: now, exp: now + TTL_MS }));
   const mac = crypto.createHmac('sha256', secret()).update(payload).digest('base64url');
   return `${payload}.${mac}`;
 }
 
 /// The user id inside a valid, unexpired token — or null.
 function verify(token) {
+  const claims = decode(token);
+  return claims ? claims.uid : null;
+}
+
+/// { uid, iat } of a valid, unexpired token — or null. `iat` (when it was
+/// signed, in ms) is 0 for a token issued before that claim existed.
+function decode(token) {
   if (typeof token !== 'string') return null;
   const [payload, mac] = token.split('.');
   if (!payload || !mac) return null;
@@ -46,12 +62,12 @@ function verify(token) {
   }
 
   try {
-    const { uid, exp } = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    const { uid, exp, iat } = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
     if (!Number.isInteger(uid) || typeof exp !== 'number' || exp < Date.now()) return null;
-    return uid;
+    return { uid, iat: typeof iat === 'number' ? iat : 0 };
   } catch (_) {
     return null;
   }
 }
 
-module.exports = { sign, verify };
+module.exports = { sign, verify, decode };

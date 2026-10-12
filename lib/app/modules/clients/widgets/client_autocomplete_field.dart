@@ -25,6 +25,10 @@ class ClientAutocompleteField extends StatelessWidget {
   final String initialValue;
   final AppThemeColors colors;
   final ValueChanged<ClientModel> onSelected;
+
+  /// The text as typed, so a name that is not in the client list (a walk-in
+  /// buyer, a supplier who is not a client) can still be used on the form.
+  final ValueChanged<String>? onTyped;
   final String hint;
   final Widget? suffixIcon;
 
@@ -33,6 +37,7 @@ class ClientAutocompleteField extends StatelessWidget {
     required this.initialValue,
     required this.colors,
     required this.onSelected,
+    this.onTyped,
     this.hint = 'Type to search client...',
     this.suffixIcon,
   });
@@ -52,6 +57,7 @@ class ClientAutocompleteField extends StatelessWidget {
             .toList();
       },
       displayStringFor: (c) => c.name,
+      onTextChanged: onTyped,
       onSelected: (ref) async {
         final full = await controller.findByName(ref.name);
         if (full != null) onSelected(full);

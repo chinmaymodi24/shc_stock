@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/session/session_controller.dart';
@@ -102,7 +103,7 @@ bool requireWrite(String module) {
   showAppToast(
     'No Permission',
     "You don't have permission to change $module.",
-    backgroundColor: const Color(0xFFEF4444),
+    backgroundColor: AppColors.danger,
     colorText: Colors.white,
     icon: Icons.lock_outline_rounded,
   );
@@ -148,6 +149,20 @@ String? moduleForRoute(String route) {
     if (route == m.route || route.startsWith('${m.route}/')) return m.name;
   }
   return null;
+}
+
+/// The first screen this employee may open: the dashboard if they have it,
+/// otherwise the first module they were granted, and finally Settings (never
+/// gated — it holds their own profile and password).
+///
+/// Used wherever the app lands somebody: after sign-in, and when a denied route
+/// bounces them. Bouncing to the dashboard unconditionally sent an employee
+/// who has no Dashboard access round and round the same redirect forever.
+String firstOpenRoute() {
+  for (final m in kAppModules) {
+    if (canOpenRoute(m.route)) return m.route;
+  }
+  return AppRoutes.settings;
 }
 
 /// Whether the signed-in user may open [route].

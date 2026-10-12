@@ -1,9 +1,10 @@
 import 'package:shc_stock/app/core/session/app_modules.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
+import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
 import 'package:shc_stock/app/modules/transactions/export/transactions_export.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/app_drawer.dart';
@@ -72,6 +73,7 @@ class MobileTransactionsLayout extends StatelessWidget {
       actions: [
         Obx(
           () => MobileFilterButton(
+            visible: c.transactions.isNotEmpty,
             filters: _buildFilters(c),
             onClear: () {
               c.search.value = '';
@@ -103,7 +105,7 @@ class MobileTransactionsLayout extends StatelessWidget {
   // so a Clear-all tap in the filter sheet also clears the visible text.
   Widget _searchField(TransactionsController c) => FilterSearchField(
     controller: c.searchCtrl,
-    hint: 'Search by item or PO #...',
+    hint: 'Search by item, SO / PO # or party...',
     width: double.infinity,
     onChanged: (v) {
       c.search.value = v;
@@ -211,7 +213,8 @@ class MobileTransactionsLayout extends StatelessWidget {
       final filtered = c.transactions.where((t) {
         if (q.isNotEmpty &&
             !t.item.toLowerCase().contains(q) &&
-            !t.poNumber.toLowerCase().contains(q)) {
+            !t.poNumber.toLowerCase().contains(q) &&
+            !t.party.toLowerCase().contains(q)) {
           return false;
         }
         if (typeFilters.isNotEmpty && !typeFilters.contains(t.typeLabel)) {
@@ -269,11 +272,11 @@ class _MobileTxnCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final dateFmt = DateFormat('MMM d, yyyy');
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () => Get.dialog(TransactionFormDialog(existing: txn)),
+      // A sale's payment / a paid purchase opens read-only.
+      onTap: () => TransactionActions.open(txn),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
@@ -285,6 +288,19 @@ class _MobileTxnCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // The order number leads, as on the web table.
+            if (txn.poNumber.isNotEmpty) ...[
+              Text(
+                txn.poNumber,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: txn.isLinked ? colors.accent : colors.textSecondary,
+                  fontFamily: brandFontFamily,
+                ),
+              ),
+              const SizedBox(height: 2),
+            ],
             Row(
               children: [
                 Expanded(
@@ -323,7 +339,11 @@ class _MobileTxnCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              '${txn.party} · PO ${txn.poNumber}',
+              [
+                if (txn.party.isNotEmpty) txn.party,
+                if (txn.amount > 0) formatRupees(txn.amount),
+                if (txn.mode.isNotEmpty) txn.mode,
+              ].join(' · '),
               style: TextStyle(
                 fontSize: 12,
                 color: colors.textSecondary,
@@ -341,7 +361,7 @@ class _MobileTxnCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  dateFmt.format(txn.date),
+                  fmtDate(txn.date),
                   style: TextStyle(
                     fontSize: 11.5,
                     color: colors.textSecondary,
@@ -370,7 +390,7 @@ class _MobileTxnCard extends StatelessWidget {
                   context: context,
                   onTap: () => TransactionActions.view(txn),
                 ),
-                if (canWriteModule('Transactions')) ...[
+                if (canWriteModule('Transactions') && !txn.isLinked) ...[
                   MobileActionButton.edit(
                     context: context,
                     onTap: () => TransactionActions.edit(txn),

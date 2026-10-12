@@ -1,5 +1,9 @@
+import 'package:shc_stock/app/core/utils/dispose_later.dart';
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/utils/phone_input.dart';
 import 'package:shc_stock/app/core/session/session_controller.dart';
 import 'package:shc_stock/app/modules/users/models/permission_editor.dart';
 import 'package:shc_stock/app/modules/users/models/role_model.dart';
@@ -50,13 +54,11 @@ class AddEmployeeWizardController extends GetxController {
   final designationCtrl = TextEditingController();
   final reportingManagerCtrl = TextEditingController();
   final employeeCodeCtrl = TextEditingController();
-  final userCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   final confCtrl = TextEditingController();
   final dept = ''.obs;
   final employmentType = 'Full-time'.obs;
   final status = 'Active'.obs;
-  final welcome = true.obs;
   final showPass = false.obs;
   final showConf = false.obs;
   // Review step's own eye toggle — separate from Step 1's so the summary
@@ -68,7 +70,6 @@ class AddEmployeeWizardController extends GetxController {
   final eEmail = RxnString();
   final ePhone = RxnString();
   final eAltPhone = RxnString();
-  final eUser = RxnString();
   final ePass = RxnString();
   final eConf = RxnString();
 
@@ -95,9 +96,9 @@ class AddEmployeeWizardController extends GetxController {
     final arg = Get.arguments;
     if (arg is EditEmployee) {
       editingId.value = arg.user.id;
-      _loadFrom(arg.user);
+      loadFrom(arg.user);
     } else if (arg is UserModel) {
-      _loadFrom(arg);
+      loadFrom(arg);
       // A duplicate needs its own login — the email is the unique key.
       emailCtrl.clear();
     }
@@ -108,10 +109,18 @@ class AddEmployeeWizardController extends GetxController {
   final editingId = RxnString();
   bool get isEdit => editingId.value != null;
 
-  void _loadFrom(UserModel u) {
+  /// Fills the form from an existing employee — the Edit and Duplicate
+  /// entry points, and the one place a stored phone reaches the box.
+  void loadFrom(UserModel u) {
     nameCtrl.text = u.name;
     emailCtrl.text = u.email;
-    phoneCtrl.text = u.phone;
+    // Normalised on the way in, not just on the way out: a stored value the
+    // formatter would rewrite (an old row, an import) makes Ctrl+Z inside the
+    // box trip a framework assertion — undo restores the raw text, the
+    // formatter cleans it, and Flutter finds the field is not holding what it
+    // just put back. Feeding the box clean text keeps that out of the
+    // undo stack entirely. See lib/app/core/utils/phone_input.dart.
+    phoneCtrl.text = normalisePhone(u.phone);
     dept.value = u.department;
     status.value = u.isActive ? 'Active' : 'Inactive';
     roleId.value = u.role.id;
@@ -121,9 +130,21 @@ class AddEmployeeWizardController extends GetxController {
     editor.load(u.permissions, everything: u.role.isSuperAdmin);
   }
 
+  /// GetX can route a delete through this controller more than once (a forced
+  /// delete on top of the route's own disposal). Disposing a
+  /// TextEditingController twice throws, so the second pass is a no-op.
+  bool _closed = false;
+
   @override
   void onClose() {
-    for (final c in [
+    if (_closed) {
+      super.onClose();
+      return;
+    }
+    _closed = true;
+    // Disposed once the page has gone, not while it is still on screen
+    // for its exit transition — see dispose_later.dart.
+    disposeAfterPageExit([
       nameCtrl,
       emailCtrl,
       phoneCtrl,
@@ -131,13 +152,10 @@ class AddEmployeeWizardController extends GetxController {
       designationCtrl,
       reportingManagerCtrl,
       employeeCodeCtrl,
-      userCtrl,
       passCtrl,
       confCtrl,
       roleSearchCtrl,
-    ]) {
-      c.dispose();
-    }
+    ]);
     super.onClose();
   }
 
@@ -164,23 +182,7 @@ class AddEmployeeWizardController extends GetxController {
     editor.load(role.permissions, everything: role.isSuperAdmin);
   }
 
-  static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
-  String _fmtDate(DateTime? d) =>
-      d == null ? '-' : '${d.day} ${_months[d.month - 1]} ${d.year}';
+  String _fmtDate(DateTime? d) => fmtDate(d, empty: '-');
 
   String get fmtDOJ => _fmtDate(doj.value);
   String get fmtDOB => _fmtDate(dob.value);
@@ -208,7 +210,6 @@ class AddEmployeeWizardController extends GetxController {
         : null;
     ePhone.value = _phoneError(phoneCtrl.text, 'Phone number');
     eAltPhone.value = _phoneError(altPhoneCtrl.text, 'Alternate phone');
-    eUser.value = userCtrl.text.trim().isEmpty ? 'Username is required' : null;
     // On a new employee the password is what they will sign in with, so it is
     // required. On an edit, leaving both fields blank means "keep the current
     // password" — only a typed one is validated and sent.
@@ -232,7 +233,6 @@ class AddEmployeeWizardController extends GetxController {
       eEmail.value,
       ePhone.value,
       eAltPhone.value,
-      eUser.value,
       ePass.value,
       eConf.value,
     ].any((e) => e != null);
@@ -303,7 +303,7 @@ class AddEmployeeWizardController extends GetxController {
     showAppToast(
       isEdit ? 'Employee Updated' : 'Employee Created',
       '${created.name} (${created.code}) has been ${isEdit ? 'updated' : 'added'} successfully.',
-      backgroundColor: const Color(0xFF22C55E),
+      backgroundColor: AppColors.success,
       colorText: Colors.white,
       icon: Icons.check_circle_outline,
     );

@@ -1,6 +1,9 @@
 abstract class AppRoutes {
   static const splash = '/splash';
   static const login = '/login';
+
+  /// Shown once to an employee whose password somebody else chose.
+  static const setPassword = '/set-password';
   static const dashboard = '/dashboard';
   static const products = '/products';
   static const addProduct = '/products/add';

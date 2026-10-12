@@ -17,7 +17,6 @@ import 'package:shc_stock/app/modules/products/views/web_products_layout.dart';
 import 'package:shc_stock/app/modules/purchase/controllers/add_purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
-import 'package:shc_stock/app/modules/purchase/controllers/mobile_add_purchase_controller.dart';
 import 'package:shc_stock/app/modules/purchase/views/mobile_add_purchase_layout.dart';
 import 'package:shc_stock/app/modules/purchase/views/web_new_purchase_layout.dart';
 import 'package:shc_stock/app/modules/purchase/views/web_purchase_layout.dart';
@@ -274,7 +273,7 @@ void main() {
     Get.put<ProductsController>(_StubProducts());
     Get.put<ClientsController>(_StubClients());
     Get.put<PurchaseController>(_StubPurchase());
-    Get.put(MobileAddPurchaseController());
+    Get.put(AddPurchaseController());
     // A real phone viewport: the item row packs No. Pkg and the Total Qty
     // stepper across one line, so this is where it would overflow.
     await _pump(

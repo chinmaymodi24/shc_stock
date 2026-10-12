@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:shc_stock/app/modules/purchase/controllers/purchase_controller.dart';
+import 'package:shc_stock/app/core/utils/gst.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 import 'package:shc_stock/app/shared/widgets/async_button.dart';
-import 'package:shc_stock/app/modules/purchase/controllers/mobile_add_purchase_controller.dart';
-import 'package:shc_stock/app/modules/purchase/models/purchase_model.dart';
+import 'package:shc_stock/app/modules/purchase/controllers/add_purchase_controller.dart';
+import 'package:shc_stock/app/shared/models/order_payment.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/modules/products/models/product_model.dart';
 import 'package:shc_stock/app/modules/products/widgets/product_autocomplete_field.dart';
@@ -12,63 +12,16 @@ import 'package:shc_stock/app/modules/clients/models/client_model.dart';
 import 'package:shc_stock/app/modules/clients/widgets/client_autocomplete_field.dart';
 import 'package:shc_stock/app/shared/widgets/form_fields.dart';
 import 'package:shc_stock/app/shared/widgets/section_card.dart';
-import 'package:shc_stock/app/core/utils/app_toast.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Add Purchase — mobile, stacked tax-invoice style entry form
-// State lives in MobileAddPurchaseController (registered by PurchaseBinding)
-// — no setState anywhere in this file.
+// State and saving live in AddPurchaseController — the SAME controller the
+// web form uses, so mobile can edit and duplicate an order and saves every
+// field the web does (it used to drop invoice no., freight, dates and the
+// payment). No setState anywhere in this file.
 // ─────────────────────────────────────────────────────────────────────────────
-class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
+class MobileAddPurchaseLayout extends GetView<AddPurchaseController> {
   const MobileAddPurchaseLayout({super.key});
-
-  Future<void> _savePurchase() async {
-    final c = Get.find<PurchaseController>();
-    final newId = 'po_${DateTime.now().millisecondsSinceEpoch}';
-    final newPoNum =
-        'PO-2024-${(10000 + c.orders.length + 1).toString().padLeft(5, '0')}';
-    final supplierName = controller.client.value.isEmpty
-        ? 'Unknown Supplier'
-        : controller.client.value;
-    final ok = await c.addOrder(
-      PurchaseOrder(
-        id: newId,
-        poNumber: newPoNum,
-        supplier: supplierName,
-        supplierIcon: supplierName
-            .substring(0, supplierName.length < 2 ? supplierName.length : 2)
-            .toUpperCase(),
-        date: controller.invoiceDate.value ?? DateTime.now(),
-        itemCount: controller.items.length,
-        amount: controller.grandTotal,
-        status: PurchaseStatus.pending,
-        // Items carry the productId, which is what makes the backend add the
-        // received quantity into inventory.
-        items: controller.items
-            .map(
-              (r) => PurchaseDetailItem(
-                productId: r.productId,
-                product: r.product,
-                hsn: r.hsn,
-                grade: r.grade,
-                density: r.density,
-                qty: r.totalQty,
-                unit: r.uom,
-                rate: r.netPrice,
-              ),
-            )
-            .toList(),
-      ),
-    );
-    if (!ok) return; // controller already showed the error toast
-    Get.offNamed(AppRoutes.purchase);
-    showAppToast(
-      '✅ Purchase Saved',
-      '$newPoNum has been successfully created.',
-      backgroundColor: const Color(0xFF22C55E),
-      colorText: Colors.white,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +49,9 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Add Purchase',
+                          controller.isEditing
+                              ? 'Edit Purchase'
+                              : 'Add Purchase',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -106,7 +61,9 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          "As per supplier's tax invoice",
+                          controller.isEditing
+                              ? 'Editing ${controller.editing!.poNumber}'
+                              : "As per supplier's tax invoice",
                           style: TextStyle(
                             fontSize: 12,
                             color: colors.textSecondary,
@@ -131,10 +88,10 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                     children: [
                       AppField(
                         mobile: true,
-                        label: 'Name & Address of Consignee',
+                        label: 'Address',
                         colors: colors,
                         child: AppTextBox(
-                          controller: controller.consigneeCtrl,
+                          controller: controller.addressCtrl,
                           hint: 'SECURE HEAT CARE...',
                           colors: colors,
                         ),
@@ -159,6 +116,7 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                           initialValue: controller.client.value,
                           colors: colors,
                           hint: 'Type to search client...',
+                          onTyped: (text) => controller.client.value = text,
                           onSelected: (ClientModel c) =>
                               controller.applyClient(c),
                         ),
@@ -330,6 +288,72 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                           colors: colors,
                         ),
                       ),
+                      const SizedBox(height: 14),
+                      AppField(
+                        mobile: true,
+                        label: 'Expected Delivery',
+                        colors: colors,
+                        child: AppDateBox(
+                          mobile: true,
+                          date: controller.expectedDelivery.value,
+                          colors: colors,
+                          onTap: () => controller.pickDate(
+                            context,
+                            controller.expectedDelivery,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: AppField(
+                              mobile: true,
+                              label: 'Order Paid',
+                              colors: colors,
+                              child: AppDropBox(
+                                mobile: true,
+                                hint: 'Select...',
+                                value:
+                                    controller.paymentType.value.label.isEmpty
+                                    ? null
+                                    : controller.paymentType.value.label,
+                                items: kOrderPaymentOptions
+                                    .map((t) => t.label)
+                                    .toList(),
+                                colors: colors,
+                                onChanged: (v) => controller.setPaymentType(
+                                  orderPaymentTypeFrom(v),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child:
+                                controller.paymentType.value ==
+                                    OrderPaymentType.none
+                                ? const SizedBox()
+                                : AppField(
+                                    mobile: true,
+                                    label: 'Amount Paid',
+                                    colors: colors,
+                                    child: AppTextBox(
+                                      controller: controller.paidAmountCtrl,
+                                      hint: 'e.g. 25000',
+                                      colors: colors,
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                            decimal: true,
+                                          ),
+                                      onChanged: (_) =>
+                                          controller.paidAmountTyped(),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -391,17 +415,26 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
                           colors: colors,
                         ),
                         const SizedBox(height: 10),
-                        AppTotalRow(
-                          label: 'SGST (9%)',
-                          value: '₹${controller.sgst.toStringAsFixed(0)}',
-                          colors: colors,
-                        ),
-                        const SizedBox(height: 10),
-                        AppTotalRow(
-                          label: 'CGST (9%)',
-                          value: '₹${controller.cgst.toStringAsFixed(0)}',
-                          colors: colors,
-                        ),
+                        // IGST for a party in another state, CGST + SGST otherwise —
+                        if (controller.gst.interState)
+                          AppTotalRow(
+                            label: controller.gst.igstLabel,
+                            value: '₹${controller.igst.toStringAsFixed(0)}',
+                            colors: colors,
+                          )
+                        else ...[
+                          AppTotalRow(
+                            label: controller.gst.cgstLabel,
+                            value: '₹${controller.cgst.toStringAsFixed(0)}',
+                            colors: colors,
+                          ),
+                          const SizedBox(height: 10),
+                          AppTotalRow(
+                            label: controller.gst.sgstLabel,
+                            value: '₹${controller.sgst.toStringAsFixed(0)}',
+                            colors: colors,
+                          ),
+                        ],
                         const SizedBox(height: 12),
                         Divider(height: 1, color: colors.divider),
                         const SizedBox(height: 12),
@@ -469,8 +502,10 @@ class MobileAddPurchaseLayout extends GetView<MobileAddPurchaseController> {
               const SizedBox(width: 12),
               Expanded(
                 child: AppAsyncButton(
-                  label: 'Save Purchase',
-                  onPressed: _savePurchase,
+                  label: controller.isEditing
+                      ? 'Update Purchase'
+                      : 'Save Purchase',
+                  onPressed: controller.save,
                   expand: true,
                   padding: const EdgeInsets.symmetric(vertical: 13),
                 ),
@@ -491,7 +526,7 @@ class _MobileItemCard extends StatelessWidget {
   static final _gradeNum = RegExp(r'(\d+)\s*°?C');
 
   final int index;
-  final MobilePurchaseItemRow row;
+  final PurchaseItemRow row;
   final AppThemeColors colors;
   final bool canDelete;
   final VoidCallback onChanged;
@@ -507,9 +542,20 @@ class _MobileItemCard extends StatelessWidget {
     required this.onDelete,
   });
 
+  /// A name typed over (or instead of) a picked product: the line is now a
+  /// hand-typed one, so it is no longer tied to a product.
+  void _typeName(String text) {
+    row.product = text;
+    row.productId = null;
+    // A typed line is not a product: the usual 18% applies.
+    row.taxPercent = kDefaultGstRate;
+    onChanged();
+  }
+
   void _applyProduct(ProductModel p) {
     row.productId = int.tryParse(p.id);
     row.product = p.name;
+    row.taxPercent = p.taxPercent;
     row.hsn = p.hsnCode ?? '';
     row.uom = p.unit;
     row.netPrice = p.costPrice;
@@ -555,9 +601,9 @@ class _MobileItemCard extends StatelessWidget {
                 InkWell(
                   onTap: onDelete,
                   borderRadius: BorderRadius.circular(6),
-                  child: const Icon(
+                  child: Icon(
                     Icons.close_rounded,
-                    color: Color(0xFFEF4444),
+                    color: AppColors.danger,
                     size: 16,
                   ),
                 ),
@@ -568,6 +614,7 @@ class _MobileItemCard extends StatelessWidget {
             initialValue: row.product,
             colors: colors,
             onSelected: _applyProduct,
+            onTyped: _typeName,
             priceOf: (p) => p.costPrice,
           ),
           const SizedBox(height: 8),

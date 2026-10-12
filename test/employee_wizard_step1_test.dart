@@ -106,7 +106,6 @@ void main() {
     test('a half-typed phone number blocks step 1', () async {
       c.nameCtrl.text = 'Deepak';
       c.emailCtrl.text = 'deeps@g.co';
-      c.userCtrl.text = 'deepak';
       c.passCtrl.text = 'secret123';
       c.confCtrl.text = 'secret123';
       c.phoneCtrl.text = '98765'; // 5 digits — incomplete
@@ -120,7 +119,6 @@ void main() {
     test('an alternate phone is optional but validated when filled', () async {
       c.nameCtrl.text = 'Deepak';
       c.emailCtrl.text = 'deeps@g.co';
-      c.userCtrl.text = 'deepak';
       c.passCtrl.text = 'secret123';
       c.confCtrl.text = 'secret123';
 
@@ -136,10 +134,48 @@ void main() {
       expect(c.v1(), isTrue);
     });
 
+    // Editing used to be impossible to get past: the form asked for a
+    // Username that nothing ever stored (sign-in is by email), so on an edit
+    // the box came back blank and Continue refused. The password box is
+    // blank by design - the hash never leaves the server - and blank means
+    // "keep the current one".
+    test('an edit passes step 1 with no password typed', () async {
+      final wizard = Get.put(AddEmployeeWizardController(), tag: 'edit');
+      wizard.editingId.value = '7';
+      wizard.nameCtrl.text = 'Deepak Malaviya';
+      wizard.emailCtrl.text = 'deepak@gmail.com';
+      wizard.phoneCtrl.text = '9000000001';
+
+      expect(wizard.isEdit, isTrue);
+      expect(wizard.v1(), isTrue);
+      expect(wizard.ePass.value, isNull);
+      expect(wizard.eConf.value, isNull);
+    });
+
+    test('a new employee still has to set a password', () {
+      c.nameCtrl.text = 'Deepak';
+      c.emailCtrl.text = 'deeps@g.co';
+      c.phoneCtrl.text = '9876543210';
+
+      expect(c.isEdit, isFalse);
+      expect(c.v1(), isFalse);
+      expect(c.ePass.value, 'Password is required');
+    });
+
+    test('an edit that does type a password still validates it', () {
+      c.editingId.value = '7';
+      c.nameCtrl.text = 'Deepak';
+      c.emailCtrl.text = 'deeps@g.co';
+      c.phoneCtrl.text = '9876543210';
+      c.passCtrl.text = 'abc';
+
+      expect(c.v1(), isFalse);
+      expect(c.ePass.value, 'Minimum 6 characters');
+    });
+
     test('a fully valid step 1 advances to step 2', () async {
       c.nameCtrl.text = 'Deepak';
       c.emailCtrl.text = 'deeps@g.co';
-      c.userCtrl.text = 'deepak';
       c.passCtrl.text = 'secret123';
       c.confCtrl.text = 'secret123';
       c.phoneCtrl.text = '9876543210';

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/utils/units.dart';
+import 'package:shc_stock/app/core/utils/qty_format.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
 import 'package:shc_stock/app/core/utils/stock_sync.dart';
@@ -14,6 +16,8 @@ import 'package:shc_stock/app/modules/stock/views/stock_item_details_panel.dart'
 import 'package:shc_stock/app/shared/widgets/async_button.dart';
 import 'package:shc_stock/app/shared/widgets/confirm_delete_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/form_fields.dart';
+
+part 'stock_adjustment_dialog_part1.dart';
 
 ProductsController _productsController() {
   if (Get.isRegistered<ProductsController>()) {
@@ -45,6 +49,8 @@ const _kAdjTypeLabels = [
 ];
 
 const _kReasonPlaceholder = 'Select reason...';
+const _kReasonOther = 'Other';
+const _kOtherReasonMax = 200;
 const _kReasons = [
   _kReasonPlaceholder,
   'Physical count correction',
@@ -73,29 +79,53 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
   /// ledger's amount column when the person doing the adjustment actually
   /// knows/wants to record a per-unit price (e.g. an opening-balance entry).
   final _priceCtrl = TextEditingController();
-  StockItemModel? _selected;
-  _AdjType _type = _AdjType.add;
-  String _reason = _kReasonPlaceholder;
+  // Reactive (no setState): the dialog body is one Obx, so changing any of
+  // these redraws it.
+  final Rx<StockItemModel?> _selectedRx = Rx<StockItemModel?>(null);
+  final Rx<_AdjType> _typeRx = _AdjType.add.obs;
+  final RxString _reasonRx = _kReasonPlaceholder.obs;
+
+  /// Bumped when the quantity text changes, so the "new stock" preview — which
+  /// reads the text box, not an Rx — redraws.
+  final RxInt _qtyTick = 0.obs;
+
+  StockItemModel? get _selected => _selectedRx.value;
+  set _selected(StockItemModel? v) => _selectedRx.value = v;
+  _AdjType get _type => _typeRx.value;
+  set _type(_AdjType v) => _typeRx.value = v;
+  String get _reason => _reasonRx.value;
+  set _reason(String v) => _reasonRx.value = v;
+
+  /// The person's own words when the reason is "Other"; this is what gets
+  /// saved as the movement's note.
+  final _otherCtrl = TextEditingController();
 
   @override
   void dispose() {
     _qtyCtrl.dispose();
     _priceCtrl.dispose();
+    _otherCtrl.dispose();
+    _selectedRx.close();
+    _typeRx.close();
+    _reasonRx.close();
+    _qtyTick.close();
     super.dispose();
   }
 
-  int get _qty => int.tryParse(_qtyCtrl.text.trim()) ?? 0;
+  /// Decimals allowed — whether they make sense depends on the unit (below).
+  double get _qty => double.tryParse(_qtyCtrl.text.trim()) ?? 0;
 
   /// Null when there's nothing to preview (no item picked yet, or the type
   /// doesn't touch currentStock at all).
-  int? get _previewStock {
+  double? get _previewStock {
     final sel = _selected;
     if (sel == null) return null;
     switch (_type) {
       case _AdjType.add:
         return sel.stockInHand + _qty;
       case _AdjType.remove:
-        return sel.stockInHand - _qty < 0 ? 0 : sel.stockInHand - _qty;
+        final left = sel.stockInHand - _qty;
+        return left < 0 ? 0 : left;
       case _AdjType.reorderOnly:
         return null;
     }
@@ -103,15 +133,14 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
 
   void _onTypeChanged(String? label) {
     final type = _AdjType.values.firstWhere((t) => t.label == label);
-    setState(() {
-      _type = type;
-      // Reorder Point starts from the item's current reorder point, not "1".
-      if (type == _AdjType.reorderOnly && _selected != null) {
-        _qtyCtrl.text = _selected!.minimumStock.toString();
-      } else if (_qtyCtrl.text == '0') {
-        _qtyCtrl.text = '1';
-      }
-    });
+    _type = type;
+    // Reorder Point starts from the item's current reorder point, not "1".
+    if (type == _AdjType.reorderOnly && _selected != null) {
+      _qtyCtrl.text = fmtStockQty(_selected!.minimumStock);
+    } else if (_qtyCtrl.text == '0') {
+      _qtyCtrl.text = '1';
+    }
+    _qtyTick.value++;
   }
 
   /// Opens the same read-only "Item Details" panel as Inventory's row-level
@@ -138,16 +167,29 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
         onDelete: () {
           if (!requireWrite('Products')) return;
           Get.back(); // close the details panel
+          // This dialog's own route, captured now: after the await a refusal
+          // toast may be on top, and Get.back() would close that instead.
+          final route = ModalRoute.of(context);
+          final navigator = Navigator.of(context);
           confirmDelete(
             context,
             itemName: sel.name,
             itemLabel: 'Product',
             onConfirm: () async {
-              await _productsController().deleteProduct(
-                sel.productId.toString(),
-              );
+              final id = sel.productId.toString();
+              await _productsController().deleteProduct(id);
               await refreshStockViews();
-              Get.back(); // close this adjustment dialog too
+              // Close this adjustment dialog too — but only when the product is
+              // really gone (a product with history is refused and stays).
+              final gone = !_productsController().products.any(
+                (p) => p.id == id,
+              );
+              if (gone &&
+                  route != null &&
+                  route.isActive &&
+                  navigator.canPop()) {
+                navigator.removeRoute(route);
+              }
             },
           );
         },
@@ -156,12 +198,11 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
   }
 
   void _onItemSelected(StockItemModel item) {
-    setState(() {
-      _selected = item;
-      if (_type == _AdjType.reorderOnly) {
-        _qtyCtrl.text = item.minimumStock.toString();
-      }
-    });
+    _selected = item;
+    if (_type == _AdjType.reorderOnly) {
+      _qtyCtrl.text = fmtStockQty(item.minimumStock);
+    }
+    _qtyTick.value++;
   }
 
   Future<void> _save() async {
@@ -170,7 +211,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
       showAppToast(
         'Error',
         'Please select an item.',
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: AppColors.danger,
         colorText: Colors.white,
       );
       return;
@@ -181,7 +222,19 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
         _type == _AdjType.reorderOnly
             ? 'Reorder point cannot be negative.'
             : 'Quantity must be greater than 0.',
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: AppColors.danger,
+        colorText: Colors.white,
+      );
+      return;
+    }
+    // A counted unit (pieces, rolls, bags) is moved in whole units only.
+    if (_type != _AdjType.reorderOnly &&
+        _qty != _qty.roundToDouble() &&
+        !unitAllowsFraction(sel.unit)) {
+      showAppToast(
+        'Error',
+        '"${sel.name}" is counted in ${sel.unit} — use a whole number.',
+        backgroundColor: AppColors.danger,
         colorText: Colors.white,
       );
       return;
@@ -190,7 +243,17 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
       showAppToast(
         'Error',
         'Please select a reason.',
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: AppColors.danger,
+        colorText: Colors.white,
+      );
+      return;
+    }
+    final other = _otherCtrl.text.trim();
+    if (_reason == _kReasonOther && other.isEmpty) {
+      showAppToast(
+        'Error',
+        'Please write the reason.',
+        backgroundColor: AppColors.danger,
         colorText: Colors.white,
       );
       return;
@@ -203,7 +266,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
         showAppToast(
           'Error',
           'Price must be 0 or more.',
-          backgroundColor: const Color(0xFFEF4444),
+          backgroundColor: AppColors.danger,
           colorText: Colors.white,
         );
         return;
@@ -216,8 +279,8 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
         : await c.adjustStock(
             productId: sel.productId,
             type: _type == _AdjType.add ? 'IN' : 'OUT',
-            qty: _qty.toDouble(),
-            note: _reason,
+            qty: _qty,
+            note: _reason == _kReasonOther ? other : _reason,
             rate: price,
           );
     if (!ok) return; // controller already showed the error toast
@@ -225,15 +288,20 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
     showAppToast(
       '✅ Stock Updated',
       _type == _AdjType.reorderOnly
-          ? '${sel.name}\'s reorder point is now $_qty.'
+          ? '${sel.name}\'s reorder point is now ${fmtStockQty(_qty)}.'
           : '${sel.name} adjusted successfully.',
-      backgroundColor: const Color(0xFF22C55E),
+      backgroundColor: AppColors.success,
       colorText: Colors.white,
     );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Obx(() {
+    _qtyTick.value; // the preview reads the text box: redraw when it changes
+    return _buildBody(context);
+  });
+
+  Widget _buildBody(BuildContext context) {
     final colors = context.appColors;
     final sel = _selected;
     final preview = _previewStock;
@@ -325,7 +393,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                           onSelected: _onItemSelected,
                           onTextChanged: (text) {
                             if (sel != null && text != sel.name) {
-                              setState(() => _selected = null);
+                              _selected = null;
                             }
                           },
                         ),
@@ -391,7 +459,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${sel.stockInHand}',
+                                    fmtStockQty(sel.stockInHand),
                                     style: TextStyle(
                                       fontSize: 17,
                                       fontWeight: FontWeight.w700,
@@ -461,11 +529,16 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                         colors: colors,
                         child: TextField(
                           controller: _qtyCtrl,
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
+                            // Up to 3 decimals (12.5 kg, 0.125 kg).
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d*\.?\d{0,3}'),
+                            ),
                           ],
-                          onChanged: (_) => setState(() {}),
+                          onChanged: (_) => _qtyTick.value++,
                           style: TextStyle(
                             fontSize: 13,
                             color: colors.textPrimary,
@@ -569,10 +642,20 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                           value: _reason,
                           items: _kReasons,
                           colors: colors,
-                          onChanged: (v) =>
-                              setState(() => _reason = v ?? _reason),
+                          onChanged: (v) => _reason = v ?? _reason,
                         ),
                       ),
+                      if (_reason == _kReasonOther) ...[
+                        const SizedBox(height: 10),
+                        AppTextBox(
+                          controller: _otherCtrl,
+                          hint: 'Write the reason',
+                          colors: colors,
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(_kOtherReasonMax),
+                          ],
+                        ),
+                      ],
 
                       if (preview != null) ...[
                         const SizedBox(height: 14),
@@ -588,7 +671,7 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
                             ),
                             const Spacer(),
                             Text(
-                              '$preview',
+                              fmtStockQty(preview),
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
@@ -661,161 +744,6 @@ class _StockAdjustmentDialogState extends State<StockAdjustmentDialog> {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Item search — typing filters the loaded inventory list by name or SKU;
-/// selecting an option hands the full [StockItemModel] back. Mirrors
-/// ClientAutocompleteField's pattern (Flutter's built-in Autocomplete, so
-/// arrow keys + Enter just work).
-class _ItemAutocomplete extends StatelessWidget {
-  final AppThemeColors colors;
-  final ValueChanged<StockItemModel> onSelected;
-  final ValueChanged<String> onTextChanged;
-
-  const _ItemAutocomplete({
-    required this.colors,
-    required this.onSelected,
-    required this.onTextChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final items = Get.find<StockController>().items;
-    return Autocomplete<StockItemModel>(
-      displayStringForOption: (i) => i.name,
-      optionsBuilder: (textEditingValue) {
-        final q = textEditingValue.text.trim().toLowerCase();
-        if (q.isEmpty) return const Iterable<StockItemModel>.empty();
-        return items
-            .where(
-              (i) =>
-                  i.name.toLowerCase().contains(q) ||
-                  i.sku.toLowerCase().contains(q),
-            )
-            .take(30);
-      },
-      onSelected: onSelected,
-      fieldViewBuilder: (context, textCtrl, focusNode, onSubmit) {
-        return TextField(
-          controller: textCtrl,
-          focusNode: focusNode,
-          onSubmitted: (_) => onSubmit(),
-          onChanged: onTextChanged,
-          style: TextStyle(
-            fontSize: 13,
-            color: colors.textPrimary,
-            fontFamily: brandFontFamily,
-          ),
-          decoration: InputDecoration(
-            hintText: 'Type item name or SKU...',
-            hintStyle: TextStyle(
-              fontSize: 13,
-              color: colors.textHint,
-              fontFamily: brandFontFamily,
-            ),
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 11,
-            ),
-            filled: true,
-            fillColor: colors.surface,
-            prefixIcon: Icon(
-              Icons.search_rounded,
-              size: 18,
-              color: colors.textHint,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: AppColors.primaryOrange,
-                width: 1.5,
-              ),
-            ),
-          ),
-        );
-      },
-      optionsViewBuilder: (context, onSelect, options) {
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(appColors.radius),
-            color: colors.surface,
-            child: Container(
-              width: 432,
-              constraints: const BoxConstraints(maxHeight: 260),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(appColors.radius),
-                border: Border.all(color: colors.border),
-              ),
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                shrinkWrap: true,
-                itemCount: options.length,
-                itemBuilder: (context, index) {
-                  final item = options.elementAt(index);
-                  final highlighted =
-                      AutocompleteHighlightedOption.of(context) == index;
-                  if (highlighted) {
-                    SchedulerBinding.instance.addPostFrameCallback((_) {
-                      Scrollable.ensureVisible(context, alignment: 0.5);
-                    });
-                  }
-                  return Container(
-                    color: highlighted
-                        ? AppColors.primaryOrange.withValues(alpha: 0.1)
-                        : null,
-                    child: InkWell(
-                      onTap: () => onSelect(item),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                item.name,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: colors.textPrimary,
-                                  fontFamily: brandFontFamily,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Text(
-                              'Current stock: ${item.stockInHand}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: colors.textHint,
-                                fontFamily: brandFontFamily,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }

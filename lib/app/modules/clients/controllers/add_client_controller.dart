@@ -1,6 +1,8 @@
+import 'package:shc_stock/app/core/utils/dispose_later.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/utils/phone_input.dart';
 import 'package:shc_stock/app/modules/clients/models/client_model.dart';
 
 /// How the Billing Address section behaves — mirrors the two "Same as…"
@@ -125,8 +127,14 @@ class AddClientController extends GetxController {
     clientType.value = c.clientType;
     nameCtrl.text = c.name;
     emailCtrl.text = c.email;
-    phoneCtrl.text = c.phone;
-    altPhCtrl.text = c.altPhone;
+    // Normalised on the way in, not just on the way out: a stored value the
+    // formatter would rewrite (an old row, an import) makes Ctrl+Z inside the
+    // box trip a framework assertion — undo restores the raw text, the
+    // formatter cleans it, and Flutter finds the field is not holding what it
+    // just put back. Feeding the box clean text keeps that out of the
+    // undo stack entirely. See lib/app/core/utils/phone_input.dart.
+    phoneCtrl.text = normalisePhone(c.phone);
+    altPhCtrl.text = normalisePhone(c.altPhone);
     gstinCtrl.text = c.gstin;
     panCtrl.text = c.pan;
     clientSince.value = c.clientSince;
@@ -166,7 +174,7 @@ class AddClientController extends GetxController {
 
     cpNameCtrl.text = c.contactPerson;
     cpDesigCtrl.text = c.contactDesignation;
-    cpPhCtrl.text = c.contactPhone;
+    cpPhCtrl.text = normalisePhone(c.contactPhone);
     cpEmailCtrl.text = c.contactEmail;
   }
 
@@ -243,7 +251,9 @@ class AddClientController extends GetxController {
 
   @override
   void onClose() {
-    for (final c in [
+    // Disposed once the page has gone, not while it is still on screen
+    // for its exit transition — see dispose_later.dart.
+    disposeAfterPageExit([
       clientCodeCtrl,
       nameCtrl,
       emailCtrl,
@@ -276,9 +286,7 @@ class AddClientController extends GetxController {
       cpDesigCtrl,
       cpPhCtrl,
       cpEmailCtrl,
-    ]) {
-      c.dispose();
-    }
+    ]);
     super.onClose();
   }
 }

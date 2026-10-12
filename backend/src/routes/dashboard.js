@@ -3,6 +3,7 @@ const prisma = require('../prismaClient');
 const { stockStatus } = require('../stockService');
 const { getAppSettings } = require('../appSettings');
 
+const M = require('../orderMath');
 const router = express.Router();
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -61,11 +62,11 @@ router.get('/', async (req, res, next) => {
           include: { category: { select: { name: true } } },
         }),
         prisma.purchaseOrder.findMany({
-          where: { date: { gte: since } },
+          where: { date: { gte: since }, ...M.NOT_CANCELLED },
           select: { date: true, amount: true, status: true, poNumber: true, supplier: true },
         }),
         prisma.salesOrder.findMany({
-          where: { date: { gte: since } },
+          where: { date: { gte: since }, ...M.NOT_CANCELLED },
           select: { date: true, amount: true, paymentStatus: true },
         }),
         prisma.client.findMany({
@@ -79,6 +80,7 @@ router.get('/', async (req, res, next) => {
         // Units sold per product drives "Top Selling Product".
         prisma.saleItem.groupBy({
           by: ['product'],
+          where: { salesOrder: M.NOT_CANCELLED },
           _sum: { qty: true },
           orderBy: { _sum: { qty: 'desc' } },
           take: 1,
@@ -92,11 +94,11 @@ router.get('/', async (req, res, next) => {
     const lowStock = products.filter((p) => stockStatus(p, lowStockThreshold) === 'lowStock').length;
 
     const allSales = await prisma.salesOrder.findMany({
-      select: { amount: true, paymentStatus: true, date: true },
+      where: M.NOT_CANCELLED,
+      select: { amount: true, paymentStatus: true, paidAmount: true, status: true, date: true },
     });
-    const duesFromClients = allSales
-      .filter((o) => o.paymentStatus === 'Pending' || o.paymentStatus === 'Partial')
-      .reduce((s, o) => s + o.amount, 0);
+    // Still owed after what was paid — not the full face value of each order.
+    const duesFromClients = allSales.reduce((s, o) => s + M.owedOn(o), 0);
 
     const todaysSales = allSales
       .filter((o) => new Date(o.date) >= startOfToday)
@@ -148,7 +150,8 @@ router.get('/', async (req, res, next) => {
     // ── Incoming deliveries: purchase orders not yet received ────────────
     const pendingPOs = await prisma.purchaseOrder.findMany({
       where: { status: { in: ['Pending', 'Partial'] } },
-      orderBy: { dueDate: 'asc' },
+      // Soonest expected delivery first; orders with no date go last.
+      orderBy: [{ expectedDelivery: { sort: 'asc', nulls: 'last' } }, { dueDate: { sort: 'asc', nulls: 'last' } }],
       take: 5,
       include: { items: { select: { product: true }, take: 1 } },
     });
@@ -157,7 +160,9 @@ router.get('/', async (req, res, next) => {
       poRef: po.poNumber,
       supplier: po.supplier,
       placeOfSupply: po.placeOfSupply,
-      dueDate: po.dueDate,
+      // The delivery date the order was entered with; the payment due date is
+      // only the fallback for an order that has none.
+      dueDate: po.expectedDelivery || po.dueDate,
       status: po.status,
     }));
 

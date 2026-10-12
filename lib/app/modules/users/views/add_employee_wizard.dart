@@ -18,12 +18,24 @@ const _kStepTitles = [
   'Permissions',
   'Review & Create',
 ];
+
+/// Same steps, worded for an edit — the last one saves changes to an account
+/// that already exists, it does not create anything.
+const _kEditStepTitles = [
+  'Employee Details',
+  'Assign Role',
+  'Permissions',
+  'Review & Save',
+];
 const _kStepSubs = [
   'Enter basic information',
   'Select or create a role',
   'Set access permissions',
   'Review and confirm',
 ];
+
+List<String> _stepTitlesFor(bool isEdit) =>
+    isEdit ? _kEditStepTitles : _kStepTitles;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Wizard Widget — all state lives in AddEmployeeWizardController (registered
@@ -60,7 +72,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                 ),
               ),
               title: Text(
-                'Create Employee',
+                controller.isEdit ? 'Edit Employee' : 'Create Employee',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
@@ -124,7 +136,9 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Create Employee Account',
+                            controller.isEdit
+                                ? 'Edit Employee Account'
+                                : 'Create Employee Account',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
@@ -134,7 +148,10 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Add a new employee and assign role with permissions',
+                            controller.isEdit
+                                ? 'Update details, role and permissions'
+                                : 'Add a new employee and assign role with '
+                                      'permissions',
                             style: TextStyle(
                               fontSize: 12.5,
                               color: colors.textSecondary,
@@ -291,7 +308,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                       if (tablet) ...[
                         const SizedBox(height: 8),
                         Text(
-                          _kStepTitles[i],
+                          _stepTitlesFor(controller.isEdit)[i],
                           style: TextStyle(
                             fontSize: wide ? 13 : 11,
                             fontWeight: active
@@ -387,7 +404,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _kStepTitles[step],
+                  _stepTitlesFor(controller.isEdit)[step],
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -561,9 +578,17 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
           // the API answers; the earlier steps just advance and return
           // immediately.
           AppAsyncButton(
-            label: isLast ? 'Create Employee' : 'Continue',
+            // Below tablet width the full wording overflowed the row
+            // (Back + Cancel + button), so the phone gets the short verb.
+            label: isLast
+                ? (controller.isEdit
+                      ? (tablet ? 'Save Changes' : 'Save')
+                      : (tablet ? 'Create Employee' : 'Create'))
+                : 'Continue',
             icon: isLast
-                ? Icons.person_add_outlined
+                ? (controller.isEdit
+                      ? Icons.save_outlined
+                      : Icons.person_add_outlined)
                 : Icons.arrow_forward_rounded,
             onPressed: controller.next,
             fontSize: 13.5,
@@ -584,10 +609,15 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
 
   // ── Right panel data ──────────────────────────────────────────────────────
   String _stepDesc() => [
-    'Provide basic information and login credentials for the new employee.',
+    controller.isEdit
+        ? 'Update these details and the sign-in password.'
+        : 'Provide basic information and the password this employee will sign '
+              'in with.',
     'Roles help you define access levels for employees. You can choose an existing role or create a custom one.',
     'Define what this employee can view and edit in the system.',
-    'You are about to create a new employee account with the following details.',
+    controller.isEdit
+        ? 'You are about to save these changes to the employee account.'
+        : 'You are about to create a new employee account with the following details.',
   ][controller.step.value];
 
   List<Widget> _panelItems(AppThemeColors c) {
@@ -657,7 +687,7 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
         (
           'Account Settings',
           Icons.lock_outline_rounded,
-          'Username: ${controller.userCtrl.text.isEmpty ? '-' : controller.userCtrl.text}\n${controller.welcome.value ? 'Welcome email will be sent' : 'No welcome email'}',
+          'Signs in with ${controller.emailCtrl.text.isEmpty ? 'their email' : controller.emailCtrl.text}',
         ),
         (
           'Role',
@@ -717,9 +747,13 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
 
   List<String> _stepTips() => [
     [
-      'Use a valid email address',
-      'Username must be unique',
-      'Employee can reset password later',
+      // Sign-in is by email address; there is no separate username.
+      'The email address is what the employee signs in with',
+      'It must not already belong to another employee',
+      if (controller.isEdit)
+        'Leave the password blank to keep the current one'
+      else
+        'Employee can reset the password later',
     ],
     [
       'Choose the role that best fits the employee\'s responsibilities',
@@ -732,8 +766,14 @@ class AddEmployeeWizard extends GetView<AddEmployeeWizardController> {
     ],
     [
       'Please review all details carefully',
-      'After creating, you can edit information anytime',
-      'Employee will receive login credentials if welcome email is enabled',
+      if (controller.isEdit)
+        'The employee keeps their current password unless you set a new one'
+      else
+        'After creating, you can edit information anytime',
+      if (controller.isEdit)
+        'Changes take effect the next time the employee signs in'
+      else
+        'Share the login email and password with the employee directly',
     ],
   ][controller.step.value];
 }

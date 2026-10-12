@@ -51,6 +51,10 @@ class _AddProductDialogState extends State<AddProductDialog> {
   final _subCategory = ''.obs;
   final _unit = ''.obs;
   final _saving = false.obs;
+  // Edit only: an inactive product stays in the books but is hidden from the
+  // pickers. A product with history cannot be deleted, so this is how it is
+  // retired.
+  final _active = true.obs;
 
   // ── Photo ──────────────────────────────────────────────────────────────
   // A file picked this session (not yet uploaded — that happens on Save);
@@ -67,6 +71,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
   void initState() {
     super.initState();
     final p = widget.product;
+    _active.value = p?.isActive ?? true;
     _nameCtrl = TextEditingController(text: p?.name ?? '');
     // A duplicate starts without an SKU — it must be unique per product.
     _skuCtrl = TextEditingController(
@@ -135,7 +140,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
     showAppToast(
       'Validation Error',
       msg,
-      backgroundColor: const Color(0xFFEF4444),
+      backgroundColor: AppColors.danger,
       colorText: Colors.white,
       duration: const Duration(seconds: 2),
     );
@@ -183,9 +188,10 @@ class _AddProductDialogState extends State<AddProductDialog> {
     final c = Get.find<ProductsController>();
     // Stock is not edited here. A new product starts at zero and fills up
     // through purchases - the stock_movements ledger owns currentStock, and
-    // nothing writes it directly. On edit the product's own stock figures go
-    // straight back out, because /products rewrites every field it is given:
-    // leaving them out zeroes them rather than keeping them.
+    // nothing writes it directly. The server's PUT ignores currentStock (it
+    // used to overwrite live stock with the figure this dialog loaded earlier);
+    // it is still passed along only because updateProduct's signature carries
+    // it.
     final ok = _isEdit
         ? await c.updateProduct(
             id: widget.product!.id,
@@ -200,6 +206,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
             currentStock: widget.product!.currentStock,
             minimumStock: widget.product!.minimumStock,
             hsnCode: _hsnCtrl.text.trim(),
+            isActive: _active.value,
           )
         : await c.addProduct(
             name: _nameCtrl.text.trim(),
@@ -219,7 +226,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
     showAppToast(
       _isEdit ? '✅ Product Updated' : '✅ Product Added',
       '${_nameCtrl.text.trim()} has been ${_isEdit ? 'updated' : 'added'}.',
-      backgroundColor: const Color(0xFF22C55E),
+      backgroundColor: AppColors.success,
       colorText: Colors.white,
       duration: const Duration(seconds: 2),
     );
@@ -442,6 +449,33 @@ class _AddProductDialogState extends State<AddProductDialog> {
                       ),
                     ],
                   ),
+                  if (_isEdit) ...[
+                    const SizedBox(height: 14),
+                    Obx(
+                      () => Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _active.value
+                                  ? 'Active — shown on Add Sale / Add Purchase'
+                                  : 'Inactive — hidden from new orders',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: colors.textPrimary,
+                                fontFamily: brandFontFamily,
+                              ),
+                            ),
+                          ),
+                          Switch(
+                            value: _active.value,
+                            activeColor: AppColors.primaryOrange,
+                            onChanged: (v) => _active.value = v,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
 
                   Row(

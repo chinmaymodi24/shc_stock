@@ -1,4 +1,5 @@
 import 'package:shc_stock/app/core/session/app_modules.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:math' as math;
@@ -9,7 +10,6 @@ import 'package:shc_stock/app/modules/sales/views/sales_actions.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/utils/amount_format.dart';
 import 'package:shc_stock/app/shared/widgets/filter_bar.dart';
-import 'package:shc_stock/app/core/utils/app_toast.dart';
 import 'package:shc_stock/app/modules/billing/controllers/billing_summary_controller.dart';
 import 'package:shc_stock/app/modules/sales/export/sales_export.dart';
 import 'package:shc_stock/app/shared/widgets/export/export_menu_button.dart';
@@ -23,6 +23,10 @@ import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
 import 'package:shc_stock/app/modules/sales/views/update_sales_status_dialog.dart';
 import 'package:shc_stock/app/shared/widgets/row_action_button.dart';
 
+part 'web_sales_side_panel.dart';
+
+part 'web_sales_row.dart';
+
 // ═════════════════════════════════════════════════════════════════════════════
 // TABLE COLUMN CONSTANTS — used by BOTH _TableHeader and _SalesRow
 // so they are always perfectly aligned.
@@ -32,15 +36,21 @@ const double _kColGap = 10.0; // gap between # badge and first flex col
 // Flex ratios follow the design's grid:
 // 1fr SO · 1.15fr Client · 0.7 Date · 0.55 Items · 0.8 Amount · 0.85 Status
 // · 0.85 Payment · 1fr Modified By · 0.6 Actions
-const int _kSoFlex = 20; // SO Number
-const int _kClientFlex = 23; // Client badge + name
+const int _kSoFlex = 18; // SO Number
+const int _kClientFlex = 21; // Client badge + name
 const int _kDateFlex = 14; // Date
 const int _kItemsFlex = 11; // Items (center)
 const int _kAmtFlex = 16; // Amount
 const int _kStatusFlex = 17; // Status badge (center)
 const int _kPayFlex = 17; // Payment badge (center)
-const int _kModFlex = 20; // Modified By
-const int _kActFlex = 20; // Actions (center) — View + Edit + Duplicate + Delete
+const int _kModFlex = 14; // Modified By
+// Actions (center) — Bill + View + Edit + Duplicate + Delete.
+// Five 28px buttons with 6px between them need 164px. The share here was
+// still sized for the four this column held before Bill arrived, so at a
+// 1440px window the row overflowed by 61px and the last button was clipped
+// behind the striped overflow bar. The width comes back out of Modified By
+// and SO Number, which had the most slack.
+const int _kActFlex = 34;
 
 // ── KPI palette — the brand's tokens, not fixed hexes ───────────────────────
 // The card tints itself from these: background at 10%, icon chip at 18%.
@@ -280,9 +290,13 @@ class WebSalesLayout extends GetView<SalesController> {
                               ),
                               // ── RIGHT: Panel ─────────────────────────────
                               // All three cards are business figures — the Sales
-                              // summary right. Without it the table takes the
-                              // full width.
-                              if (canSeeSummary('Sales')) ...[
+                              // summary right, and something to have figures
+                              // about. Without either the table takes the full
+                              // width. Gated on the whole list, not the
+                              // filtered one, so a search that matches nothing
+                              // does not make the page jump about.
+                              if (canSeeSummary('Sales') &&
+                                  c.orders.isNotEmpty) ...[
                                 const SizedBox(width: 16),
                                 SizedBox(
                                   width: 272,
@@ -410,6 +424,7 @@ class _Toolbar extends StatelessWidget {
     // owns the row's height and lets the pill strip scroll, which a bare Row
     // does not — that overflowed by the width of the whole client list.
     return FilterBar(
+      pillsVisible: () => c.orders.isNotEmpty,
       search: FilterSearchField(
         hint: 'Search by item or SO...',
         width: 240,
@@ -548,341 +563,6 @@ class _TableHeader extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Sales Row — uses the SAME constants as _TableHeader
-// ─────────────────────────────────────────────────────────────────────────────
-class _SalesRow extends StatefulWidget {
-  final SalesOrder order;
-  final int displayIndex;
-  final AppThemeColors colors;
-  final bool isLast;
-
-  const _SalesRow({
-    required this.order,
-    required this.displayIndex,
-    required this.colors,
-    required this.isLast,
-  });
-
-  @override
-  State<_SalesRow> createState() => _SalesRowState();
-}
-
-class _SalesRowState extends State<_SalesRow> {
-  // Local, widget-scoped hover flag — kept as an Rx on the persistent State
-  // object (not setState) so only the row's background repaints on hover.
-  final _hovered = false.obs;
-
-  @override
-  void dispose() {
-    _hovered.close();
-    super.dispose();
-  }
-
-  static const _months = [
-    '',
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
-  String _fmtDate(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')} ${_months[d.month]} ${d.year}';
-
-  String _fmtAmount(double v) {
-    final i = v.toInt();
-    if (i >= 100000) {
-      final lakh = i ~/ 100000;
-      final rest = i % 100000;
-      final thou = rest ~/ 1000;
-      final sub = rest % 1000;
-      return '₹ $lakh,${thou.toString().padLeft(2, '0')},${sub.toString().padLeft(3, '0')}';
-    }
-    if (i >= 10000) {
-      final s = i.toString();
-      return '₹ ${s.substring(0, s.length - 3)},${s.substring(s.length - 3)}';
-    }
-    return '₹ $i';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final o = widget.order;
-    final c = widget.colors;
-
-    return MouseRegion(
-      onEnter: (_) => _hovered.value = true,
-      onExit: (_) => _hovered.value = false,
-      child: Obx(
-        () => AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          decoration: BoxDecoration(
-            color: _hovered.value ? c.rowEven : c.surface,
-            border: widget.isLast
-                ? null
-                : Border(bottom: BorderSide(color: c.divider, width: 0.8)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // # badge
-                SizedBox(
-                  width: _kIdxWidth,
-                  child: Container(
-                    width: _kIdxWidth,
-                    height: _kIdxWidth,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryOrange.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(7),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${widget.displayIndex}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primaryOrange,
-                          fontFamily: brandFontFamily,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: _kColGap),
-
-                // SO Number
-                Expanded(
-                  flex: _kSoFlex,
-                  child: Text(
-                    o.soNumber,
-                    // The design paints the order number in the brand orange.
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryOrange,
-                      fontFamily: brandFontFamily,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-
-                // Client
-                Expanded(
-                  flex: _kClientFlex,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: o.clientColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: Text(
-                            o.clientBadge,
-                            style: TextStyle(
-                              fontSize: o.clientBadge.length > 2 ? 9.5 : 11,
-                              fontWeight: FontWeight.w700,
-                              color: o.clientColor,
-                              fontFamily: brandFontFamily,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          o.client,
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w500,
-                            color: c.textPrimary,
-                            fontFamily: brandFontFamily,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Date
-                Expanded(
-                  flex: _kDateFlex,
-                  child: Text(
-                    _fmtDate(o.date),
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: c.textSecondary,
-                      fontFamily: brandFontFamily,
-                    ),
-                  ),
-                ),
-
-                // Items
-                Expanded(
-                  flex: _kItemsFlex,
-                  child: Center(
-                    // Units, not lines — see the purchase list for why.
-                    child: Tooltip(
-                      message: o.itemCount == 1
-                          ? '1 line item'
-                          : '${o.itemCount} line items',
-                      child: Text(
-                        o.totalQtyLabel,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w600,
-                          color: c.textPrimary,
-                          fontFamily: brandFontFamily,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Amount
-                Expanded(
-                  flex: _kAmtFlex,
-                  child: Text(
-                    _fmtAmount(o.amount),
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                      color: c.textPrimary,
-                      fontFamily: brandFontFamily,
-                    ),
-                  ),
-                ),
-
-                // Status badge — tap to change just the status, now that the
-                // row's third action is Delete.
-                Expanded(
-                  flex: _kStatusFlex,
-                  child: Center(
-                    child: Tooltip(
-                      message: 'Update status',
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () => Get.dialog(
-                          UpdateSalesStatusDialog(order: widget.order),
-                        ),
-                        child: _Badge(
-                          label: o.status.label,
-                          color: o.status.color,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Payment Status badge
-                Expanded(
-                  flex: _kPayFlex,
-                  child: Center(
-                    child: _Badge(
-                      label: o.paymentStatus.label,
-                      color: o.paymentStatus.color,
-                    ),
-                  ),
-                ),
-
-                // Modified By — same cell the Purchase table uses.
-                Expanded(
-                  flex: _kModFlex,
-                  child: Builder(
-                    builder: (context) {
-                      final mod = resolveModifiedBy(
-                        storedName: o.modifiedBy,
-                        storedDate: o.modifiedAt,
-                      );
-                      return mod == null
-                          ? ModifiedByEmpty(textHint: c.textHint)
-                          : ModifiedByCell(
-                              name: mod.name,
-                              date: mod.date,
-                              textPrimary: c.textPrimary,
-                              textHint: c.textHint,
-                            );
-                    },
-                  ),
-                ),
-
-                // Actions
-                Expanded(
-                  flex: _kActFlex,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      RowActionButton(
-                        icon: Icons.receipt_long_outlined,
-                        color: AppColors.primaryOrange,
-                        bg: AppColors.primaryOrange.withValues(alpha: 0.10),
-                        tooltip: 'Bill',
-                        onTap: () => SalesActions.bill(widget.order),
-                      ),
-                      const SizedBox(width: 6),
-                      RowActionButton(
-                        icon: Icons.remove_red_eye_outlined,
-                        color: context.appColors.success,
-                        bg: context.appColors.success.withValues(alpha: 0.10),
-                        tooltip: 'View',
-                        onTap: () => SalesActions.view(context, widget.order),
-                      ),
-                      if (canWriteModule('Sales')) ...[
-                        const SizedBox(width: 6),
-                        RowActionButton(
-                          icon: Icons.edit_outlined,
-                          color: AppColors.primaryOrange,
-                          bg: AppColors.primaryOrange.withValues(alpha: 0.10),
-                          tooltip: 'Edit',
-                          onTap: () => SalesActions.edit(widget.order),
-                        ),
-                        const SizedBox(width: 6),
-                        RowActionButton(
-                          icon: Icons.copy_outlined,
-                          color: const Color(0xFF3B82F6),
-                          bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
-                          tooltip: 'Duplicate',
-                          onTap: () => SalesActions.duplicate(widget.order),
-                        ),
-                        const SizedBox(width: 6),
-                        RowActionButton(
-                          icon: Icons.delete_outline_rounded,
-                          iconSize: 18,
-                          color: context.appColors.error,
-                          // Neutral, not red-tinted — only the icon carries
-                          // the warning color.
-                          bg: context.appColors.tagBg,
-                          tooltip: 'Delete',
-                          onTap: () =>
-                              SalesActions.delete(context, widget.order),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _Badge extends StatelessWidget {
   final String label;
   final Color color;
@@ -936,388 +616,6 @@ class _EmptyState extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// RIGHT PANEL — Sales Summary
-// ─────────────────────────────────────────────────────────────────────────────
-class _SalesSummaryCard extends StatelessWidget {
-  final AppThemeColors colors;
-  final SalesController controller;
-  const _SalesSummaryCard({required this.colors, required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return _PanelCard(
-      colors: colors,
-      title: 'Sales Summary',
-      child: Column(
-        children: [
-          _SummaryRow(
-            label: 'Total Sales Orders',
-            value: '${controller.stats.value.intOf('totalOrders')}',
-            colors: colors,
-          ),
-          const SizedBox(height: 10),
-          _SummaryRow(
-            label: 'Total Sales Amount',
-            value: formatRupees(controller.stats.value.doubleOf('totalSales')),
-            colors: colors,
-          ),
-          const SizedBox(height: 10),
-          _SummaryRow(
-            label: 'Total Received',
-            value: formatRupees(
-              controller.stats.value.doubleOf('totalReceived'),
-            ),
-            colors: colors,
-          ),
-          const SizedBox(height: 10),
-          _SummaryRow(
-            label: 'Total Due',
-            value: formatRupees(controller.stats.value.doubleOf('amountDue')),
-            colors: colors,
-          ),
-          const SizedBox(height: 10),
-          _SummaryRow(
-            label: 'Average Order Value',
-            value: formatRupees(
-              controller.stats.value.doubleOf('avgOrderValue'),
-            ),
-            colors: colors,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryRow extends StatelessWidget {
-  final String label, value;
-  final AppThemeColors colors;
-  const _SummaryRow({
-    required this.label,
-    required this.value,
-    required this.colors,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Flexible(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.5,
-              color: colors.textSecondary,
-              fontFamily: brandFontFamily,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: colors.textPrimary,
-            fontFamily: brandFontFamily,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// RIGHT PANEL — Billing
-//
-// How much of the sales list has actually been billed, and a way straight to
-// the most recent invoice.
-// ─────────────────────────────────────────────────────────────────────────────
-class _BillingCard extends StatelessWidget {
-  final AppThemeColors colors;
-  const _BillingCard({required this.colors});
-
-  @override
-  Widget build(BuildContext context) {
-    if (!Get.isRegistered<BillingSummaryController>()) {
-      Get.put(BillingSummaryController(), permanent: true);
-    }
-    final billing = BillingSummaryController.to;
-    return _PanelCard(
-      colors: colors,
-      title: 'Billing',
-      child: Obx(() {
-        final s = billing.summary.value;
-        return Column(
-          children: [
-            _SummaryRow(
-              label: 'Bills generated',
-              value: '${s.generated}',
-              colors: colors,
-            ),
-            const SizedBox(height: 10),
-            _SummaryRow(
-              label: 'Pending billing',
-              value: '${s.pending}',
-              colors: colors,
-            ),
-            const SizedBox(height: 10),
-            _SummaryRow(
-              label: 'e-Invoice IRN',
-              value: '${s.irnRegistered} of ${s.irnTotal}',
-              colors: colors,
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              child: _PrimaryBtn(
-                label: 'Open latest bill',
-                icon: Icons.receipt_long_rounded,
-                onTap: () {
-                  final id = s.latestSalesOrderId;
-                  if (id == null) {
-                    showAppToast(
-                      'Billing',
-                      'No bill has been generated yet.',
-                      backgroundColor: AppColors.primaryPurple,
-                      colorText: Colors.white,
-                      duration: const Duration(seconds: 2),
-                    );
-                    return;
-                  }
-                  Get.toNamed(AppRoutes.saleBill, arguments: id.toString());
-                },
-              ),
-            ),
-            const SizedBox(height: 10),
-            InkWell(
-              onTap: () => Get.toNamed(AppRoutes.settings),
-              child: Text(
-                'Bill format settings',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryOrange,
-                  fontFamily: brandFontFamily,
-                ),
-              ),
-            ),
-          ],
-        );
-      }),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// RIGHT PANEL — Top Clients
-// ─────────────────────────────────────────────────────────────────────────────
-class _TopClientsCard extends StatelessWidget {
-  final AppThemeColors colors;
-  final SalesController controller;
-  const _TopClientsCard({required this.colors, required this.controller});
-
-  // Shared Indian-grouped formatter — the hand-rolled version here crashed
-  // with a RangeError for any total under ₹1,000 (s.length - 3 went negative).
-  String _fmtAmt(double v) => formatRupees(v);
-
-  @override
-  Widget build(BuildContext context) {
-    return _PanelCard(
-      colors: colors,
-      title: 'Top Clients',
-      action: InkWell(
-        onTap: () {},
-        child: Text(
-          'View All',
-          style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primaryOrange,
-            fontFamily: brandFontFamily,
-          ),
-        ),
-      ),
-      child: Column(
-        children: controller.topClients
-            .map(
-              (tc) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  children: [
-                    // Badge circle
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: tc.color.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          tc.badge,
-                          style: TextStyle(
-                            fontSize: tc.badge.length > 2 ? 9 : 11,
-                            fontWeight: FontWeight.w800,
-                            color: tc.color,
-                            fontFamily: brandFontFamily,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    // Name + orders
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            tc.name,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: colors.textPrimary,
-                              fontFamily: brandFontFamily,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            '${tc.orderCount} Orders',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: colors.textSecondary,
-                              fontFamily: brandFontFamily,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Total amount
-                    Text(
-                      _fmtAmt(tc.totalAmount),
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
-                        fontFamily: brandFontFamily,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// RIGHT PANEL — Quick Actions
-// ─────────────────────────────────────────────────────────────────────────────
-class _PanelCard extends StatelessWidget {
-  final AppThemeColors colors;
-  final String title;
-  final Widget child;
-  final Widget? action;
-  const _PanelCard({
-    required this.colors,
-    required this.title,
-    required this.child,
-    this.action,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.divider),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // The title flexes so a long one plus an action button can't
-          // overflow the 272px side panel.
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: colors.textPrimary,
-                    fontFamily: brandFontFamily,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (action != null) ...[const SizedBox(width: 8), action!],
-            ],
-          ),
-          const SizedBox(height: 14),
-          Divider(height: 1, color: colors.divider),
-          const SizedBox(height: 12),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Primary Button helper
-// ─────────────────────────────────────────────────────────────────────────────
-class _PrimaryBtn extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-  const _PrimaryBtn({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, color: Colors.white, size: 18),
-      label: Text(
-        label,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-          fontFamily: brandFontFamily,
-        ),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primaryOrange,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(appColors.radius),
         ),
       ),
     );

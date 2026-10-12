@@ -47,7 +47,7 @@ class MobileActionButton extends StatelessWidget {
   factory MobileActionButton.duplicate({required VoidCallback onTap}) =>
       MobileActionButton(
         icon: Icons.copy_outlined,
-        color: const Color(0xFF3B82F6),
+        color: AppColors.info,
         tooltip: 'Duplicate',
         onTap: onTap,
       );
@@ -55,7 +55,7 @@ class MobileActionButton extends StatelessWidget {
   factory MobileActionButton.delete({required VoidCallback onTap}) =>
       MobileActionButton(
         icon: Icons.delete_outline_rounded,
-        color: const Color(0xFFEF4444),
+        color: AppColors.danger,
         tooltip: 'Delete',
         onTap: onTap,
       );

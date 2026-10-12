@@ -1,26 +1,36 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/utils/phone_input.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
 import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:shc_stock/app/core/session/session_controller.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:shc_stock/app/core/utils/app_toast.dart';
 
-/// SharedPreferences key mirroring the `autoNumberDocs` user setting, so the
-/// Add Purchase / Add Sale forms can read it synchronously without depending
-/// on SettingsController being registered.
-const kAutoNumberDocsPrefKey = 'pref_auto_number_docs';
+/// SharedPreferences keys mirroring the `autoNumberPurchase` / `autoNumberSales`
+/// user settings, so the Add Purchase / Add Sale forms can read them without
+/// depending on SettingsController being registered.
+const kAutoNumberPurchasePrefKey = 'pref_auto_number_purchase';
+const kAutoNumberSalesPrefKey = 'pref_auto_number_sales';
 
-/// Whether the Add Purchase / Add Sale forms should prefill "Invoice No."
-/// with the next number in the series. Defaults to true (opt-out).
-Future<bool> autoNumberDocsEnabled() async {
+Future<bool> _prefOrTrue(String key) async {
   try {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(kAutoNumberDocsPrefKey) ?? true;
+    return prefs.getBool(key) ?? true;
   } catch (_) {
     return true;
   }
 }
+
+/// Whether Add Purchase should prefill "Invoice No." with the next number in
+/// the series. Defaults to true (opt-out).
+Future<bool> autoNumberPurchaseEnabled() =>
+    _prefOrTrue(kAutoNumberPurchasePrefKey);
+
+/// Same for Add Sale — switched separately.
+Future<bool> autoNumberSalesEnabled() => _prefOrTrue(kAutoNumberSalesPrefKey);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Settings for the signed-in user, loaded from and saved to /api/settings.
@@ -58,18 +68,20 @@ class SettingsController extends GetxController {
 
   // Preferences
   final rowsPerPage = 10.obs;
-  final dateFormat = 'MMM D, YYYY (Jul 18, 2026)'.obs;
-  final autoNumberDocs = true.obs;
+  final dateFormat = kDefaultDateFormatLabel.obs;
+  final autoNumberPurchase = true.obs;
+  final autoNumberSales = true.obs;
 
   /// Business-wide (not per-user): flag a product "Low Stock" once its stock
   /// falls to this level or below, for products with no per-item minimum set.
   /// 0 = off. Loaded from / saved to /api/settings/app.
   final lowStockThreshold = 0.obs;
 
-  Future<void> _cacheAutoNumberDocs() async {
+  Future<void> _cacheAutoNumber() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(kAutoNumberDocsPrefKey, autoNumberDocs.value);
+      await prefs.setBool(kAutoNumberPurchasePrefKey, autoNumberPurchase.value);
+      await prefs.setBool(kAutoNumberSalesPrefKey, autoNumberSales.value);
     } catch (_) {}
   }
 
@@ -86,14 +98,14 @@ class SettingsController extends GetxController {
   void _error(String message) => showAppToast(
     'Error',
     message,
-    backgroundColor: const Color(0xFFEF4444),
+    backgroundColor: AppColors.danger,
     colorText: Colors.white,
   );
 
   void _ok(String title, String message) => showAppToast(
     title,
     message,
-    backgroundColor: const Color(0xFF22C55E),
+    backgroundColor: AppColors.success,
     colorText: Colors.white,
   );
 
@@ -107,17 +119,23 @@ class SettingsController extends GetxController {
           await _api.get('/settings?userId=$uid') as Map<String, dynamic>;
       nameCtrl.text = json['name'] as String? ?? '';
       emailCtrl.text = json['email'] as String? ?? '';
-      phoneCtrl.text = json['phone'] as String? ?? '';
+      phoneCtrl.text = normalisePhone(json['phone'] as String? ?? '');
       lowStock.value = json['notifyLowStock'] as bool? ?? true;
       delivery.value = json['notifyDelivery'] as bool? ?? true;
       payment.value = json['notifyPayment'] as bool? ?? false;
       weekly.value = json['notifyWeekly'] as bool? ?? true;
       twoFactor.value = json['twoFactor'] as bool? ?? false;
       rowsPerPage.value = (json['rowsPerPage'] as num?)?.toInt() ?? 10;
-      dateFormat.value =
-          json['dateFormat'] as String? ?? 'MMM D, YYYY (Jul 18, 2026)';
-      autoNumberDocs.value = json['autoNumberDocs'] as bool? ?? true;
-      await _cacheAutoNumberDocs();
+      final fmt = json['dateFormat'] as String?;
+      dateFormat.value = kDateFormatLabels.contains(fmt)
+          ? fmt!
+          : kDefaultDateFormatLabel;
+      await AppDates.apply(dateFormat.value);
+      // An older server only knows the single switch: it covers both.
+      final legacy = json['autoNumberDocs'] as bool? ?? true;
+      autoNumberPurchase.value = json['autoNumberPurchase'] as bool? ?? legacy;
+      autoNumberSales.value = json['autoNumberSales'] as bool? ?? legacy;
+      await _cacheAutoNumber();
 
       final app = await _api.get('/settings/app') as Map<String, dynamic>;
       lowStockThreshold.value =
@@ -147,9 +165,15 @@ class SettingsController extends GetxController {
         'twoFactor': twoFactor.value,
         'rowsPerPage': rowsPerPage.value,
         'dateFormat': dateFormat.value,
-        'autoNumberDocs': autoNumberDocs.value,
+        'autoNumberPurchase': autoNumberPurchase.value,
+        'autoNumberSales': autoNumberSales.value,
       });
-      await _cacheAutoNumberDocs();
+      await _cacheAutoNumber();
+      // Every date on every screen follows the new format straight away.
+      final formatChanged =
+          AppDates.styleFor(dateFormat.value) != AppDates.style.value;
+      await AppDates.apply(dateFormat.value);
+      if (formatChanged) Get.forceAppUpdate();
 
       // Business-wide low-stock threshold — its own endpoint, not per-user,
       // and only for someone allowed to change Preferences.
@@ -214,11 +238,17 @@ class SettingsController extends GetxController {
 
     isChangingPassword.value = true;
     try {
-      await _api.post('/settings/password', {
+      final json = await _api.post('/settings/password', {
         'userId': uid,
         'currentPassword': curPwdCtrl.text,
         'newPassword': newPwdCtrl.text,
       });
+      // The old session token stopped working with the old password; carry on
+      // with the fresh one.
+      final fresh = json is Map ? json['token'] : null;
+      if (fresh is String && Get.isRegistered<SessionController>()) {
+        await Get.find<SessionController>().markPasswordChanged(token: fresh);
+      }
       curPwdCtrl.clear();
       newPwdCtrl.clear();
       confirmPwdCtrl.clear();

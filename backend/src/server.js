@@ -1,4 +1,6 @@
 require('dotenv').config();
+// Indian time for every "today" / "this month" the server works out.
+require('./timezone');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
@@ -24,6 +26,7 @@ const { guard } = require('./auth/middleware');
 const { syncSystemRoles } = require('./roles');
 const { startDeliverySweep } = require('./deliverySweep');
 const { decimalJson } = require('./jsonDecimal');
+const { inputGuard } = require('./inputGuard');
 
 const app = express();
 
@@ -51,6 +54,8 @@ app.use(
 // real logo here with a bare 413 before the route's own, friendlier guard
 // ever ran. 3 mb leaves room for that logo plus the rest of the payload.
 app.use(express.json({ limit: '3mb' }));
+// NULs stripped and absurdly long text refused before any route sees it.
+app.use(inputGuard);
 // Money is NUMERIC in the database; this renders it as a number rather than
 // the string Decimal.toJSON() would produce. See jsonDecimal.js.
 app.use(decimalJson);
@@ -97,10 +102,45 @@ app.use('/api/transactions', transactionsRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/settings', settingsRouter);
 
+// An /api path nothing handled: answer in JSON like every other error, not
+// with Express's HTML error page.
+app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
+
+// Last stop for anything a route did not handle itself.
+//
+// A rejected request (ValidationError, bad JSON, 4xx) tells the caller why. An
+// unexpected failure used to send err.message too — which for a database error
+// is the whole Prisma query plus a path on this machine — so those now get a
+// plain message and the detail stays in the server log.
 app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode;
+  if (status && status >= 400 && status < 500) {
+    return res.status(status).json({ error: err.message });
+  }
+  if (err.name === 'PrismaClientValidationError') {
+    console.error(err);
+    return res.status(400).json({ error: 'One of the values sent is not valid.' });
+  }
   console.error(err);
-  res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
+  res.status(500).json({ error: 'Something went wrong on the server. Please try again.' });
 });
+
+// Production hygiene: say so loudly (once, at start-up) when the two settings
+// that matter behind a real host are left at their dev defaults.
+if (process.env.NODE_ENV === 'production') {
+  if (corsOrigins.includes('*')) {
+    console.warn(
+      '[config] CORS_ORIGINS is "*": any website may call this API from a browser. ' +
+        'Set it to your web app origin(s), comma separated.',
+    );
+  }
+  if (!Number(process.env.TRUST_PROXY || 0)) {
+    console.warn(
+      '[config] TRUST_PROXY is 0 behind a proxy: every caller shares one sign-in ' +
+        'rate-limit bucket. Set TRUST_PROXY=1 when exactly one proxy sits in front.',
+    );
+  }
+}
 
 const PORT = process.env.PORT || 4000;
 // Bind to 0.0.0.0 so a physical phone on the same Wi-Fi can reach the dev

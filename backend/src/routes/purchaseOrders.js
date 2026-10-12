@@ -7,61 +7,78 @@ const {
   toStockLines,
   reverseStockFor,
   syncStockForStatus,
+  assertUnitQuantities,
 } = require('../stockService');
+const V = require('../validate');
+const O = require('../orderValidation');
 
 const router = express.Router();
+router.param('id', require('../validate').idParam);
 
 const orderInclude = { items: true };
+const { syncPurchaseTransaction, removePurchaseTransaction } = require('../paymentTransaction');
+const { stampDone } = require('../doneDate');
+const { nextNumber, createNumbered } = require('../docNumber');
+
+/// Purchase order series: PO/0001/26-27.
+const PO_PREFIX = 'PO';
 const REF_TYPE = 'purchase';
 
-function toItemsData(items) {
-  return (items || []).map((i) => ({
-    productId: Number.isInteger(Number(i.productId)) && Number(i.productId) > 0
-      ? Number(i.productId)
-      : null,
-    product: i.product || '',
-    hsn: i.hsn || '',
-    grade: i.grade || '',
-    density: i.density || '',
-    qty: Number(i.qty) || 0,
-    unit: i.unit || '',
-    rate: Number(i.rate) || 0,
-  }));
-}
+/// Validates the whole body and returns what to store: the order columns plus
+/// its lines. Throws ValidationError (-> 400) for anything not acceptable.
+function parseOrder(body, actor, { requirePoNumber }) {
+  if (!body || typeof body !== 'object') V.fail('request body is required');
+  const items = O.orderLines(body.items, { extra: ['grade', 'density'] });
+  const freight = V.money(body.freight, 'freight');
+  const { amount, paidAmount } = O.money(body, items, { allowance: freight });
 
-function orderFields(body, actor) {
-  return {
-    supplier: String(body.supplier || '').trim(),
-    supplierIcon: body.supplierIcon || '',
-    date: new Date(body.date),
-    amount: Number(body.amount) || 0,
-    status: body.status || 'Pending',
+  const date = V.date(body.date, 'date', { required: true });
+  const invoiceDate = V.date(body.invoiceDate, 'invoiceDate');
+  const lrDate = V.date(body.lrDate, 'lrDate');
+  const dueDate = V.date(body.dueDate, 'dueDate');
+  const expectedDelivery = V.date(body.expectedDelivery, 'expectedDelivery');
+  O.notBefore(expectedDelivery, date, 'expectedDelivery', 'the order date');
+  O.notBefore(dueDate, invoiceDate || date, 'dueDate', 'the invoice date');
+
+  const poNumber = V.text(body.poNumber, 'poNumber', { required: requirePoNumber, max: 60 });
+  const fields = {
+    supplier: V.text(body.supplier, 'supplier', { required: true, max: 200 }),
+    supplierIcon: V.text(body.supplierIcon, 'supplierIcon', { max: 10 }),
+    date,
+    amount,
+    status: V.oneOf(body.status, 'status', O.PURCHASE_STATUSES, { fallback: 'Pending' }),
     modifiedBy: actor,
     modifiedAt: new Date(),
-    supplierAddress: body.supplierAddress || '',
-    buyerGst: body.buyerGst || '',
-    pan: body.pan || '',
-    invoiceNo: body.invoiceNo || '',
-    invoiceDate: body.invoiceDate ? new Date(body.invoiceDate) : null,
-    despatchThrough: body.despatchThrough || '',
-    lrNo: body.lrNo || '',
-    lrDate: body.lrDate ? new Date(body.lrDate) : null,
-    vehicleNo: body.vehicleNo || '',
-    freight: Number(body.freight) || 0,
-    placeOfSupply: body.placeOfSupply || '',
-    dueDate: body.dueDate ? new Date(body.dueDate) : null,
-    expectedDelivery: body.expectedDelivery ? new Date(body.expectedDelivery) : null,
-    paymentType: body.paymentType || '',
-    paidAmount: Number(body.paidAmount) || 0,
+    supplierAddress: V.text(body.supplierAddress, 'supplierAddress', { max: 500 }),
+    buyerGst: V.text(body.buyerGst, 'buyerGst', { max: 20 }),
+    pan: V.text(body.pan, 'pan', { max: 20 }),
+    invoiceNo: V.text(body.invoiceNo, 'invoiceNo', { max: 60 }),
+    invoiceDate,
+    despatchThrough: V.text(body.despatchThrough, 'despatchThrough', { max: 100 }),
+    lrNo: V.text(body.lrNo, 'lrNo', { max: 60 }),
+    lrDate,
+    vehicleNo: V.text(body.vehicleNo, 'vehicleNo', { max: 30 }),
+    freight,
+    placeOfSupply: V.text(body.placeOfSupply, 'placeOfSupply', { max: 100 }),
+    dueDate,
+    expectedDelivery,
+    paymentType: V.oneOf(body.paymentType, 'paymentType', O.PAYMENT_TYPES, { fallback: '' }),
+    // Supplier in another state: the order carries IGST, not CGST + SGST.
+    interState: body.interState === true,
+    paidAmount,
   };
+  return { fields, items, poNumber };
 }
 
-function validate(body, { requirePoNumber }) {
-  if (requirePoNumber && !String(body.poNumber || '').trim()) return 'poNumber is required';
-  if (!String(body.supplier || '').trim()) return 'supplier is required';
-  if (!body.date) return 'date is required';
-  return null;
-}
+// GET /api/purchase-orders/next-number — what a new order would be numbered,
+// for the form's "Invoice No." prefill. Declared before any /:id route.
+router.get('/next-number', async (req, res, next) => {
+  try {
+    res.json({ number: await nextNumber(prisma.purchaseOrder, 'poNumber', PO_PREFIX) });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // GET /api/purchase-orders
 router.get('/', async (req, res, next) => {
@@ -87,17 +104,19 @@ router.get('/', async (req, res, next) => {
 // change, or the expectedDelivery sweep).
 router.post('/', async (req, res, next) => {
   try {
-    const invalid = validate(req.body, { requirePoNumber: true });
-    if (invalid) return res.status(400).json({ error: invalid });
-
-    const items = toItemsData(req.body.items);
-    const order = await prisma.$transaction(async (tx) => {
+    const { fields, items, poNumber: given } = parseOrder(req.body, actorName(req), {
+      requirePoNumber: false,
+    });
+    // Left blank, the server numbers the order (see docNumber.js).
+    const order = await createNumbered({
+      given,
+      next: (skip) => nextNumber(prisma.purchaseOrder, 'poNumber', PO_PREFIX, { skip }),
+      create: (poNumber) => prisma.$transaction(async (tx) => {
+      // Decimals only for products measured in kg / m / … (units.js).
+      await assertUnitQuantities(tx, items);
       const created = await tx.purchaseOrder.create({
-        data: {
-          ...orderFields(req.body, actorName(req)),
-          poNumber: String(req.body.poNumber).trim(),
-          items: { create: items },
-        },
+        // No invoice number typed: the order's own number stands in.
+        data: { ...fields, invoiceNo: fields.invoiceNo || poNumber, poNumber, receivedAt: stampDone('Received', fields.status), items: { create: items } },
         include: orderInclude,
       });
       await syncStockForStatus(tx, {
@@ -109,7 +128,9 @@ router.post('/', async (req, res, next) => {
         note: `Purchase ${created.poNumber}`,
         createdBy: created.modifiedBy,
       });
+      await syncPurchaseTransaction(tx, created);
       return created;
+    }),
     });
     res.status(201).json(order);
   } catch (err) {
@@ -124,10 +145,9 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const invalid = validate(req.body, { requirePoNumber: false });
-    if (invalid) return res.status(400).json({ error: invalid });
-
-    const items = toItemsData(req.body.items);
+    const { fields, items, poNumber } = parseOrder(req.body, actorName(req), {
+      requirePoNumber: false,
+    });
     const order = await prisma.$transaction(async (tx) => {
       const existing = await tx.purchaseOrder.findUnique({ where: { id } });
       if (!existing) {
@@ -135,12 +155,13 @@ router.put('/:id', async (req, res, next) => {
         e.code = 'P2025';
         throw e;
       }
+      await assertUnitQuantities(tx, items);
       await reverseStockFor(tx, REF_TYPE, id);
       await tx.purchaseItem.deleteMany({ where: { purchaseOrderId: id } });
 
-      const data = orderFields(req.body, actorName(req));
-      const poNumber = String(req.body.poNumber || '').trim();
+      const data = { ...fields };
       if (poNumber) data.poNumber = poNumber;
+      data.receivedAt = stampDone('Received', fields.status, existing.status, existing.receivedAt);
 
       const updated = await tx.purchaseOrder.update({
         where: { id },
@@ -157,6 +178,7 @@ router.put('/:id', async (req, res, next) => {
         createdBy: updated.modifiedBy,
         force: true,
       });
+      await syncPurchaseTransaction(tx, updated);
       return updated;
     });
     res.json(order);
@@ -174,12 +196,21 @@ router.put('/:id', async (req, res, next) => {
 router.patch('/:id/status', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const { status } = req.body;
-    if (!status) return res.status(400).json({ error: 'status is required' });
+    const status = V.oneOf(req.body.status, 'status', O.PURCHASE_STATUSES, { required: true });
     const order = await prisma.$transaction(async (tx) => {
+      const before = await tx.purchaseOrder.findUnique({ where: { id } });
+      if (!before) {
+        const e = new Error('not found');
+        e.code = 'P2025';
+        throw e;
+      }
       const updated = await tx.purchaseOrder.update({
         where: { id },
-        data: { status, modifiedAt: new Date() },
+        data: {
+          status,
+          modifiedAt: new Date(),
+          receivedAt: stampDone('Received', status, before.status, before.receivedAt),
+        },
         include: orderInclude,
       });
       await syncStockForStatus(tx, {
@@ -191,6 +222,7 @@ router.patch('/:id/status', async (req, res, next) => {
         note: `Purchase ${updated.poNumber} (${status})`,
         createdBy: updated.modifiedBy,
       });
+      await syncPurchaseTransaction(tx, updated);
       return updated;
     });
     res.json(order);
@@ -206,6 +238,7 @@ router.delete('/:id', async (req, res, next) => {
     const id = Number(req.params.id);
     await prisma.$transaction(async (tx) => {
       await reverseStockFor(tx, REF_TYPE, id);
+      await removePurchaseTransaction(tx, id);
       await tx.purchaseOrder.delete({ where: { id } });
     });
     res.status(204).send();

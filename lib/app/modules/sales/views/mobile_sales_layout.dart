@@ -4,7 +4,6 @@ import 'package:shc_stock/app/modules/sales/export/sales_export.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/modules/billing/controllers/billing_summary_controller.dart';
-import 'package:shc_stock/app/core/utils/app_toast.dart';
 import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
 import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -53,6 +52,7 @@ class MobileSalesLayout extends GetView<SalesController> {
         actions: [
           Obx(
             () => MobileFilterButton(
+              visible: c.orders.isNotEmpty,
               filters: _buildFilters(
                 c,
                 c.orders.map((o) => o.client).toSet().toList()..sort(),
@@ -124,13 +124,13 @@ class MobileSalesLayout extends GetView<SalesController> {
               label: 'Amount Due',
               value: formatRupees(c.stats.value.doubleOf('amountDue')),
               icon: Icons.currency_rupee_rounded,
-              color: const Color(0xFFF59E0B),
+              color: AppColors.warning,
             ),
             MobileStatCardData(
               label: 'Received',
               value: formatRupees(c.stats.value.doubleOf('receivedMTD')),
               icon: Icons.check_circle_outline_rounded,
-              color: const Color(0xFF22C55E),
+              color: AppColors.success,
             ),
           ],
           search: FilterSearchField(
@@ -191,8 +191,10 @@ class MobileSalesLayout extends GetView<SalesController> {
           // The web page's right rail. A phone has no rail, so the three
           // cards sit under the list in the same scroll view — the summary,
           // how much of it is billed, and who is buying.
-          // Figures only — the Sales summary right, same as the web rail.
-          footer: loading || !canSeeSummary('Sales')
+          // Figures only — the Sales summary right, same as the web rail, and
+          // something to have figures about: with no sale on record the three
+          // cards could only read zero and list nobody.
+          footer: loading || !canSeeSummary('Sales') || c.orders.isEmpty
               ? null
               : const SliverToBoxAdapter(child: _SalesRailCards()),
         );
@@ -401,48 +403,42 @@ class _MobileBillingCard extends StatelessWidget {
               label: 'e-Invoice IRN',
               value: '${s.irnRegistered} of ${s.irnTotal}',
             ),
-            const SizedBox(height: 4),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  final id = s.latestSalesOrderId;
-                  if (id == null) {
-                    showAppToast(
-                      'Billing',
-                      'No bill has been generated yet.',
-                      backgroundColor: AppColors.primaryPurple,
-                      colorText: Colors.white,
-                      duration: const Duration(seconds: 2),
-                    );
-                    return;
-                  }
-                  Get.toNamed(AppRoutes.saleBill, arguments: id.toString());
-                },
-                icon: const Icon(
-                  Icons.receipt_long_rounded,
-                  size: 17,
-                  color: Colors.white,
-                ),
-                label: Text(
-                  'Open latest bill',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    fontFamily: brandFontFamily,
+            // Hidden rather than shown-and-refused: with no bill to open, the
+            // button could only answer with a toast saying so.
+            if (s.latestSalesOrderId != null) ...[
+              const SizedBox(height: 4),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => Get.toNamed(
+                    AppRoutes.saleBill,
+                    arguments: s.latestSalesOrderId.toString(),
                   ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryOrange,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(appColors.radiusSm),
+                  icon: const Icon(
+                    Icons.receipt_long_rounded,
+                    size: 17,
+                    color: Colors.white,
+                  ),
+                  label: Text(
+                    'Open latest bill',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      fontFamily: brandFontFamily,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryOrange,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(appColors.radiusSm),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
             const SizedBox(height: 10),
             InkWell(
               onTap: () => Get.toNamed(AppRoutes.settings),
@@ -623,9 +619,9 @@ class _MobileSaleRow extends StatelessWidget {
   String get _title =>
       order.items.isEmpty ? order.soNumber : order.items.first.product;
 
-  /// "Suresh Patel · Qty 120" — the client, then how much of it went out.
+  /// "Suresh Patel · 120 pcs" — the client, then how much of it went out.
   String get _subtitle {
-    final qty = order.items.isEmpty ? null : 'Qty ${order.totalQtyLabel}';
+    final qty = order.items.isEmpty ? null : order.totalQtyLabel;
     return [
       if (order.client.isNotEmpty) order.client,
       qty ?? order.soNumber,
@@ -636,16 +632,21 @@ class _MobileSaleRow extends StatelessWidget {
   /// what's left against what's come in so far. Matches how /api/stats/sales
   /// splits Received from Amount Due.
   (String, Color) _settlement() {
+    // A cancelled order is not owed anything — it used to keep showing the
+    // amount as "due" even though the totals above had already dropped it.
+    if (order.status == SalesStatus.cancelled) {
+      return ('Cancelled', const Color(0xFF9CA3AF));
+    }
     switch (order.paymentStatus) {
       case PaymentStatus.paid:
-        return ('Received', const Color(0xFF22C55E));
+        return ('Received', AppColors.success);
       case PaymentStatus.refunded:
         return ('Refunded', const Color(0xFF9CA3AF));
       case PaymentStatus.partial:
       case PaymentStatus.pending:
         final due = order.amount - order.paidAmount;
-        if (due <= 0) return ('Received', const Color(0xFF22C55E));
-        return ('${formatRupees(due)} due', const Color(0xFFF59E0B));
+        if (due <= 0) return ('Received', AppColors.success);
+        return ('${formatRupees(due)} due', AppColors.warning);
     }
   }
 
@@ -691,7 +692,7 @@ class _MobileSaleRow extends StatelessWidget {
           ),
           MobileRowMenuItem(
             icon: Icons.copy_outlined,
-            color: const Color(0xFF3B82F6),
+            color: AppColors.info,
             label: 'Duplicate',
             onSelected: () => SalesActions.duplicate(order),
           ),
@@ -703,7 +704,7 @@ class _MobileSaleRow extends StatelessWidget {
           ),
           MobileRowMenuItem(
             icon: Icons.delete_outline_rounded,
-            color: const Color(0xFFEF4444),
+            color: AppColors.danger,
             label: 'Delete',
             onSelected: () => SalesActions.delete(context, order),
           ),

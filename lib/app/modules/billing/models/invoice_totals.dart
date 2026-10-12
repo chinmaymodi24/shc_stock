@@ -8,9 +8,9 @@ import 'package:shc_stock/app/core/utils/amount_format.dart';
 // printed paper and the screen can never disagree — which on a tax invoice is
 // not a cosmetic concern.
 //
-// Tax is split CGST/SGST at half the GST rate each, matching the approved
-// design. Inter-state (IGST) supply is not modelled — see the note on
-// [InvoiceTaxConfig].
+// Each line is taxed at its own GST rate (the product's). Within the seller's
+// state that is split CGST/SGST at half the rate each; to a buyer in another
+// state it is charged in full as IGST ([InvoiceTaxConfig.interState]).
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// One line of goods on the invoice.
@@ -26,6 +26,10 @@ class InvoiceLine {
   final String uom;
   final double rate;
 
+  /// GST rate (percent) on this line. Null falls back to the invoice-wide
+  /// [InvoiceTaxConfig.gstPercent].
+  final double? taxPercent;
+
   const InvoiceLine({
     required this.name,
     required this.qty,
@@ -33,6 +37,7 @@ class InvoiceLine {
     this.spec = '',
     this.hsn = '',
     this.uom = '',
+    this.taxPercent,
   });
 }
 
@@ -41,7 +46,16 @@ class InvoiceTaxConfig {
   /// Total GST percentage, e.g. 18 for 9% CGST + 9% SGST.
   final double gstPercent;
 
-  const InvoiceTaxConfig({this.gstPercent = 18});
+  /// The buyer is in another state: the whole rate is IGST.
+  final bool interState;
+
+  const InvoiceTaxConfig({this.gstPercent = 18, this.interState = false});
+
+  InvoiceTaxConfig copyWith({double? gstPercent, bool? interState}) =>
+      InvoiceTaxConfig(
+        gstPercent: gstPercent ?? this.gstPercent,
+        interState: interState ?? this.interState,
+      );
 
   double get halfPercent => gstPercent / 2;
 
@@ -64,6 +78,12 @@ class InvoiceLineTotals {
   final double cgst;
   final double sgst;
 
+  /// Inter-state tax (zero within the state).
+  final double igst;
+
+  /// GST rate (percent) this line was charged at.
+  final double ratePercent;
+
   /// Tax-inclusive line total — what the invoice's Amount column prints.
   final double amount;
 
@@ -73,6 +93,8 @@ class InvoiceLineTotals {
     required this.cgst,
     required this.sgst,
     required this.amount,
+    this.igst = 0,
+    this.ratePercent = 18,
   });
 
   String get qtyLabel {
@@ -87,6 +109,7 @@ class InvoiceLineTotals {
   String get taxableText => formatIndian2(taxableValue);
   String get cgstText => formatIndian2(cgst);
   String get sgstText => formatIndian2(sgst);
+  String get igstText => formatIndian2(igst);
   String get amountText => formatIndian2(amount);
 }
 
@@ -96,15 +119,34 @@ class HsnSummaryRow {
   final double taxableValue;
   final double cgst;
   final double sgst;
+  final double igst;
+
+  /// GST rate (percent) of this row — rows are per HSN and rate.
+  final double ratePercent;
 
   const HsnSummaryRow({
     required this.hsn,
     required this.taxableValue,
     required this.cgst,
     required this.sgst,
+    this.igst = 0,
+    this.ratePercent = 18,
   });
 
-  double get totalTax => cgst + sgst;
+  double get totalTax => cgst + sgst + igst;
+
+  /// "9%" — each of CGST / SGST on this row.
+  String get halfRateText => _pct(ratePercent / 2);
+
+  /// "18%" — the IGST on this row.
+  String get fullRateText => _pct(ratePercent);
+}
+
+String _pct(double pct) {
+  final text = pct == pct.roundToDouble()
+      ? pct.toStringAsFixed(0)
+      : pct.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '');
+  return '$text%';
 }
 
 /// Every figure the invoice prints, derived once from the lines.
@@ -116,8 +158,9 @@ class InvoiceTotals {
   final double taxableTotal;
   final double cgstTotal;
   final double sgstTotal;
+  final double igstTotal;
 
-  /// taxable + both taxes, before rounding.
+  /// taxable + tax, before rounding.
   final double grossTotal;
 
   /// [grossTotal] rounded to the nearest rupee — what the buyer pays.
@@ -134,13 +177,37 @@ class InvoiceTotals {
     required this.taxableTotal,
     required this.cgstTotal,
     required this.sgstTotal,
+    this.igstTotal = 0,
     required this.grossTotal,
     required this.grandTotal,
     required this.roundOff,
     required this.hsnSummary,
   });
 
-  double get totalTax => cgstTotal + sgstTotal;
+  double get totalTax => cgstTotal + sgstTotal + igstTotal;
+
+  /// IGST invoice (buyer in another state) rather than CGST + SGST.
+  bool get interState => tax.interState;
+
+  /// The one rate on every line, or null when the lines mix rates.
+  double? get uniformRate {
+    final rates = {for (final l in lines) l.ratePercent};
+    if (rates.isEmpty) return tax.gstPercent;
+    return rates.length == 1 ? rates.first : null;
+  }
+
+  /// Column headers: "CGST 9%" / "SGST 9%" / "IGST 18%" — just the tax name
+  /// when the lines carry different rates (each row then shows its own).
+  String get cgstHeader =>
+      uniformRate == null ? 'CGST' : 'CGST ${_pct(uniformRate! / 2)}';
+  String get sgstHeader =>
+      uniformRate == null ? 'SGST' : 'SGST ${_pct(uniformRate! / 2)}';
+  String get igstHeader =>
+      uniformRate == null ? 'IGST' : 'IGST ${_pct(uniformRate!)}';
+
+  /// "GST 18%" — the cash memo's single tax line.
+  String get gstHeader =>
+      uniformRate == null ? 'GST' : 'GST ${_pct(uniformRate!)}';
 
   int get itemCount => lines.length;
 
@@ -149,6 +216,7 @@ class InvoiceTotals {
   String get taxableTotalText => formatIndian2(taxableTotal);
   String get cgstTotalText => formatIndian2(cgstTotal);
   String get sgstTotalText => formatIndian2(sgstTotal);
+  String get igstTotalText => formatIndian2(igstTotal);
   String get totalTaxText => formatIndian2(totalTax);
 
   /// Grand total with thousands separators and no paise — it is a whole
@@ -185,12 +253,12 @@ InvoiceTotals computeInvoiceTotals(
   List<InvoiceLine> lines, {
   InvoiceTaxConfig tax = const InvoiceTaxConfig(),
 }) {
-  final half = tax.halfPercent / 100;
-
   final lineTotals = <InvoiceLineTotals>[];
   for (final line in lines) {
+    final rate = line.taxPercent ?? tax.gstPercent;
     final taxable = _paise(line.qty * line.rate);
-    final cgst = _paise(taxable * half);
+    final igst = tax.interState ? _paise(taxable * rate / 100) : 0.0;
+    final cgst = tax.interState ? 0.0 : _paise(taxable * rate / 200);
     final sgst = cgst;
     lineTotals.add(
       InvoiceLineTotals(
@@ -198,7 +266,9 @@ InvoiceTotals computeInvoiceTotals(
         taxableValue: taxable,
         cgst: cgst,
         sgst: sgst,
-        amount: _paise(taxable + cgst + sgst),
+        igst: igst,
+        ratePercent: rate,
+        amount: _paise(taxable + cgst + sgst + igst),
       ),
     );
   }
@@ -210,23 +280,31 @@ InvoiceTotals computeInvoiceTotals(
   );
   final cgstTotal = _paise(lineTotals.fold(0.0, (sum, l) => sum + l.cgst));
   final sgstTotal = _paise(lineTotals.fold(0.0, (sum, l) => sum + l.sgst));
-  final gross = _paise(taxableTotal + cgstTotal + sgstTotal);
+  final igstTotal = _paise(lineTotals.fold(0.0, (sum, l) => sum + l.igst));
+  final gross = _paise(taxableTotal + cgstTotal + sgstTotal + igstTotal);
   final grand = gross.roundToDouble();
 
-  // HSN grouping preserves first-appearance order so the summary reads in the
-  // same order as the items table.
+  // One summary row per HSN and rate — two products under one HSN at
+  // different rates must not be merged into one rate.
   final byHsn = <String, HsnSummaryRow>{};
   for (final l in lineTotals) {
-    final key = l.line.hsn.trim().isEmpty ? '—' : l.line.hsn.trim();
+    final hsn = l.line.hsn.trim().isEmpty ? '—' : l.line.hsn.trim();
+    final key = '$hsn@${l.ratePercent}';
     final existing = byHsn[key];
     byHsn[key] = HsnSummaryRow(
-      hsn: key,
+      hsn: hsn,
+      ratePercent: l.ratePercent,
       taxableValue: _paise((existing?.taxableValue ?? 0) + l.taxableValue),
       cgst: _paise((existing?.cgst ?? 0) + l.cgst),
       sgst: _paise((existing?.sgst ?? 0) + l.sgst),
+      igst: _paise((existing?.igst ?? 0) + l.igst),
     );
   }
-  final hsnRows = byHsn.values.toList()..sort((a, b) => a.hsn.compareTo(b.hsn));
+  final hsnRows = byHsn.values.toList()
+    ..sort((a, b) {
+      final c = a.hsn.compareTo(b.hsn);
+      return c != 0 ? c : a.ratePercent.compareTo(b.ratePercent);
+    });
 
   return InvoiceTotals(
     lines: lineTotals,
@@ -234,6 +312,7 @@ InvoiceTotals computeInvoiceTotals(
     taxableTotal: taxableTotal,
     cgstTotal: cgstTotal,
     sgstTotal: sgstTotal,
+    igstTotal: igstTotal,
     grossTotal: gross,
     grandTotal: grand,
     roundOff: _paise(grand - gross),

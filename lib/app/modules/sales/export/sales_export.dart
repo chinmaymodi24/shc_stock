@@ -3,11 +3,11 @@ import 'package:shc_stock/app/core/export/export_table.dart';
 import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
 import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
 
-/// Export config for the Sell list.
+/// Export config for the Sale list.
 ExportEntityConfig<SalesOrder> salesExportConfig(SalesController c) {
   return ExportEntityConfig<SalesOrder>(
     entityKey: 'sales',
-    entityLabel: 'Sell Entries',
+    entityLabel: 'Sale Entries',
     rowNoun: 'sales orders',
     filteredRows: () => c.filteredOrders,
     allRows: () => c.orders.toList(),
@@ -132,6 +132,13 @@ ExportEntityConfig<SalesOrder> salesExportConfig(SalesController c) {
         type: ExportCellType.money,
         width: 1.3,
         value: (o) => o.sgst,
+      ),
+      ExportColumn(
+        key: 'igst',
+        label: 'IGST',
+        type: ExportCellType.money,
+        width: 1.3,
+        value: (o) => o.igst,
       ),
       ExportColumn(
         key: 'destination',

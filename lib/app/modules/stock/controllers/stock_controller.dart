@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -60,7 +61,7 @@ class StockController extends GetxController {
     showAppToast(
       'Error',
       message,
-      backgroundColor: const Color(0xFFEF4444),
+      backgroundColor: AppColors.danger,
       colorText: Colors.white,
     );
   }
@@ -119,7 +120,7 @@ class StockController extends GetxController {
   /// Updates a row's reorder settings (minimum stock / location / active).
   Future<bool> updateItem(
     int productId, {
-    int? minimumStock,
+    double? minimumStock,
     String? stockLocation,
     bool? isActive,
   }) async {
@@ -248,7 +249,7 @@ class StockController extends GetxController {
       items.where((i) => i.status == StockStatus.outOfStock).length;
   int get inactiveCount =>
       items.where((i) => i.status == StockStatus.inactive).length;
-  int get totalQty => items.fold(0, (s, i) => s + i.stockInHand);
+  double get totalQty => items.fold(0.0, (s, i) => s + i.stockInHand);
   double get totalValue => items.fold(0.0, (s, i) => s + i.stockValue);
 
   List<String> get categories => [

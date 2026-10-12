@@ -473,7 +473,7 @@ class _RoleRow extends GetView<AddEmployeeWizardController> {
                     const SizedBox(width: 6),
                     RowActionButton(
                       icon: Icons.delete_outline_rounded,
-                      color: const Color(0xFFEF4444),
+                      color: AppColors.danger,
                       bg: c.tagBg,
                       tooltip: role.userCount > 0
                           ? 'In use by ${role.userCount} employee(s)'

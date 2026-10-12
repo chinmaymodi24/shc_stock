@@ -243,13 +243,16 @@ class ThermalReceipt extends StatelessWidget {
 
   // ── Money ─────────────────────────────────────────────────────────────────
   Widget _taxBlock() {
-    final half = totals.tax.halfLabel;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         _pair('Taxable', totals.taxableTotalText),
-        _pair('CGST $half', totals.cgstTotalText),
-        _pair('SGST $half', totals.sgstTotalText),
+        if (totals.interState)
+          _pair(totals.igstHeader, totals.igstTotalText)
+        else ...[
+          _pair(totals.cgstHeader, totals.cgstTotalText),
+          _pair(totals.sgstHeader, totals.sgstTotalText),
+        ],
         _pair('Round Off', totals.roundOffText),
       ],
     );

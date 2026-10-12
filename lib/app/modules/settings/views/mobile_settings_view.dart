@@ -1,4 +1,5 @@
 import 'package:shc_stock/app/modules/settings/views/settings_tab_gate.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
 import 'package:shc_stock/app/modules/settings/views/billing/billing_tab.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -178,11 +179,7 @@ class MobileSettingsView extends GetView<SettingsController> {
         _dropdown<String>(
           value: controller.dateFormat.value,
           width: double.infinity,
-          items: const [
-            'MMM D, YYYY (Jul 18, 2026)',
-            'DD/MM/YYYY (18/07/2026)',
-            'YYYY-MM-DD (2026-07-18)',
-          ],
+          items: kDateFormatLabels,
           itemLabel: (v) => v,
           onChanged: (v) => controller.dateFormat.value = v,
           colors: colors,
@@ -191,12 +188,24 @@ class MobileSettingsView extends GetView<SettingsController> {
         Divider(height: 1, color: colors.divider),
         Obx(
           () => _toggleRow(
-            title: 'Auto-generate invoice numbers',
+            title: 'Auto-generate purchase invoice numbers',
             subtitle:
-                'Prefill "Invoice No." on Add Purchase / Add Sale with the next '
-                'number in the series',
-            value: controller.autoNumberDocs.value,
-            onChanged: (v) => controller.autoNumberDocs.value = v,
+                'Prefill "Invoice No." on Add Purchase with the next number in the '
+                'series',
+            value: controller.autoNumberPurchase.value,
+            onChanged: (v) => controller.autoNumberPurchase.value = v,
+            colors: colors,
+          ),
+        ),
+        Divider(height: 1, color: colors.divider),
+        Obx(
+          () => _toggleRow(
+            title: 'Auto-generate sale invoice numbers',
+            subtitle:
+                'Prefill "Invoice No." on Add Sale with the next number in the '
+                'series',
+            value: controller.autoNumberSales.value,
+            onChanged: (v) => controller.autoNumberSales.value = v,
             colors: colors,
           ),
         ),
@@ -258,8 +267,9 @@ class MobileSettingsView extends GetView<SettingsController> {
                   label: 'Reset',
                   colors: colors,
                   onTap: () {
-                    controller.dateFormat.value = 'MMM D, YYYY (Jul 18, 2026)';
-                    controller.autoNumberDocs.value = true;
+                    controller.dateFormat.value = kDefaultDateFormatLabel;
+                    controller.autoNumberPurchase.value = true;
+                    controller.autoNumberSales.value = true;
                     controller.lowStockThreshold.value = 0;
                   },
                 ),

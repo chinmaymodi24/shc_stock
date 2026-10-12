@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/utils/phone_input.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
@@ -89,7 +90,10 @@ class _BillingTabState extends State<BillingTab> {
       'declaration': p.declaration,
       'footerNote': p.footerNote,
     };
-    values.forEach((key, value) => _fields[key]!.text = value);
+    values.forEach(
+      (key, value) =>
+          _fields[key]!.text = key == 'phone' ? normalisePhone(value) : value,
+    );
     _defaults.value = p.defaults;
     _gstPercent.value = p.gstPercent;
     _signature.value = p.signatureBase64;
@@ -190,7 +194,7 @@ class _BillingTabState extends State<BillingTab> {
               _field('stateCode', 'State code', colors, hint: '24'),
             ),
             _pair(
-              _field('phone', 'Phone', colors),
+              _field('phone', 'Phone', colors, hint: kPhoneHint, phone: true),
               _field('email', 'Email', colors),
             ),
           ]),
@@ -391,6 +395,7 @@ class _BillingTabState extends State<BillingTab> {
     String? hint,
     int lines = 1,
     bool caps = false,
+    bool phone = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,7 +416,10 @@ class _BillingTabState extends State<BillingTab> {
           textCapitalization: caps
               ? TextCapitalization.characters
               : TextCapitalization.none,
-          inputFormatters: caps
+          keyboardType: phone ? TextInputType.phone : null,
+          inputFormatters: phone
+              ? kPhoneInputFormatters
+              : caps
               ? [UpperCaseFormatter()]
               : const <TextInputFormatter>[],
           style: TextStyle(

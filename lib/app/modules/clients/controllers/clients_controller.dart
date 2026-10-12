@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -133,7 +134,7 @@ class ClientsController extends GetxController {
     showAppToast(
       'Error',
       message,
-      backgroundColor: const Color(0xFFEF4444),
+      backgroundColor: AppColors.danger,
       colorText: Colors.white,
     );
   }
@@ -245,9 +246,7 @@ class ClientsController extends GetxController {
       exportRows.assignAll(matching);
       // With nothing filtered the two scopes are the same set, so only fetch
       // the whole table when the screen is actually showing a subset.
-      exportAllRows.assignAll(
-        filters.isEmpty ? matching : await _fetchAll(''),
-      );
+      exportAllRows.assignAll(filters.isEmpty ? matching : await _fetchAll(''));
     } catch (e) {
       // Better to export the page on screen than nothing at all.
       exportRows.assignAll(clients);
@@ -378,7 +377,8 @@ class ClientsController extends GetxController {
       await _api.delete('/clients/$id');
       await _reloadAfterWrite();
     } catch (e) {
-      _showError('Failed to delete client.');
+      // A client with sales is refused (409) — show the server's reason.
+      _showError(e is ApiException ? e.message : 'Failed to delete client.');
     }
   }
 

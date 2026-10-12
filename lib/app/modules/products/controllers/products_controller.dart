@@ -1,3 +1,4 @@
+import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
@@ -176,7 +177,7 @@ class ProductsController extends GetxController {
     showAppToast(
       'Error',
       message,
-      backgroundColor: const Color(0xFFEF4444),
+      backgroundColor: AppColors.danger,
       colorText: Colors.white,
     );
   }
@@ -338,7 +339,7 @@ class ProductsController extends GetxController {
       products.removeWhere((p) => p.id == id);
       _applyFilters();
     } catch (e) {
-      _showError('Failed to delete product.');
+      _showError(apiErrorMessage(e, 'Failed to delete product.'));
     }
   }
 
@@ -356,8 +357,8 @@ class ProductsController extends GetxController {
     required String unit,
     required double sellingPrice,
     required double costPrice,
-    int currentStock = 0,
-    int minimumStock = 0,
+    double currentStock = 0,
+    double minimumStock = 0,
     String? brand,
     String? hsnCode,
     String? description,
@@ -389,7 +390,7 @@ class ProductsController extends GetxController {
       _applyFilters();
       return true;
     } catch (e) {
-      _showError('Failed to add product.');
+      _showError(apiErrorMessage(e, 'Failed to add product.'));
       return false;
     }
   }
@@ -404,18 +405,20 @@ class ProductsController extends GetxController {
     required String unit,
     required double sellingPrice,
     required double costPrice,
-    int currentStock = 0,
-    int minimumStock = 0,
+    double currentStock = 0,
+    double minimumStock = 0,
     String? brand,
     String? hsnCode,
     String? description,
     double taxPercent = 18.0,
 
-    /// Relative `/uploads/...` path, or null to leave the product without a
-    /// photo. Every field this endpoint accepts is rewritten on every save
-    /// (there's no partial-patch on the backend), so the caller must pass the
-    /// product's *current* image back through when the user didn't touch it
-    /// — omitting it here clears the photo, it doesn't preserve it.
+    /// Whether the product is active. Null leaves it as it is.
+    bool? isActive,
+
+    /// Relative `/uploads/...` path. The server's PUT only changes the fields
+    /// it is sent, so a null here means "no photo": an empty string is sent so
+    /// a removed photo is actually cleared. The caller passes the product's
+    /// current image back through when the user did not touch it.
     String? imageUrl,
   }) async {
     try {
@@ -423,18 +426,20 @@ class ProductsController extends GetxController {
         'name': name.trim(),
         'sku': sku.trim(),
         'categoryId': categoryId,
-        if (subCategoryId != null) 'subCategoryId': subCategoryId,
+        'subCategoryId': subCategoryId,
         'unit': unit,
-        if (imageUrl != null && imageUrl.isNotEmpty) 'imageUrl': imageUrl,
+        'imageUrl': imageUrl ?? '',
         'sellingPrice': sellingPrice,
         'costPrice': costPrice,
         'currentStock': currentStock,
         'minimumStock': minimumStock,
-        if (brand != null && brand.isNotEmpty) 'brand': brand,
-        if (hsnCode != null && hsnCode.isNotEmpty) 'hsnCode': hsnCode,
-        if (description != null && description.isNotEmpty)
-          'description': description,
+        // Sent whenever given, even empty, so a field cleared in the form is
+        // cleared on the server too (the PUT leaves unsent fields alone).
+        if (brand != null) 'brand': brand,
+        if (hsnCode != null) 'hsnCode': hsnCode,
+        if (description != null) 'description': description,
         'taxPercent': taxPercent,
+        if (isActive != null) 'isActive': isActive,
       });
       final updated = ProductModel.fromJson(json as Map<String, dynamic>);
       // Last modified first: move the edited row back to the top, matching the
@@ -447,7 +452,7 @@ class ProductsController extends GetxController {
       _applyFilters();
       return true;
     } catch (e) {
-      _showError('Failed to update product.');
+      _showError(apiErrorMessage(e, 'Failed to update product.'));
       return false;
     }
   }

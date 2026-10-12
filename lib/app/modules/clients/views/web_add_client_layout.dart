@@ -1,4 +1,6 @@
+import 'package:shc_stock/app/shared/widgets/app_date_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:shc_stock/app/core/utils/phone_input.dart';
 import 'package:get/get.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
@@ -9,6 +11,8 @@ import 'package:shc_stock/app/modules/clients/controllers/add_client_controller.
 import 'package:shc_stock/app/modules/clients/controllers/clients_controller.dart';
 import 'package:shc_stock/app/shared/widgets/form_fields.dart';
 import 'package:shc_stock/app/shared/widgets/section_card.dart';
+
+part 'web_add_client_layout_part1.dart';
 
 // ── Select options — match the approved design exactly ─────────────────────
 const _kClientTypes = ['Business', 'Individual', 'Government'];
@@ -199,7 +203,7 @@ class WebAddClientLayout extends GetView<AddClientController> {
       showAppToast(
         'Validation Error',
         'Client Name is required.',
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: AppColors.danger,
         colorText: Colors.white,
         duration: const Duration(seconds: 2),
       );
@@ -225,7 +229,7 @@ class WebAddClientLayout extends GetView<AddClientController> {
     showAppToast(
       controller.isEdit ? '✅ Client Updated' : '✅ Client Saved',
       '${saved.name} (${saved.code}) has been ${controller.isEdit ? 'updated' : 'added'}.',
-      backgroundColor: const Color(0xFF22C55E),
+      backgroundColor: AppColors.success,
       colorText: Colors.white,
     );
   }
@@ -314,7 +318,9 @@ class WebAddClientLayout extends GetView<AddClientController> {
                     colors: colors,
                     child: AppTextBox(
                       controller: controller.phoneCtrl,
-                      hint: 'Enter phone number',
+                      hint: kPhoneHint,
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: kPhoneInputFormatters,
                       colors: colors,
                     ),
                   ),
@@ -326,7 +332,9 @@ class WebAddClientLayout extends GetView<AddClientController> {
                     colors: colors,
                     child: AppTextBox(
                       controller: controller.altPhCtrl,
-                      hint: 'Enter phone number',
+                      hint: kPhoneHint,
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: kPhoneInputFormatters,
                       colors: colors,
                     ),
                   ),
@@ -369,7 +377,7 @@ class WebAddClientLayout extends GetView<AddClientController> {
                       date: controller.clientSince.value,
                       colors: colors,
                       onTap: () async {
-                        final picked = await showDatePicker(
+                        final picked = await showAppDatePicker(
                           context: Get.context!,
                           initialDate: DateTime.now(),
                           firstDate: DateTime(2000),
@@ -843,7 +851,9 @@ class WebAddClientLayout extends GetView<AddClientController> {
             colors: colors,
             child: AppTextBox(
               controller: controller.cpPhCtrl,
-              hint: 'Enter phone number',
+              hint: kPhoneHint,
+              keyboardType: TextInputType.phone,
+              inputFormatters: kPhoneInputFormatters,
               colors: colors,
             ),
           ),
@@ -857,53 +867,6 @@ class WebAddClientLayout extends GetView<AddClientController> {
               colors: colors,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Sidebar card — matches `.section-card` with a titled, divider-underlined
-// header (no numbered badge, unlike the main form's section cards).
-// ─────────────────────────────────────────────────────────────────────────────
-class _SidebarCard extends StatelessWidget {
-  final AppThemeColors colors;
-  final String title;
-  final Widget child;
-
-  const _SidebarCard({
-    required this.colors,
-    required this.title,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: colors.textPrimary,
-              fontFamily: brandFontFamily,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Divider(height: 1, color: colors.divider),
-          const SizedBox(height: 14),
-          child,
         ],
       ),
     );

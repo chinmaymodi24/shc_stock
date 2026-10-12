@@ -4,6 +4,9 @@ const { actorName } = require('../auth/middleware');
 const { listResponse } = require('../pagination');
 
 const router = express.Router();
+router.param('id', require('../validate').idParam);
+const V = require('../validate');
+const { PAYMENT_MODES } = require('../salePayments');
 
 const TYPES = ['Inbound', 'Outbound'];
 const STATUSES = ['Received', 'Shipped', 'Pending', 'Delivered'];
@@ -15,13 +18,15 @@ function txnData(body, actor) {
   const type = str(body.type);
   const status = str(body.status);
   return {
-    item: str(body.item),
+    item: V.text(body.item, 'item', { max: 200 }),
     type: TYPES.includes(type) ? type : 'Inbound',
-    party: str(body.party),
-    poNumber: str(body.poNumber),
-    date: body.date ? new Date(body.date) : new Date(),
+    party: V.text(body.party, 'party', { max: 200 }),
+    poNumber: V.text(body.poNumber, 'poNumber', { max: 60 }),
+    date: V.date(body.date, 'date') || new Date(),
     status: STATUSES.includes(status) ? status : 'Pending',
-    notes: str(body.notes),
+    notes: V.text(body.notes, 'notes', { max: 1000 }),
+    amount: V.money(body.amount, 'amount'),
+    mode: V.oneOf(body.mode, 'mode', PAYMENT_MODES, { fallback: '' }),
     modifiedBy: actor,
     modifiedAt: new Date(),
   };
@@ -37,6 +42,29 @@ function validate(body) {
     return `status must be one of ${STATUSES.join(', ')}`;
   }
   return null;
+}
+
+/// Rows generated from an order (a payment on a sale, a paid purchase) belong
+/// to that order: changing one here would leave the order saying something
+/// else, so they are edited from the order. 404 when the row does not exist.
+async function assertHandEntered(id) {
+  const row = await prisma.transaction.findUnique({
+    where: { id },
+    select: { refType: true, poNumber: true },
+  });
+  if (!row) {
+    const e = new Error('not found');
+    e.code = 'P2025';
+    throw e;
+  }
+  if (row.refType) {
+    const what = row.refType === 'sale' ? 'sale' : 'purchase';
+    const e = new Error(
+      `This row comes from ${what} ${row.poNumber}. Change it from that ${what} instead.`,
+    );
+    e.status = 409;
+    throw e;
+  }
 }
 
 // GET /api/transactions
@@ -74,6 +102,7 @@ router.put('/:id', async (req, res, next) => {
     const id = Number(req.params.id);
     const invalid = validate(req.body);
     if (invalid) return res.status(400).json({ error: invalid });
+    await assertHandEntered(id);
     const txn = await prisma.transaction.update({
       where: { id },
       data: txnData(req.body, actorName(req)),
@@ -93,6 +122,7 @@ router.patch('/:id/status', async (req, res, next) => {
     if (!STATUSES.includes(status)) {
       return res.status(400).json({ error: `status must be one of ${STATUSES.join(', ')}` });
     }
+    await assertHandEntered(id);
     const txn = await prisma.transaction.update({
       where: { id },
       data: { status, modifiedAt: new Date() },
@@ -108,6 +138,7 @@ router.patch('/:id/status', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
+    await assertHandEntered(id);
     await prisma.transaction.delete({ where: { id } });
     res.status(204).send();
   } catch (err) {

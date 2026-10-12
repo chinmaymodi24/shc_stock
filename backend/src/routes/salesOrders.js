@@ -1,5 +1,10 @@
 const express = require('express');
 const prisma = require('../prismaClient');
+const { stampDone } = require('../doneDate');
+const { nextNumber, createNumbered } = require('../docNumber');
+
+/// Sales order series: SO/0001/26-27.
+const SO_PREFIX = 'SO';
 const { actorName } = require('../auth/middleware');
 const { listResponse } = require('../pagination');
 const {
@@ -7,55 +12,77 @@ const {
   toStockLines,
   reverseStockFor,
   syncStockForStatus,
+  assertSaleCoverable,
+  assertUnitQuantities,
 } = require('../stockService');
+const V = require('../validate');
+const O = require('../orderValidation');
+const P = require('../salePayments');
 
 const router = express.Router();
+router.param('id', require('../validate').idParam);
 
-const orderInclude = { items: true };
+const orderInclude = {
+  items: true,
+  payments: { orderBy: [{ date: 'asc' }, { id: 'asc' }] },
+};
 const REF_TYPE = 'sale';
+const SETTLED = new Set(['Delivered', 'Cancelled']);
 
-function toItemsData(items) {
-  return (items || []).map((i) => ({
-    productId: Number.isInteger(Number(i.productId)) && Number(i.productId) > 0
-      ? Number(i.productId)
-      : null,
-    product: i.product || '',
-    hsn: i.hsn || '',
-    qty: Number(i.qty) || 0,
-    unit: i.unit || '',
-    rate: Number(i.rate) || 0,
-  }));
-}
+/// Validates the whole body and returns what to store: the order columns plus
+/// its lines. Throws ValidationError (-> 400) for anything not acceptable.
+function parseOrder(body, actor, { requireSoNumber }) {
+  if (!body || typeof body !== 'object') V.fail('request body is required');
+  const items = O.orderLines(body.items);
+  const { amount, paidAmount } = O.money(body, items);
 
-function orderFields(body, actor) {
-  return {
-    client: String(body.client || '').trim(),
-    clientBadge: body.clientBadge || '',
-    date: new Date(body.date),
-    amount: Number(body.amount) || 0,
-    status: body.status || 'Confirmed',
-    paymentStatus: body.paymentStatus || 'Pending',
+  const date = V.date(body.date, 'date', { required: true });
+  const invoiceDate = V.date(body.invoiceDate, 'invoiceDate');
+  const expectedDelivery = V.date(body.expectedDelivery, 'expectedDelivery');
+  O.notBefore(expectedDelivery, date, 'expectedDelivery', 'the order date');
+
+  const soNumber = V.text(body.soNumber, 'soNumber', { required: requireSoNumber, max: 60 });
+  const fields = {
+    client: V.text(body.client, 'client', { required: true, max: 200 }),
+    clientBadge: V.text(body.clientBadge, 'clientBadge', { max: 10 }),
+    date,
+    amount,
+    status: V.oneOf(body.status, 'status', O.SALE_STATUSES, { fallback: 'Confirmed' }),
+    paymentStatus: V.oneOf(body.paymentStatus, 'paymentStatus', O.PAYMENT_STATUSES, {
+      fallback: 'Pending',
+    }),
     modifiedBy: actor,
     modifiedAt: new Date(),
-    clientAddress: body.clientAddress || '',
-    buyerGstin: body.buyerGstin || '',
-    pan: body.pan || '',
-    invoiceNo: body.invoiceNo || '',
-    invoiceDate: body.invoiceDate ? new Date(body.invoiceDate) : null,
-    despatchedThrough: body.despatchedThrough || '',
-    destination: body.destination || '',
-    expectedDelivery: body.expectedDelivery ? new Date(body.expectedDelivery) : null,
-    paymentType: body.paymentType || '',
-    paidAmount: Number(body.paidAmount) || 0,
+    clientAddress: V.text(body.clientAddress, 'clientAddress', { max: 500 }),
+    buyerGstin: V.text(body.buyerGstin, 'buyerGstin', { max: 20 }),
+    pan: V.text(body.pan, 'pan', { max: 20 }),
+    invoiceNo: V.text(body.invoiceNo, 'invoiceNo', { max: 60 }),
+    invoiceDate,
+    despatchedThrough: V.text(body.despatchedThrough, 'despatchedThrough', { max: 100 }),
+    destination: V.text(body.destination, 'destination', { max: 100 }),
+    expectedDelivery,
+    paymentType: V.oneOf(body.paymentType, 'paymentType', O.PAYMENT_TYPES, { fallback: '' }),
+    // Buyer in another state: the order carries IGST, not CGST + SGST.
+    interState: body.interState === true,
+    paidAmount,
   };
+  // Sent with its payments (the form does): those decide what was paid, and
+  // the Payment column follows. Without them (an older client) paidAmount and
+  // paymentStatus are taken as sent.
+  const parsed = P.parsePayments(body.payments, amount);
+  if (parsed) Object.assign(fields, P.paymentFields(amount, parsed.total, fields.paymentStatus));
+  return { fields, items, soNumber, payments: parsed && parsed.payments };
 }
 
-function validate(body, { requireSoNumber }) {
-  if (requireSoNumber && !String(body.soNumber || '').trim()) return 'soNumber is required';
-  if (!String(body.client || '').trim()) return 'client is required';
-  if (!body.date) return 'date is required';
-  return null;
-}
+// GET /api/sales-orders/next-number — what a new order would be numbered,
+// for the form's "Invoice No." prefill. Declared before any /:id route.
+router.get('/next-number', async (req, res, next) => {
+  try {
+    res.json({ number: await nextNumber(prisma.salesOrder, 'soNumber', SO_PREFIX) });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // GET /api/sales-orders
 router.get('/', async (req, res, next) => {
@@ -82,17 +109,22 @@ router.get('/', async (req, res, next) => {
 // a product below zero.
 router.post('/', async (req, res, next) => {
   try {
-    const invalid = validate(req.body, { requireSoNumber: true });
-    if (invalid) return res.status(400).json({ error: invalid });
-
-    const items = toItemsData(req.body.items);
-    const order = await prisma.$transaction(async (tx) => {
+    const { fields, items, soNumber: given, payments } = parseOrder(req.body, actorName(req), {
+      requireSoNumber: false,
+    });
+    // Left blank, the server numbers the order (see docNumber.js).
+    const order = await createNumbered({
+      given,
+      next: (skip) => nextNumber(prisma.salesOrder, 'soNumber', SO_PREFIX, { skip }),
+      create: (soNumber) => prisma.$transaction(async (tx) => {
+      // Decimals only for products measured in kg / m / … (units.js).
+      await assertUnitQuantities(tx, items);
+      // An open order holds its stock back from everyone else — refuse it now
+      // rather than letting it fail at delivery.
+      await assertSaleCoverable(tx, { lines: toStockLines(items), status: fields.status });
       const created = await tx.salesOrder.create({
-        data: {
-          ...orderFields(req.body, actorName(req)),
-          soNumber: String(req.body.soNumber).trim(),
-          items: { create: items },
-        },
+        // No invoice number typed: the order's own number stands in.
+        data: { ...fields, invoiceNo: fields.invoiceNo || soNumber, soNumber, deliveredAt: stampDone('Delivered', fields.status), items: { create: items } },
         include: orderInclude,
       });
       await syncStockForStatus(tx, {
@@ -104,7 +136,9 @@ router.post('/', async (req, res, next) => {
         note: `Sale ${created.soNumber}`,
         createdBy: created.modifiedBy,
       });
-      return created;
+      if (payments) await P.writePayments(tx, created, payments);
+      return tx.salesOrder.findUnique({ where: { id: created.id }, include: orderInclude });
+    }),
     });
     res.status(201).json(order);
   } catch (err) {
@@ -113,16 +147,30 @@ router.post('/', async (req, res, next) => {
   }
 });
 
+/// An invoice is a document the customer holds: once one is issued the sale
+/// behind it must not change underneath it (a bill for ₹5,000 over a sale that
+/// now says ₹9,000), and deleting the sale would silently take the bill with
+/// it. Status and payment changes still go through PATCH.
+async function assertNotBilled(tx, id, verb) {
+  const bill = await tx.bill.findUnique({ where: { salesOrderId: id }, select: { invoiceNo: true } });
+  if (bill) {
+    const e = new Error(
+      `This sale already has invoice ${bill.invoiceNo}, so it cannot be ${verb}. Cancel the sale instead.`,
+    );
+    e.status = 409;
+    throw e;
+  }
+}
+
 // PUT /api/sales-orders/:id — replaces the order and its items. Anything the
 // old version had booked is reversed, and the new lines are booked again only
 // if the order is (still) "Delivered".
 router.put('/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const invalid = validate(req.body, { requireSoNumber: false });
-    if (invalid) return res.status(400).json({ error: invalid });
-
-    const items = toItemsData(req.body.items);
+    const { fields, items, soNumber, payments } = parseOrder(req.body, actorName(req), {
+      requireSoNumber: false,
+    });
     const order = await prisma.$transaction(async (tx) => {
       const existing = await tx.salesOrder.findUnique({ where: { id } });
       if (!existing) {
@@ -130,12 +178,20 @@ router.put('/:id', async (req, res, next) => {
         e.code = 'P2025';
         throw e;
       }
+      await assertNotBilled(tx, id, 'edited');
+      await assertUnitQuantities(tx, items);
       await reverseStockFor(tx, REF_TYPE, id);
       await tx.saleItem.deleteMany({ where: { salesOrderId: id } });
+      // The order being edited must not count against itself.
+      await assertSaleCoverable(tx, {
+        lines: toStockLines(items),
+        status: fields.status,
+        excludeSalesOrderId: id,
+      });
 
-      const data = orderFields(req.body, actorName(req));
-      const soNumber = String(req.body.soNumber || '').trim();
+      const data = { ...fields };
       if (soNumber) data.soNumber = soNumber;
+      data.deliveredAt = stampDone('Delivered', fields.status, existing.status, existing.deliveredAt);
 
       const updated = await tx.salesOrder.update({
         where: { id },
@@ -152,7 +208,9 @@ router.put('/:id', async (req, res, next) => {
         createdBy: updated.modifiedBy,
         force: true,
       });
-      return updated;
+      if (payments) await P.writePayments(tx, updated, payments);
+      else await P.refreshPaymentRows(tx, updated);
+      return tx.salesOrder.findUnique({ where: { id }, include: orderInclude });
     });
     res.json(order);
   } catch (err) {
@@ -166,16 +224,54 @@ router.put('/:id', async (req, res, next) => {
 router.patch('/:id/status', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const { status, paymentStatus } = req.body;
+    const status = V.oneOf(req.body.status, 'status', O.SALE_STATUSES);
+    const paymentStatus = V.oneOf(req.body.paymentStatus, 'paymentStatus', O.PAYMENT_STATUSES);
     if (!status && !paymentStatus) {
       return res.status(400).json({ error: 'status or paymentStatus is required' });
     }
-    const data = { modifiedAt: new Date() };
-    if (status) data.status = status;
-    if (paymentStatus) data.paymentStatus = paymentStatus;
-    // Reaching "Delivered" is what takes the goods out of stock; leaving it
-    // puts them back.
     const order = await prisma.$transaction(async (tx) => {
+      const before = await tx.salesOrder.findUnique({ where: { id }, include: orderInclude });
+      if (!before) {
+        const e = new Error('not found');
+        e.code = 'P2025';
+        throw e;
+      }
+      const data = { modifiedAt: new Date() };
+      if (status) {
+        data.status = status;
+        data.deliveredAt = stampDone('Delivered', status, before.status, before.deliveredAt);
+      }
+      if (paymentStatus) {
+        data.paymentStatus = paymentStatus;
+        // Keep the money in step with the label: "Paid" means the whole amount
+        // came in, "Pending" that none did. Receivables are worked out from
+        // paidAmount, so a "Paid" order left at 0 paid still looked owed.
+        if (paymentStatus === 'Paid') data.paidAmount = before.amount;
+        if (paymentStatus === 'Pending') data.paidAmount = 0;
+        // ...and the payment rows with it, so they still add up to paidAmount:
+        // "Paid" books whatever was still due as one more payment, "Pending"
+        // clears them.
+        if (paymentStatus === 'Paid' && before.paymentStatus !== 'Paid') {
+          const recorded = before.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+          data.paymentType = 'Full Payment';
+          await P.recordBalance(tx, before, Number(before.amount) - recorded);
+        }
+        if (paymentStatus === 'Pending') {
+          data.paymentType = '';
+          await tx.transaction.deleteMany({ where: { salesOrderId: id } });
+        }
+      }
+      // Re-opening a cancelled/delivered sale puts it back among the open ones,
+      // so it has to fit in what is free like any new order.
+      if (status && !SETTLED.has(status) && SETTLED.has(before.status) && status !== before.status) {
+        await assertSaleCoverable(tx, {
+          lines: toStockLines(before.items),
+          status,
+          excludeSalesOrderId: id,
+        });
+      }
+      // Reaching "Delivered" is what takes the goods out of stock; leaving it
+      // puts them back.
       const updated = await tx.salesOrder.update({
         where: { id },
         data,
@@ -190,7 +286,7 @@ router.patch('/:id/status', async (req, res, next) => {
         note: `Sale ${updated.soNumber} (${updated.status})`,
         createdBy: updated.modifiedBy,
       });
-      return updated;
+      return tx.salesOrder.findUnique({ where: { id }, include: orderInclude });
     });
     res.json(order);
   } catch (err) {
@@ -204,6 +300,7 @@ router.delete('/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     await prisma.$transaction(async (tx) => {
+      await assertNotBilled(tx, id, 'deleted');
       await reverseStockFor(tx, REF_TYPE, id);
       await tx.salesOrder.delete({ where: { id } });
     });

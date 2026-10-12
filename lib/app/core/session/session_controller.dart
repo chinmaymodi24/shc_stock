@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shc_stock/app/core/api/api_client.dart';
+import 'package:shc_stock/app/core/utils/app_date.dart';
+import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:shc_stock/app/routes/app_routes.dart';
 
 /// What one employee may do in one module or Settings tab.
@@ -65,6 +67,10 @@ class SessionUser {
   /// do there.
   final Map<String, ModuleAccess> permissions;
 
+  /// True while the password is one somebody else chose; the server refuses
+  /// everything but setting a new one until this clears.
+  final bool mustChangePassword;
+
   const SessionUser({
     required this.id,
     required this.name,
@@ -77,6 +83,7 @@ class SessionUser {
     this.isSuperAdmin = false,
     this.token = '',
     this.permissions = const {},
+    this.mustChangePassword = false,
   });
 
   ModuleAccess accessTo(String key) => permissions[key] ?? ModuleAccess.none;
@@ -109,6 +116,7 @@ class SessionUser {
       isSuperAdmin: json['isSuperAdmin'] == true,
       token: json['token'] as String? ?? '',
       permissions: perms,
+      mustChangePassword: json['mustChangePassword'] == true,
     );
   }
 
@@ -124,6 +132,7 @@ class SessionUser {
     'isSuperAdmin': isSuperAdmin,
     'token': token,
     'permissions': permissions.map((k, v) => MapEntry(k, v.toJson())),
+    'mustChangePassword': mustChangePassword,
   };
 
   /// Same session with edited profile fields — what Settings › Profile saves.
@@ -140,7 +149,26 @@ class SessionUser {
         isSuperAdmin: isSuperAdmin,
         token: token,
         permissions: permissions,
+        mustChangePassword: mustChangePassword,
       );
+
+  /// Same session once the employee has chosen their own password. Changing a
+  /// password ends every older session, so the server hands back a fresh
+  /// [token] to carry on with.
+  SessionUser withPasswordChosen({String? token}) => SessionUser(
+    id: id,
+    code: code,
+    name: name,
+    email: email,
+    role: role,
+    roleId: roleId,
+    phone: phone,
+    department: department,
+    isSuperAdmin: isSuperAdmin,
+    token: (token != null && token.isNotEmpty) ? token : this.token,
+    permissions: permissions,
+    mustChangePassword: false,
+  );
 
   String get initials {
     final parts = name
@@ -184,6 +212,21 @@ class SessionController extends GetxController {
 
   bool get isSuperAdmin => user.value?.isSuperAdmin ?? false;
 
+  /// Where a freshly signed-in session should land: the "set your own
+  /// password" screen when the password is not theirs yet, otherwise the first
+  /// screen they may open (the dashboard for anyone who has it).
+  String get homeRoute => user.value?.mustChangePassword == true
+      ? AppRoutes.setPassword
+      : firstOpenRoute();
+
+  /// The employee has chosen their own password. [token] is the fresh session
+  /// token the server returns with it (the old one stops working).
+  Future<void> markPasswordChanged({String? token}) async {
+    final current = user.value;
+    if (current == null) return;
+    await _store(current.withPasswordChosen(token: token));
+  }
+
   /// Signed out reads as "no access" rather than "everything" — every check
   /// fails closed.
   bool canRead(String key) => user.value?.canRead(key) ?? false;
@@ -195,6 +238,7 @@ class SessionController extends GetxController {
     super.onInit();
     ApiClient.instance.tokenProvider = () => user.value?.token;
     ApiClient.instance.onUnauthorized = _onSessionRejected;
+    ApiClient.instance.onPasswordChangeRequired = _onPasswordChangeRequired;
     _restoreFuture = restore();
   }
 
@@ -229,6 +273,7 @@ class SessionController extends GetxController {
       final json = await ApiClient.instance.get('/auth/me');
       if (json is Map<String, dynamic>) {
         await _store(SessionUser.fromJson(json));
+        await _applyDateFormat(json);
       }
     } catch (_) {}
   }
@@ -242,6 +287,14 @@ class SessionController extends GetxController {
   }) async {
     _persist = persist;
     await _store(SessionUser.fromJson(loginResponse));
+    await _applyDateFormat(loginResponse);
+  }
+
+  /// The date format is the employee's own (Settings › Preferences), so it
+  /// follows whoever signs in on this device.
+  Future<void> _applyDateFormat(Map<String, dynamic> json) async {
+    final f = json['dateFormat'];
+    if (f is String && f.isNotEmpty) await AppDates.apply(f);
   }
 
   /// Keeps the top bar in step after Settings › Profile saves, without
@@ -276,6 +329,19 @@ class SessionController extends GetxController {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_key);
     } catch (_) {}
+  }
+
+  /// The server says this account must choose its own password first (an admin
+  /// reset it while the app was open). Flag the session and go to that screen.
+  Future<void> _onPasswordChangeRequired() async {
+    final current = user.value;
+    if (current == null || current.mustChangePassword) return;
+    await _store(
+      SessionUser.fromJson({...current.toJson(), 'mustChangePassword': true}),
+    );
+    if (Get.currentRoute != AppRoutes.setPassword) {
+      Get.offAllNamed(AppRoutes.setPassword);
+    }
   }
 
   bool _redirecting = false;

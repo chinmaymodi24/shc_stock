@@ -1,6 +1,7 @@
 import 'package:shc_stock/app/core/session/app_modules.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shc_stock/app/core/utils/qty_format.dart';
 import 'dart:math' as math;
 import 'package:shc_stock/app/modules/stock/controllers/stock_controller.dart';
 import 'package:shc_stock/app/shared/widgets/app_loading_indicator.dart';
@@ -162,13 +163,13 @@ class WebStockLayout extends GetView<StockController> {
                                   label: 'Low Stock',
                                   value: '${c.stats.value.intOf('lowStock')}',
                                   icon: Icons.warning_amber_rounded,
-                                  iconColor: const Color(0xFFF59E0B),
+                                  iconColor: AppColors.warning,
                                 ),
                                 AppStatCard(
                                   label: 'Out of Stock',
                                   value: '${c.stats.value.intOf('outOfStock')}',
                                   icon: Icons.block_rounded,
-                                  iconColor: const Color(0xFFEF4444),
+                                  iconColor: AppColors.danger,
                                 ),
                                 AppStatCard(
                                   label: 'Stock Value',
@@ -177,7 +178,7 @@ class WebStockLayout extends GetView<StockController> {
                                   ),
                                   smallValue: true,
                                   icon: Icons.currency_rupee_rounded,
-                                  iconColor: const Color(0xFF22C55E),
+                                  iconColor: AppColors.success,
                                   // Stock movement volume this month vs last.
                                   trend: c.stats.value.trendLabel('movement'),
                                   trendUp: c.stats.value.trendUp('movement'),
@@ -190,6 +191,7 @@ class WebStockLayout extends GetView<StockController> {
 
                           // ── Toolbar: search + filters ─────────────────────────────
                           FilterBar(
+                            pillsVisible: () => c.items.isNotEmpty,
                             search: FilterSearchField(
                               controller: c.searchCtrl,
                               hint: 'Search by name or SKU...',
@@ -510,7 +512,7 @@ class _StockRowState extends State<_StockRow> {
                 Expanded(
                   flex: 2,
                   child: Text(
-                    '${item.stockInHand}',
+                    fmtStockQty(item.stockInHand),
                     style: TextStyle(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
@@ -595,8 +597,8 @@ class _StockRowState extends State<_StockRow> {
                         const SizedBox(width: 6),
                         RowActionButton(
                           icon: Icons.copy_outlined,
-                          color: const Color(0xFF3B82F6),
-                          bg: const Color(0xFF3B82F6).withValues(alpha: 0.10),
+                          color: AppColors.info,
+                          bg: AppColors.info.withValues(alpha: 0.10),
                           tooltip: 'Duplicate',
                           onTap: () => StockActions.duplicate(item),
                         ),
@@ -604,7 +606,7 @@ class _StockRowState extends State<_StockRow> {
                         RowActionButton(
                           icon: Icons.delete_outline_rounded,
                           iconSize: 18,
-                          color: const Color(0xFFEF4444),
+                          color: AppColors.danger,
                           // Neutral, not red-tinted — the design leaves
                           // Delete's background plain and lets only the icon
                           // carry the warning color.

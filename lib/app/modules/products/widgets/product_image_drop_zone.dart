@@ -4,6 +4,7 @@ import 'package:cross_file/cross_file.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:shc_stock/app/core/api/api_config.dart';
 import 'package:shc_stock/app/core/theme/app_colors.dart';
 
@@ -58,7 +59,14 @@ class ProductImageDropZone extends StatefulWidget {
 }
 
 class _ProductImageDropZoneState extends State<ProductImageDropZone> {
-  bool _dragging = false;
+  /// Reactive (no setState): true while a file is dragged over the zone.
+  final RxBool _dragging = false.obs;
+
+  @override
+  void dispose() {
+    _dragging.close();
+    super.dispose();
+  }
 
   bool get _hasExisting =>
       !widget.removed &&
@@ -86,7 +94,7 @@ class _ProductImageDropZoneState extends State<ProductImageDropZone> {
   }
 
   Future<void> _onDrop(List<XFile> files) async {
-    setState(() => _dragging = false);
+    _dragging.value = false;
     if (files.isEmpty) return;
     final file = files.first;
     await _accept(await file.readAsBytes(), file.name);
@@ -110,56 +118,60 @@ class _ProductImageDropZoneState extends State<ProductImageDropZone> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropTarget(
-          onDragEntered: (_) => setState(() => _dragging = true),
-          onDragExited: (_) => setState(() => _dragging = false),
+          onDragEntered: (_) => _dragging.value = true,
+          onDragExited: (_) => _dragging.value = false,
           onDragDone: (d) => _onDrop(d.files),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              InkWell(
-                onTap: _hasImage ? null : _browse,
-                borderRadius: BorderRadius.circular(14),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: widget.size,
-                  height: widget.size,
-                  decoration: BoxDecoration(
-                    color: _dragging
-                        ? AppColors.primaryOrange.withValues(alpha: 0.05)
-                        : colors.inputFill,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: CustomPaint(
-                    painter: _DashedBorderPainter(
-                      color: _dragging
-                          ? AppColors.primaryOrange
-                          : colors.border,
-                      radius: 14,
+              Obx(
+                () => InkWell(
+                  onTap: _hasImage ? null : _browse,
+                  borderRadius: BorderRadius.circular(14),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: widget.size,
+                    height: widget.size,
+                    decoration: BoxDecoration(
+                      color: _dragging.value
+                          ? AppColors.primaryOrange.withValues(alpha: 0.05)
+                          : colors.inputFill,
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(13),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 320),
-                        switchInCurve: Curves.easeOutBack,
-                        switchOutCurve: Curves.easeIn,
-                        transitionBuilder: (child, anim) => FadeTransition(
-                          opacity: anim,
-                          child: ScaleTransition(scale: anim, child: child),
+                    child: CustomPaint(
+                      painter: _DashedBorderPainter(
+                        color: _dragging.value
+                            ? AppColors.primaryOrange
+                            : colors.border,
+                        radius: 14,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(13),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 320),
+                          switchInCurve: Curves.easeOutBack,
+                          switchOutCurve: Curves.easeIn,
+                          transitionBuilder: (child, anim) => FadeTransition(
+                            opacity: anim,
+                            child: ScaleTransition(scale: anim, child: child),
+                          ),
+                          child: _hasImage
+                              ? _Preview(
+                                  key: const ValueKey('preview'),
+                                  bytes: widget.pickedBytes,
+                                  existingUrl: _hasExisting
+                                      ? widget.existingImageUrl
+                                      : null,
+                                  colors: colors,
+                                )
+                              : _Prompt(
+                                  key: ValueKey(
+                                    _dragging.value ? 'dragging' : 'empty',
+                                  ),
+                                  dragging: _dragging.value,
+                                  colors: colors,
+                                ),
                         ),
-                        child: _hasImage
-                            ? _Preview(
-                                key: const ValueKey('preview'),
-                                bytes: widget.pickedBytes,
-                                existingUrl: _hasExisting
-                                    ? widget.existingImageUrl
-                                    : null,
-                                colors: colors,
-                              )
-                            : _Prompt(
-                                key: ValueKey(_dragging ? 'dragging' : 'empty'),
-                                dragging: _dragging,
-                                colors: colors,
-                              ),
                       ),
                     ),
                   ),
@@ -171,7 +183,7 @@ class _ProductImageDropZoneState extends State<ProductImageDropZone> {
                   right: -6,
                   child: _Badge(
                     icon: Icons.close_rounded,
-                    background: const Color(0xFFEF4444),
+                    background: AppColors.danger,
                     onTap: widget.onRemove,
                   ),
                 ),

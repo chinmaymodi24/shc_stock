@@ -19,7 +19,7 @@ const loginAccount = {
   email: 'shc@gmail.com',
   password: '123456',
   role: 'Admin',
-  phone: '+91 98765 00001',
+  phone: '9876500001',
   department: 'Management',
   isActive: true,
 };
@@ -34,7 +34,7 @@ const employees = [
     "code": "USR-0002",
     "name": "Ravi Sharma",
     "email": "ravi@shc.com",
-    "phone": "+91 98765 00002",
+    "phone": "9876500002",
     "role": "Manager",
     "department": "",
     "isActive": true
@@ -43,7 +43,7 @@ const employees = [
     "code": "USR-0003",
     "name": "Priya Patel",
     "email": "priya@shc.com",
-    "phone": "+91 98765 00003",
+    "phone": "9876500003",
     "role": "Salesman",
     "department": "",
     "isActive": true
@@ -52,7 +52,7 @@ const employees = [
     "code": "USR-0004",
     "name": "Amit Verma",
     "email": "amit@shc.com",
-    "phone": "+91 98765 00004",
+    "phone": "9876500004",
     "role": "Stock Manager",
     "department": "",
     "isActive": true
@@ -61,7 +61,7 @@ const employees = [
     "code": "USR-0005",
     "name": "Sneha Gupta",
     "email": "sneha@shc.com",
-    "phone": "+91 98765 00005",
+    "phone": "9876500005",
     "role": "Accountant",
     "department": "",
     "isActive": true
@@ -70,7 +70,7 @@ const employees = [
     "code": "USR-0006",
     "name": "Vijay Joshi",
     "email": "vijay@shc.com",
-    "phone": "+91 98765 00006",
+    "phone": "9876500006",
     "role": "Salesman",
     "department": "",
     "isActive": true
@@ -79,7 +79,7 @@ const employees = [
     "code": "USR-0007",
     "name": "Neha Iyer",
     "email": "neha@shc.com",
-    "phone": "+91 98765 00007",
+    "phone": "9876500007",
     "role": "Salesman",
     "department": "",
     "isActive": false
@@ -88,7 +88,7 @@ const employees = [
     "code": "USR-0008",
     "name": "Kiran Mehta",
     "email": "kiran@shc.com",
-    "phone": "+91 98765 00008",
+    "phone": "9876500008",
     "role": "Manager",
     "department": "",
     "isActive": true
@@ -97,7 +97,7 @@ const employees = [
     "code": "USR-0009",
     "name": "Suresh Kumar",
     "email": "suresh@shc.com",
-    "phone": "+91 98765 00009",
+    "phone": "9876500009",
     "role": "Stock Manager",
     "department": "",
     "isActive": true
@@ -106,7 +106,7 @@ const employees = [
     "code": "USR-0010",
     "name": "Deepa Nair",
     "email": "deepa@shc.com",
-    "phone": "+91 98765 00010",
+    "phone": "9876500010",
     "role": "Accountant",
     "department": "",
     "isActive": false
@@ -115,7 +115,7 @@ const employees = [
     "code": "USR-0011",
     "name": "Rajesh Kapoor",
     "email": "rajesh@shc.com",
-    "phone": "+91 98765 00011",
+    "phone": "9876500011",
     "role": "Salesman",
     "department": "",
     "isActive": true
@@ -124,7 +124,7 @@ const employees = [
     "code": "USR-0012",
     "name": "Anita Singh",
     "email": "anita@shc.com",
-    "phone": "+91 98765 00012",
+    "phone": "9876500012",
     "role": "Salesman",
     "department": "",
     "isActive": true
@@ -133,7 +133,7 @@ const employees = [
     "code": "USR-0013",
     "name": "Manoj Patil",
     "email": "manoj@shc.com",
-    "phone": "+91 98765 00013",
+    "phone": "9876500013",
     "role": "Stock Manager",
     "department": "",
     "isActive": true
@@ -142,7 +142,7 @@ const employees = [
     "code": "USR-0014",
     "name": "Lakshmi Rao",
     "email": "lakshmi@shc.com",
-    "phone": "+91 98765 00014",
+    "phone": "9876500014",
     "role": "Accountant",
     "department": "",
     "isActive": true
@@ -151,7 +151,7 @@ const employees = [
     "code": "USR-0015",
     "name": "Ganesh Iyer",
     "email": "ganesh@shc.com",
-    "phone": "+91 98765 00015",
+    "phone": "9876500015",
     "role": "Salesman",
     "department": "",
     "isActive": false

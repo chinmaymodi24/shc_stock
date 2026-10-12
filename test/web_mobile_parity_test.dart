@@ -12,6 +12,8 @@ import 'package:shc_stock/app/modules/dashboard/controllers/dashboard_controller
 import 'package:shc_stock/app/modules/dashboard/models/dashboard_models.dart';
 import 'package:shc_stock/app/modules/dashboard/views/mobile_dashboard_layout.dart';
 import 'package:shc_stock/app/modules/dashboard/widgets/notes_todo.dart';
+import 'package:shc_stock/app/modules/billing/controllers/billing_summary_controller.dart';
+import 'package:shc_stock/app/modules/billing/models/bill_model.dart';
 import 'package:shc_stock/app/modules/sales/controllers/sales_controller.dart';
 import 'package:shc_stock/app/modules/sales/models/sales_model.dart';
 import 'package:shc_stock/app/modules/sales/views/mobile_sales_layout.dart';
@@ -41,6 +43,24 @@ const _signedIn = SessionUser(
 class _StubSession extends SessionController {
   @override
   Future<void> restore() async => user.value = _signedIn;
+}
+
+/// Billing figures without the network. [latest] is the sales order the
+/// "Open latest bill" shortcut would open — null when nothing is billed yet,
+/// which is when that shortcut is not supposed to render at all.
+class _StubBillingSummary extends BillingSummaryController {
+  _StubBillingSummary({int? latest}) {
+    summary.value = BillingSummary(
+      generated: latest == null ? 0 : 3,
+      pending: 2,
+      irnRegistered: 1,
+      irnTotal: 3,
+      latestSalesOrderId: latest,
+    );
+  }
+
+  @override
+  Future<void> fetch() async {}
 }
 
 class _StubSales extends SalesController {
@@ -185,6 +205,7 @@ void main() {
 
     testWidgets('the Billing card and its shortcut are there', (tester) async {
       Get.put<SalesController>(_StubSales());
+      Get.put<BillingSummaryController>(_StubBillingSummary(latest: 156));
       await _pump(tester, const MobileSalesLayout());
 
       await _scrollTo(tester, find.text('Billing'));
@@ -193,6 +214,22 @@ void main() {
       expect(find.text('e-Invoice IRN'), findsOneWidget);
       expect(find.text('Open latest bill'), findsOneWidget);
       expect(find.text('Bill format settings'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('with nothing billed the shortcut is not offered', (
+      tester,
+    ) async {
+      Get.put<SalesController>(_StubSales());
+      Get.put<BillingSummaryController>(_StubBillingSummary());
+      await _pump(tester, const MobileSalesLayout());
+
+      await _scrollTo(tester, find.text('Billing'));
+      // The card still reports the figures; only the button that could do
+      // nothing but say "no bill yet" is gone.
+      expect(find.text('Bills generated'), findsOneWidget);
+      expect(find.text('Bill format settings'), findsOneWidget);
+      expect(find.text('Open latest bill'), findsNothing);
       expect(tester.takeException(), isNull);
     });
 

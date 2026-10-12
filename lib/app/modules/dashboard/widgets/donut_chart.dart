@@ -84,7 +84,7 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
             ),
           );
         }),
-        const SizedBox(width: 28),
+        const SizedBox(width: 20),
         // Flexible: the legend used to hold four short hardcoded labels, but
         // the categories now come from the API ("Fire & Welding Protection",
         // an "Other (n)" bucket, …) and overflowed the card at laptop widths.
@@ -225,16 +225,18 @@ class _LegendItem extends StatelessWidget {
         ),
         SizedBox(width: highlighted ? 6 : 8),
         // Capped width + ellipsis: category names come from the API and can
-        // be long, so the label shrinks rather than blowing out the legend.
+        // be long, so the label shrinks rather than blowing out the legend. The
+        // cap is 240 (it was 150, which cut "Ceramic Fiber Products — 0%" down
+        // to "Ceramic Fiber Product…" on a card with room to spare).
         //
         // Flexible around the cap, not the cap alone: `loose` still lets the
-        // row shrink-wrap (the label takes its natural width up to 150), but
+        // row shrink-wrap (the label takes its natural width up to the cap), but
         // it also honours a legend column narrower than that cap — the
         // Analytics tab's Inventory Health panel only offers ~153px, where a
         // bare ConstrainedBox overflowed by 14px.
         Flexible(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 150),
+            constraints: const BoxConstraints(maxWidth: 240),
             child: Text(
               slice.legendText ??
                   '${slice.label} — ${slice.percent.toStringAsFixed(0)}%',

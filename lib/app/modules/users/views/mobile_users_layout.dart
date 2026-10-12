@@ -66,6 +66,7 @@ class MobileUsersLayout extends StatelessWidget {
       actions: [
         Obx(
           () => MobileFilterButton(
+            visible: c.users.isNotEmpty,
             filters: _buildFilters(c),
             onClear: c.resetFilters,
             activeCount:
@@ -110,7 +111,7 @@ class MobileUsersLayout extends StatelessWidget {
         label: 'Active',
         value: '${c.activeUsers}',
         icon: Icons.person_outline_rounded,
-        color: const Color(0xFF22C55E),
+        color: AppColors.success,
         selected: c.filterStatus.value == 'Active',
         onTap: () => c.filterStatus.value = c.filterStatus.value == 'Active'
             ? 'All Status'
@@ -130,7 +131,7 @@ class MobileUsersLayout extends StatelessWidget {
         label: 'Inactive',
         value: '${c.inactiveUsers}',
         icon: Icons.person_off_outlined,
-        color: const Color(0xFFEF4444),
+        color: AppColors.danger,
         selected: c.filterStatus.value == 'Inactive',
         onTap: () => c.filterStatus.value = c.filterStatus.value == 'Inactive'
             ? 'All Status'
@@ -297,7 +298,7 @@ class _MobileUserCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: u.isActive
-                        ? const Color(0xFF22C55E).withValues(alpha: 0.10)
+                        ? AppColors.success.withValues(alpha: 0.10)
                         : colors.comingSoonBadge,
                     borderRadius: BorderRadius.circular(999),
                   ),
@@ -307,7 +308,7 @@ class _MobileUserCard extends StatelessWidget {
                       fontSize: 10.5,
                       fontWeight: FontWeight.w600,
                       color: u.isActive
-                          ? const Color(0xFF22C55E)
+                          ? AppColors.success
                           : colors.textSecondary,
                       fontFamily: brandFontFamily,
                     ),
