@@ -236,7 +236,8 @@ router.patch('/:id/status', async (req, res, next) => {
         e.code = 'P2025';
         throw e;
       }
-      const data = { modifiedAt: new Date() };
+      // Credited to whoever changed it, like every other write.
+      const data = { modifiedBy: actorName(req), modifiedAt: new Date() };
       if (status) {
         data.status = status;
         data.deliveredAt = stampDone('Delivered', status, before.status, before.deliveredAt);
